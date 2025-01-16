@@ -1,7 +1,7 @@
 ********************************************************************************
 ** Set home directory
 ********************************************************************************
-global homedir "G:\Other computers\My Laptop\Documents"
+global homedir "G:/Other computers/My Laptop/Documents"
 // global homedir "T:" // comment this out if you are not using the PRC Remote Server
 
 ********************************************************************************
@@ -29,19 +29,19 @@ global temp_gsoep "$homedir/WeEqualize (Postdoc)/Temp Data/GSOEP"
 ********************************************************************************
 * This is the base directory with the setup files.
 * It is the directory you should change into before executing any files
-global code "$homedir/github/we-equalize/projects/relationship-life-course"
+global code "$homedir/github/relationship-life-course"
 
 * PROJECT SPECIFIC created data files
-global created_data "$homedir/Research Projects/Growth Curves/created data"
+global created_data "$homedir/Research Projects/Relationship Life Course (with LP)/created data"
 
 * PROJECT SPECIFIC results
-global results "$homedir/Research Projects/Growth Curves/results & output"
+global results "$homedir/Research Projects/Relationship Life Course (with LP)/results & output"
 
 * PROJECT SPECIFIC logdir
-global logdir "$homedir/Research Projects/Growth Curves/logs"
+global logdir "$homedir/Research Projects/Relationship Life Course (with LP)/logs"
 
 * PROJECT SPECIFIC temporary data files (they get deleted without a second thought)
-global temp "$homedir/Research Projects/Growth Curves/temp data"
+global temp "$homedir/Research Projects/Relationship Life Course (with LP)/temp data"
 
 
 ********************************************************************************
@@ -75,7 +75,7 @@ global temp_gsoep "$homedir/datasets/GSOEP/temp data"
 ********************************************************************************
 * This is the base directory with the setup files.
 * It is the directory you should change into before executing any files
-global code "$homedir/github/we-equalize/projects/relationship-life-course"
+global code "$homedir/github/relationship-life-course"
 
 * PROJECT SPECIFIC created data files
 global created_data "$homedir/projects/Growth Curves/created data"
