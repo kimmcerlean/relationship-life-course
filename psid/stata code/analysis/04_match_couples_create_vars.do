@@ -533,13 +533,24 @@ mi update
 
 mi reshape wide ft_pt_woman_end overwork_woman_end ft_pt_man_end overwork_man_end couple_work_end couple_work_ow_end couple_hw_end couple_hw_hrs_end couple_hw_hrs_alt_end rel_type couple_num_children_gp_end family_type_end in_sample hh_status relationship housework_focal age_focal weekly_hrs_t_focal earnings_t_focal family_income_t partnered_imp educ_focal_imp num_children_imp_hh weekly_hrs_woman weekly_hrs_man housework_woman housework_man partnered_woman partnered_man num_children_woman num_children_man ft_pt_woman overwork_woman ft_pt_man overwork_man ft_pt_det_woman ft_pt_det_man  in_sample_sp hh_status_sp relationship_sp housework_focal_sp age_focal_sp weekly_hrs_t_focal_sp earnings_t_focal_sp family_income_t_sp partnered_imp_sp num_children_imp_hh_sp, i(unique_id partner_id rel_start_all rel_end_all) j(duration) // SEX SEX_sp rel_status rel_type_constant transition_yr FIRST_BIRTH_YR FIRST_BIRTH_YR_sp sample_type sample_type_sp has_psid_gene has_psid_gene_sp birth_yr_all birth_yr_all_sp raceth_fixed_focal raceth_fixed_focal_sp fixed_education fixed_education_sp
 
+tab _mi_miss, m // see what happens if I reshape but DON'T convert
+tab _mi_m, m
+browse unique unique_id partner_id _mi_id _mi_miss _mi_m couple_work_end*
+browse unique unique_id partner_id _mi_id _mi_miss _mi_m couple_work_end* if inrange(_mi_id,1,10)
+
+unique unique_id partner_id // so now there are 4363 uniques and 11 observations for each (base + 10 imputations)
+
+save "$created_data/psid_couples_imputed_wide.dta", replace 
+
 mi convert wide, clear
 
-save "$created_data/psid_couples_imputed_wide.dta", replace // this seems to mess up some observations, so I might have done something wrong in the reshape. will revisit this, but I think getting via long format is fine for now. I wonder if this is because of the category things? okay it was because I dropped the imputed variables the passive ones were based off of; I fixed this.
+save "$created_data/psid_couples_imputed_fully_wide.dta", replace // this seems to mess up some observations, so I might have done something wrong in the reshape. will revisit this, but I think getting via long format is fine for now. I wonder if this is because of the category things? okay it was because I dropped the imputed variables the passive ones were based off of; I fixed this.
 
-unique unique_id partner_id
+unique unique_id partner_id // so, I think to what Lea said - the imputations are also wide, need to be long
+tab _mi_miss, m
 
 browse unique_id partner_id min_dur max_dur rel_type* *rel_*
+browse unique_id partner_id couple_work_end1 _*_couple_work_end1 _mi_miss
 
 mi estimate: proportion rel_type0 couple_work_ow_end0 family_type_end0 // okay NOW there are the right number of couples AND they match what I did when long
 mi estimate: proportion rel_type5 couple_work_ow_end5 family_type_end5 // same here
