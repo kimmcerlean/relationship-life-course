@@ -22,7 +22,7 @@ set more off
 
 set seed 8675309
 
-*net install cleanplots, from("https://tdmize.github.io/data/cleanplots")
+net install cleanplots, from("https://tdmize.github.io/data/cleanplots")
 set scheme cleanplots
 
 // define the reference folder for all 
@@ -38,12 +38,17 @@ set scheme cleanplots
 
 /*Setting directories based on ${comp}*/
 	if ("${comp}"=="kim") {
-		if `"`c(hostname)'"' == "LAPTOP-TP2VHI6B" global root `"G:/Other computers/My Laptop/Documents/Research Projects/Relationship Life Course (with LP)"' // Kim's Personal Computer
+		if `"`c(hostname)'"' == "LAPTOP-TP2VHI6B" global root `"C:/Users/mcerl/Istituto Universitario Europeo/Pessin, Lea - 1. WeEqualize - Team Folder/Papers/Cross National Analysis of the Division of Labor across the Relationship Life Course"' // Shared One Drive on Kim's PC
+		// if `"`c(hostname)'"' == "LAPTOP-TP2VHI6B" global root `"G:/Other computers/My Laptop/Documents/Research Projects/Relationship Life Course (with LP)"' // Kim's Personal Computer
 		if `"`c(hostname)'"' == "PPRC-STATS-P01" global root `"T:/Research Projects/Relationship Life Course (with LP)"' // PRC Stats Server
-		if `"`c(hostname)'"' == "60018D" global root `"C:/Users/kmcerlea/Istituto Universitario Europeo/Pessin, Lea - 1. WeEqualize - Team Folder/Papers/Cross National Analysis of the Division of Labor across the Relationship Life Course"' // EUI Computer
+		if `"`c(hostname)'"' == "60018D" global root `"C:/Users/kmcerlea/Istituto Universitario Europeo/Pessin, Lea - 1. WeEqualize - Team Folder/Papers/Cross National Analysis of the Division of Labor across the Relationship Life Course"' // Team folder on EUI Computer
+		global code    "G:/Other computers/My Laptop/Documents/GitHub/relationship-life-course/psid" // I am actually not sure if having the code on a shared directory will work. I am a bit worried about version control if the code can be updated in OneDrive but not yet pushed to github; I am worried about accidental changes. putting code into my own folder for now
 			}
+			
+			
 	if ("${comp}"=="lea") {
 		// global root	"G:\My Drive\(4) Pessin & Pojman - LCA - PSID 2017" // Lea to change
+		global code    "$root/code/relationship-life-course/psid" // should match names if cloned from github
 		}	
 
 // define globals
@@ -51,7 +56,6 @@ global PSID    "$root/PSID data" /*original PSID data*/
 global temp    "$root/temp data" /*intermediary processing files*/
 global created_data "$root/created data" /*created data*/
 global results  "$root/results"
-global code    "$root/code/relationship-life-course" // should match names if cloned from github
 // global graphs  "$root/graphs"
 // global tables  "$root/tables"
 

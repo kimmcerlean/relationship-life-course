@@ -15,14 +15,14 @@
 ********************************************************************************
 * Take downloaded data, turn it into Stata format and rename
 ********************************************************************************
-do "$PSID/J341059 (2021)/J341059.do" // note - this will need to be updated to wherever the raw data you downloaded is - this is directly provided by PSID
-do "$PSID/J341059 (2021)/J341059_formats.do" // note - this will need to be updated to wherever the raw data you downloaded is - this is directly provided by PSID - also need to direct this file where to save: "$PSID\PSID_full.dta"
-do "$code/00_rename_vars.do"
+do "$code/stata code/data-cleaning/J341059.do"
+do "$code/stata code/data-cleaning/J341059_formats.do"
+do "$code/stata code/data-cleaning/00_rename_vars.do"
 
 ********************************************************************************
 * Import data and reshape so it's long
 ********************************************************************************
-use "$PSID\PSID_full_renamed.dta", clear
+use "$PSID/PSID_full_renamed.dta", clear
 browse X1968_PERSON_NUM_1968 X1968_INTERVIEW_NUM_1968 // 30001 = interview; 30002 = person number
 
 rename X1968_PERSON_NUM_1968 main_per_id
@@ -59,7 +59,7 @@ Some individuals who qualify as sample members (because they have a sample paren
 All other people who have ever lived in a PSID family are not sample individuals. They also receive Person Numbers of 170 or greater, but are not Followable.
 */
 
-merge 1:1 unique_id using "$PSID\strata.dta", keepusing(stratum cluster)
+merge 1:1 unique_id using "$PSID/strata.dta", keepusing(stratum cluster)
 drop if _merge==2
 drop _merge
 
@@ -69,7 +69,7 @@ local reshape_vars "RELEASE_ X1968_PERSON_NUM_ INTERVIEW_NUM_ RELATION_ AGE_INDV
 
 reshape long `reshape_vars', i(id unique_id sample_type stratum cluster) j(survey_yr)
 
-save "$temp_psid\PSID_full_long.dta", replace
+save "$temp/PSID_full_long.dta", replace
 
 ********************************************************************************
 **# Prep childbirth history files
@@ -154,12 +154,12 @@ forvalues n=1/20{
 	rename cah_parent_marital_status`n' cah_parent_marst`n' // think getting too long for what I want to work
 }
    
-save "$created_data_psid\birth_history_wide.dta", replace
+save "$created_data/birth_history_wide.dta", replace
 
 ********************************************************************************
 **# Attempt to get births by individual HH / survey year
 ********************************************************************************
-use "$temp_psid\PSID_full_long.dta", clear
+use "$temp/PSID_full_long.dta", clear
 
 gen relationship=.
 replace relationship=0 if RELATION_==0
@@ -215,7 +215,7 @@ inspect FAMILY_INTERVIEW_NUM_ if SEQ_NUMBER!=0
 browse  unique_id FAMILY_INTERVIEW_NUM_ survey_yr hh_births_in_yr individ_birth_in_yr hh_births_pre1968 indiv_births_pre1968 cah_child_birth_yr1 cah_child_birth_yr2 cah_child_birth_yr3 cah_child_birth_yr4 cah_child_birth_yr*
 browse  unique_id FAMILY_INTERVIEW_NUM_ survey_yr cah_child_birth_yr1 cah_child_birth_yr2 cah_child_birth_yr3 cah_child_birth_yr4 hh_births_* individ_birth_*
 
-save "$created_data_psid\hh_birth_history_file.dta", replace
+save "$created_data/hh_birth_history_file.dta", replace
 
 sort unique_id survey_yr
 drop if FAMILY_INTERVIEW_NUM_==.
@@ -230,13 +230,13 @@ browse  unique_id main_fam_id FAMILY_INTERVIEW_NUM_ survey_yr relationship hh_bi
 
 collapse (max) hh_births_1* hh_births_2* individ_birth_1* individ_birth_2*, by(unique_id)
 
-save "$created_data_psid\hh_birth_history_file_byUNIQUE.dta", replace
+save "$created_data/hh_birth_history_file_byUNIQUE.dta", replace
 
 ********************************************************************************
 **# This is births by 1968 fam id but not helpful for splitoffs and such
 ********************************************************************************
 // can I reshape wide AGAIN so it's by HH and use later to get incremental number of children??
-use "$created_data_psid\birth_history_wide.dta", clear
+use "$created_data/birth_history_wide.dta", clear
 
 keep int_number per_num cah_child_birth_yr*
 rename int_number main_fam_id 
@@ -270,4 +270,4 @@ forvalues y=1968/2021{
 
 browse main_fam_id hh_births_pre1968 hh_births_2001 cah*
 
-save "$created_data_psid\1968hh_birth_history_file.dta", replace
+save "$created_data/1968hh_birth_history_file.dta", replace

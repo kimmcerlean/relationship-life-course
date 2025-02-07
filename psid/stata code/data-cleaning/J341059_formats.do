@@ -27267,5 +27267,5 @@ label values V9423      V9423L
 label values V9433      V9433L
 
 
-save "$PSID\PSID_full.dta", replace 
+save "$PSID/PSID_full.dta", replace 
 

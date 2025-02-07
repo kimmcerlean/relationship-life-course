@@ -1529,7 +1529,7 @@ infix
       ER35051          13757 - 13758       ER35052          13759 - 13762  long ER35053          13763 - 13767 
       ER35054          13768 - 13768       ER35056          13769 - 13769       ER35062          13770 - 13771 
       ER35064          13772 - 13778  long ER35065          13779 - 13783 
-using "T:\data\PSID\J341059 (2021)\J341059.txt", clear 
+using "$PSID/J341059.txt", clear 
 ;
 label variable ER30000         "RELEASE NUMBER"                           ;
 label variable ER30001         "1968 INTERVIEW NUMBER"                    ;
@@ -6074,5 +6074,5 @@ label variable ER35064         "CORE/IMM INDIVIDUAL LONGITUDINAL WT   21" ;
 label variable ER35065         "CORE/IMM INDIVIDUAL CROSS-SECTION WT  21" ;
 
 
-save "$PSID\PSID_full.dta", replace ;
+save "$PSID/PSID_full.dta", replace ;
 

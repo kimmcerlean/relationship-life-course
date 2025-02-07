@@ -14,11 +14,69 @@
 * a cohabitation history
 
 ********************************************************************************
+* First try to get marital history data to merge on
+********************************************************************************
+use "$PSID/mh85_21.dta", clear
+
+gen unique_id = (MH2*1000) + MH3
+browse MH3 MH2 unique_id
+gen unique_id_spouse = (MH7*1000) + MH8
+
+/* first rename for ease*/
+rename MH1 releaseno
+rename MH2 fam_id
+rename MH3 main_per_id
+rename MH4 sex
+rename MH5 mo_born
+rename MH6 yr_born
+rename MH7 fam_id_spouse
+rename MH8 per_no_spouse
+rename MH9 marrno 
+rename MH10 mo_married
+rename MH11 yr_married
+rename MH12 status
+rename MH13 mo_widdiv
+rename MH14 yr_widdiv
+rename MH15 mo_sep
+rename MH16 yr_sep
+rename MH17 history
+rename MH18 num_marriages
+rename MH19 marital_status
+rename MH20 num_records
+
+label define status 1 "Intact" 3 "Widow" 4 "Divorce" 5 "Separation" 7 "Other" 8 "DK" 9 "Never Married"
+label values status status
+
+egen yr_end = rowmin(yr_widdiv yr_sep)
+browse unique_id marrno status yr_widdiv yr_sep yr_end
+
+// this is currently LONG - one record per marriage. want to make WIDE
+
+drop mo_born mo_widdiv yr_widdiv mo_sep yr_sep history
+bysort unique_id: egen year_birth = min(yr_born)
+drop yr_born
+
+reshape wide unique_id_spouse fam_id_spouse per_no_spouse mo_married yr_married status yr_end, i(unique_id main_per_id fam_id) j(marrno)
+gen INTERVIEW_NUM_1968 = fam_id
+
+foreach var in *{
+	rename `var' mh_`var' // so I know it came from marital history
+}
+
+rename mh_fam_id fam_id
+rename mh_main_per_id main_per_id
+rename mh_unique_id unique_id
+rename mh_year_birth year_birth 
+rename mh_INTERVIEW_NUM_1968 INTERVIEW_NUM_1968
+
+save "$temp/marital_history_wide.dta", replace
+
+********************************************************************************
 ********************************************************************************
 **# Using HH composition variables
 ********************************************************************************
 ********************************************************************************
-use "$temp_psid\PSID_full_long.dta", clear // use long data for now, bc easier to manage
+use "$temp/PSID_full_long.dta", clear // use long data for now, bc easier to manage
 egen wave = group(survey_yr) // this will make years consecutive, easier for later
 
 ********************************************************************************
@@ -206,7 +264,7 @@ replace cohab_end=1 if rel_type==2 & rel_type[_n+1]==0 & unique_id==unique_id[_n
 browse unique_id survey_yr SAMPLE in_sample hh_status_ relationship partnered rel_type rel_start marriage_start cohab_start rel_end marriage_end cohab_end YR_NONRESPONSE_FIRST
 
 // merge on marital history - bc in order of prio, it should be marital history for marriages observed, then other variables for not in marital history or cohabitation.
-merge m:1 unique_id using "$temp_psid\marital_history_wide.dta"
+merge m:1 unique_id using "$temp/marital_history_wide.dta"
 drop if _merge==2
 
 gen in_marital_history=0
@@ -388,11 +446,11 @@ collapse 	(mean) rel1_start rel2_start rel3_start rel4_start rel5_start rel1_end
 
 gen partner_id = unique_id // for later matching
 **# Create file
-save "$created_data_psid\psid_composition_history.dta", replace
+save "$created_data/psid_composition_history.dta", replace
 
 restore
 
-use "$created_data_psid\psid_composition_history.dta", clear
+use "$created_data/psid_composition_history.dta", clear
 tab rel1_start partnered, m // do most ever partnered people at least have rel1 start date?
 tab hh1_start has_psid_gene, m
 tab SAMPLE has_psid_gene, m

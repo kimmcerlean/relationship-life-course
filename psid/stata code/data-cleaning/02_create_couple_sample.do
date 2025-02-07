@@ -24,7 +24,7 @@ Prior to 1983, the Relationship to Head ('Reference Person' starting in the 2017
 ********************************************************************************
 * import data and clean up sample
 ********************************************************************************
-use "$temp_psid\PSID_full_long.dta", clear
+use "$temp/PSID_full_long.dta", clear
 
 sort unique_id survey_yr
 
@@ -137,4 +137,4 @@ tab survey_yr marr_trans
 
 // okay how to get duration?! next problem GAH
 
-save "$created_data_psid\PSID_partners.dta", replace
+save "$created_data/PSID_partners.dta", replace
