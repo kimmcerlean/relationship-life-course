@@ -19,12 +19,12 @@ use "$created_data/PSID_partners.dta", clear
 
 // merge on marital history
 /*
-merge m:1 unique_id using "$temp_psid\marital_history_wide.dta" // merge this or the other relationship history file?!
+merge m:1 unique_id using "$temp/marital_history_wide.dta" // merge this or the other relationship history file?!
 gen in_marital_history=0
 replace in_marital_history=1 if _merge==3
 drop _merge
 */
-merge m:1 unique_id using "$created_data_psid\psid_composition_history.dta" // try this for now
+merge m:1 unique_id using "$created_data/psid_composition_history.dta" // try this for now
 rename partnered ever_partnered
 drop partner_id // need to clean up some things I don't need in this file for now
 
@@ -649,4 +649,4 @@ gen age_mar_head = rel_start_yr -  yr_born_head
 gen age_mar_wife = rel_start_yr -  yr_born_wife
 browse unique_id survey_yr SEX yr_born_head  yr_born_wife  year_birth AGE_INDV AGE_HEAD_ AGE_WIFE_ rel_start_yr age_mar_head age_mar_wife
 
-save "$created_data_psid\PSID_partners_cleaned.dta", replace
+save "$created_data/PSID_partners_cleaned.dta", replace

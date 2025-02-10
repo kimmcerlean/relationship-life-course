@@ -27,7 +27,7 @@ net get st0445 // these go into working directory (the ancillary files); pwd sho
 ********************************************************************************
 **# First get survey responses for each individual in couple from main file
 ********************************************************************************
-use "$PSID\PSID_full_renamed.dta", clear
+use "$PSID/PSID_full_renamed.dta", clear
 browse X1968_PERSON_NUM_1968 X1968_INTERVIEW_NUM_1968 // 30001 = interview; 30002 = person number
 
 rename X1968_PERSON_NUM_1968 main_per_id
@@ -134,15 +134,15 @@ foreach var in AGE_INDV_ YRS_EDUCATION_INDV_ EDUC1_WIFE_ EDUC1_HEAD_ EDUC_WIFE_ 
 
 drop *_1968
 
-save "$temp\individual_sample_info.dta", replace
+save "$temp/individual_sample_info.dta", replace
 
 ********************************************************************************
 **# Now merge this info on to individuals and recode core variables
 * JUST for individuals; not doing any couple-level
 ********************************************************************************
-use "$created_data\couple_list_individ.dta", clear
+use "$created_data/couple_list_individ.dta", clear
 
-merge m:1 unique_id using "$temp\individual_sample_info.dta" //
+merge m:1 unique_id using "$temp/individual_sample_info.dta" //
 drop if _merge==2
 drop _merge
 
@@ -150,15 +150,15 @@ drop *_sp_*
 drop SEX_sp
 drop SAMPLE_sp
 
-merge m:1 partner_id using "$temp\individual_sample_info.dta", keepusing(*_sp_* *_sp) // this way, I know which of them is the OG, which is the moved in, and when that happened
+merge m:1 partner_id using "$temp/individual_sample_info.dta", keepusing(*_sp_* *_sp) // this way, I know which of them is the OG, which is the moved in, and when that happened
 drop if _merge==2
 drop _merge
 
 browse unique_id partner_id SEX SEX_sp
 
-save "$temp\individual_vars_imputation_wide.dta", replace
+save "$temp/individual_vars_imputation_wide.dta", replace
 
-use "$temp\individual_vars_imputation_wide.dta", clear
+use "$temp/individual_vars_imputation_wide.dta", clear
 // misstable summarize LABOR_INCOME_T2_INDV_*, all
 // misstable summarize WEEKLY_HRS_T2_INDV_*, all
 // misstable summarize ANNUAL_HOURS_T1_INDV_*, all
@@ -383,7 +383,7 @@ replace ADULTCARE_WIFE = . if inlist(ADULTCARE_WIFE,998,999)
 
 // Education recode
 * add SHELF variables for comparison
-merge m:1 unique_id survey_yr using "$created_data_psid/datagen_shelf_03_education_long.dta", keepusing(*match)
+merge m:1 unique_id survey_yr using "$PSID/datagen_shelf_03_education_long.dta", keepusing(*match)
 drop if _merge==2
 drop _merge
 
@@ -986,12 +986,12 @@ browse unique_id survey_yr relationship_ new_in_hh NEW_HEAD_YEAR NEW_WIFE_YEAR
 // drop variables that aren't core (aka were used to create main variables)
 drop LABOR_INCOME_T1_WIFE_ WAGES_T1_WIFE_ LABOR_INCOME_T1_HEAD WAGES_T1_HEAD WEEKLY_HRS1_T1_WIFE_ WEEKLY_HRS_T1_WIFE_ WEEKLY_HRS1_T1_HEAD_ WEEKLY_HRS_T1_HEAD_  ANNUAL_HOURS_T1_INDV EMPLOY_STATUS_HEAD_ EMPLOY_STATUS1_HEAD_ EMPLOY_STATUS2_HEAD_ EMPLOY_STATUS3_HEAD_ EMPLOY_STATUS_WIFE_ EMPLOY_STATUS1_WIFE_ EMPLOY_STATUS2_WIFE_ EMPLOY_STATUS3_WIFE_ employ_head employ1_head employ2_head employ3_head employ_wife employ1_wife employ2_wife employ3_wife HOUSEWORK_HEAD_ HOUSEWORK_WIFE_ TOTAL_HOUSEWORK_T1_HW MOST_HOUSEWORK_T1 EDUC1_HEAD_ EDUC_HEAD_ EDUC1_WIFE_ EDUC_WIFE_  educ_wife_early educ_head_early educ_wife_1975 educ_head_1975 START_YR_EMPLOYER_HEAD START_YR_CURRENT_HEAD START_YR_PREV_HEAD YRS_CURRENT_EMPLOY_HEAD START_YR_EMPLOYER_WIFE START_YR_CURRENT_WIFE START_YR_PREV_WIFE YRS_CURRENT_EMPLOY_WIFE total_housework_weekly RACE_1_WIFE_ RACE_2_WIFE_ RACE_3_WIFE_ RACE_1_HEAD_ RACE_2_HEAD_ RACE_3_HEAD_ RACE_4_HEAD_ race_1_head_rec race_2_head_rec race_3_head_rec race_4_head_rec race_1_wife_rec race_2_wife_rec race_3_wife_rec race_4_wife_rec BIRTHS_T1_HEAD_ BIRTHS_T1_WIFE_ BIRTHS_T1_BOTH_
 
-save "$temp\inidividual_vars_imputation_long.dta", replace
+save "$temp/inidividual_vars_imputation_long.dta", replace
 
 ********************************************************************************
 **# now reshape back to wide to fill in the off years where possible (with t-2 data)
 ********************************************************************************
-use "$temp\inidividual_vars_imputation_long.dta", clear
+use "$temp/inidividual_vars_imputation_long.dta", clear
 
 drop *_head* *_HEAD* *_wife* *_WIFE* *_INDV* *_indv* educ_completed wave MOVED_ MOVED_MONTH_  SPLITOFF_MONTH_ FAMILY_ID_SO_ MOVED_sp_ edulevelrp_match edulevelmaxrp_match edulevelsp_match edulevelmaxsp_match
 
@@ -1114,7 +1114,7 @@ browse first_educ_focal educ_focal*
 label values first_educ_focal educ
 
 // and add in children info and see if I can get this to work
-merge m:1 unique_id using "$created_data_psid\hh_birth_history_file_byUNIQUE.dta", keepusing(hh_births_1985 hh_births_1986 hh_births_1987 hh_births_1988 hh_births_1989 hh_births_199* hh_births_2* individ_birth_1985 individ_birth_1986 individ_birth_1987 individ_birth_1989 individ_birth_1989 individ_birth_199* individ_birth_2*)
+merge m:1 unique_id using "$created_data/hh_birth_history_file_byUNIQUE.dta", keepusing(hh_births_1985 hh_births_1986 hh_births_1987 hh_births_1988 hh_births_1989 hh_births_199* hh_births_2* individ_birth_1985 individ_birth_1986 individ_birth_1987 individ_birth_1989 individ_birth_1989 individ_birth_199* individ_birth_2*)
 
 drop if _merge==2
 drop _merge
@@ -1172,7 +1172,7 @@ tab lt_attrit permanent_attrit, m
 tab lt_attrit has_psid_gene, m
 tab permanent_attrit has_psid_gene, m
 
-merge m:1 unique_id using "$created_data_psid\psid_composition_history.dta", keepusing(rel*_start rel*_end marr*_start marr*_end coh*_start coh*_end hh*_start hh*_end mh_yr_married* mh_yr_end* mh_status* first_survey_yr last_survey_yr in_marital_history)
+merge m:1 unique_id using "$created_data/psid_composition_history.dta", keepusing(rel*_start rel*_end marr*_start marr*_end coh*_start coh*_end hh*_start hh*_end mh_yr_married* mh_yr_end* mh_status* first_survey_yr last_survey_yr in_marital_history)
 drop if _merge==2
 drop _merge
 
@@ -1234,7 +1234,7 @@ sort unique_id survey_yr
 browse unique_id FAMILY_INTERVIEW_NUM_  in_sample_
 
 // add on full history birth history for respondent
-merge m:1 unique_id using "$created_data_psid\birth_history_wide.dta" // now get person specific births
+merge m:1 unique_id using "$created_data/birth_history_wide.dta" // now get person specific births
 drop if _merge==2
 drop _merge 
 
@@ -1315,10 +1315,10 @@ keep if duration <=12 // up to 10/11 for now - but adding a few extra years so I
 
 replace partnered_imp=. if partnered_imp==.x
 
-save "$created_data\individs_by_duration_long.dta", replace
+save "$created_data/individs_by_duration_long.dta", replace
 
 // 
-use "$created_data\individs_by_duration_long.dta", clear
+use "$created_data/individs_by_duration_long.dta", clear
 
 unique unique_id partner_id
 egen couple_id = group(unique_id partner_id)
@@ -1453,7 +1453,7 @@ browse unique_id min_educ max_educ educ_focal_imp* if educ_focal_imp2==.
 gen fixed_education=educ_focal_imp2 // duration 0
 
 **# Here the data is now reshaped wide, by duration
-save "$created_data\individs_by_duration_wide.dta", replace
+save "$created_data/individs_by_duration_wide.dta", replace
 // use "$created_data\individs_by_duration_wide.dta", clear
 
 // make sure all of these variables exist in final file: rel_start_all rel_end_all rel_status rel_type_constant min_dur max_dur last_yr_observed ended transition_yr
@@ -1528,6 +1528,7 @@ putexcel A1 = matrix(r(table))
 ********************************************************************************
 **# Before I impute, want to match and explore child variables
 ********************************************************************************
+/*
 use "$created_data\individs_by_duration_long.dta", clear
 
 keep unique_id partner_id survey_yr duration rel_start_all min_dur max_dur NUM_CHILDREN_ num_children_imp_focal num_children_imp_hh had_birth increment_birth cah_child_birth_yr*
@@ -1567,6 +1568,7 @@ tab had_birth had_birth_sp if duration>=min_dur & duration<=max_dur, m
 tab increment_birth increment_birth_sp if duration>=min_dur & duration<=max_dur, m // so these match a bit more than births above
 
 browse unique_id partner_id survey_yr duration NUM_CHILDREN_ NUM_CHILDREN__sp num_children_imp_focal num_children_imp_focal_sp num_children_imp_hh num_children_imp_hh_sp had_birth had_birth_sp increment_birth increment_birth_sp cah_child_birth_yr1 cah_child_birth_yr1_sp
+*/
 
 ********************************************************************************
 **# MICT Exploration

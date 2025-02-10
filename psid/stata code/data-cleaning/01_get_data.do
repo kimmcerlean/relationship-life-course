@@ -156,6 +156,7 @@ forvalues n=1/20{
    
 save "$created_data/birth_history_wide.dta", replace
 
+
 ********************************************************************************
 **# Attempt to get births by individual HH / survey year
 ********************************************************************************
@@ -172,7 +173,7 @@ label values relationship relationship
 
 keep main_fam_id unique_id survey_yr relationship FAMILY_INTERVIEW_NUM_ SEQ_NUMBER_ AGE_INDV_ NUM_IN_HH_ NUM_CHILDREN_ NUM_NONFU_IN_HH_ AGE_YOUNG_CHILD_ AGE_OLDEST_CHILD_
 
-merge m:1 unique_id using "$created_data_psid\birth_history_wide.dta", keepusing(cah_child_birth_yr*)
+merge m:1 unique_id using "$created_data/birth_history_wide.dta", keepusing(cah_child_birth_yr*)
 tab AGE_INDV _merge, m row
 tab survey_yr _merge, m row
 
@@ -215,7 +216,7 @@ inspect FAMILY_INTERVIEW_NUM_ if SEQ_NUMBER!=0
 browse  unique_id FAMILY_INTERVIEW_NUM_ survey_yr hh_births_in_yr individ_birth_in_yr hh_births_pre1968 indiv_births_pre1968 cah_child_birth_yr1 cah_child_birth_yr2 cah_child_birth_yr3 cah_child_birth_yr4 cah_child_birth_yr*
 browse  unique_id FAMILY_INTERVIEW_NUM_ survey_yr cah_child_birth_yr1 cah_child_birth_yr2 cah_child_birth_yr3 cah_child_birth_yr4 hh_births_* individ_birth_*
 
-save "$created_data/hh_birth_history_file.dta", replace
+save "$temp/hh_birth_history_file.dta", replace
 
 sort unique_id survey_yr
 drop if FAMILY_INTERVIEW_NUM_==.
@@ -232,6 +233,7 @@ collapse (max) hh_births_1* hh_births_2* individ_birth_1* individ_birth_2*, by(u
 
 save "$created_data/hh_birth_history_file_byUNIQUE.dta", replace
 
+/*
 ********************************************************************************
 **# This is births by 1968 fam id but not helpful for splitoffs and such
 ********************************************************************************
@@ -271,3 +273,4 @@ forvalues y=1968/2021{
 browse main_fam_id hh_births_pre1968 hh_births_2001 cah*
 
 save "$created_data/1968hh_birth_history_file.dta", replace
+*/
