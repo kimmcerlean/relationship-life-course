@@ -2,7 +2,7 @@
 * Relabeling variables for consistency across waves and make it easier to analyze
 ********************************************************************************
 
-use "$PSID\PSID_full.dta", clear
+use "$PSID/PSID_full.dta", clear
 
 rename ER30000 RELEASE_1968
 rename ER30001 X1968_INTERVIEW_NUM_1968
@@ -4572,4 +4572,4 @@ rename RECENT_SEPARATE_YR_2021 RECENT_SEPARATE_YR
 rename MARITAL_STATUS_2021 MARITAL_STATUS
 
 
-save "$PSID\PSID_full_renamed.dta", replace
+save "$PSID/PSID_full_renamed.dta", replace

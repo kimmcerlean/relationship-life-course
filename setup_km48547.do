@@ -35,7 +35,7 @@ global code "$homedir/github/relationship-life-course"
 global created_data "$homedir/Research Projects/Relationship Life Course (with LP)/created data"
 
 * PROJECT SPECIFIC results
-global results "$homedir/Research Projects/Relationship Life Course (with LP)/results & output"
+global results "$homedir/Research Projects/Relationship Life Course (with LP)/results"
 
 * PROJECT SPECIFIC logdir
 global logdir "$homedir/Research Projects/Relationship Life Course (with LP)/logs"

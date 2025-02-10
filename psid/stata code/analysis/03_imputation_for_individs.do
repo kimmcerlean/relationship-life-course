@@ -15,7 +15,7 @@
 ********************************************************************************
 * Stata MI Impute
 ********************************************************************************
-use "$created_data\individs_by_duration_wide.dta", clear
+use "$created_data/individs_by_duration_wide.dta", clear
 capture label define rel_status 1 "Intact" 3 "Widow" 4 "Divorce" 5 "Separated" 6 "Attrited"
 label values rel_status rel_status
 
@@ -520,7 +520,7 @@ restore
 *******************************************************************************
 **# By sex
 ********************************************************************************
-use "$created_data\individs_by_duration_wide.dta", clear
+use "$created_data/individs_by_duration_wide.dta", clear
 
 egen nmis_age = rmiss(age_focal*)
 tab nmis_age, m
@@ -790,6 +790,8 @@ restore
 ********************************************************************************
 **# * ICE
 ********************************************************************************
+/* Not using this - was for robustness
+
 // ice
 * https://www.stata.com/support/faqs/statistics/mi-versus-ice-and-mim/
 * https://www.statalist.org/forums/forum/general-stata-discussion/general/1371095-multiple-imputation
@@ -1058,7 +1060,7 @@ twoway (line weekly_hrs_t_focal duration_rec if imputed==0 & SEX==2) (line weekl
 twoway (line housework_focal duration_rec if imputed==0 & SEX==2) (line housework_focal duration_rec if imputed==1 & SEX==2), legend(order(1 "Observed" 2 "Imputed") rows(1) position(6))
 
 restore
-
+*/
 
 ********************************************************************************
 ********************************************************************************

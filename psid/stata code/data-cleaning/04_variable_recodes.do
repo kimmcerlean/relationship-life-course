@@ -12,78 +12,19 @@
 ********************************************************************************
 * This files takes sample of couples and recodes to get ready for analysis
 
-
-********************************************************************************
-* First try to get marital history data to merge on
-********************************************************************************
-use "$PSID\mh85_21.dta", clear
-
-gen unique_id = (MH2*1000) + MH3
-browse MH3 MH2 unique_id
-gen unique_id_spouse = (MH7*1000) + MH8
-
-/* first rename for ease*/
-rename MH1 releaseno
-rename MH2 fam_id
-rename MH3 main_per_id
-rename MH4 sex
-rename MH5 mo_born
-rename MH6 yr_born
-rename MH7 fam_id_spouse
-rename MH8 per_no_spouse
-rename MH9 marrno 
-rename MH10 mo_married
-rename MH11 yr_married
-rename MH12 status
-rename MH13 mo_widdiv
-rename MH14 yr_widdiv
-rename MH15 mo_sep
-rename MH16 yr_sep
-rename MH17 history
-rename MH18 num_marriages
-rename MH19 marital_status
-rename MH20 num_records
-
-label define status 1 "Intact" 3 "Widow" 4 "Divorce" 5 "Separation" 7 "Other" 8 "DK" 9 "Never Married"
-label values status status
-
-egen yr_end = rowmin(yr_widdiv yr_sep)
-browse unique_id marrno status yr_widdiv yr_sep yr_end
-
-// this is currently LONG - one record per marriage. want to make WIDE
-
-drop mo_born mo_widdiv yr_widdiv mo_sep yr_sep history
-bysort unique_id: egen year_birth = min(yr_born)
-drop yr_born
-
-reshape wide unique_id_spouse fam_id_spouse per_no_spouse mo_married yr_married status yr_end, i(unique_id main_per_id fam_id) j(marrno)
-gen INTERVIEW_NUM_1968 = fam_id
-
-foreach var in *{
-	rename `var' mh_`var' // so I know it came from marital history
-}
-
-rename mh_fam_id fam_id
-rename mh_main_per_id main_per_id
-rename mh_unique_id unique_id
-rename mh_year_birth year_birth 
-rename mh_INTERVIEW_NUM_1968 INTERVIEW_NUM_1968
-
-save "$temp_psid\marital_history_wide.dta", replace
-
 ********************************************************************************
 **# import orig data, merge to marital history, and create nec relationship variables
 ********************************************************************************
-use "$created_data_psid\PSID_partners.dta", clear
+use "$created_data/PSID_partners.dta", clear
 
 // merge on marital history
 /*
-merge m:1 unique_id using "$temp_psid\marital_history_wide.dta" // merge this or the other relationship history file?!
+merge m:1 unique_id using "$temp/marital_history_wide.dta" // merge this or the other relationship history file?!
 gen in_marital_history=0
 replace in_marital_history=1 if _merge==3
 drop _merge
 */
-merge m:1 unique_id using "$created_data_psid\psid_composition_history.dta" // try this for now
+merge m:1 unique_id using "$created_data/psid_composition_history.dta" // try this for now
 rename partnered ever_partnered
 drop partner_id // need to clean up some things I don't need in this file for now
 
@@ -708,4 +649,4 @@ gen age_mar_head = rel_start_yr -  yr_born_head
 gen age_mar_wife = rel_start_yr -  yr_born_wife
 browse unique_id survey_yr SEX yr_born_head  yr_born_wife  year_birth AGE_INDV AGE_HEAD_ AGE_WIFE_ rel_start_yr age_mar_head age_mar_wife
 
-save "$created_data_psid\PSID_partners_cleaned.dta", replace
+save "$created_data/PSID_partners_cleaned.dta", replace

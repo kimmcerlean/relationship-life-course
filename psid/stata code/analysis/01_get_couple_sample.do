@@ -15,8 +15,7 @@
 ********************************************************************************
 * Import data and small final sample cleanup
 ********************************************************************************
-use "$created_data_psid\PSID_partners_cleaned.dta", clear
-// use "G:\Other computers\My Laptop\Documents\Research Projects\Growth Curves\PAA 2025 submission\data\PSID_partners_cleaned.dta", clear
+use "$created_data/PSID_partners_cleaned.dta", clear
 // browse if inlist(unique_id, 16032, 16176)
 
 // first create partner ids before I drop partners
@@ -251,10 +250,11 @@ preserve
 
 collapse (first) rel_start_all rel_end_all rel_status rel_type_constant min_dur max_dur last_yr_observed ended transition_yr_est, by(unique_id partner_id)
 
-save "$created_data\couple_list_individ.dta", replace
+save "$created_data/couple_list_individ.dta", replace
 
 restore
 
+/*
 ********************************************************************************
 **# get deduped list of couples to match their info on later
 ********************************************************************************
@@ -277,7 +277,7 @@ preserve
 
 collapse (first) rel_start_all rel_end_all rel_status rel_type_constant min_dur max_dur last_yr_observed ended transition_yr_est, by(unique_id partner_id)
 
-save "$created_data\couple_list.dta", replace
+save "$created_data/couple_list.dta", replace
 
 restore
 
@@ -299,3 +299,4 @@ gen percent_tracked = num_observations_20 / max_dur if max_dur < 21
 sum percent_tracked, detail // but this won't be 100% because not imputed, so 50% is good
 
 tab dur ended, row
+*/
