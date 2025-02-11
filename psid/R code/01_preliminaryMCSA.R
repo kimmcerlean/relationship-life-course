@@ -99,6 +99,17 @@ dist.hw.hrs.alt.om <- seqdist(seq.hw.hrs.alt, method="OM", indel=1, sm= "CONSTAN
 dist.fam.om <- seqdist(seq.fam, method="OM", indel=1, sm= "CONSTANT")
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Compute mantel coefficients across domains----------------
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+mantel.rtest(dist.work.om, dist.hw.om, nrepet = 100)
+
+mantel.rtest(dist.work.om, dist.hw.om, nrepet = 100)
+
+mantel.rtest(dist.work.om, dist.fam.om, nrepet = 100)
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Compute standard OM multichannel distance-----------------
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
