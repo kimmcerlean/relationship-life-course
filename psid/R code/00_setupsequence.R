@@ -385,3 +385,9 @@ seq.fam <- seqdef(data[,col_fam], cpal = colspace.fam, labels=longlab.fam, state
 ggseqdplot(seq.fam) +
   scale_x_discrete(labels = 1:10) +
   labs(x = "Year")
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Save objects for further usage in other scripts ----
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+save.image("created data/setupsequence.RData")
