@@ -85,6 +85,17 @@ options(scipen=999)
 # Import imputed datasets using haven 
 load("created data/setupsequence.RData")
 
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Preliminary analysis for MCSA 
+## Compute standard OM distance matrices for each domain
+## Compute mantel coefficients across domains
+## Compute standard OM multichannel distance
+## Compare r2 and silhouette across single SA and MC SA
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Compute standard OM distance matrices for each domain ----
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -103,11 +114,19 @@ dist.fam.om <- seqdist(seq.fam, method="OM", indel=1, sm= "CONSTANT")
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 mantel.rtest(dist.work.om, dist.hw.om, nrepet = 100)
+mantel.rtest(dist.work.ow.om, dist.hw.om, nrepet = 100)
 
-mantel.rtest(dist.work.om, dist.hw.om, nrepet = 100)
+mantel.rtest(dist.work.om, dist.hw.hrs.om, nrepet = 100)
+mantel.rtest(dist.work.ow.om, dist.hw.hrs.om, nrepet = 100)
+
+mantel.rtest(dist.work.om, dist.hw.hrs.alt.om, nrepet = 100)
+mantel.rtest(dist.work.ow.om, dist.hw.hrs.alt.om, nrepet = 100)
 
 mantel.rtest(dist.work.om, dist.fam.om, nrepet = 100)
-
+mantel.rtest(dist.work.ow.om, dist.fam.om, nrepet = 100)
+mantel.rtest(dist.work.hw.om, dist.fam.om, nrepet = 100)
+mantel.rtest(dist.work.hw.hrs.om, dist.fam.om, nrepet = 100)
+mantel.rtest(dist.work.hw.hrs.alt.om, dist.fam.om, nrepet = 100)
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Compute standard OM multichannel distance-----------------
@@ -116,6 +135,61 @@ mantel.rtest(dist.work.om, dist.fam.om, nrepet = 100)
 mcdist.om <- seqdistmc(channels=list(seq.work, seq.hw, seq.fam),
                        method="OM", indel=1, sm="CONSTANT", 
                        cweight=c(1,1,1))
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Compare r2 and silhouette across single SA and MC SA ---- 
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+# Defining the range of the x axis 
+x <- 2:15
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Extract r2 and silhouette for the clustering of paid work trajectories
+
+work.pam.test <- wcKMedRange(dist.work.om, 
+                            kvals = 2:15)
+
+work.val<-work.pam.test[[4]]
+
+work.asw <- work.val[,4]
+
+work.r2 <- work.val[,7]
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Extract r2 and silhouette for the clustering of housework trajectories
+
+hw.pam.test <- wcKMedRange(dist.hw.om, 
+                            kvals = 2:15)
+
+hw.val<-hw.pam.test[[4]]
+
+hw.asw <- hw.val[,4]
+
+hw.r2 <- hw.val[,7]
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Extract r2 and silhouette for the clustering of family trajectories
+
+fam.pam.test <- wcKMedRange(dist.fam.om, 
+                            kvals = 2:15)
+
+fam.val<-fam.pam.test[[4]]
+
+fam.asw <- fam.val[,4]
+
+fam.r2 <- fam.val[,7]
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Extract r2 and silhouette for the combined clustering
+
+mcdist.om.pam <- wcKMedRange(mcdist.om, 
+                             kvals = 2:15)
+
+mc.val<-mcdist.om.pam[[4]]
+
+mc.asw <- mc.val[,4]
+
+mc.r2 <- mc.val[,7]
 
 
 save.image("created data/singledist.RData")

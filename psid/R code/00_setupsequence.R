@@ -85,6 +85,7 @@ options(scipen=999)
 # Import imputed datasets using haven 
 data <- read_dta("created data/psid_couples_imputed_wide.dta")
 data <- data%>%filter(`_mi_m`!=0)
+
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Setting up the data ----------------------------------------------------------
 ## Identifying the columns with the sequence states
