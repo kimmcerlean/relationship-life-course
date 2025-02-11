@@ -344,7 +344,6 @@ colspace.fam <- c(col1, col2, col3)
 
 # Couple Paid Work - no OW
 seq.work <- seqdef(data[,col_work], cpal = colspace.work, labels=longlab.work, states= shortlab.work)
-seqdplot(seq.work)
 
 ggseqdplot(seq.work) +
   scale_x_discrete(labels = 1:10) +
