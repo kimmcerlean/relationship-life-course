@@ -49,6 +49,9 @@ library(WeightedCluster)
 #install.packages("dendextend")
 library(dendextend) 
 
+#Mantel test
+library(vegan)
+
 #seqHMM
 #install.packages("seqHMM")
 library(seqHMM)
