@@ -3,7 +3,7 @@
 #    Author: Kim McErlean & Lea Pessin 
 #    Date: January 2025
 #    Modified: February 19 2025
-#    Goal: run mantel coefficients
+#    Goal: run mantel coefficients on one imputed datasets
 # --------------------------------------------------------------------
 # --------------------------------------------------------------------
 
@@ -87,13 +87,13 @@ options(scipen=999)
 
 # Import non-imputed data
 data <- read_dta("created data/psid_couples_imputed_wide.dta")
-data <- data%>%filter(`_mi_m`==0) 
+data <- data%>%filter(`_mi_m`== 1) 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Preliminary analysis for MCSA 
-## set up sequence objects on non-imputed data 
-## Compute standard OM distance matrices for each domain on non-imputed data 
-## Compute mantel coefficients across domains on non-imputed data 
+## set up sequence objects on one imputed dataset
+## Compute standard OM distance matrices for each domain one imputed dataset
+## Compute mantel coefficients across domains one imputed dataset
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
