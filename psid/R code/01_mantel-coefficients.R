@@ -1,5 +1,5 @@
 # ---------------------------------------------------------------------
-#    Program: 01_preliminaryMCSA.R
+#    Program: 01_mantel-coefficients.R
 #    Author: Kim McErlean & Lea Pessin 
 #    Date: January 2025
 #    Modified: February 19 2025

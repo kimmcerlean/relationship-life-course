@@ -1,9 +1,9 @@
 # ---------------------------------------------------------------------
-#    Program: 01_preliminaryMCSA.R
+#    Program: 02_preliminaryMCSA.R
 #    Author: Kim McErlean & Lea Pessin 
 #    Date: January 2025
-#    Modified: February 10 2025
-#    Goal: preliminary analysis to justify analyzing different domains
+#    Modified: February 19 2025
+#    Goal: cluster analysis by domain and across multiple domain
 # --------------------------------------------------------------------
 # --------------------------------------------------------------------
 
@@ -89,9 +89,8 @@ options(scipen=999)
 load("created data/setupsequence.RData")
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Preliminary analysis for MCSA 
+# Preliminary cluster analysis for MCSA 
 ## Compute standard OM distance matrices for each domain
-## Compute mantel coefficients across domains
 ## Compute standard OM multichannel distance
 ## Compare r2 and silhouette across single SA and MC SA
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -111,25 +110,6 @@ dist.hw.hrs.om <- seqdist(seq.hw.hrs, method="OM", indel=1, sm= "CONSTANT")
 dist.hw.hrs.alt.om <- seqdist(seq.hw.hrs.alt, method="OM", indel=1, sm= "CONSTANT")
 
 dist.fam.om <- seqdist(seq.fam, method="OM", indel=1, sm= "CONSTANT")
-
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Compute mantel coefficients across domains----------------
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-mantel.rtest(dist.work.om, dist.hw.om, nrepet = 100)
-mantel.rtest(dist.work.ow.om, dist.hw.om, nrepet = 100)
-
-mantel.rtest(dist.work.om, dist.hw.hrs.om, nrepet = 100)
-mantel.rtest(dist.work.ow.om, dist.hw.hrs.om, nrepet = 100)
-
-mantel.rtest(dist.work.om, dist.hw.hrs.alt.om, nrepet = 100)
-mantel.rtest(dist.work.ow.om, dist.hw.hrs.alt.om, nrepet = 100)
-
-mantel.rtest(dist.work.om, dist.fam.om, nrepet = 100)
-mantel.rtest(dist.work.ow.om, dist.fam.om, nrepet = 100)
-mantel.rtest(dist.work.hw.om, dist.fam.om, nrepet = 100)
-mantel.rtest(dist.work.hw.hrs.om, dist.fam.om, nrepet = 100)
-mantel.rtest(dist.work.hw.hrs.alt.om, dist.fam.om, nrepet = 100)
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Compute standard OM multichannel distance-----------------
@@ -195,4 +175,4 @@ mc.asw <- mc.val[,4]
 mc.r2 <- mc.val[,7]
 
 
-save.image("created data/singledist.RData")
+save.image("created data/singleSA-MCSA.RData")
