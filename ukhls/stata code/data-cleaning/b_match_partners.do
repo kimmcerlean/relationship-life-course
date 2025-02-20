@@ -1,6 +1,6 @@
 ********************************************************************************
 ********************************************************************************
-* Project: Relative Density Approach - UK
+* Project: Relationship Life Course Analysis
 * Code owner: Kimberly McErlean
 * Started: September 2024
 * File name: b_match_partners.do
@@ -17,13 +17,13 @@
 ********************************************************************************
 * Going to try to first update spouse id for BHPS so it's pidp NOT pid
 ********************************************************************************
-use "$UKHLS\xwaveid_bh.dta", clear
+use "$UKHLS/xwaveid_bh.dta", clear
 
 keep pidp pid
 rename pid sppid_bh
 rename pidp partner_pidp_bh
 
-save "$temp_ukhls\spid_lookup.dta", replace
+save "$temp/spid_lookup.dta", replace
 
 ********************************************************************************
 * Prep partner history file for later
@@ -34,19 +34,19 @@ foreach var in status* partner* starty* startm* endy* endm* divorcey* divorcem* 
 	rename `var' mh_`var' // renaming for ease of finding later, especially when matching partner info
 }
 
-save "$temp_ukhls\partner_history_tomatch.dta", replace
+save "$temp/partner_history_tomatch.dta", replace
 
 ********************************************************************************
 * Import data (created in step a) and do some data cleaning / recoding before creating a file to match partners
 ********************************************************************************
 
-use "$created_data_ukhls/UKHLS_long_all.dta", clear
+use "$created_data/UKHLS_long_all.dta", clear
 drop if pidp==. // think these are HHs that didn't match?
 
 // Right now 1-13 are ukhls and 14-31 are bhps, so the wave order doesn't make a lot of sense. These aren't perfect but will work for now.
 // okay i added interview characteristics, so use that?
 browse pidp pid wavename intdatey intdaty_dv istrtdaty // istrtdaty seems the most comprehensive. the DV one is only UKHLS
-// okay, but sometimes consecutive surveys are NOT consecutive years? 
+// okay, but sometimes consecutive surveys are NOT consecutive years? https://www.understandingsociety.ac.uk/documentation/mainstage/survey-timeline/
 
 gen year=.
 replace year=2009 if wavename==1
@@ -242,14 +242,16 @@ replace partnered=1 if inlist(marital_status_defacto,1,2)
 
 inspect ppid
 inspect ppid if partnered==1 // this is only ukhls
+inspect ppid if partnered==1 & survey==1
 inspect sppid if partnered==1 // okay this is also only ukhls and is just spouses
 inspect sppid_bh if partnered==1 // okay this is bhps but includes spouses and partners
+inspect sppid_bh if partnered==1 & survey==2 
 
-merge m:1 sppid_bh using "$temp_ukhls\spid_lookup.dta"
+merge m:1 sppid_bh using "$temp/spid_lookup.dta"
 drop if _merge==2
 browse survey pidp pid sppid_bh partner_pidp_bh _merge
-inspect sppid_bh if partnered==1
-inspect partner_pidp_bh if partnered==1
+inspect sppid_bh if partnered==1 & survey==2 
+inspect partner_pidp_bh if partnered==1 & survey==2 
 drop _merge
 
 browse pidp wavename survey marital_status_defacto partnered ppid sppid sppid_bh
@@ -373,7 +375,7 @@ browse pidp hidp wavename age_all partnered marital_status_defacto husits howlng
 * Doing here (used to be later, just for reference person) so I can get gendered versions for later
 ********************************************************************************
 
-merge m:1 pidp using "$temp_ukhls\partner_history_tomatch.dta", keepusing(mh_*)
+merge m:1 pidp using "$temp/partner_history_tomatch.dta", keepusing(mh_*)
 tab marital_status_defacto _merge, row // so def some missing that shouldn't be... but not a lot
 drop if _merge==2
 drop _merge
@@ -440,7 +442,7 @@ replace current_rel_ongoing = mh_ongoing1 if rel_no==. & partner_id!=. & inlist(
 gen rel_no_orig=rel_no
 replace rel_no=1 if rel_no==. & partner_id!=. & inlist(marital_status_defacto,1,2) & marital_status_defacto==mh_status1 & istrtdaty>=mh_starty1 & istrtdaty<=mh_endy1 // okay this actually didn't add that many more that is fine.
 
-save "$created_data_ukhls/UKHLS_long_all_recoded.dta", replace
+save "$created_data/UKHLS_long_all_recoded.dta", replace
 
 unique pidp // 109651, 772472 total py
 unique pidp partner_id // 126305	
