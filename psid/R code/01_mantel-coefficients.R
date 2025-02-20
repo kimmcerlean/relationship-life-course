@@ -416,20 +416,19 @@ dist.fam.om <- seqdist(seq.fam, method="OM", indel=1, sm= "CONSTANT")
 # Compute mantel coefficients across domains----------------
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-mantel.rtest(dist.work.om, dist.hw.om, nrepet = 100)
-mantel.rtest(dist.work.ow.om, dist.hw.om, nrepet = 100)
+mantel_w.hw = mantel(dist.work.om, dist.hw.om)
+mantel_ow.hw = mantel(dist.work.ow.om, dist.hw.om)
 
-mantel.rtest(dist.work.om, dist.hw.hrs.om, nrepet = 100)
-mantel.rtest(dist.work.ow.om, dist.hw.hrs.om, nrepet = 100)
+mantel_w.hw.hrs = mantel(dist.work.om, dist.hw.hrs.om)
+mantel_ow.hw.hrs = mantel(dist.work.ow.om, dist.hw.hrs.om)
 
-mantel.rtest(dist.work.om, dist.hw.hrs.alt.om, nrepet = 100)
-mantel.rtest(dist.work.ow.om, dist.hw.hrs.alt.om, nrepet = 100)
+mantel_w.hw.hrs.alt = mantel(dist.work.om, dist.hw.hrs.alt.om)
+mantel_ow.hw.hrs.alt = mantel(dist.work.ow.om, dist.hw.hrs.alt.om)
 
-mantel.rtest(dist.work.om, dist.fam.om, nrepet = 100)
-mantel.rtest(dist.work.ow.om, dist.fam.om, nrepet = 100)
-mantel.rtest(dist.hw.om, dist.fam.om, nrepet = 100)
-mantel.rtest(dist.hw.hrs.om, dist.fam.om, nrepet = 100)
-mantel.rtest(dist.hw.hrs.alt.om, dist.fam.om, nrepet = 100)
-
+mantel_w.fam = mantel(dist.work.om, dist.fam.om)
+mantel_ow.fam = mantel(dist.work.ow.om, dist.fam.om)
+mantel_hw.fam = mantel(dist.hw.om, dist.fam.om)
+mantel_hw.hrs.fam = mantel(dist.hw.hrs.om, dist.fam.om)
+mantel_hw.hrs.alt.fam = mantel(dist.hw.hrs.alt.om, dist.fam.om)
 
 save.image("created data/mantel.RData")
