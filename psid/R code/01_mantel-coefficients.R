@@ -11,7 +11,15 @@ options(repos=c(CRAN="https://cran.r-project.org"))
 
 #note to put this on github otherwise this script is not usable for Kim
 .libPaths("G:/My Drive/R Library") #leas library
-setwd("C:/Users/lpessin/OneDrive - Istituto Universitario Europeo/1. WeEqualize - Team Folder/Papers/Cross National Analysis of the Division of Labor across the Relationship Life Course") #leas folder
+
+# set WD for whomever is running the script
+lea <- 'C:/Users/lpessin/OneDrive - Istituto Universitario Europeo/1. WeEqualize - Team Folder/Papers/Cross National Analysis of the Division of Labor across the Relationship Life Course' #leas folder
+kim <- 'C:/Users/mcerl/Istituto Universitario Europeo/Pessin, Lea - 1. WeEqualize - Team Folder/Papers/Cross National Analysis of the Division of Labor across the Relationship Life Course' # Kim
+
+
+if (Sys.getenv(c("USERNAME")) == "mcerl") { setwd(kim) }
+if (Sys.getenv(c("USERNAME")) == "lpessin") { setwd(lea) }
+getwd() # check it worked
 
 # ~~~~~~~~~~~~~~~~~~
 # Load packages ----
