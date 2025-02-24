@@ -45,51 +45,22 @@ lapply(required_packages, library, character.only = TRUE)
 # Load sequence states created in step 00 ----
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-load ("created data/setupsequence.RData")
+load ("created data/setupsequence.RData") ## This loads the sequences so we don't need to recreate
 
-data <- data%>%filter(`_mi_m`== 1) # test for now with just one imputation
-# (bc I don't think I have the processing power for more)
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Create OM Matrices here ------------
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Have to recreate the sequences --------------
-# and OM matrices using just the mi 1 data ----
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Creating the sequence objects for each channel
-# Just using the mi 1 data
-
-# Couple Paid Work - no OW
-seq.work.mi1 <- seqdef(data[,col_work], cpal = colspace.work, labels=longlab.work, states= shortlab.work)
-
-# Couple Paid Work - OW
-seq.work.ow.mi1 <- seqdef(data[,col_work.ow], cpal = colspace.work.ow, labels=longlab.work.ow, states= shortlab.work.ow)
-
-# Couple HW - no amounts
-seq.hw.mi1 <- seqdef(data[,col_hw], cpal = colspace.hw, labels=longlab.hw, states= shortlab.hw)
-
-# Couple HW - amounts v1
-seq.hw.hrs.mi1 <- seqdef(data[,col_hw.hrs], cpal = colspace.hw.hrs, labels=longlab.hw.hrs, states= shortlab.hw.hrs)
-
-# Couple HW - amounts v2
-seq.hw.hrs.alt.mi1 <- seqdef(data[,col_hw.hrs.alt], cpal = colspace.hw.hrs.alt, labels=longlab.hw.hrs.alt, 
-                         states= shortlab.hw.hrs.alt)
-
-# Family channel
-seq.fam.mi1 <- seqdef(data[,col_fam], cpal = colspace.fam, labels=longlab.fam, states= shortlab.fam)
-
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Compute standard OM distance matrices
 
-dist.work.om.mi1 <- seqdist(seq.work.mi1, method="OM", indel=1, sm= "CONSTANT")
-dist.work.ow.om.mi1 <- seqdist(seq.work.ow.mi1, method="OM", indel=1, sm= "CONSTANT")
+dist.work.om <- seqdist(seq.work, method="OM", indel=1, sm= "CONSTANT")
+dist.work.ow.om <- seqdist(seq.work.ow, method="OM", indel=1, sm= "CONSTANT")
 
-dist.hw.om.mi1 <- seqdist(seq.hw.mi1, method="OM", indel=1, sm= "CONSTANT")
-dist.hw.hrs.om.mi1 <- seqdist(seq.hw.hrs.mi1, method="OM", indel=1, sm= "CONSTANT")
-dist.hw.hrs.alt.om.mi1 <- seqdist(seq.hw.hrs.alt.mi1, method="OM", indel=1, sm= "CONSTANT")
+dist.hw.om <- seqdist(seq.hw, method="OM", indel=1, sm= "CONSTANT")
+dist.hw.hrs.om <- seqdist(seq.hw.hrs, method="OM", indel=1, sm= "CONSTANT")
+dist.hw.hrs.alt.om <- seqdist(seq.hw.hrs.alt, method="OM", indel=1, sm= "CONSTANT")
 
-dist.fam.om.mi1 <- seqdist(seq.fam.mi1, method="OM", indel=1, sm= "CONSTANT")
+dist.fam.om <- seqdist(seq.fam, method="OM", indel=1, sm= "CONSTANT")
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Preparatory work required for rendering the plot ---- 
@@ -108,7 +79,7 @@ x <- 2:15 ## this is number of clusters
 
 # Extract r2 and silhouette for the combined clustering
 
-mcdist.om <- seqdistmc(channels=list(seq.work.mi1, seq.hw.hrs.mi1, seq.fam.mi1), ## Seq states NOT om matrix
+mcdist.om <- seqdistmc(channels=list(seq.work, seq.hw.hrs, seq.fam), ## Seq states NOT om matrix
                        method="OM", indel=1, sm="CONSTANT") 
 
 mcdist.om.pam <- wcKMedRange(mcdist.om, 
@@ -124,7 +95,7 @@ mc.r2 <- mc.val[,7]
 
 # Extract r2 and silhouette for the clustering of family trajectories
 
-fam.pam.test <- wcKMedRange(dist.fam.om.mi1, 
+fam.pam.test <- wcKMedRange(dist.fam.om, 
                             kvals = 2:15)
 
 fam.val<-fam.pam.test[[4]]
@@ -138,7 +109,7 @@ fam.r2 <- fam.val[,7]
 # Extract r2 and silhouette for the clustering of paid labor trajectories
 
 ## No Overwork
-work.pam.test <- wcKMedRange(dist.work.om.mi1, 
+work.pam.test <- wcKMedRange(dist.work.om, 
                             kvals = 2:15)
 
 work.val<-work.pam.test[[4]]
@@ -148,7 +119,7 @@ work.asw <- work.val[,4]
 work.r2 <- work.val[,7]
 
 ## With Overwork
-work.ow.pam.test <- wcKMedRange(dist.work.ow.om.mi1, 
+work.ow.pam.test <- wcKMedRange(dist.work.ow.om, 
                              kvals = 2:15)
 
 work.ow.val<-work.ow.pam.test[[4]]
@@ -162,7 +133,7 @@ work.ow.r2 <- work.ow.val[,7]
 # Extract r2 and silhouette for the clustering of housework trajectories
 
 ## No hours
-hw.pam.test <- wcKMedRange(dist.hw.om.mi1, 
+hw.pam.test <- wcKMedRange(dist.hw.om, 
                            kvals = 2:15)
 
 hw.val<-hw.pam.test[[4]]
@@ -172,7 +143,7 @@ hw.asw <- hw.val[,4]
 hw.r2 <- hw.val[,7]
 
 ## V1
-hw.hrs.pam.test <- wcKMedRange(dist.hw.hrs.om.mi1, 
+hw.hrs.pam.test <- wcKMedRange(dist.hw.hrs.om, 
                             kvals = 2:15)
 
 hw.hrs.val<-hw.hrs.pam.test[[4]]
@@ -182,7 +153,7 @@ hw.hrs.asw <- hw.hrs.val[,4]
 hw.hrs.r2 <- hw.hrs.val[,7]
 
 ## V2
-hw.hrs.alt.pam.test <- wcKMedRange(dist.hw.hrs.alt.om.mi1, 
+hw.hrs.alt.pam.test <- wcKMedRange(dist.hw.hrs.alt.om, 
                                kvals = 2:15)
 
 hw.hrs.alt.val<-hw.hrs.alt.pam.test[[4]]
@@ -195,7 +166,7 @@ hw.hrs.alt.r2 <- hw.hrs.alt.val[,7]
 # Create figure comparing separate channels and MCSA ---- 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-cairo_pdf("results/test - mi1/Fig5-1_PSID.pdf",
+cairo_pdf("results/Fig5-1_PSID.pdf",
           width=15,
           height=5)
 
@@ -256,15 +227,15 @@ legend("bottomright", legend=c("ASW", "R2"),
 dev.off()
 
 
-pdf_convert("results/test - mi1/Fig5-1_PSID.pdf",
+pdf_convert("results/Fig5-1_PSID.pdf",
             format = "png", dpi = 300, pages = 2,
-            "results/test - mi1/Fig5-1_PSID.png")
+            "results/Fig5-1_PSID.png")
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Additional figures (compare two paid work options)
 
-cairo_pdf("results/test - mi1/Fig5-1_PSID_Work-Options.pdf",
+cairo_pdf("results/Fig5-1_PSID_Work-Options.pdf",
           width=12,
           height=5)
 
@@ -301,14 +272,14 @@ legend("bottomright", legend=c("ASW", "R2"),
 dev.off()
 
 
-pdf_convert("results/test - mi1/Fig5-1_PSID_Work-Options.pdf",
+pdf_convert("results/Fig5-1_PSID_Work-Options.pdf",
             format = "png", dpi = 300, pages = 2,
-            "results/test - mi1/Fig5-1_PSID_Work-Options.png")
+            "results/Fig5-1_PSID_Work-Options.png")
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Additional figures (compare three housework options)
 
-cairo_pdf("results/test - mi1/Fig5-1_PSID_HW-Options.pdf",
+cairo_pdf("results/Fig5-1_PSID_HW-Options.pdf",
           width=15,
           height=5)
 
@@ -361,9 +332,9 @@ legend("bottomright", legend=c("ASW", "R2"),
 dev.off()
 
 
-pdf_convert("results/test - mi1/Fig5-1_PSID_HW-Options.pdf",
+pdf_convert("results/Fig5-1_PSID_HW-Options.pdf",
             format = "png", dpi = 300, pages = 2,
-            "results/test - mi1/Fig5-1_PSID_HW-Options.png")
+            "results/Fig5-1_PSID_HW-Options.png")
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Save objects for further usage in other scripts ----
