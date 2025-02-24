@@ -431,4 +431,37 @@ mantel_hw.fam = mantel(dist.hw.om, dist.fam.om)
 mantel_hw.hrs.fam = mantel(dist.hw.hrs.om, dist.fam.om)
 mantel_hw.hrs.alt.fam = mantel(dist.hw.hrs.alt.om, dist.fam.om)
 
+mantel_w.hw$statistic
+mantel_w.hw$signif
+
+mantel_ow.hw$statistic
+mantel_ow.hw$signif
+
+mantel_w.hw.hrs$statistic
+mantel_w.hw.hrs$signif
+
+mantel_ow.hw.hrs$statistic
+mantel_ow.hw.hrs$signif
+
+mantel_w.hw.hrs.alt$statistic
+mantel_w.hw.hrs.alt$signif
+
+mantel_ow.hw.hrs.alt$statistic
+mantel_ow.hw.hrs.alt$signif
+
+mantel_w.fam$statistic
+mantel_w.fam$signif
+
+mantel_ow.fam$statistic
+mantel_ow.fam$signif
+
+mantel_hw.fam$statistic
+mantel_hw.fam$signif
+
+mantel_hw.hrs.fam$statistic
+mantel_hw.hrs.fam$signif
+
+mantel_hw.hrs.alt.fam$statistic
+mantel_hw.hrs.alt.fam$signif
+
 save.image("created data/mantel.RData")
