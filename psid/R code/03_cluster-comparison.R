@@ -79,7 +79,7 @@ x <- 2:15 ## this is number of clusters
 
 # Extract r2 and silhouette for the combined clustering
 
-mcdist.om <- seqdistmc(channels=list(seq.work, seq.hw.hrs, seq.fam), ## Seq states NOT om matrix
+mcdist.om <- seqdistmc(channels=list(seq.work.ow, seq.hw.hrs, seq.fam), ## Seq states NOT om matrix
                        method="OM", indel=1, sm="CONSTANT") 
 
 mcdist.om.pam <- wcKMedRange(mcdist.om, 
@@ -189,13 +189,13 @@ legend("bottomright", legend=c("ASW", "R2"),
        col=c("blue", "black"), lty = 1:2, cex=1.2)
 
 # Paid Work Channel: Option 1 (used in MCSA)
-plot(x, work.asw, type = "b", frame = FALSE, pch = 19, main="(b) Paid Work", 
+plot(x, work.ow.asw, type = "b", frame = FALSE, pch = 19, main="(b) Paid Work", 
      col = "blue", xlab = "N. clusters", ylab = "", ylim = c(0,0.8),
      cex.main=2,
      cex.lab=1.6,
      cex.axis=1.2)
 # Add a second line
-lines(x, work.r2, pch = 19, col = "black", type = "b", lty = 2)
+lines(x, work.ow.r2, pch = 19, col = "black", type = "b", lty = 2)
 # Add a legend to the plot
 legend("bottomright", legend=c("ASW", "R2"),
        col=c("blue", "black"), lty = 1:2, cex=1.2)
@@ -246,6 +246,18 @@ layout.show(layout.fig1)
 par(mar = c(5, 5, 3, 3))
 
 # Paid Work Channel: Option 1 (used in MCSA)
+plot(x, work.ow.asw, type = "b", frame = FALSE, pch = 19, main="(a) Paid Work (with Overwork)", 
+     col = "blue", xlab = "N. clusters", ylab = "", ylim = c(0,0.8),
+     cex.main=2,
+     cex.lab=1.6,
+     cex.axis=1.2)
+# Add a second line
+lines(x, work.ow.r2, pch = 19, col = "black", type = "b", lty = 2)
+# Add a legend to the plot
+legend("bottomright", legend=c("ASW", "R2"),
+       col=c("blue", "black"), lty = 1:2, cex=1.2)
+
+# Paid Work Channel: Option 2
 plot(x, work.asw, type = "b", frame = FALSE, pch = 19, main="(b) Paid Work", 
      col = "blue", xlab = "N. clusters", ylab = "", ylim = c(0,0.8),
      cex.main=2,
@@ -253,18 +265,6 @@ plot(x, work.asw, type = "b", frame = FALSE, pch = 19, main="(b) Paid Work",
      cex.axis=1.2)
 # Add a second line
 lines(x, work.r2, pch = 19, col = "black", type = "b", lty = 2)
-# Add a legend to the plot
-legend("bottomright", legend=c("ASW", "R2"),
-       col=c("blue", "black"), lty = 1:2, cex=1.2)
-
-# Paid Work Channel: Option 2 (used in MCSA)
-plot(x, work.ow.asw, type = "b", frame = FALSE, pch = 19, main="(b) Paid Work (with Overwork)", 
-     col = "blue", xlab = "N. clusters", ylab = "", ylim = c(0,0.8),
-     cex.main=2,
-     cex.lab=1.6,
-     cex.axis=1.2)
-# Add a second line
-lines(x, work.ow.r2, pch = 19, col = "black", type = "b", lty = 2)
 # Add a legend to the plot
 legend("bottomright", legend=c("ASW", "R2"),
        col=c("blue", "black"), lty = 1:2, cex=1.2)
