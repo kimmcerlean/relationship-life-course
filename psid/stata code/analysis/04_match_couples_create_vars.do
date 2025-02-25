@@ -172,11 +172,11 @@ mi passive: replace couple_work = 3 if ft_pt_man == 2 & ft_pt_woman == 2
 mi passive: replace couple_work = 4 if ft_pt_man == 0 & ft_pt_woman == 2
 mi passive: replace couple_work = 4 if ft_pt_man == 1 & ft_pt_woman == 2
 mi passive: replace couple_work = 5 if ft_pt_man == 1 & ft_pt_woman == 1
-mi passive: replace couple_work = 6 if ft_pt_man == 0 & ft_pt_woman == 0
-mi passive: replace couple_work = 6 if ft_pt_man == 0 & ft_pt_woman == 1
-mi passive: replace couple_work = 6 if ft_pt_man == 1 & ft_pt_woman == 0
+mi passive: replace couple_work = 5 if ft_pt_man == 0 & ft_pt_woman == 0
+mi passive: replace couple_work = 5 if ft_pt_man == 0 & ft_pt_woman == 1
+mi passive: replace couple_work = 5 if ft_pt_man == 1 & ft_pt_woman == 0
 
-label define couple_work 1 "male bw" 2 "1.5 male bw" 3 "dual FT" 4 "female bw" 5 "dual PT" 6 "under work"
+label define couple_work 1 "male bw" 2 "1.5 male bw" 3 "dual FT" 4 "female bw" 5 "under work"
 label values couple_work couple_work
 
 mi estimate: proportion couple_work
