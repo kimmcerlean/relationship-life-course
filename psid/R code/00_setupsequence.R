@@ -7,10 +7,13 @@
 # --------------------------------------------------------------------
 # --------------------------------------------------------------------
 
-options(repos=c(CRAN="https://cran.r-project.org"))
+# clear the environment
+rm(list = ls())
 
 #note to put this on github otherwise this script is not usable for Kim
 .libPaths("G:/My Drive/R Library") #leas library
+
+options(repos=c(CRAN="https://cran.r-project.org"))
 
 # set WD for whomever is running the script
 lea <- 'C:/Users/lpessin/OneDrive - Istituto Universitario Europeo/1. WeEqualize - Team Folder/Papers/Cross National Analysis of the Division of Labor across the Relationship Life Course' #leas folder
@@ -205,12 +208,12 @@ col_fam =which(colnames(data)%in%lab_t)
 
 shortlab.work <- c("MBW", "1.5MBW", 
                       "dualFT", "FBW", 
-                      "dualPT", "underWK",
+                      "underWK",
                       "DISS", "ATT")
 
 longlab.work <- c("male breadwinner", "1.5 male breadwinner", 
                    "dual full-time", "female breadwinner", 
-                   "dual part-time", "under work",
+                   "under work",
                    "dissolved", "attrited")
 
 # ------------------------------------------------------------------------------
@@ -297,7 +300,7 @@ longlab.fam <- c("married, 0 Ch",
 #Couple Paid Work - no OW: colors
 
 # Work colors
-col1 <- diverging_hcl(6, palette = "Purple-Green")
+col1 <- diverging_hcl(5, palette = "Purple-Green")
 col2 <- sequential_hcl(5, palette = "Grays")[c(2,4)] # Right-censored states
 
 # Combine to full color palette
@@ -369,28 +372,28 @@ colspace.fam <- c(col1, col2, col3)
 seq.work <- seqdef(data[,col_work], cpal = colspace.work, labels=longlab.work, states= shortlab.work)
 
 ggseqdplot(seq.work) +
-  scale_x_discrete(labels = 1:10) +
+  scale_x_discrete(labels = 1:11) +
   labs(x = "Year")
 
 # Couple Paid Work - OW
 seq.work.ow <- seqdef(data[,col_work.ow], cpal = colspace.work.ow, labels=longlab.work.ow, states= shortlab.work.ow)
 
 ggseqdplot(seq.work.ow) +
-  scale_x_discrete(labels = 1:10) +
+  scale_x_discrete(labels = 1:11) +
   labs(x = "Year")
 
 # Couple HW - no amounts
 seq.hw <- seqdef(data[,col_hw], cpal = colspace.hw, labels=longlab.hw, states= shortlab.hw)
 
 ggseqdplot(seq.hw) +
-  scale_x_discrete(labels = 1:10) +
+  scale_x_discrete(labels = 1:11) +
   labs(x = "Year")
 
 # Couple HW - amounts v1
 seq.hw.hrs <- seqdef(data[,col_hw.hrs], cpal = colspace.hw.hrs, labels=longlab.hw.hrs, states= shortlab.hw.hrs)
 
 ggseqdplot(seq.hw.hrs) +
-  scale_x_discrete(labels = 1:10) +
+  scale_x_discrete(labels = 1:11) +
   labs(x = "Year")
 
 # Couple HW - amounts v2
@@ -398,14 +401,14 @@ seq.hw.hrs.alt <- seqdef(data[,col_hw.hrs.alt], cpal = colspace.hw.hrs.alt, labe
                          states= shortlab.hw.hrs.alt)
 
 ggseqdplot(seq.hw.hrs.alt) +
-  scale_x_discrete(labels = 1:10) +
+  scale_x_discrete(labels = 1:11) +
   labs(x = "Year")
 
 # Family channel
 seq.fam <- seqdef(data[,col_fam], cpal = colspace.fam, labels=longlab.fam, states= shortlab.fam)
 
 ggseqdplot(seq.fam) +
-  scale_x_discrete(labels = 1:10) +
+  scale_x_discrete(labels = 1:11) +
   labs(x = "Year")
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
