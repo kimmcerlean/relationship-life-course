@@ -10,8 +10,8 @@
 # clear the environment
 rm(list = ls())
 
-#note to put this on github otherwise this script is not usable for Kim
-.libPaths("G:/My Drive/R Library") #leas library
+#note to put this on github otherwise this script is not usable for Kim. Think I updated this below?
+#.libPaths("G:/My Drive/R Library") #leas library
 
 options(repos=c(CRAN="https://cran.r-project.org"))
 
@@ -20,8 +20,8 @@ lea <- 'C:/Users/lpessin/OneDrive - Istituto Universitario Europeo/1. WeEqualize
 kim <- 'C:/Users/mcerl/Istituto Universitario Europeo/Pessin, Lea - 1. WeEqualize - Team Folder/Papers/Cross National Analysis of the Division of Labor across the Relationship Life Course' # Kim
 
 
-if (Sys.getenv(c("USERNAME")) == "mcerl") { setwd(kim) }
-if (Sys.getenv(c("USERNAME")) == "lpessin") { setwd(lea) }
+if (Sys.getenv(c("USERNAME")) == "mcerl") { setwd(kim); .libPaths("G:/Other computers/My Laptop/Documents/R/R library") }
+if (Sys.getenv(c("USERNAME")) == "lpessin") { setwd(lea); .libPaths("G:/My Drive/R Library")  }
 getwd() # check it worked
 
 # ~~~~~~~~~~~~~~~~~~
@@ -140,13 +140,13 @@ data <- data%>%filter(`_mi_m`!=0)
 # ------------------------------------------------------------------------------
 ### We identify columns that contain our sequence analysis input variables
 
-t = 0:12 #Number of time units (12 years)
+t = 1:10 #Number of time units (10 years - don't want to use year 11)
 
 # ------------------------------------------------------------------------------
 #Couple Paid Work - no OW: columns
 
 lab_t=c()
-for (i in 0:12){
+for (i in 1:10){
   lab_t[i]=paste("couple_work_end",i, sep="")
 }
 col_work=which(colnames(data)%in%lab_t) 
@@ -155,7 +155,7 @@ col_work=which(colnames(data)%in%lab_t)
 #Couple Paid Work - WITH OW: columns
 
 lab_t=c()
-for (i in 0:12){
+for (i in 1:10){
   lab_t[i]=paste("couple_work_ow_end",i, sep="")
 }
 col_work.ow=which(colnames(data)%in%lab_t) 
@@ -164,7 +164,7 @@ col_work.ow=which(colnames(data)%in%lab_t)
 #Couple HW - no amounts: columns
 
 lab_t=c()
-for (i in 0:12){
+for (i in 1:10){
   lab_t[i]=paste("couple_hw_end",i, sep="")
 }
 col_hw=which(colnames(data)%in%lab_t) 
@@ -173,7 +173,7 @@ col_hw=which(colnames(data)%in%lab_t)
 #Couple HW - amounts v1 (universal ptiles): columns
 
 lab_t=c()
-for (i in 0:12){
+for (i in 1:10){
   lab_t[i]=paste("couple_hw_hrs_end",i, sep="")
 }
 col_hw.hrs=which(colnames(data)%in%lab_t) 
@@ -182,7 +182,7 @@ col_hw.hrs=which(colnames(data)%in%lab_t)
 #Couple HW - amounts v2 (group-specific ptiles): columns
 
 lab_t=c()
-for (i in 0:12){
+for (i in 1:10){
   lab_t[i]=paste("couple_hw_hrs_alt_end",i, sep="")
 }
 col_hw.hrs.alt =which(colnames(data)%in%lab_t) 
@@ -191,7 +191,7 @@ col_hw.hrs.alt =which(colnames(data)%in%lab_t)
 #Family type: columns
 
 lab_t=c()
-for (i in 0:12){
+for (i in 1:10){
   lab_t[i]=paste("family_type_end",i, sep="")
 }
 col_fam =which(colnames(data)%in%lab_t) 
@@ -372,28 +372,28 @@ colspace.fam <- c(col1, col2, col3)
 seq.work <- seqdef(data[,col_work], cpal = colspace.work, labels=longlab.work, states= shortlab.work)
 
 ggseqdplot(seq.work) +
-  scale_x_discrete(labels = 1:11) +
+  scale_x_discrete(labels = 1:10) +
   labs(x = "Year")
 
 # Couple Paid Work - OW
 seq.work.ow <- seqdef(data[,col_work.ow], cpal = colspace.work.ow, labels=longlab.work.ow, states= shortlab.work.ow)
 
 ggseqdplot(seq.work.ow) +
-  scale_x_discrete(labels = 1:11) +
+  scale_x_discrete(labels = 1:10) +
   labs(x = "Year")
 
 # Couple HW - no amounts
 seq.hw <- seqdef(data[,col_hw], cpal = colspace.hw, labels=longlab.hw, states= shortlab.hw)
 
 ggseqdplot(seq.hw) +
-  scale_x_discrete(labels = 1:11) +
+  scale_x_discrete(labels = 1:10) +
   labs(x = "Year")
 
 # Couple HW - amounts v1
 seq.hw.hrs <- seqdef(data[,col_hw.hrs], cpal = colspace.hw.hrs, labels=longlab.hw.hrs, states= shortlab.hw.hrs)
 
 ggseqdplot(seq.hw.hrs) +
-  scale_x_discrete(labels = 1:11) +
+  scale_x_discrete(labels = 1:10) +
   labs(x = "Year")
 
 # Couple HW - amounts v2
@@ -401,14 +401,14 @@ seq.hw.hrs.alt <- seqdef(data[,col_hw.hrs.alt], cpal = colspace.hw.hrs.alt, labe
                          states= shortlab.hw.hrs.alt)
 
 ggseqdplot(seq.hw.hrs.alt) +
-  scale_x_discrete(labels = 1:11) +
+  scale_x_discrete(labels = 1:10) +
   labs(x = "Year")
 
 # Family channel
 seq.fam <- seqdef(data[,col_fam], cpal = colspace.fam, labels=longlab.fam, states= shortlab.fam)
 
 ggseqdplot(seq.fam) +
-  scale_x_discrete(labels = 1:11) +
+  scale_x_discrete(labels = 1:10) +
   labs(x = "Year")
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

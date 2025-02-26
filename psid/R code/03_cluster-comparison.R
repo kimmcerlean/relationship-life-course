@@ -16,9 +16,8 @@ options(repos=c(CRAN="https://cran.r-project.org"))
 lea <- 'C:/Users/lpessin/OneDrive - Istituto Universitario Europeo/1. WeEqualize - Team Folder/Papers/Cross National Analysis of the Division of Labor across the Relationship Life Course' #leas folder
 kim <- 'C:/Users/mcerl/Istituto Universitario Europeo/Pessin, Lea - 1. WeEqualize - Team Folder/Papers/Cross National Analysis of the Division of Labor across the Relationship Life Course' # Kim
 
-
-if (Sys.getenv(c("USERNAME")) == "mcerl") { setwd(kim) }
-if (Sys.getenv(c("USERNAME")) == "lpessin") { setwd(lea) }
+if (Sys.getenv(c("USERNAME")) == "mcerl") { setwd(kim); .libPaths("G:/Other computers/My Laptop/Documents/R/R library") }
+if (Sys.getenv(c("USERNAME")) == "lpessin") { setwd(lea); .libPaths("G:/My Drive/R Library")  }
 getwd() # check it worked
 
 # ~~~~~~~~~~~~~~~~~~
@@ -68,7 +67,7 @@ dist.fam.om <- seqdist(seq.fam, method="OM", indel=1, sm= "CONSTANT")
 
 # Defining the label for the x-axis 
 
-xtlab<-seq(1,11, by = 1) ## Think this is for number of states
+xtlab<-seq(1,10, by = 1) ## Think this is for number of states
 
 
 # Defining the range of the x axis 

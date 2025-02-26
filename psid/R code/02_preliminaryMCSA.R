@@ -9,15 +9,15 @@
 
 options(repos=c(CRAN="https://cran.r-project.org"))
 
-#note to put this on github otherwise this script is not usable for Kim
-.libPaths("G:/My Drive/R Library") #leas library
+#note to put this on github otherwise this script is not usable for Kim. Think I updated this below?
+#.libPaths("G:/My Drive/R Library") #leas library
 
 lea <- 'C:/Users/lpessin/OneDrive - Istituto Universitario Europeo/1. WeEqualize - Team Folder/Papers/Cross National Analysis of the Division of Labor across the Relationship Life Course' #leas folder
 kim <- 'C:/Users/mcerl/Istituto Universitario Europeo/Pessin, Lea - 1. WeEqualize - Team Folder/Papers/Cross National Analysis of the Division of Labor across the Relationship Life Course' # Kim
 
 
-if (Sys.getenv(c("USERNAME")) == "mcerl") { setwd(kim) }
-if (Sys.getenv(c("USERNAME")) == "lpessin") { setwd(lea) }
+if (Sys.getenv(c("USERNAME")) == "mcerl") { setwd(kim); .libPaths("G:/Other computers/My Laptop/Documents/R/R library") }
+if (Sys.getenv(c("USERNAME")) == "lpessin") { setwd(lea); .libPaths("G:/My Drive/R Library")  }
 getwd()
 
 ## Replace this with your name before you start

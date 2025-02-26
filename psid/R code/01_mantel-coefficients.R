@@ -9,21 +9,35 @@
 
 options(repos=c(CRAN="https://cran.r-project.org"))
 
-#note to put this on github otherwise this script is not usable for Kim
-.libPaths("G:/My Drive/R Library") #leas library
+#note to put this on github otherwise this script is not usable for Kim. Think I updated this below?
+#.libPaths("G:/My Drive/R Library") #leas library
 
 # set WD for whomever is running the script
 lea <- 'C:/Users/lpessin/OneDrive - Istituto Universitario Europeo/1. WeEqualize - Team Folder/Papers/Cross National Analysis of the Division of Labor across the Relationship Life Course' #leas folder
 kim <- 'C:/Users/mcerl/Istituto Universitario Europeo/Pessin, Lea - 1. WeEqualize - Team Folder/Papers/Cross National Analysis of the Division of Labor across the Relationship Life Course' # Kim
 
 
-if (Sys.getenv(c("USERNAME")) == "mcerl") { setwd(kim) }
-if (Sys.getenv(c("USERNAME")) == "lpessin") { setwd(lea) }
+if (Sys.getenv(c("USERNAME")) == "mcerl") { setwd(kim); .libPaths("G:/Other computers/My Laptop/Documents/R/R library") }
+if (Sys.getenv(c("USERNAME")) == "lpessin") { setwd(lea); .libPaths("G:/My Drive/R Library")  }
 getwd() # check it worked
 
 # ~~~~~~~~~~~~~~~~~~
 # Load packages ----
 # ~~~~~~~~~~~~~~~~~~
+
+required_packages <- c("TraMineR", "TraMineRextras","RColorBrewer", "paletteer", 
+                       "colorspace","ggplot2","ggpubr","ggseqplot", 
+                       "patchwork", "cluster", "WeightedCluster","dendextend","seqHMM","haven",
+                       "labelled", "readxl", "openxlsx","tidyverse")
+
+install_if_missing <- function(packages) {
+  missing_packages <- packages[!packages %in% installed.packages()[, "Package"]]
+  if (length(missing_packages) > 0) {
+    install.packages(missing_packages)
+  }
+}
+
+install_if_missing(required_packages)
 
 #### installing traminer package. 
 #install.packages("TraMineR", dependencies = TRUE)
@@ -136,13 +150,13 @@ data <- data%>%filter(`_mi_m`== 1)
 # ------------------------------------------------------------------------------
 ### We identify columns that contain our sequence analysis input variables
 
-t = 0:12 #Number of time units (12 years)
+t = 1:10 #Number of time units (10 years - don't want to use year 11)
 
 # ------------------------------------------------------------------------------
 #Couple Paid Work - no OW: columns
 
 lab_t=c()
-for (i in 0:12){
+for (i in 1:10){
   lab_t[i]=paste("couple_work_end",i, sep="")
 }
 col_work=which(colnames(data)%in%lab_t) 
@@ -151,7 +165,7 @@ col_work=which(colnames(data)%in%lab_t)
 #Couple Paid Work - WITH OW: columns
 
 lab_t=c()
-for (i in 0:12){
+for (i in 1:10){
   lab_t[i]=paste("couple_work_ow_end",i, sep="")
 }
 col_work.ow=which(colnames(data)%in%lab_t) 
@@ -160,7 +174,7 @@ col_work.ow=which(colnames(data)%in%lab_t)
 #Couple HW - no amounts: columns
 
 lab_t=c()
-for (i in 0:12){
+for (i in 1:10){
   lab_t[i]=paste("couple_hw_end",i, sep="")
 }
 col_hw=which(colnames(data)%in%lab_t) 
@@ -169,7 +183,7 @@ col_hw=which(colnames(data)%in%lab_t)
 #Couple HW - amounts v1 (universal ptiles): columns
 
 lab_t=c()
-for (i in 0:12){
+for (i in 1:10){
   lab_t[i]=paste("couple_hw_hrs_end",i, sep="")
 }
 col_hw.hrs=which(colnames(data)%in%lab_t) 
@@ -178,7 +192,7 @@ col_hw.hrs=which(colnames(data)%in%lab_t)
 #Couple HW - amounts v2 (group-specific ptiles): columns
 
 lab_t=c()
-for (i in 0:12){
+for (i in 1:10){
   lab_t[i]=paste("couple_hw_hrs_alt_end",i, sep="")
 }
 col_hw.hrs.alt =which(colnames(data)%in%lab_t) 
@@ -187,7 +201,7 @@ col_hw.hrs.alt =which(colnames(data)%in%lab_t)
 #Family type: columns
 
 lab_t=c()
-for (i in 0:12){
+for (i in 1:10){
   lab_t[i]=paste("family_type_end",i, sep="")
 }
 col_fam =which(colnames(data)%in%lab_t) 
@@ -204,12 +218,12 @@ col_fam =which(colnames(data)%in%lab_t)
 
 shortlab.work <- c("MBW", "1.5MBW", 
                    "dualFT", "FBW", 
-                   "dualPT", "underWK",
+                   "underWK",
                    "DISS", "ATT")
 
 longlab.work <- c("male breadwinner", "1.5 male breadwinner", 
                   "dual full-time", "female breadwinner", 
-                  "dual part-time", "under work",
+                  "under work",
                   "dissolved", "attrited")
 
 # ------------------------------------------------------------------------------
@@ -296,7 +310,7 @@ longlab.fam <- c("married, 0 Ch",
 #Couple Paid Work - no OW: colors
 
 # Work colors
-col1 <- diverging_hcl(6, palette = "Purple-Green")
+col1 <- diverging_hcl(5, palette = "Purple-Green")
 col2 <- sequential_hcl(5, palette = "Grays")[c(2,4)] # Right-censored states
 
 # Combine to full color palette
@@ -472,4 +486,22 @@ mantel_hw.hrs.fam$signif
 mantel_hw.hrs.alt.fam$statistic
 mantel_hw.hrs.alt.fam$signif
 
+## create and export data frame with mantel coefficients
+association <- c('w.hw', 'ow.hw', 'w.hw.hrs', 'ow.hw.hrs', 'w.hw.hrs.alt', 'ow.hw.hrs.alt',
+                 'w.fam', 'ow.fam', 'hw.fam', 'hw.hrs.fam', 'hw.hrs.alt.fam')
+stats <- c(mantel_w.hw$statistic, mantel_ow.hw$statistic, mantel_w.hw.hrs$statistic,
+           mantel_ow.hw.hrs$statistic, mantel_w.hw.hrs.alt$statistic, mantel_ow.hw.hrs.alt$statistic,
+           mantel_w.fam$statistic, mantel_ow.fam$statistic, mantel_hw.fam$statistic,
+           mantel_hw.hrs.fam$statistic,mantel_hw.hrs.alt.fam$statistic)
+sig <- c(mantel_w.hw$signif, mantel_ow.hw$signif, mantel_w.hw.hrs$signif,
+         mantel_ow.hw.hrs$signif, mantel_w.hw.hrs.alt$signif, mantel_ow.hw.hrs.alt$signif,
+         mantel_w.fam$signif, mantel_ow.fam$signif, mantel_hw.fam$signif,
+         mantel_hw.hrs.fam$signif,mantel_hw.hrs.alt.fam$signif)
+mantel <- data.frame(association, stats, sig)
+
+print(mantel)
+
+write.xlsx(mantel, "results/mantel_coefficients.xlsx")
+
+## Save
 save.image("created data/mantel.RData")
