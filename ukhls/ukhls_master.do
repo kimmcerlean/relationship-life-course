@@ -63,6 +63,7 @@ global results  	"$root/results"
 
 cd "$code"
 
+/*
 capture log using "$results/LifeCourse_${date}.log", append
 
 /* Get raw UKHLS data and organize*/
@@ -112,3 +113,4 @@ capture log using "$results/LifeCourse_${date}.log", append
 
 		
 }
+*/
