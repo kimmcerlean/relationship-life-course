@@ -68,7 +68,7 @@ dist.fam.om <- seqdist(seq.fam, method="OM", indel=1, sm= "CONSTANT")
 
 # Defining the label for the x-axis 
 
-xtlab<-seq(1,10, by = 1) ## Think this is for number of states
+xtlab<-seq(1,11, by = 1) ## Think this is for number of states
 
 
 # Defining the range of the x axis 
@@ -79,17 +79,31 @@ x <- 2:15 ## this is number of clusters
 
 # Extract r2 and silhouette for the combined clustering
 
-mcdist.om <- seqdistmc(channels=list(seq.work.ow, seq.hw.hrs, seq.fam), ## Seq states NOT om matrix
-                       method="OM", indel=1, sm="CONSTANT") 
+## More detailed sequence alphabets
+mcdist.det.om <- seqdistmc(channels=list(seq.work.ow, seq.hw.hrs.alt, seq.fam), ## Seq states NOT om matrix
+                           method="OM", indel=1, sm="CONSTANT") 
 
-mcdist.om.pam <- wcKMedRange(mcdist.om, 
-                             kvals = 2:15)
+mcdist.det.om.pam <- wcKMedRange(mcdist.det.om, 
+                                 kvals = 2:15)
 
-mc.val<-mcdist.om.pam[[4]]
+mc.det.val<-mcdist.det.om.pam[[4]]
 
-mc.asw <- mc.val[,4]
+mc.det.asw <- mc.det.val[,4]
 
-mc.r2 <- mc.val[,7]
+mc.det.r2 <- mc.det.val[,7]
+
+## Simpler sequence alphabets
+mcdist.simp.om <- seqdistmc(channels=list(seq.work, seq.hw, seq.fam), ## Seq states NOT om matrix
+                            method="OM", indel=1, sm="CONSTANT") 
+
+mcdist.simp.om.pam <- wcKMedRange(mcdist.simp.om, 
+                                  kvals = 2:15)
+
+mc.simp.val<-mcdist.simp.om.pam[[4]]
+
+mc.simp.asw <- mc.simp.val[,4]
+
+mc.simp.r2 <- mc.simp.val[,7]
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -168,58 +182,118 @@ hw.hrs.alt.r2 <- hw.hrs.alt.val[,7]
 
 cairo_pdf("results/Fig5-1_PSID.pdf",
           width=15,
-          height=5)
+          height=20)
 
-layout.fig1 <- layout(matrix(c(1,2,3,4), 1, 4, byrow = TRUE),
-                      heights = c(1,1,1))
+layout.fig1 <- layout(matrix(c(1,2,3,4,5,6,7,8), nrow=4, ncol=2, byrow = TRUE),
+                      heights = c(1,1,1,1,1))
 layout.show(layout.fig1)
 
 par(mar = c(5, 5, 3, 3))
 
-# Family channel
-plot(x, fam.asw, type = "b", frame = FALSE, pch = 19, main="(a) Family formation",
-     col = "blue", xlab = "N. clusters", ylab = "ASW and R2 value", ylim = c(0,0.8),
-     cex.main=2,
-     cex.lab=1.6,
-     cex.axis=1.2)
-# Add a second line
-lines(x, fam.r2, pch = 19, col = "black", type = "b", lty = 2)
-# Add a legend to the plot
-legend("bottomright", legend=c("ASW", "R2"),
-       col=c("blue", "black"), lty = 1:2, cex=1.2)
-
-# Paid Work Channel: Option 1 (used in MCSA)
-plot(x, work.ow.asw, type = "b", frame = FALSE, pch = 19, main="(b) Paid Work", 
+# MCSA: Detailed
+plot(x, mc.det.asw, type = "b", frame = FALSE, pch = 19, main="(1a) MCSA: Detailed Sequences", 
      col = "blue", xlab = "N. clusters", ylab = "", ylim = c(0,0.8),
      cex.main=2,
      cex.lab=1.6,
      cex.axis=1.2)
+grid(nx = NULL,
+     ny = NA,
+     lty = 1, col = "gray85", lwd = 1)
+# Add a second line
+lines(x, mc.det.r2, pch = 19, col = "black", type = "b", lty = 2)
+# Add a legend to the plot
+legend("bottomright", legend=c("ASW", "R2"),
+       col=c("blue", "black"), lty = 1:2, cex=1.2)
+
+# MCSA: Simple
+plot(x, mc.simp.asw, type = "b", frame = FALSE, pch = 19, main="(1b) MCSA: SImple Sequences", 
+     col = "blue", xlab = "N. clusters", ylab = "", ylim = c(0,0.8),
+     cex.main=2,
+     cex.lab=1.6,
+     cex.axis=1.2)
+grid(nx = NULL,
+     ny = NA,
+     lty = 1, col = "gray85", lwd = 1)
+# Add a second line
+lines(x, mc.simp.r2, pch = 19, col = "black", type = "b", lty = 2)
+# Add a legend to the plot
+legend("bottomright", legend=c("ASW", "R2"),
+       col=c("blue", "black"), lty = 1:2, cex=1.2)
+
+
+# Paid Work Channel: With Overwork
+plot(x, work.ow.asw, type = "b", frame = FALSE, pch = 19, main="(2a) Paid Work (with Overwork)", 
+     col = "blue", xlab = "N. clusters", ylab = "", ylim = c(0,0.8),
+     cex.main=2,
+     cex.lab=1.6,
+     cex.axis=1.2)
+grid(nx = NULL,
+     ny = NA,
+     lty = 1, col = "gray85", lwd = 1)
 # Add a second line
 lines(x, work.ow.r2, pch = 19, col = "black", type = "b", lty = 2)
 # Add a legend to the plot
 legend("bottomright", legend=c("ASW", "R2"),
        col=c("blue", "black"), lty = 1:2, cex=1.2)
 
-# Housework Channel: Option 1 (used in MCSA)
-plot(x, hw.hrs.asw, type = "b", frame = FALSE, pch = 19, main="(c) Housework", 
+# Paid Work Channel: no Overwork
+plot(x, work.asw, type = "b", frame = FALSE, pch = 19, main="(2b) Paid Work (no Overwork)", 
      col = "blue", xlab = "N. clusters", ylab = "", ylim = c(0,0.8),
      cex.main=2,
      cex.lab=1.6,
      cex.axis=1.2)
+grid(nx = NULL,
+     ny = NA,
+     lty = 1, col = "gray85", lwd = 1)
+# Add a second line
+lines(x, work.r2, pch = 19, col = "black", type = "b", lty = 2)
+# Add a legend to the plot
+legend("bottomright", legend=c("ASW", "R2"),
+       col=c("blue", "black"), lty = 1:2, cex=1.2)
+
+
+# Housework Channel: Hours with Group-specific thresholds
+plot(x, hw.hrs.asw, type = "b", frame = FALSE, pch = 19, main="(3a) Housework (with Hours)", 
+     col = "blue", xlab = "N. clusters", ylab = "", ylim = c(0,0.8),
+     cex.main=2,
+     cex.lab=1.6,
+     cex.axis=1.2)
+grid(nx = NULL,
+     ny = NA,
+     lty = 1, col = "gray85", lwd = 1)
 # Add a second line
 lines(x, hw.hrs.r2, pch = 19, col = "black", type = "b", lty = 2)
 # Add a legend to the plot
 legend("bottomright", legend=c("ASW", "R2"),
        col=c("blue", "black"), lty = 1:2, cex=1.2)
 
-# MCSA
-plot(x, mc.asw, type = "b", frame = FALSE, pch = 19, main="(d) MCSA", 
+
+# Housework Channel: No Hours
+plot(x, hw.asw, type = "b", frame = FALSE, pch = 19, main="(3b) Housework (No Hours)", 
      col = "blue", xlab = "N. clusters", ylab = "", ylim = c(0,0.8),
      cex.main=2,
      cex.lab=1.6,
      cex.axis=1.2)
+grid(nx = NULL,
+     ny = NA,
+     lty = 1, col = "gray85", lwd = 1)
 # Add a second line
-lines(x, mc.r2, pch = 19, col = "black", type = "b", lty = 2)
+lines(x, hw.r2, pch = 19, col = "black", type = "b", lty = 2)
+# Add a legend to the plot
+legend("bottomright", legend=c("ASW", "R2"),
+       col=c("blue", "black"), lty = 1:2, cex=1.2)
+
+# Family channel
+plot(x, fam.asw, type = "b", frame = FALSE, pch = 19, main="(4) Family formation",
+     col = "blue", xlab = "N. clusters", ylab = "ASW and R2 value", ylim = c(0,0.8),
+     cex.main=2,
+     cex.lab=1.6,
+     cex.axis=1.2)
+grid(nx = NULL,
+     ny = NA,
+     lty = 1, col = "gray85", lwd = 1)
+# Add a second line
+lines(x, fam.r2, pch = 19, col = "black", type = "b", lty = 2)
 # Add a legend to the plot
 legend("bottomright", legend=c("ASW", "R2"),
        col=c("blue", "black"), lty = 1:2, cex=1.2)
@@ -230,7 +304,6 @@ dev.off()
 pdf_convert("results/Fig5-1_PSID.pdf",
             format = "png", dpi = 300, pages = 2,
             "results/Fig5-1_PSID.png")
-
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Additional figures (compare two paid work options)
@@ -251,6 +324,9 @@ plot(x, work.ow.asw, type = "b", frame = FALSE, pch = 19, main="(a) Paid Work (w
      cex.main=2,
      cex.lab=1.6,
      cex.axis=1.2)
+grid(nx = NULL,
+     ny = NA,
+     lty = 1, col = "gray85", lwd = 1)
 # Add a second line
 lines(x, work.ow.r2, pch = 19, col = "black", type = "b", lty = 2)
 # Add a legend to the plot
@@ -263,14 +339,17 @@ plot(x, work.asw, type = "b", frame = FALSE, pch = 19, main="(b) Paid Work",
      cex.main=2,
      cex.lab=1.6,
      cex.axis=1.2)
+grid(nx = NULL,
+     ny = NA,
+     lty = 1, col = "gray85", lwd = 1)
 # Add a second line
 lines(x, work.r2, pch = 19, col = "black", type = "b", lty = 2)
 # Add a legend to the plot
 legend("bottomright", legend=c("ASW", "R2"),
        col=c("blue", "black"), lty = 1:2, cex=1.2)
 
-dev.off()
 
+dev.off()
 
 pdf_convert("results/Fig5-1_PSID_Work-Options.pdf",
             format = "png", dpi = 300, pages = 2,
@@ -296,6 +375,9 @@ plot(x, hw.hrs.asw, type = "b", frame = FALSE, pch = 19, main="(a) Housework Hou
      cex.main=2,
      cex.lab=1.6,
      cex.axis=1.2)
+grid(nx = NULL,
+     ny = NA,
+     lty = 1, col = "gray85", lwd = 1)
 # Add a second line
 lines(x, hw.hrs.r2, pch = 19, col = "black", type = "b", lty = 2)
 # Add a legend to the plot
@@ -309,6 +391,9 @@ plot(x, hw.asw, type = "b", frame = FALSE, pch = 19, main="(b) Housework (no Hou
      cex.main=2,
      cex.lab=1.6,
      cex.axis=1.2)
+grid(nx = NULL,
+     ny = NA,
+     lty = 1, col = "gray85", lwd = 1)
 # Add a second line
 lines(x, hw.r2, pch = 19, col = "black", type = "b", lty = 2)
 # Add a legend to the plot
@@ -322,6 +407,9 @@ plot(x, hw.hrs.alt.asw, type = "b", frame = FALSE, pch = 19, main="(c) Housework
      cex.main=2,
      cex.lab=1.6,
      cex.axis=1.2)
+grid(nx = NULL,
+     ny = NA,
+     lty = 1, col = "gray85", lwd = 1)
 # Add a second line
 lines(x, hw.hrs.alt.r2, pch = 19, col = "black", type = "b", lty = 2)
 # Add a legend to the plot
@@ -330,7 +418,6 @@ legend("bottomright", legend=c("ASW", "R2"),
 
 
 dev.off()
-
 
 pdf_convert("results/Fig5-1_PSID_HW-Options.pdf",
             format = "png", dpi = 300, pages = 2,
