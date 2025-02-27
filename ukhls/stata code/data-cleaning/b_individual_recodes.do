@@ -3,16 +3,14 @@
 * Project: Relationship Life Course Analysis
 * Code owner: Kimberly McErlean
 * Started: September 2024
-* File name: b_match_partners.do
+* File name: b_individual_recodes.do
 ********************************************************************************
 ********************************************************************************
 
 ********************************************************************************
 * Description
 ********************************************************************************
-* This file uses partner ID to match partner data (where relevant) for our key
-* variables of interest.
-* NOTE: you should run the macros in the setup file for this to work. 
+* This file recodes key variables to use in imputation / subsequence analysis
 
 ********************************************************************************
 * Going to try to first update spouse id for BHPS so it's pidp NOT pid
@@ -37,7 +35,32 @@ foreach var in status* partner* starty* startm* endy* endm* divorcey* divorcem* 
 save "$temp/partner_history_tomatch.dta", replace
 
 ********************************************************************************
-* Import data (created in step a) and do some data cleaning / recoding before creating a file to match partners
+* Get variables from cross wave files?
+********************************************************************************
+use "$UKHLS/xwavedat.dta", clear
+
+// why does it still feel like no good race variables
+tab racel_dv xwdat_dv, m col
+tab racel_bh xwdat_dv, m col // very bad coverage
+tab race_bh xwdat_dv, m col // very bad coverage
+
+local xwave "xwdat_dv sex memorig sampst racel_dv ethn_dv coh1m_dv coh1y_dv evercoh_dv lmar1m_dv lmar1y_dv evermar_dv ch1by_dv anychild_dv"
+
+foreach var in `xwave'{
+	fre `var'
+}
+
+foreach var in `xwave'{
+	recode `var' (-9/-1=.)
+	rename `var' xw_`var' // renaming
+}
+
+keep pidp xw_* // to match later
+
+save "$temp/xwave_tomatch.dta", replace 
+
+********************************************************************************
+* Import data (created in step a) and do some data cleaning / recoding
 ********************************************************************************
 
 use "$created_data/UKHLS_long_all.dta", clear
@@ -88,6 +111,13 @@ replace year=2008 if wavename==32
 // key linking variables: ppid ppno sppid sppno
 
 ** Demographic and related variables
+
+// first, get variables from xwave file
+merge m:1 pidp using "$temp/xwave_tomatch.dta" // only 4 didn't match
+drop if _merge==2
+drop _merge
+// browse pidp year xw_*
+
 gen survey=.
 replace survey=1 if inrange(wavename,1,14)
 replace survey=2 if inrange(wavename,15,32)
@@ -95,14 +125,22 @@ label define survey 1 "UKHLS" 2 "BHPS"
 label values survey survey
 
 tab wavename survey, m
+tab survey xw_xwdat_dv, m
 
-tab sex, m
-recode sex (-9/-1=.)
+tab xw_memorig, m
 
 // going to see if I can fill in missing sex variables
-browse pidp year sex hgsex
-replace sex=hgsex if sex==. & hgsex!=.
-replace sex=sex_dv if sex==. & sex_dv!=.
+tab sex, m
+recode sex (-9/0=.)
+tab sex xw_sex, m
+
+browse pidp year sex hgsex xw_sex
+replace xw_sex = sex if xw_sex==. & sex!=.
+replace xw_sex = hgsex if xw_sex==. & hgsex!=.
+replace xw_sex = sex_dv if xw_sex==. & sex_dv!=.
+
+tab xw_sex, m
+recode xw_sex (-9/0=.)
 
 tab age if survey==2, m
 tab age_dv if survey==1, m
@@ -122,7 +160,17 @@ gen dob_year=.
 replace dob_year = doby if survey==2
 replace dob_year = doby_dv if survey==1
 replace dob_year = . if inrange(dob_year,-9,-1)
+replace dob_year = istrtdaty - age_all if dob_year==.
 tab dob_year, m
+
+replace age_all = istrtdaty - dob_year if age_all == .
+
+// are these just respondents in sample? is there a sample status?
+bysort pidp: egen first_year_observed = min(istrtdaty)
+bysort pidp: egen last_year_observed = max(istrtdaty)
+sort pidp year
+
+browse pidp year istrtdaty wavename ivfio sex age_all dob_year first_year_observed last_year_observed
 
 // also need to figure out how to get college degree equivalent (see Musick et al 2020 - use the ISCED guidelines to identify bachelor's degree equivalents as the completion of tertiary education programs, excluding higher vocational programs
 
@@ -173,6 +221,15 @@ replace race_use = -8 if racel_bh==-8 & survey==2 & inrange(year,2003,2008)
 
 label define race_use 1 "White" 2 "Black" 3 "Asian" 4 "Mixed" 5 "Other" -8 "Get"
 label values race_use race_use
+
+browse pidp survey year race_use xw_racel_dv xw_ethn_dv
+
+tab xw_racel_dv survey, m
+tab xw_ethn_dv survey, m
+tab xw_racel_dv race_use, m
+tab xw_ethn_dv race_use, m
+tab race_use if xw_ethn_dv==., m // okay, let's just use the ethnicity variable
+tab race_use if xw_racel_dv==., m
 
 // country
 recode gor_dv (1/9=1)(10=2)(11=3)(12=4), gen(country_all)
@@ -238,7 +295,8 @@ tab marstat_dv marital_status_defacto, m
 label define marital_status_defacto 1 "Married" 2 "Cohabiting" 3 "Separated" 4 "Divorced" 5 "Widowed" 6 "Never Married"
 label values marital_status_defacto marital_status_defacto
 
-gen partnered=0
+gen partnered=.
+replace partnered=0 if inrange(marital_status_defacto,3,6)
 replace partnered=1 if inlist(marital_status_defacto,1,2)
 
 inspect ppid
@@ -298,7 +356,9 @@ recode jbhrs (-8=0)(-9=.)(-7/-1=.)
 fre jbot
 recode jbot (-8=0)(-9=.)(-7/-1=.)
 
-egen total_hours=rowtotal(jbhrs jbot)
+egen total_hours=rowtotal(jbhrs jbot), missing
+
+tabstat jbhrs jbot total_hours, by(jbstat)
 
 sum howlng, detail
 sum jbhrs, detail
@@ -306,9 +366,21 @@ sum jbhrs if employed==1, detail
 tab husits, m
 fre husits
 
-recode fimnlabgrs_dv (-9=.)(-7=.)
-recode fimnlabnet_dv (-9=.)(-1=.)
-recode paynu_dv (-9=.)(-7=.)(-8=0)
+// earnings 
+recode fimnlabgrs_dv (-9=.)(-7=.) // Total personal monthly labour income gross
+recode fimnlabnet_dv (-9=.)(-1=.) // net is only asked in UKHLS
+recode paynu_dv (-9=.)(-7=.)(-8=0) // usual net pay per month: current job
+
+tabstat fimnlabgrs_dv fimnlabnet_dv paynu_dv, by(year)
+
+// HH incomes
+tabstat fihhmngrs_dv fihhmnlabnet_dv fihhmnlabgrs_dv fihhml fihhyl grpay hhneti hhyneti hhyrlg hhyrln netlab, by(year)
+// fihhmngrs_dv is only one asked in all waves, though I could probably combine a few? But this is gross household income: month before interview
+recode fihhmngrs_dv (-9=.)
+
+sort hidp year
+browse hidp pidp year fimnlabgrs_dv paynu_dv fihhmngrs_dv
+sort pidp year
 
 // unpaid labor variables
 foreach var in hubuys hufrys huiron humops{ // coding changed starting wave 12 (and then only asked every other year)
@@ -351,12 +423,28 @@ tab aidxhh survey, m
 tab aidhrs survey, m
 recode aidhrs (-8=0)(-10/-9=.)(-7/-1=.)
 
-foreach var in nch02_dv nch34_dv nch511_dv nch1215_dv{
+// child variables
+foreach var in nch02_dv nch34_dv nch511_dv nch1215_dv agechy_dv nkids_dv{
 	replace `var'=. if `var'==-9
 }
 
-egen nchild_015 = rowtotal(nch02_dv nch34_dv nch511_dv nch1215_dv)
-browse nchild_dv nchild_015 nch02_dv nch34_dv nch511_dv nch1215_dv
+egen nchild_015 = rowtotal(nch02_dv nch34_dv nch511_dv nch1215_dv), missing
+browse nchild_dv nkids_dv nchild_015 nch02_dv nch34_dv nch511_dv nch1215_dv
+
+tab agechy_dv nchild_dv, m
+tab agechy_dv nchild_015, m
+tab agechy_dv nkids_dv, m
+
+tab xw_anychild_dv, m
+tab xw_ch1by_dv xw_anychild_dv, m
+tab agechy_dv xw_anychild_dv, m
+
+gen year_first_birth = xw_ch1by_dv
+replace year_first_birth = 9999 if xw_anychild_dv==2
+
+gen age_youngest_child = agechy_dv
+replace age_youngest_child = 9999 if agechy_dv==-8
+tab age_youngest_child, m
 
 tab husits if partnered==1, m
 tab husits if nchild_dv!=0, m
@@ -370,9 +458,11 @@ tab huboss housework_flag if partnered==1, m col
 
 browse pidp hidp wavename age_all partnered marital_status_defacto husits howlng hubuys hufrys huiron humops jbhrs
 
+// let's do a check of the variables I either will use for analysis or will use to impute, so I can be sure I a. properly impute and b. properly recoded
+
+
 ********************************************************************************
-* Okay, let's add on marital history as well, so I can use this to get duration / relationship order?
-* Doing here (used to be later, just for reference person) so I can get gendered versions for later
+* Okay, let's add on marital history as well, so I can use this to get duration / relationship order
 ********************************************************************************
 
 merge m:1 pidp using "$temp/partner_history_tomatch.dta", keepusing(mh_*)
@@ -489,6 +579,7 @@ replace current_rel_end_year = rel_end_year_est if current_rel_end_year==. & rel
 // check how many relationships have the proper info
 tab current_rel_start_year if partner_id!=. , m // about 5% missing
 tab current_rel_start_year if inlist(marital_status_defacto,1,2), m // about 6% missing
+tab current_rel_start_year partnered, m col
 
 // for those with missing, maybe if only 1 spell, use that info? as long as the status matches and the interview date is within the confines of the spell?
 // this might have been covered in my "rel no alt" but let's try
@@ -506,10 +597,45 @@ forvalues r=1/14{
 	replace rel_no=`r' if rel_no==. & partner_id!=. & inlist(marital_status_defacto,1,2) & marital_status_defacto==mh_status`r' & istrtdaty>=mh_starty`r' & istrtdaty<=mh_endy`r' // okay yes this didn't add any
 }
 
+// can I use the dates from the main file, not marital history? or the cross-wave file?
+tabstat lmar1y coh1by lmcby41 lmcby42, by(year)
+by pidp: egen first_marr_yr = max(lmar1y)
+by pidp: egen first_cohab_yr = max(coh1by)
+
+tab lmar1y survey if current_rel_start_year==., m
+tab first_marr_yr survey if current_rel_start_year==., m
+tab xw_lmar1y_dv survey if current_rel_start_year==., m
+tab xw_coh1y_dv survey if current_rel_start_year==., m
+
+sort pidp year
+browse pidp istrtdaty marital_status_defacto partner_id rel_no mh_ttl_spells mh_ttl_married mh_ttl_cohabit xw_lmar1y_dv xw_coh1y_dv lmar1y first_marr_yr coh1by first_cohab_yr lmcby41 lmcby42 mh_starty1 mh_endy1 mh_starty2 mh_endy2 if current_rel_start_year==. & partnered==1
+
+replace current_rel_start_year = xw_lmar1y_dv if current_rel_start_year==. & marital_status_defacto==1 & mh_ttl_married==1 & inrange(xw_lmar1y_dv, 1900,2024)
+replace current_rel_start_year = first_marr_yr if current_rel_start_year==. & marital_status_defacto==1 & mh_ttl_married==1 & inrange(first_marr_yr, 1900,2024) // if married and only has one marriage, use this date?
+replace current_rel_start_year = xw_coh1y_dv if current_rel_start_year==. & marital_status_defacto==2 & mh_ttl_cohabit==1 & inrange(xw_coh1y_dv, 1900,2024) 
+replace current_rel_start_year = first_cohab_yr if current_rel_start_year==. & marital_status_defacto==2 & mh_ttl_cohabit==1 & inrange(first_cohab_yr, 1900,2024) // same for cohab
+
+// browse pidp istrtdaty marital_status_defacto partner_id rel_no current_rel_start_year current_rel_end_year rel_start rel_end rel_end_pre mh_ttl_spells mh_partner1 mh_status1 mh_starty1 mh_startm1 mh_endy1 mh_endm1 xw_lmar1y_dv xw_coh1y_dv mh_divorcey1 mh_divorcem1 mh_mrgend1 mh_cohend1 mh_ongoing1 first_marr_yr first_cohab_yr mh_partner2 mh_status2 mh_starty2 mh_startm2 mh_endy2 mh_endm2 mh_divorcey2 mh_divorcem2 mh_mrgend2 mh_cohend2 mh_ongoing2
+
+// what things are correlated with missing relationship start year?
+gen missing_rel_start=.
+replace missing_rel_start = 0 if partnered==1 & current_rel_start_year!=.
+replace missing_rel_start = 1 if partnered==1 & current_rel_start_year==.
+
+tab sampst missing_rel_start, row // codebook says psm and tsm might have more missing, that is true (We are aware that the information about past partnership history is incomplete or missing for new entrants and those who asked someone else to complete their interview on their behalf (proxy interviews))
+tab ivfio missing_rel_start, row // and proxy interviews, so that is also true (96% of full interviews have a rel start)
+tab college_degree missing_rel_start, row // quite evenly distrbuted
+tab country_all missing_rel_start, row // quite evenly distributed
+tab employed missing_rel_start, row // quite evenly distributed
+tab age_all missing_rel_start, row
+// okay so it really is about the type of sample / interview, not really the people themselves. so I think fine to just leave as missing for now?
+
 save "$created_data/UKHLS_long_all_recoded.dta", replace
 
+// note: this file is still NOT restricted in any way
 unique pidp // 118405, 807942 total py
 unique pidp partner_id // 135496	
-unique pidp, by(sex) // 56297 m, 62216 w
+unique pidp, by(xw_sex) // 56297 m, 62216 w
 unique pidp, by(partnered) // 59866 0, 73581 1
-
+unique pidp partner_id if partnered==1 & current_rel_start_year==. // 8600 couples. does that feel like too many to be missing?
+// unique pidp partner_id if partnered==1, by(current_rel_start_year)
