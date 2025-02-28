@@ -12,6 +12,13 @@
 ********************************************************************************
 * This file recodes key variables to use in imputation / subsequence analysis
 
+
+********************************************************************************
+********************************************************************************
+* Data prep steps
+********************************************************************************
+********************************************************************************
+
 ********************************************************************************
 * Going to try to first update spouse id for BHPS so it's pidp NOT pid
 ********************************************************************************
@@ -33,6 +40,144 @@ foreach var in status* partner* starty* startm* endy* endm* divorcey* divorcem* 
 }
 
 save "$temp/partner_history_tomatch.dta", replace
+
+********************************************************************************
+* Backup partner history files
+********************************************************************************
+// see list on table 4 here: https://www.understandingsociety.ac.uk/documentation/mainstage/user-guides/main-survey-user-guide/list-of-data-files-and-their-descriptions/
+// based on below, some of these are in indresp, but not the end dates I don't think?
+
+** Marriage
+
+local waves = "a f"
+
+local i=1
+
+foreach wave in `waves' {
+	local waveno=`i'
+	use "$UKHLS/`wave'_marriage.dta", clear
+	
+	foreach var in `wave'_lmary4 `wave'_lmcby4 `wave'_lmend `wave'_lmwwy4 `wave'_lmdvy4 `wave'_lmspy4{
+		recode `var' (-9=.)(-2/-1=.)
+	}
+	
+	gen year_end = `wave'_lmwwy4 if `wave'_lmend==2
+	replace year_end = `wave'_lmspy4 if `wave'_lmend==1 & `wave'_lmspy4!=. & `wave'_lmspy4!=-8
+	replace year_end = `wave'_lmdvy4 if year_end==. & `wave'_lmend==1 & `wave'_lmdvy4!=. & `wave'_lmdvy4!=-8
+	replace year_end = `wave'_lmspy4 if year_end==. & `wave'_lmend==97 & `wave'_lmspy4!=. & `wave'_lmspy4!=-8
+	replace year_end = `wave'_lmdvy4 if year_end==. & `wave'_lmend==97 & `wave'_lmdvy4!=. & `wave'_lmdvy4!=-8
+	replace year_end = `wave'_lmwwy4 if year_end==. & `wave'_lmend==97 & `wave'_lmwwy4!=. & `wave'_lmwwy4!=-8
+	
+	gen how_end=.
+	replace how_end = 1 if inlist(`wave'_lmend,1,97) // divorce / sep
+	replace how_end = 2 if `wave'_lmend==2 // widowed
+	
+	label define how_end 1 "Dissolved" 2 "Widowed" 3 "Ongoing"
+	label values how_end how_end
+	
+	keep pidp `wave'_marno `wave'_lmary4 `wave'_lmcby4 year_end how_end
+	
+	gen wave = "`wave'"
+	
+	rename `wave'_* *
+	
+	save "$temp/marriage_`wave'", replace
+	
+	local ++i
+}
+
+local waves = "bb bk bl" // coding switched in between
+
+local i=1
+
+foreach wave in `waves' {
+	local waveno=`i'
+	use "$UKHLS/`wave'_marriag.dta", clear
+	
+	foreach var in `wave'_lmary4 `wave'_lmcby4 `wave'_lmend `wave'_lmwwy4 `wave'_lmdvy4 `wave'_lmspy4{
+		recode `var' (-9=.)(-2/-1=.)
+	}
+		
+	gen year_end = `wave'_lmwwy4 if `wave'_lmend==1
+	replace year_end = `wave'_lmspy4 if inlist(`wave'_lmend,2,3) & `wave'_lmspy4!=. & `wave'_lmspy4!=-8
+	replace year_end = `wave'_lmdvy4 if year_end==. & inlist(`wave'_lmend,2,3) & `wave'_lmdvy4!=. & `wave'_lmdvy4!=-8
+	
+	gen how_end=.
+	replace how_end = 1 if inlist(`wave'_lmend,2,3) // divorce / sep
+	replace how_end = 2 if `wave'_lmend==1 // widowed
+	replace how_end = 3 if `wave'_lmend==4 // still married
+	
+	label define how_end 1 "Dissolved" 2 "Widowed" 3 "Ongoing"
+	label values how_end how_end
+	
+	keep pidp `wave'_marno `wave'_lmary4 `wave'_lmcby4 year_end how_end
+	
+	gen wave = "`wave'"
+	
+	rename `wave'_* *
+	
+	save "$temp/marriage_`wave'", replace
+	
+	local ++i
+}
+
+
+use "$temp/marriage_a", clear
+append using "$temp/marriage_f"
+append using "$temp/marriage_bb"
+append using "$temp/marriage_bk"
+append using "$temp/marriage_bl"
+
+tab year_end how_end, m col
+
+gen wavename=.
+replace wavename = 1 if wave == "a"
+replace wavename = 6 if wave == "f"
+replace wavename = 16 if wave == "bb"
+replace wavename = 25 if wave == "bk"
+replace wavename = 26 if wave == "bl"
+
+gen year=.
+replace year=2009 if wavename==1
+replace year=2014 if wavename==6
+replace year=1992 if wavename==16
+replace year=2001 if wavename==25
+replace year=2002 if wavename==26
+
+sort pidp marno 
+unique pidp
+browse
+
+rename lmary4 mh2_year_marr
+rename lmcby4 mh2_year_coh
+rename year_end mh2_year_end
+rename how_end mh2_how_end
+
+drop wave
+reshape wide mh2_year_marr mh2_year_coh mh2_year_end mh2_how_end, j(marno) i(pidp year wavename)
+
+save "$temp/marriage_combined_wide.dta", replace
+
+/*
+** Cohabitation: I feel like these are all integrated into indresp?
+use "$UKHLS/a_cohab.dta", clear
+use "$UKHLS/f_cohab.dta", clear
+use "$UKHLS/bb_cohabit.dta", clear
+
+** in indresp - make sure I have all. but like none of these are END date
+cohlby1 cohlby2 cohlby3 // year started reverse order (most recent to less recent) BH 08 (would that be h?) oh but these are in the main file, just only asked in wave bh 08
+cohley1 cohley2 cohley3 // year ended
+curmarrby // year current cohab started (wave 14) - these are only for new entrants
+lcsby4 // year began cohab spell (1 6 Bh02 BH11 BH12)
+lcsey4 // year ended
+currcohby
+lcmary4 // year of current marriage (1 6 BH11 BH12)
+lcmspy4 // year separated (1 6 BH11 BH12)
+lmar1y // year of first marriage (good coverage)
+
+** xwlsten
+lcmstat // wave marital status last changed
+*/
 
 ********************************************************************************
 * Get variables from cross wave files?
@@ -60,7 +205,9 @@ keep pidp xw_* // to match later
 save "$temp/xwave_tomatch.dta", replace 
 
 ********************************************************************************
-* Import data (created in step a) and do some data cleaning / recoding
+********************************************************************************
+**# Import data (created in step a) and do some data cleaning / recoding
+********************************************************************************
 ********************************************************************************
 
 use "$created_data/UKHLS_long_all.dta", clear
@@ -237,6 +384,8 @@ replace country_all=. if inlist(country_all,-9,13)
 label define country 1 "England" 2 "Wales" 3 "Scotland" 4 "N. Ireland"
 label values country_all country
 
+replace gor_dv = . if gor_dv==-9
+
 // so many marital statuses STILL
 tab mlstat survey, m // present legal marital status - has a lot of inapplicable, so doesn't seem right - think only for new people?
 tab marstat survey, m  // legal marital status -- only for ukhls, doesn't seem to include cohabiting
@@ -348,7 +497,8 @@ foreach var in howlng husits hubuys hufrys huiron humops huboss jbstat aidhh aid
 
 // some better employment variables
 fre jbstat
-gen employed=0
+gen employed=.
+replace employed=0 if inrange(jbstat,3,97)
 replace employed=1 if inlist(jbstat,1,2)
 
 recode jbhrs (-8=0)(-9=.)(-7/-1=.)
@@ -459,12 +609,16 @@ tab huboss housework_flag if partnered==1, m col
 browse pidp hidp wavename age_all partnered marital_status_defacto husits howlng hubuys hufrys huiron humops jbhrs
 
 // let's do a check of the variables I either will use for analysis or will use to impute, so I can be sure I a. properly impute and b. properly recoded
+foreach var in jbhrs total_hours howlng aidhrs fimnlabgrs_dv jbstat employed hiqual_dv nchild_dv nkids_dv agechy_dv partnered marital_status_defacto fihhmngrs_dv xw_ethn_dv country_all dob_year year_first_birth xw_memorig xw_sampst ivfio xw_sex{
+	inspect `var'
+}
 
+// okay, doing this, but actually care more in next file once I have my actual sample
 
 ********************************************************************************
 * Okay, let's add on marital history as well, so I can use this to get duration / relationship order
 ********************************************************************************
-
+// main partner history
 merge m:1 pidp using "$temp/partner_history_tomatch.dta", keepusing(mh_*)
 tab marital_status_defacto _merge, row // so def some missing that shouldn't be... but not a lot (like coverage is 97-98% for those cohab / married, a little less for those dissolved)
 drop if _merge==2
@@ -474,6 +628,14 @@ replace in_partner_history=1 if _merge==3
 
 drop _merge
 
+// backup marital history
+merge m:1 pidp using "$temp/marriage_combined_wide.dta", keepusing(mh2_*)
+drop if _merge==2
+drop _merge
+
+	// browse pidp year mh_starty1 mh_endy1 mh_starty2 mh_endy2 mh2_year_marr1 mh2_year_end1 mh2_how_end1 mh2_year_marr4 mh2_year_end4 mh2_how_end4 mh2_year_marr2 mh2_year_marr3 // so sometimes mh2 year 4 is actually year 1 lolz (maybe most to least recent?)
+
+// create necessary variables
 sort pidp year
 browse pidp year sex marital_status_defacto year partner_id mh_partner1 mh_status1 mh_starty1 mh_endy1 mh_partner2 mh_status2 mh_starty2 mh_endy2 mh_partner3 mh_status3  mh_starty3 mh_endy3 mh_partner4 mh_status4
 
@@ -580,6 +742,7 @@ replace current_rel_end_year = rel_end_year_est if current_rel_end_year==. & rel
 tab current_rel_start_year if partner_id!=. , m // about 5% missing
 tab current_rel_start_year if inlist(marital_status_defacto,1,2), m // about 6% missing
 tab current_rel_start_year partnered, m col
+tab current_rel_end_year partnered, m col
 
 // for those with missing, maybe if only 1 spell, use that info? as long as the status matches and the interview date is within the confines of the spell?
 // this might have been covered in my "rel no alt" but let's try
@@ -598,9 +761,16 @@ forvalues r=1/14{
 }
 
 // can I use the dates from the main file, not marital history? or the cross-wave file?
-tabstat lmar1y coh1by lmcby41 lmcby42, by(year)
+tabstat lmar1y coh1by coh1ey lmcby41 lmcby42 lmspy41 lmspy42, by(year)
+
 by pidp: egen first_marr_yr = max(lmar1y)
 by pidp: egen first_cohab_yr = max(coh1by)
+by pidp: egen first_cohab_end_yr = max(coh1ey)
+
+forvalues c=1/7{
+	by pidp: egen cohab`c'_yr = max(lmcby4`c')
+	by pidp: egen cohab`c'_end_yr = max(lmspy4`c')
+}
 
 tab lmar1y survey if current_rel_start_year==., m
 tab first_marr_yr survey if current_rel_start_year==., m
@@ -608,12 +778,24 @@ tab xw_lmar1y_dv survey if current_rel_start_year==., m
 tab xw_coh1y_dv survey if current_rel_start_year==., m
 
 sort pidp year
-browse pidp istrtdaty marital_status_defacto partner_id rel_no mh_ttl_spells mh_ttl_married mh_ttl_cohabit xw_lmar1y_dv xw_coh1y_dv lmar1y first_marr_yr coh1by first_cohab_yr lmcby41 lmcby42 mh_starty1 mh_endy1 mh_starty2 mh_endy2 if current_rel_start_year==. & partnered==1
+browse pidp istrtdaty marital_status_defacto partner_id rel_no mh_ttl_spells mh_ttl_married mh_ttl_cohabit xw_lmar1y_dv xw_coh1y_dv lmar1y first_marr_yr coh1by coh1ey first_cohab_yr lmcby41 lmcby42 mh_starty1 mh_endy1 mh_starty2 mh_endy2 if current_rel_start_year==. & partnered==1
 
-replace current_rel_start_year = xw_lmar1y_dv if current_rel_start_year==. & marital_status_defacto==1 & mh_ttl_married==1 & inrange(xw_lmar1y_dv, 1900,2024)
-replace current_rel_start_year = first_marr_yr if current_rel_start_year==. & marital_status_defacto==1 & mh_ttl_married==1 & inrange(first_marr_yr, 1900,2024) // if married and only has one marriage, use this date?
+replace current_rel_start_year = xw_lmar1y_dv if current_rel_start_year==. & marital_status_defacto==1 & mh_ttl_married==1 & inrange(xw_lmar1y_dv, 1900,2024) // if married and only has one marriage, use this date?
+replace current_rel_start_year = first_marr_yr if current_rel_start_year==. & marital_status_defacto==1 & mh_ttl_married==1 & inrange(first_marr_yr, 1900,2024)
 replace current_rel_start_year = xw_coh1y_dv if current_rel_start_year==. & marital_status_defacto==2 & mh_ttl_cohabit==1 & inrange(xw_coh1y_dv, 1900,2024) 
 replace current_rel_start_year = first_cohab_yr if current_rel_start_year==. & marital_status_defacto==2 & mh_ttl_cohabit==1 & inrange(first_cohab_yr, 1900,2024) // same for cohab
+replace current_rel_start_year = cohab1_yr if current_rel_start_year==. & marital_status_defacto==2 & mh_ttl_cohabit==1 & inrange(cohab1_yr, 1900,2024) 
+replace current_rel_end_year = first_cohab_end_yr if current_rel_end_year==. & marital_status_defacto==2 & mh_ttl_cohabit==1 & inrange(first_cohab_end_yr, 1900,2024) 
+replace current_rel_end_year = cohab1_end_yr if current_rel_end_year==. & marital_status_defacto==2 & mh_ttl_cohabit==1 & inrange(cohab1_end_yr, 1900,2024)
+// replace current_rel_start_year = mh_starty1 if current_rel_start_year==. & mh_ttl_spells==1 & inrange(mh_starty1, 1900,2024) & inlist(marital_status_defacto,1,2) // this is giving me errors for cohabitors sometimes
+// replace current_rel_end_year = mh_endy1 if current_rel_end_year==. & mh_ttl_spells==1 & inrange(mh_endy1, 1900,2024) & inlist(marital_status_defacto,1,2)
+
+sort pidp year
+browse pidp year mh_ttl_cohabit rel_no rel_no_alt rel_no_orig current_rel_start_year current_rel_end_year rel_start rel_end rel_end_pre xw_coh1y_dv coh1by coh1ey cohab1_yr cohab2_yr cohab1_end_yr cohab2_end_yr if marital_status_defacto==2  & (current_rel_start_year==. | current_rel_end_year==.)
+browse pidp year mh_ttl_married rel_no current_rel_start_year current_rel_end_year rel_start rel_end rel_end_pre xw_lmar1y_dv lmar1y mh2_year_marr1 mh2_year_end1 mh2_how_end1 mh2_year_marr4 mh2_year_end4 mh2_how_end4 mh2_year_marr3 mh2_year_end3 mh2_year_marr2 mh2_year_end2 mh_status1 mh_starty1 mh_endy1 if marital_status_defacto==1 & (current_rel_start_year==. | current_rel_end_year==.)
+
+tab current_rel_start_year marital_status_defacto if partnered==1, m col
+tab current_rel_end_year marital_status_defacto if partnered==1, m col
 
 // browse pidp istrtdaty marital_status_defacto partner_id rel_no current_rel_start_year current_rel_end_year rel_start rel_end rel_end_pre mh_ttl_spells mh_partner1 mh_status1 mh_starty1 mh_startm1 mh_endy1 mh_endm1 xw_lmar1y_dv xw_coh1y_dv mh_divorcey1 mh_divorcem1 mh_mrgend1 mh_cohend1 mh_ongoing1 first_marr_yr first_cohab_yr mh_partner2 mh_status2 mh_starty2 mh_startm2 mh_endy2 mh_endm2 mh_divorcey2 mh_divorcem2 mh_mrgend2 mh_cohend2 mh_ongoing2
 
@@ -622,13 +804,71 @@ gen missing_rel_start=.
 replace missing_rel_start = 0 if partnered==1 & current_rel_start_year!=.
 replace missing_rel_start = 1 if partnered==1 & current_rel_start_year==.
 
+gen missing_rel_end=.
+replace missing_rel_end = 0 if partnered==1 & current_rel_end_year!=.
+replace missing_rel_end = 1 if partnered==1 & current_rel_end_year==.
+
 tab sampst missing_rel_start, row // codebook says psm and tsm might have more missing, that is true (We are aware that the information about past partnership history is incomplete or missing for new entrants and those who asked someone else to complete their interview on their behalf (proxy interviews))
+tab sampst missing_rel_end, row 
 tab ivfio missing_rel_start, row // and proxy interviews, so that is also true (96% of full interviews have a rel start)
+tab ivfio missing_rel_end, row 
 tab college_degree missing_rel_start, row // quite evenly distrbuted
+tab college_degree missing_rel_end, row 
 tab country_all missing_rel_start, row // quite evenly distributed
 tab employed missing_rel_start, row // quite evenly distributed
 tab age_all missing_rel_start, row
 // okay so it really is about the type of sample / interview, not really the people themselves. so I think fine to just leave as missing for now?
+
+// final clean up of file before saving
+gen int_year = istrtdaty 
+replace int_year = year if istrtdaty < 0 // missing / dk, so not very helpful...
+
+// also need to make sure the start / end dates are congruent if the couple transitioned from cohabitation to marriage gAH
+bysort pidp partner_id: egen ever_transition = max(marr_trans) if partnered==1
+gen year_transitioned = int_year if marr_trans==1 // note, year transition is first year marrriage. so years prior are cohab, then that year onward is marriage
+bysort pidp partner_id (year_transitioned): replace year_transitioned = year_transitioned[1]
+
+sort pidp year
+browse pidp partner_id int_year marital_status_defacto marr_trans ever_transition year_transitioned if partnered==1
+
+// some cohab dates missing so the above is messing things up for marriage to cohab (start date after rel start)
+bysort pidp partner_id: egen first_couple_year = min(int_year) if partnered==1
+bysort pidp partner_id: egen last_couple_year = max(int_year) if partnered==1
+
+sort pidp year
+browse pidp partner_id int_year marital_status_defacto first_couple_year last_couple_year current_rel_start_year current_rel_end_year marr_trans if ever_transition==1
+
+// updating dates specifically for those who transition because it will mess up the codes otherwise. add a flag to denote that I did still
+gen rel_end_flag=.
+replace rel_end_flag=0 if current_rel_end_year!=.
+replace rel_end_flag=1 if current_rel_end_year==.
+
+gen rel_start_flag=.
+replace rel_start_flag=0 if current_rel_start_year!=.
+replace rel_start_flag=1 if current_rel_start_year==.
+
+replace current_rel_start_year = first_couple_year if current_rel_start_year==. & ever_transition==1 & marital_status_defacto==2
+replace current_rel_end_year = last_couple_year if current_rel_end_year==. & ever_transition==1 & marital_status_defacto==1
+
+bysort pidp partner_id: egen rel_start_all = min(current_rel_start_year) if partnered==1
+bysort pidp partner_id: egen rel_end_all = max(current_rel_end_year) if partnered==1
+bysort pidp partner_id: egen status_all = max(current_rel_ongoing) if partnered==1
+
+capture label define status 0 "ended" 1 "ongoing"
+label values status_all status
+
+sort pidp year
+replace rel_end_all = rel_end_all[_n-1] if rel_end_all==. & rel_start_all == rel_start_all[_n-1] & pidp==pidp[_n-1]
+
+browse pidp partner_id int_year marital_status_defacto first_couple_year last_couple_year rel_start_all rel_end_all status_all current_rel_start_year current_rel_end_year marr_trans ever_transition
+
+gen date_check=0
+replace date_check = 1 if rel_end_all < rel_start_all & rel_end_all!=. & rel_start_all!=.
+
+// browse pidp partner_id int_year marital_status_defacto rel_no first_couple_year last_couple_year rel_start_all rel_end_all status_all current_rel_start_year current_rel_end_year mh_starty1 mh_endy1 mh_starty2 mh_endy2 if date_check==1
+
+replace rel_start_all = first_couple_year if date_check==1 & rel_start_all > last_couple_year
+replace rel_end_all = last_couple_year if date_check==1 & rel_end_all < first_couple_year
 
 save "$created_data/UKHLS_long_all_recoded.dta", replace
 
@@ -637,5 +877,6 @@ unique pidp // 118405, 807942 total py
 unique pidp partner_id // 135496	
 unique pidp, by(xw_sex) // 56297 m, 62216 w
 unique pidp, by(partnered) // 59866 0, 73581 1
-unique pidp partner_id if partnered==1 & current_rel_start_year==. // 8600 couples. does that feel like too many to be missing?
+unique pidp partner_id if partnered==1 & current_rel_start_year==. // 8124 couples. does that feel like too many to be missing?
+unique pidp partner_id if partnered==1 & current_rel_end_year==. //  8150 couples. does that feel like too many to be missing?
 // unique pidp partner_id if partnered==1, by(current_rel_start_year)
