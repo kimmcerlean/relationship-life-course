@@ -501,7 +501,7 @@ mantel <- data.frame(association, stats, sig)
 
 print(mantel)
 
-write.xlsx(mantel, "results/mantel_coefficients.xlsx")
+write.xlsx(mantel, "results/psid_mantel_coefficients.xlsx")
 
 ## Save
 save.image("created data/mantel.RData")

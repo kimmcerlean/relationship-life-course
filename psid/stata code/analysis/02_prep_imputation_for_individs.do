@@ -1519,7 +1519,7 @@ matrix list `matrix', noheader
 return matrix table = `matrix' 
 end
 
-putexcel set "$results/missingtable.xlsx", replace
+putexcel set "$root/imputation/psid_missingtable.xlsx", replace
 mmdesc FAMILY_INTERVIEW_NUM_0-raceth_fixed_focal
 putexcel A1 = matrix(r(table))
 
