@@ -166,16 +166,31 @@ replace eligible_rel_status = 99 if eligible_rel_status==. & eligible_rel_end_ye
 
 // browse pidp partner_id int_year eligible_partner eligible_rel_start_year eligible_rel_end_year eligible_rel_status rel_start_all rel_end_all status_all max_eligible_rels if eligible_partner==.
 // browse pidp partner_id int_year eligible_partner eligible_rel_start_year eligible_rel_end_year eligible_rel_status rel_start_all rel_end_all status_all max_eligible_rels if inlist(pidp,683763125, 687391802, 748014291, 749686407, 816866325)
+
 browse pidp partner_id int_year marital_status_defacto post_marital_status post_ended eligible_partner eligible_rel_start_year eligible_rel_end_year rel_start_all rel_end_all status_all max_eligible_rels first_year_observed last_year_observed if eligible_rel_status==.
 
 egen couple_id = group(pidp eligible_partner)
 unique couple_id
+unique pidp couple_id
 unique pidp partner_id
 unique pidp eligible_partner
 
-gen relative_duration = int_year - eligible_rel_start_year
-tab relative_duration, m
-browse pidp partner_id int_year relative_duration eligible_rel_start_year
+gen relative_duration_v0 = int_year - eligible_rel_start_year
+tab relative_duration_v0, m
+
+// fix the duplicate duration issue (identified below) - when people are interviewed twice in same year
+bysort pidp couple_id: egen duplicate_dur = rank(year), unique  // because waves aren't in right order have to use year (proxy for wave)
+sort pidp year
+
+gen wave_distance = year - year[_n-1] if pidp == pidp[_n-1] & eligible_partner == eligible_partner[_n-1] // because waves aren't in right order
+
+gen relative_duration = relative_duration_v0 if duplicate_dur==1
+// browse pidp eligible_partner int_year year wavename wave_distance eligible_rel_start_year relative_duration_v0 relative_duration duplicate_dur 
+replace relative_duration = relative_duration[_n-1] + wave_distance if pidp == pidp[_n-1] & eligible_partner == eligible_partner[_n-1]  
+browse pidp eligible_partner int_year year wavename wave_distance eligible_rel_start_year relative_duration_v0 relative_duration duplicate_dur 
+// browse pidp eligible_partner int_year year wavename wave_distance eligible_rel_start_year relative_duration_v0 relative_duration duplicate_dur  if relative_duration==.
+// browse pidp eligible_partner int_year year wavename wave_distance eligible_rel_start_year relative_duration_v0 relative_duration duplicate_dur  if  inlist(pidp, 476653485, 479990245, 682201165)
+replace relative_duration = relative_duration_v0 if relative_duration==.
 
 // keep a few durations around 0 to 10
 keep if relative_duration >=-2
@@ -199,8 +214,8 @@ foreach var in jbhrs total_hours howlng aidhrs fimnlabgrs_dv jbstat employed hiq
 
 // see if some variables are fixed or change
 unique pidp 
-unique pidp country_all // 19187 instead of 18664 so barely changes 
-unique pidp gor_dv // 20406 so changes more if I get more specific
+unique pidp country_all // 19191 instead of 18664 so barely changes 
+unique pidp gor_dv // 20409 so changes more if I get more specific
 quietly unique gor_dv if gor_dv!=., by(pidp) gen(country_change)
 bysort pidp (country_change): replace country_change=country_change[1]
 tab country_change, m
@@ -246,11 +261,14 @@ W_LCHBY4 on datafile W_NEWBORN
 BW_CH1BY on datafile BW_INDRESP/
 */
 
+**********************************
 // here, we finally rectangularize
 unique pidp
 unique pidp eligible_partner
-unique pidp eligible_rel_start_year //  19621
-unique couple_id // 19589
+unique pidp eligible_rel_start_year //   19619
+unique couple_id // 19588
+
+drop if couple_id==. // this will cause issues later because those are with missing partner info
 
 browse pidp eligible_partner int_year partnered partner_id eligible_rel_start_year relative_duration couple_id
 
@@ -258,9 +276,12 @@ gen orig_record = 1 // want to know if existed or new below
 
 fillin couple_id relative_duration
 
-tab relative_duration
-tab relative_duration if couple_id!=.
-unique couple_id, by(relative_duration) // so this makes sense, where are the extras? are those the missing? but then the above should work
+// quick checks
+tab relative_duration // yes, now it perfect aligns
+unique couple_id, by(relative_duration)
+bysort couple_id: egen rowcount = count(relative_duration)
+tab rowcount, m // all should be 15
+
 unique pidp eligible_rel_start_year
 unique couple_id
 
@@ -276,7 +297,7 @@ sort pidp int_year
 browse pidp eligible_partner int_year age_all dob_year partnered partner_id eligible_rel_start_year eligible_rel_end_year relative_duration couple_id orig_record
 
 // now see the missing again
-foreach var in jbhrs total_hours howlng aidhrs fimnlabgrs_dv jbstat employed hiqual_dv hiqual_fixed nchild_dv nkids_dv age_youngest_child partnered marital_status_defacto fihhmngrs_dv xw_ethn_dv xw_racel_dv country_all gor_dv dob_year year_first_birth current_rel_start_year eligible_rel_start_year xw_memorig xw_sampst ivfio xw_sex{
+foreach var in jbhrs total_hours howlng aidhrs fimnlabgrs_dv jbstat employed hiqual_dv hiqual_fixed xw_anychild_dv nchild_dv nkids_dv age_youngest_child partnered marital_status_defacto fihhmngrs_dv xw_ethn_dv xw_racel_dv country_all gor_dv dob_year year_first_birth current_rel_start_year eligible_rel_start_year xw_memorig xw_sampst ivfio xw_sex{
 	inspect `var'
 }
 
@@ -298,24 +319,6 @@ replace marital_status_imp=6 if marital_status_imp==. & int_year < mh_starty1 & 
 
 browse pidp int_year partnered_imp partnered marital_status_imp marital_status_defacto eligible_rel_start_year eligible_rel_end_year current_rel_start_year current_rel_end_year mh_*
 
-// browse pidp eligible_partner int_year partnered_imp partner_id eligible_rel_start_year eligible_rel_end_year relative_duration couple_id orig_record
-// struggling to understand why the totals aren't right
-quietly unique relative_duration, by(couple_id) gen(dur_change)
-bysort couple_id (dur_change): replace dur_change=dur_change[1]
-tab dur_change, m
-
-by couple_id: egen rowcount = count(relative_duration)
-tab rowcount
-
-forvalues d=-2/12{
-	display "`d'"
-	inspect couple_id if relative_duration==`d' & couple_id!=.
-	unique couple_id if relative_duration==`d' // so why do some couple_ids have multiple rows?
-}
-
-sort couple_id relative_duration
-browse couple_id pidp eligible_partner int_year year wavename relative_duration orig_record if rowcount > 15 // it's because they are two different waves GAH. need to figure this out; this is where I stopped.
-
-drop if couple_id==.
+inspect partnered_imp marital_status_imp
 
 save "$created_data/ukhls_couples_alldurs_long.dta", replace
