@@ -328,9 +328,59 @@ mi impute chained
 (pmm, knn(5) include ( i.gor_dv0 i.gor_dv1 i.gor_dv2 i.gor_dv3 i.gor_dv4 i.gor_dv5 i.gor_dv6 i.gor_dv7 i.gor_dv8 i.gor_dv9 i.gor_dv10 i.gor_dv11 i.gor_dv12 i.gor_dv14              jbhrs13 howlng13 i.aidhrs_rec13 i.jbstat13 fimnlabgrs_dv13 nkids_dv13 age_youngest_child13 i.marital_status_imp13 fihhmngrs_dv13 total_hours13)) gor_dv13
 (pmm, knn(5) include (i.gor_dv0 i.gor_dv1 i.gor_dv2 i.gor_dv3 i.gor_dv4 i.gor_dv5 i.gor_dv6 i.gor_dv7 i.gor_dv8 i.gor_dv9 i.gor_dv10 i.gor_dv11 i.gor_dv12 i.gor_dv13               jbhrs14 howlng14 i.aidhrs_rec14 i.jbstat14 fimnlabgrs_dv14 nkids_dv14 age_youngest_child14 i.marital_status_imp14 fihhmngrs_dv14 total_hours14)) gor_dv14
 
-= dob i.xw_ethn_dv i.xw_memorig i.xw_sampst i.hiqual_fixed, by(xw_sex) chaindots add(1) rseed(12345) noimputed augment force showcommand // dryrun // noisily i.eligible_rel_start_year
+= dob i.xw_ethn_dv i.xw_memorig i.xw_sampst i.hiqual_fixed, by(xw_sex) chaindots add(10) rseed(12345) noimputed augment force showcommand // dryrun // noisily i.eligible_rel_start_year
 
 ;
 #delimit cr
 
-// save "$created_data/ukhls_individs_imputed_wide_bysex", replace
+save "$created_data/ukhls_individs_imputed_wide_bysex", replace
+
+********************************************************************************
+**# Reshape back to long to look at descriptives
+********************************************************************************
+
+mi reshape long total_hours jbhrs howlng aidhrs aidhrs_rec employed jbstat fimnlabgrs_dv nkids_dv age_youngest_child partnered_imp marital_status_imp fihhmngrs_dv gor_dv orig_record hiqual_dv nchild_dv partnered marital_status_defacto country_all age_all current_rel_start_year current_rel_end_year ivfio sampst hidp psu strata int_year year aidhh aidxhh husits hubuys hufrys huiron humops huboss ///
+, i(couple_id pidp eligible_partner eligible_rel_start_year eligible_rel_end_year eligible_rel_status xw_sex) ///
+ j(duration)
+ 
+mi convert flong
+
+browse couple_id pidp eligible_partner duration total_hours howlng _mi_miss _mi_m _mi_id
+
+gen imputed=0
+replace imputed=1 if inrange(_mi_m,1,10)
+
+inspect total_hours if imputed==0
+inspect total_hours if imputed==1
+
+inspect howlng if imputed==0
+inspect howlng if imputed==1
+
+mi update
+
+save "$created_data/ukhls_individs_imputed_long_bysex", replace
+
+// explore congruence between imputed and not
+tabstat total_hours jbhrs howlng, by(imputed) stats(mean sd p50)
+tabstat total_hours jbhrs howlng if xw_sex==1, by(imputed) stats(mean sd p50)
+tabstat total_hours jbhrs howlng if xw_sex==2, by(imputed) stats(mean sd p50)
+
+tabstat total_hours jbhrs howlng aidhrs_rec employed jbstat fimnlabgrs_dv nkids_dv age_youngest_child partnered_imp marital_status_imp fihhmngrs_dv gor_dv age_all dob hiqual_fixed xw_ethn_dv, by(imputed), stats(mean sd p50) columns(statistics)
+
+twoway (histogram total_hours if imputed==0, width(2) color(blue%30)) (histogram total_hours if imputed==1, width(2) color(red%30)), legend(order(1 "Observed" 2 "Imputed") rows(1) position(6)) xtitle("Weekly Employment Hours")
+twoway (histogram total_hours if imputed==0 & xw_sex==1, width(2) color(blue%30)) (histogram total_hours if imputed==1 & xw_sex==1, width(2) color(red%30)), legend(order(1 "Observed" 2 "Imputed") rows(1) position(6)) xtitle("Weekly Employment Hours")
+twoway (histogram total_hours if imputed==0 & xw_sex==2, width(2) color(blue%30)) (histogram total_hours if imputed==1 & xw_sex==2, width(2) color(red%30)), legend(order(1 "Observed" 2 "Imputed") rows(1) position(6)) xtitle("Weekly Employment Hours")
+twoway (histogram total_hours if imputed==0 & total_hours > 0, width(2) color(blue%30)) (histogram total_hours if imputed==1 & total_hours > 0, width(2) color(red%30)), legend(order(1 "Observed" 2 "Imputed") rows(1) position(6)) xtitle("Weekly Employment Hours")
+
+twoway (histogram howlng if imputed==0, width(2) color(blue%30)) (histogram howlng if imputed==1, width(2) color(red%30)), legend(order(1 "Observed" 2 "Imputed") rows(1) position(6)) xtitle("Weekly Housework Hours")
+
+preserve
+
+collapse (mean) total_hours jbhrs howlng, by(duration imputed)
+
+twoway (line total_hours duration if imputed==0) (line total_hours duration if imputed==1), legend(order(1 "Observed" 2 "Imputed") rows(1) position(6)) ytitle("Weekly Employment Hours") title("Avg Employment Hours by Duration") xtitle("Marital Duration") //  yscale(range(30 40))
+
+twoway (line howlng duration if imputed==0) (line howlng duration if imputed==1), legend(order(1 "Observed" 2 "Imputed") rows(1) position(6)) ytitle("Weekly Housework Hours") title("Avg Housework Hours by Duration") xtitle("Marital Duration")
+
+restore
+
