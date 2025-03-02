@@ -365,14 +365,15 @@ tabstat total_hours jbhrs howlng, by(imputed) stats(mean sd p50)
 tabstat total_hours jbhrs howlng if xw_sex==1, by(imputed) stats(mean sd p50)
 tabstat total_hours jbhrs howlng if xw_sex==2, by(imputed) stats(mean sd p50)
 
-tabstat total_hours jbhrs howlng aidhrs_rec employed jbstat fimnlabgrs_dv nkids_dv age_youngest_child partnered_imp marital_status_imp fihhmngrs_dv gor_dv age_all dob hiqual_fixed xw_ethn_dv, by(imputed), stats(mean sd p50) columns(statistics)
+tabstat total_hours jbhrs howlng aidhrs_rec employed jbstat fimnlabgrs_dv nkids_dv age_youngest_child partnered_imp marital_status_imp fihhmngrs_dv gor_dv age_all dob hiqual_fixed xw_ethn_dv, by(imputed) stats(mean sd p50) columns(statistics)
 
-twoway (histogram total_hours if imputed==0, width(2) color(blue%30)) (histogram total_hours if imputed==1, width(2) color(red%30)), legend(order(1 "Observed" 2 "Imputed") rows(1) position(6)) xtitle("Weekly Employment Hours")
-twoway (histogram total_hours if imputed==0 & xw_sex==1, width(2) color(blue%30)) (histogram total_hours if imputed==1 & xw_sex==1, width(2) color(red%30)), legend(order(1 "Observed" 2 "Imputed") rows(1) position(6)) xtitle("Weekly Employment Hours")
-twoway (histogram total_hours if imputed==0 & xw_sex==2, width(2) color(blue%30)) (histogram total_hours if imputed==1 & xw_sex==2, width(2) color(red%30)), legend(order(1 "Observed" 2 "Imputed") rows(1) position(6)) xtitle("Weekly Employment Hours")
-twoway (histogram total_hours if imputed==0 & total_hours > 0, width(2) color(blue%30)) (histogram total_hours if imputed==1 & total_hours > 0, width(2) color(red%30)), legend(order(1 "Observed" 2 "Imputed") rows(1) position(6)) xtitle("Weekly Employment Hours")
+twoway (histogram total_hours if imputed==0 & total_hours <=80, width(2) color(blue%30)) (histogram total_hours if imputed==1 & total_hours <=80, width(2) color(red%30)), legend(order(1 "Observed" 2 "Imputed") rows(1) position(6)) xtitle("Weekly Employment Hours")
+// more zeroes for men than women
+twoway (histogram total_hours if imputed==0 & xw_sex==1 & total_hours <=80, width(2) color(blue%30)) (histogram total_hours if imputed==1 & xw_sex==1 & total_hours <=80, width(2) color(red%30)), legend(order(1 "Observed" 2 "Imputed") rows(1) position(6)) xtitle("Weekly Employment Hours")
+twoway (histogram total_hours if imputed==0 & xw_sex==2 & total_hours <=80, width(2) color(blue%30)) (histogram total_hours if imputed==1 & xw_sex==2 & total_hours <=80, width(2) color(red%30)), legend(order(1 "Observed" 2 "Imputed") rows(1) position(6)) xtitle("Weekly Employment Hours")
 
-twoway (histogram howlng if imputed==0, width(2) color(blue%30)) (histogram howlng if imputed==1, width(2) color(red%30)), legend(order(1 "Observed" 2 "Imputed") rows(1) position(6)) xtitle("Weekly Housework Hours")
+// housework much more aligned
+twoway (histogram howlng if imputed==0 & howlng<=50, width(2) color(blue%30)) (histogram howlng if imputed==1 & howlng<=50, width(2) color(red%30)), legend(order(1 "Observed" 2 "Imputed") rows(1) position(6)) xtitle("Weekly Housework Hours")
 
 preserve
 
