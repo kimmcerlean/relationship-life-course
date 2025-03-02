@@ -322,3 +322,15 @@ browse pidp int_year partnered_imp partnered marital_status_imp marital_status_d
 inspect partnered_imp marital_status_imp
 
 save "$created_data/ukhls_couples_alldurs_long.dta", replace
+
+/* need to temporarily export this because i am an idiot and forgot some key variables.
+But already imputed, so going to merge for speed, but will update code later - this note is from 3/2/25 for reference
+
+preserve
+
+collapse (first) eligible_rel_start_year eligible_rel_end_year ever_transition year_transitioned, by(pidp eligible_partner)
+save "$temp/final_couple_lookup.dta", replace
+
+restore
+
+*/
