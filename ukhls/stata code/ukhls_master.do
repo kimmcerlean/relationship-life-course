@@ -20,6 +20,8 @@ clear all
 macro drop _all
 set more off
 
+set maxvar 10000
+
 set seed 8675309
 
 // net install cleanplots, from("https://tdmize.github.io/data/cleanplots")

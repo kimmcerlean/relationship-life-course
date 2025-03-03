@@ -22,7 +22,7 @@ use "$created_data/ukhls_individs_imputed_long_bysex", clear
 // browse pidp eligible_partner duration _mi_miss _mi_m _mi_id imputed
 
 // just keep necessary variables - i think this doesn't work if I try to keep variables that weren't imputed
-local partnervars "total_hours jbhrs howlng aidhrs aidhrs_rec employed jbstat fimnlabgrs_dv nkids_dv age_youngest_child partnered_imp marital_status_imp fihhmngrs_dv gor_dv xw_sex xw_memorig xw_sampst xw_racel_dv xw_anychild_dv xw_ethn_dv dob hiqual_fixed first_year_observed last_year_observed imputed" // age_all orig_record hiqual_dv nchild_dv partnered marital_status_defacto country_all current_rel_start_year current_rel_end_year ivfio sampst hidp psu strata int_year year aidhh aidxhh husits hubuys hufrys huiron humops huboss year_first_birth
+local partnervars "total_hours jbhrs howlng aidhrs aidhrs_rec employed jbstat fimnlabgrs_dv nkids_dv age_youngest_child partnered_imp marital_status_imp fihhmngrs_dv gor_dv xw_sex xw_memorig xw_sampst xw_racel_dv xw_anychild_dv xw_ethn_dv dob hiqual_fixed first_year_observed last_year_observed imputed age_all" // orig_record hiqual_dv nchild_dv partnered marital_status_defacto country_all current_rel_start_year current_rel_end_year ivfio sampst hidp psu strata int_year year aidhh aidxhh husits hubuys hufrys huiron humops huboss year_first_birth
 
 keep pidp eligible_partner eligible_rel_start_year eligible_rel_end_year eligible_rel_status duration min_dur max_dur first_couple_year last_couple_year _mi_miss _mi_m _mi_id  `partnervars'
 
@@ -528,17 +528,18 @@ sort pidp eligible_partner imputed _mi_m duration
 browse pidp eligible_partner couple_id duration fam_id hidp
 
 unique pidp eligible_partner
-unique pidp eligible_partner, by(xw_sex)
+unique pidp eligible_partner, by(SEX)
 unique fam_id
 unique pidp eligible_partner fam_id
-tab xw_sex
+tab SEX
+rename xw_sex_sp SEX_sp
 
 bysort fam_id duration _mi_m : egen per_id = rank(couple_id)
 tab per_id, m // see I think this is not working properly
 bysort fam_id duration _mi_m : egen num_couples = max(per_id)
 
 sort pidp eligible_partner imputed _mi_m duration
-browse pidp eligible_partner xw_sex couple_id duration fam_id hidp per_id num_couples if imputed==0
+browse pidp eligible_partner SEX couple_id duration fam_id hidp per_id num_couples if imputed==0
 
 // okay yes, sex should work
 tab couple_work if imputed==1
@@ -548,10 +549,25 @@ tab family_type if imputed==1
 tab family_type SEX if imputed==1, col
 
 // keep if inlist(per_id,1,3,5,7,9,11)
-keep if xw_sex==2
+keep if SEX==1
 unique pidp eligible_partner // 7063, was 14126
 
+// need to do age restrictions (18-60)
+mi passive: gen age_all_sp = int_year - dob_sp // making this now, but can pull through above eventually (note: 3/3/25)
+	// browse pidp eligible_partner int_year dob age_all dob_sp age_all_sp
+// keep if age_all>=18 & age_all<=60 // wait, if I drop these now, won't be rectangular anymore...
+gen age_flag = 0
+replace age_flag = 1 if (age_all>=18 & age_all<=60) & (age_all_sp>=18 & age_all_sp<=60) 
+
+bysort pidp eligible_partner _mi_m: egen age_eligible=total(age_flag)
+tab age_eligible, m // 0 means never within age range
+
+sort pidp eligible_partner imputed _mi_m duration
+drop if age_eligible==0
+
 mi update
+
+unique pidp eligible_partner // now 6263
 
 save "$created_data/ukhls_couples_imputed_long_deduped.dta", replace
 
@@ -581,7 +597,8 @@ gen duration_v0 = duration
 replace duration = duration + 1
 
 // use "$created_data/ukhls_couples_imputed_long_deduped.dta", clear
-keep ft_pt_woman_end overwork_woman_end ft_pt_man_end overwork_man_end couple_work_end couple_work_ow_end couple_hw_end couple_hw_hrs_end couple_hw_hrs_alt_end rel_type couple_num_children_gp_end family_type_end unique_id partner_id rel_start_all rel_end_all duration  min_dur max_dur last_yr_observed ended _mi_miss _mi_id _mi_m SEX in_sample hh_status relationship housework_focal age_focal weekly_hrs_t_focal earnings_t_focal family_income_t partnered_imp educ_focal_imp num_children_imp_hh weekly_hrs_woman weekly_hrs_man housework_woman housework_man partnered_woman partnered_man num_children_woman num_children_man ft_pt_woman overwork_woman ft_pt_man overwork_man ft_pt_det_woman ft_pt_det_man rel_status rel_type_constant transition_yr FIRST_BIRTH_YR sample_type has_psid_gene birth_yr_all raceth_fixed_focal fixed_education SEX_sp in_sample_sp hh_status_sp relationship_sp housework_focal_sp age_focal_sp weekly_hrs_t_focal_sp earnings_t_focal_sp family_income_t_sp partnered_imp_sp num_children_imp_hh_sp  FIRST_BIRTH_YR_sp sample_type_sp has_psid_gene_sp birth_yr_all_sp raceth_fixed_focal_sp fixed_education_sp // think I need to keep the base variables the passive variables I created are based off of, otherwise, they are reset back to missing I think, which causes problems when I reshape.
+
+drop hidp sampst ivfio hubuys hufrys humops huiron husits huboss year marital_status_defacto partnered current_rel_start_year current_rel_end_year rowcount _Unique per_id num_couples age_flag age_eligible duration_v0 psu strata // think I need to keep the base variables the passive variables I created are based off of, otherwise, they are reset back to missing I think, which causes problems when I reshape.
 
 mi update
 
@@ -589,28 +606,30 @@ mi update
 **# Reshape back to wide to see the data by duration and compare to long estimates
 ********************************************************************************
 
-mi reshape wide ft_pt_woman_end overwork_woman_end ft_pt_man_end overwork_man_end couple_work_end couple_work_ow_end couple_hw_end couple_hw_hrs_end couple_hw_hrs_alt_end rel_type couple_num_children_gp_end family_type_end in_sample hh_status relationship housework_focal age_focal weekly_hrs_t_focal earnings_t_focal family_income_t partnered_imp educ_focal_imp num_children_imp_hh weekly_hrs_woman weekly_hrs_man housework_woman housework_man partnered_woman partnered_man num_children_woman num_children_man ft_pt_woman overwork_woman ft_pt_man overwork_man ft_pt_det_woman ft_pt_det_man  in_sample_sp hh_status_sp relationship_sp housework_focal_sp age_focal_sp weekly_hrs_t_focal_sp earnings_t_focal_sp family_income_t_sp partnered_imp_sp num_children_imp_hh_sp, i(unique_id partner_id rel_start_all rel_end_all) j(duration) // SEX SEX_sp rel_status rel_type_constant transition_yr FIRST_BIRTH_YR FIRST_BIRTH_YR_sp sample_type sample_type_sp has_psid_gene has_psid_gene_sp birth_yr_all birth_yr_all_sp raceth_fixed_focal raceth_fixed_focal_sp fixed_education fixed_education_sp
+mi reshape wide age_all fihhmngrs_dv gor_dv nkids_dv jbstat aidhh aidxhh aidhrs howlng jbhrs fimnlabgrs_dv nchild_dv hiqual_dv country_all employed total_hours age_youngest_child partnered_imp marital_status_imp aidhrs_rec int_year orig_record age_all_sp fihhmngrs_dv_sp gor_dv_sp nkids_dv_sp jbstat_sp aidhrs_sp howlng_sp jbhrs_sp fimnlabgrs_dv_sp employed_sp total_hours_sp age_youngest_child_sp partnered_imp_sp marital_status_imp_sp aidhrs_rec_sp weekly_hrs_woman weekly_hrs_man housework_woman housework_man marital_status_woman marital_status_man partnered_woman partnered_man num_children_woman num_children_man ft_pt_woman overwork_woman ft_pt_man overwork_man ft_pt_det_woman ft_pt_det_man couple_work couple_work_ow  couple_hw_total woman_hw_share hw_terc_woman hw_hilow_woman hw_hilow_man couple_hw hw_hilow_woman_gp1 hw_hilow_woman_gp2 hw_hilow_man_gp4 couple_hw_hrs couple_hw_hrs_alt rel_type couple_num_children couple_num_children_gp family_type ft_pt_woman_end overwork_woman_end ft_pt_man_end overwork_man_end ft_pt_det_woman_end ft_pt_det_man_end couple_work_end couple_work_ow_end couple_hw_end couple_hw_hrs_end couple_hw_hrs_alt_end couple_num_children_gp_end family_type_end fam_id ///
+, i(pidp eligible_partner eligible_rel_start_year eligible_rel_end_year eligible_rel_status) j(duration)
 
 tab _mi_miss, m // see what happens if I reshape but DON'T convert
 tab _mi_m, m
-browse unique unique_id partner_id _mi_id _mi_miss _mi_m couple_work_end*
-browse unique unique_id partner_id _mi_id _mi_miss _mi_m couple_work_end* if inrange(_mi_id,1,10)
 
-unique unique_id partner_id // so now there are 4363 uniques and 11 observations for each (base + 10 imputations)
+browse pidp eligible_partner _mi_id _mi_miss _mi_m couple_work_end*
+browse pidp eligible_partner _mi_id _mi_miss _mi_m couple_work_end* couple_hw_end* if inrange(_mi_m,1,10)
 
-save "$created_data/psid_couples_imputed_wide.dta", replace 
+unique pidp eligible_partner // so now there are 6263 uniques and 11 observations for each (base + 10 imputations) - so 68893 observations
+unique pidp eligible_partner, by(_mi_m)
+
+save "$created_data/ukhls_couples_imputed_wide.dta", replace 
 
 mi convert wide, clear
 
-save "$created_data/psid_couples_imputed_fully_wide.dta", replace // this seems to mess up some observations, so I might have done something wrong in the reshape. will revisit this, but I think getting via long format is fine for now. I wonder if this is because of the category things? okay it was because I dropped the imputed variables the passive ones were based off of; I fixed this.
+save "$created_data/ukhls_couples_imputed_fully_wide.dta", replace
 
-unique unique_id partner_id // so, I think to what Lea said - the imputations are also wide, need to be long
+unique pidp eligible_partner // so, I think to what Lea said - the imputations are also wide, need to be long. so now there are 6263 uniques AND 6263 rows
 tab _mi_miss, m
 
-browse unique_id partner_id min_dur max_dur rel_type* *rel_*
-browse unique_id partner_id couple_work_end1 _*_couple_work_end1 _mi_miss
+browse pidp eligible_partner  min_dur max_dur rel_type* *rel_*
+browse pidp eligible_partner couple_work_end1 _*_couple_work_end1 _mi_miss
 
-mi estimate: proportion rel_type0 couple_work_ow_end0 family_type_end0 // okay NOW there are the right number of couples AND they match what I did when long
-mi estimate: proportion rel_type5 couple_work_ow_end5 family_type_end5 // same here
-mi estimate: proportion rel_type0 rel_type1 rel_type2 rel_type3 rel_type4 rel_type5 rel_type6 rel_type7 rel_type8 rel_type9 rel_type10 // ensure all have the right number of people now aka 4363
-mi estimate: proportion couple_work_ow_end0 couple_work_ow_end1 couple_work_ow_end2 couple_work_ow_end3 couple_work_ow_end4 couple_work_ow_end5 couple_work_ow_end6 couple_work_ow_end7 couple_work_ow_end8 couple_work_ow_end9 couple_work_ow_end10 // ensure all have the right number of people now aka 4363 - wanted to do with created / imputed var, not just a constant one (rel type is constant)
+mi estimate: proportion rel_type1 couple_work_ow_end1 family_type_end1 // okay NOW there are the right number of couples AND they match what I did when long
+mi estimate: proportion rel_type1 rel_type2 rel_type3 rel_type4 rel_type5 rel_type6 rel_type7 rel_type8 rel_type9 rel_type10 rel_type11 // ensure all have the right number of people now aka 6263
+mi estimate: proportion couple_work_ow_end1 couple_work_ow_end2 couple_work_ow_end3 couple_work_ow_end4 couple_work_ow_end5 couple_work_ow_end6 couple_work_ow_end7 couple_work_ow_end8 couple_work_ow_end9 couple_work_ow_end10 couple_work_ow_end11 // ensure all have the right number of people now aka 6263 - wanted to do with created / imputed var, not just a constant one (rel type is constant)
