@@ -2,106 +2,74 @@
 #    Program: 01_mantel-coefficients.R
 #    Author: Kim McErlean & Lea Pessin 
 #    Date: January 2025
-#    Modified: February 19 2025
+#    Modified: March 4 2025
 #    Goal: run mantel coefficients on one imputed datasets
 # --------------------------------------------------------------------
 # --------------------------------------------------------------------
 
 options(repos=c(CRAN="https://cran.r-project.org"))
 
-#note to put this on github otherwise this script is not usable for Kim. Think I updated this below?
-#.libPaths("G:/My Drive/R Library") #leas library
-
 # set WD for whomever is running the script
 lea <- 'C:/Users/lpessin/OneDrive - Istituto Universitario Europeo/1. WeEqualize - Team Folder/Papers/Cross National Analysis of the Division of Labor across the Relationship Life Course' #leas folder
 kim <- 'C:/Users/mcerl/Istituto Universitario Europeo/Pessin, Lea - 1. WeEqualize - Team Folder/Papers/Cross National Analysis of the Division of Labor across the Relationship Life Course' # Kim
+lea.server <- '/home/lpessin/stage/Life Course'
 
-
-if (Sys.getenv(c("USERNAME")) == "mcerl") { setwd(kim); .libPaths("G:/Other computers/My Laptop/Documents/R/R library") }
-if (Sys.getenv(c("USERNAME")) == "lpessin") { setwd(lea); .libPaths("G:/My Drive/R Library")  }
+if (Sys.getenv(c("USERNAME")) == "mcerl") { setwd(kim) }
+if (Sys.getenv(c("USERNAME")) == "lpessin") { setwd(lea) }
+if (Sys.getenv(c("HOME" )) == "/home/lpessin") { setwd(lea.server) }
 getwd() # check it worked
+
+# set library path for whomever is running the script
+if (Sys.getenv(c("USERNAME")) == "lpessin") { .libPaths("G:/My Drive/R Library") }
 
 # ~~~~~~~~~~~~~~~~~~
 # Load packages ----
 # ~~~~~~~~~~~~~~~~~~
 
-required_packages <- c("TraMineR", "TraMineRextras","RColorBrewer", "paletteer", 
-                       "colorspace","ggplot2","ggpubr","ggseqplot", 
-                       "patchwork", "cluster", "WeightedCluster","dendextend","seqHMM","haven",
-                       "labelled", "readxl", "openxlsx","tidyverse")
+# load and install packages for whomever is running the script
+## the server doesn't let you install packages
+## the server doesn't have ggseqplot for now (package incompatibility issue)
 
-install_if_missing <- function(packages) {
-  missing_packages <- packages[!packages %in% installed.packages()[, "Package"]]
-  if (length(missing_packages) > 0) {
-    install.packages(missing_packages)
-  }
+if (Sys.getenv(c("HOME" )) == "/home/lpessin") {
+  required_packages <- c("TraMineR", "TraMineRextras","RColorBrewer", "paletteer", 
+                         "colorspace","ggplot2","ggpubr", "ggseqplot", "vegan",
+                         "patchwork", "cluster", "WeightedCluster","dendextend","seqHMM","haven",
+                         "labelled", "readxl", "openxlsx","tidyverse")
+  lapply(required_packages, require, character.only = TRUE)
 }
 
-install_if_missing(required_packages)
 
-#### installing traminer package. 
-#install.packages("TraMineR", dependencies = TRUE)
-library(TraMineR)
-#install.packages("TraMineRextras")
-library(TraMineRextras)
+if (Sys.getenv(c("USERNAME")) == "mcerl") {
+  required_packages <- c("TraMineR", "TraMineRextras","RColorBrewer", "paletteer", 
+                         "colorspace","ggplot2","ggpubr", "ggseqplot", "vegan",
+                         "patchwork", "cluster", "WeightedCluster","dendextend","seqHMM","haven",
+                         "labelled", "readxl", "openxlsx","tidyverse")
+  
+  install_if_missing <- function(packages) {
+    missing_packages <- packages[!packages %in% installed.packages()[, "Package"]]
+    if (length(missing_packages) > 0) {
+      install.packages(missing_packages)
+    }
+  }
+  install_if_missing(required_packages)
+  lapply(required_packages, require, character.only = TRUE)
+}
 
-#packages for color palettes
-#install.packages("RColorBrewer", dependencies= TRUE)
-library(RColorBrewer)
-#install.packages("paletteer", dependencies= TRUE)
-library(paletteer) 
-library(colorspace)
-
-#ggplot
-#install.packages("ggplot2", dependencies= TRUE)
-library(ggplot2)
-#install.packages("ggsignif")
-#install.packages("rstatix")
-#install.packages("ggpubr")
-library(ggpubr)
-library(ggseqplot)
-library(patchwork)
-
-#Weighted cluster
-#Cluster
-#install.packages("cluster", dependencies= TRUE)
-library(cluster)
-#install.packages("WeightedCluster", dependencies= TRUE)
-library(WeightedCluster)
-#install.packages("dendextend")
-library(dendextend) 
-
-#Mantel test
-library(vegan)
-
-#seqHMM
-#install.packages("seqHMM")
-library(seqHMM)
-
-#importing .dta into R
-#install.packages("haven", dependencies= TRUE)
-library(haven)
-
-#labeling variables
-#install.packages("labelled", dependencies= TRUE)
-library(labelled)
-
-#Excel
-#install.packages("readxl", dependencies= TRUE)
-library(readxl)
-#install.packages("openxlsx", dependencies= TRUE)
-library(openxlsx)
-
-#Data Functions
-#install.packages("tidyverse", dependencies= TRUE)
-library(tidyverse)
-
-#clear graph window
-graphics.off()
-
-#number display
-options(scipen=999)
-#library(MASS)
+if (Sys.getenv(c("USERNAME")) == "lpessin") {
+  required_packages <- c("TraMineR", "TraMineRextras","RColorBrewer", "paletteer", 
+                         "colorspace","ggplot2","ggpubr", "ggseqplot", "vegan",
+                         "patchwork", "cluster", "WeightedCluster","dendextend","seqHMM","haven",
+                         "labelled", "readxl", "openxlsx","tidyverse")
+  
+  install_if_missing <- function(packages) {
+    missing_packages <- packages[!packages %in% installed.packages()[, "Package"]]
+    if (length(missing_packages) > 0) {
+      install.packages(missing_packages)
+    }
+  }
+  install_if_missing(required_packages)
+  lapply(required_packages, require, character.only = TRUE)
+}
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~
 # Import created data ----
