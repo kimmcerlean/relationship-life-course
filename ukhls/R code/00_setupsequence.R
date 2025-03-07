@@ -18,90 +18,71 @@ options(repos=c(CRAN="https://cran.r-project.org"))
 # set WD for whomever is running the script
 lea <- 'C:/Users/lpessin/OneDrive - Istituto Universitario Europeo/1. WeEqualize - Team Folder/Papers/Cross National Analysis of the Division of Labor across the Relationship Life Course' #leas folder
 kim <- 'C:/Users/mcerl/Istituto Universitario Europeo/Pessin, Lea - 1. WeEqualize - Team Folder/Papers/Cross National Analysis of the Division of Labor across the Relationship Life Course' # Kim
-
+lea.server <- '/home/lpessin/stage/Life Course'
+kim.server <- '/home/kmcerlea/stage/Life Course'
 
 if (Sys.getenv(c("USERNAME")) == "mcerl") { setwd(kim); .libPaths("G:/Other computers/My Laptop/Documents/R/R library") }
 if (Sys.getenv(c("USERNAME")) == "lpessin") { setwd(lea); .libPaths("G:/My Drive/R Library")  }
+if (Sys.getenv(c("HOME" )) == "/home/lpessin") { setwd(lea.server) }
+if (Sys.getenv(c("HOME" )) == "/home/kmcerlea") { setwd(kim.server) }
 getwd() # check it worked
 
 # ~~~~~~~~~~~~~~~~~~
 # Load packages ----
 # ~~~~~~~~~~~~~~~~~~
 
-required_packages <- c("TraMineR", "TraMineRextras","RColorBrewer", "paletteer", 
-                       "colorspace","ggplot2","ggpubr","ggseqplot", 
-                       "patchwork", "cluster", "WeightedCluster","dendextend","seqHMM","haven",
-                       "labelled", "readxl", "openxlsx","tidyverse")
+# load and install packages for whomever is running the script
+## the server doesn't let you install packages
+## the server doesn't have ggseqplot for now (package incompatibility issue)
 
-install_if_missing <- function(packages) {
-  missing_packages <- packages[!packages %in% installed.packages()[, "Package"]]
-  if (length(missing_packages) > 0) {
-    install.packages(missing_packages)
-  }
+if (Sys.getenv(c("HOME" )) == "/home/lpessin") {
+  required_packages <- c("TraMineR", "TraMineRextras","RColorBrewer", "paletteer", 
+                         "colorspace","ggplot2","ggpubr", "ggseqplot",
+                         "patchwork", "cluster", "WeightedCluster","dendextend","seqHMM","haven",
+                         "labelled", "readxl", "openxlsx","tidyverse")
+  lapply(required_packages, require, character.only = TRUE)
 }
 
-install_if_missing(required_packages)
+if (Sys.getenv(c("HOME" )) == "/home/kmcerlea") {
+  required_packages <- c("TraMineR", "TraMineRextras","RColorBrewer", "paletteer", 
+                         "colorspace","ggplot2","ggpubr", "ggseqplot",
+                         "patchwork", "cluster", "WeightedCluster","dendextend","seqHMM","haven",
+                         "labelled", "readxl", "openxlsx","tidyverse")
+  lapply(required_packages, require, character.only = TRUE)
+}
 
-#### installing traminer package. 
-#install.packages("TraMineR", dependencies = TRUE)
-library(TraMineR)
-#install.packages("TraMineRextras")
-library(TraMineRextras)
 
-#packages for color palettes
-#install.packages("RColorBrewer", dependencies= TRUE)
-library(RColorBrewer)
-#install.packages("paletteer", dependencies= TRUE)
-library(paletteer) 
-library(colorspace)
+if (Sys.getenv(c("USERNAME")) == "mcerl") {
+  required_packages <- c("TraMineR", "TraMineRextras","RColorBrewer", "paletteer", 
+                         "colorspace","ggplot2","ggpubr", "ggseqplot",
+                         "patchwork", "cluster", "WeightedCluster","dendextend","seqHMM","haven",
+                         "labelled", "readxl", "openxlsx","tidyverse")
+  
+  install_if_missing <- function(packages) {
+    missing_packages <- packages[!packages %in% installed.packages()[, "Package"]]
+    if (length(missing_packages) > 0) {
+      install.packages(missing_packages)
+    }
+  }
+  install_if_missing(required_packages)
+  lapply(required_packages, require, character.only = TRUE)
+}
 
-#ggplot
-#install.packages("ggplot2", dependencies= TRUE)
-library(ggplot2)
-#install.packages("ggsignif")
-#install.packages("rstatix")
-#install.packages("ggpubr")
-library(ggpubr)
-library(ggseqplot)
-library(patchwork)
-
-#Weighted cluster
-#Cluster
-#install.packages("cluster", dependencies= TRUE)
-library(cluster)
-#install.packages("WeightedCluster", dependencies= TRUE)
-library(WeightedCluster)
-#install.packages("dendextend")
-library(dendextend) 
-
-#seqHMM
-#install.packages("seqHMM")
-library(seqHMM)
-
-#importing .dta into R
-#install.packages("haven", dependencies= TRUE)
-library(haven)
-
-#labeling variables
-#install.packages("labelled", dependencies= TRUE)
-library(labelled)
-
-#Excel
-#install.packages("readxl", dependencies= TRUE)
-library(readxl)
-#install.packages("openxlsx", dependencies= TRUE)
-library(openxlsx)
-
-#Data Functions
-#install.packages("tidyverse", dependencies= TRUE)
-library(tidyverse)
-
-#clear graph window
-graphics.off()
-
-#number display
-options(scipen=999)
-#library(MASS)
+if (Sys.getenv(c("USERNAME")) == "lpessin") {
+  required_packages <- c("TraMineR", "TraMineRextras","RColorBrewer", "paletteer", 
+                         "colorspace","ggplot2","ggpubr", "ggseqplot",
+                         "patchwork", "cluster", "WeightedCluster","dendextend","seqHMM","haven",
+                         "labelled", "readxl", "openxlsx","tidyverse")
+  
+  install_if_missing <- function(packages) {
+    missing_packages <- packages[!packages %in% installed.packages()[, "Package"]]
+    if (length(missing_packages) > 0) {
+      install.packages(missing_packages)
+    }
+  }
+  install_if_missing(required_packages)
+  lapply(required_packages, require, character.only = TRUE)
+}
 
 # ~~~~~~~~~~~~~~~~
 # Import data ----
@@ -371,45 +352,45 @@ colspace.fam <- c(col1, col2, col3)
 # Couple Paid Work - no OW
 seq.work <- seqdef(data[,col_work], cpal = colspace.work, labels=longlab.work, states= shortlab.work)
 
-ggseqdplot(seq.work) +
-  scale_x_discrete(labels = 1:10) +
-  labs(x = "Year")
+# ggseqdplot(seq.work) +
+#  scale_x_discrete(labels = 1:10) +
+#  labs(x = "Year")
 
 # Couple Paid Work - OW
 seq.work.ow <- seqdef(data[,col_work.ow], cpal = colspace.work.ow, labels=longlab.work.ow, states= shortlab.work.ow)
 
-ggseqdplot(seq.work.ow) +
-  scale_x_discrete(labels = 1:10) +
-  labs(x = "Year")
+# ggseqdplot(seq.work.ow) +
+#  scale_x_discrete(labels = 1:10) +
+#  labs(x = "Year")
 
 # Couple HW - no amounts
 seq.hw <- seqdef(data[,col_hw], cpal = colspace.hw, labels=longlab.hw, states= shortlab.hw)
 
-ggseqdplot(seq.hw) +
-  scale_x_discrete(labels = 1:10) +
-  labs(x = "Year")
+# ggseqdplot(seq.hw) +
+# scale_x_discrete(labels = 1:10) +
+#  labs(x = "Year")
 
 # Couple HW - amounts v1
 seq.hw.hrs <- seqdef(data[,col_hw.hrs], cpal = colspace.hw.hrs, labels=longlab.hw.hrs, states= shortlab.hw.hrs)
 
-ggseqdplot(seq.hw.hrs) +
-  scale_x_discrete(labels = 1:10) +
-  labs(x = "Year")
+# ggseqdplot(seq.hw.hrs) +
+#  scale_x_discrete(labels = 1:10) +
+#  labs(x = "Year")
 
 # Couple HW - amounts v2
 seq.hw.hrs.alt <- seqdef(data[,col_hw.hrs.alt], cpal = colspace.hw.hrs.alt, labels=longlab.hw.hrs.alt, 
                          states= shortlab.hw.hrs.alt)
 
-ggseqdplot(seq.hw.hrs.alt) +
-  scale_x_discrete(labels = 1:10) +
-  labs(x = "Year")
+# ggseqdplot(seq.hw.hrs.alt) +
+#  scale_x_discrete(labels = 1:10) +
+#  labs(x = "Year")
 
 # Family channel
 seq.fam <- seqdef(data[,col_fam], cpal = colspace.fam, labels=longlab.fam, states= shortlab.fam)
 
-ggseqdplot(seq.fam) +
-  scale_x_discrete(labels = 1:10) +
-  labs(x = "Year")
+# ggseqdplot(seq.fam) +
+# scale_x_discrete(labels = 1:10) +
+#  labs(x = "Year")
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Save objects for further usage in other scripts ----
