@@ -61,7 +61,7 @@ global results  "$root/results"
 // global tables  "$root/tables"
 
 cd "$code"
-
+/*
 capture log using "$results/LifeCourse_${date}.log", append
 
 /* Get raw PSID data and organize*/
@@ -111,3 +111,4 @@ capture log using "$results/LifeCourse_${date}.log", append
 
 		
 }
+*/

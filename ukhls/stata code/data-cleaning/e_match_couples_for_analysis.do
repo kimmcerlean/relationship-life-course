@@ -571,6 +571,16 @@ unique pidp eligible_partner // now 6263
 
 save "$created_data/ukhls_couples_imputed_long_deduped.dta", replace
 
+//
+histogram weekly_hrs_woman if couple_work_ow_end==8
+histogram weekly_hrs_man if couple_work_ow_end==8
+
+tab ft_pt_det_man_end ft_pt_det_woman_end if couple_work_ow_end==8, cell
+tab ft_pt_man_end ft_pt_woman_end, cell
+
+tab couple_work_ow_end imputed, col
+tab couple_work_end imputed, col
+
 // descriptives at all durations
 desctable i.ft_pt_woman_end i.overwork_woman_end i.ft_pt_det_woman_end i.ft_pt_man_end i.overwork_man_end i.ft_pt_det_man_end i.couple_work_end i.couple_work_ow_end i.couple_hw_end i.couple_hw_hrs_end i.couple_hw_hrs_alt_end i.rel_type i.couple_num_children_gp_end i.family_type_end, filename("$results/ukhls_mi_desc") stats(mimean)
 // desctable i.ft_pt_woman i.overwork_woman i.ft_pt_man i.overwork_man i.couple_work i.couple_work_ow i.couple_hw i.couple_hw_hrs i.rel_type i.couple_num_children_gp i.family_type, filename("$results/mi_desc_all") stats(mimean)  // modify - okay can't use modify but want to see if this replaces the previous or adds a new sheet. okay it replaces the previous oops

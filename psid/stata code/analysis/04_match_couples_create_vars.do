@@ -460,6 +460,11 @@ save "$created_data/psid_couples_imputed_long.dta", replace
 
 // mi estimate: proportion couple_hw_hrs_end couple_hw_end if duration >=0 & duration <=10
 
+histogram weekly_hrs_woman if couple_work_ow_end==8
+histogram weekly_hrs_man if couple_work_ow_end==8
+
+tab ft_pt_det_man_end ft_pt_det_woman_end if couple_work_ow_end==8, cell
+
 ********************************************************************************
 **# Quick descriptives for full sample while long
 ********************************************************************************
