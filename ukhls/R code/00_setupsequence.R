@@ -256,18 +256,18 @@ longlab.hw.hrs.alt <- c("woman does all: high", "woman does all: low",
 # ------------------------------------------------------------------------------
 #Family type: labels
 
-shortlab.fam <- c("MARc0", "MARc1", "MARc2", "MARc3+",
-                         "COHc0", "COHc1", "COHc2", "COHc3+",
+shortlab.fam <- c("MARc0", "MARc1", "MARc2", "MARc3",
+                         "COHc0", "COHc1", "COHc2", "COHc3",
                          "DISS", "ATT")
 
 longlab.fam <- c("married, 0 Ch", 
                         "married, 1 Ch",
                         "married, 2 Ch",
-                        "married, 3+ Ch",
+                        "married, 3 Ch",
                         "cohab, 0 Ch",
                         "cohab, 1 Ch",
                         "cohab, 2 Ch",
-                        "cohab, 3+ Ch ",
+                        "cohab, 3 Ch ",
                         "dissolved", "attrited")
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -352,45 +352,45 @@ colspace.fam <- c(col1, col2, col3)
 # Couple Paid Work - no OW
 seq.work <- seqdef(data[,col_work], cpal = colspace.work, labels=longlab.work, states= shortlab.work)
 
-# ggseqdplot(seq.work) +
-#  scale_x_discrete(labels = 1:10) +
-#  labs(x = "Year")
+ggseqdplot(seq.work) +
+  scale_x_discrete(labels = 1:10) +
+  labs(x = "Year")
 
 # Couple Paid Work - OW
 seq.work.ow <- seqdef(data[,col_work.ow], cpal = colspace.work.ow, labels=longlab.work.ow, states= shortlab.work.ow)
 
-# ggseqdplot(seq.work.ow) +
-#  scale_x_discrete(labels = 1:10) +
-#  labs(x = "Year")
+ggseqdplot(seq.work.ow) +
+  scale_x_discrete(labels = 1:10) +
+  labs(x = "Year")
 
 # Couple HW - no amounts
 seq.hw <- seqdef(data[,col_hw], cpal = colspace.hw, labels=longlab.hw, states= shortlab.hw)
 
-# ggseqdplot(seq.hw) +
-# scale_x_discrete(labels = 1:10) +
-#  labs(x = "Year")
+ggseqdplot(seq.hw) +
+ scale_x_discrete(labels = 1:10) +
+  labs(x = "Year")
 
 # Couple HW - amounts v1
 seq.hw.hrs <- seqdef(data[,col_hw.hrs], cpal = colspace.hw.hrs, labels=longlab.hw.hrs, states= shortlab.hw.hrs)
 
-# ggseqdplot(seq.hw.hrs) +
-#  scale_x_discrete(labels = 1:10) +
-#  labs(x = "Year")
+ ggseqdplot(seq.hw.hrs) +
+  scale_x_discrete(labels = 1:10) +
+  labs(x = "Year")
 
 # Couple HW - amounts v2
 seq.hw.hrs.alt <- seqdef(data[,col_hw.hrs.alt], cpal = colspace.hw.hrs.alt, labels=longlab.hw.hrs.alt, 
                          states= shortlab.hw.hrs.alt)
 
-# ggseqdplot(seq.hw.hrs.alt) +
-#  scale_x_discrete(labels = 1:10) +
-#  labs(x = "Year")
+ggseqdplot(seq.hw.hrs.alt) +
+  scale_x_discrete(labels = 1:10) +
+  labs(x = "Year")
 
 # Family channel
 seq.fam <- seqdef(data[,col_fam], cpal = colspace.fam, labels=longlab.fam, states= shortlab.fam)
 
-# ggseqdplot(seq.fam) +
-# scale_x_discrete(labels = 1:10) +
-#  labs(x = "Year")
+ggseqdplot(seq.fam) +
+ scale_x_discrete(labels = 1:10) +
+  labs(x = "Year")
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Save objects for further usage in other scripts ----

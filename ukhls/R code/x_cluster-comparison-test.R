@@ -3,8 +3,7 @@
 #    Author: Kim McErlean & Lea Pessin 
 #    Date: January 2025
 #    Modified: March 7 2025
-#    Goal: compare clusters for SC v. MC solution
-#    (weighting the UKHLS unique sequences)
+#    Goal: compare clusters for SC v. MC solution (just using unique sequences)
 # --------------------------------------------------------------------
 # --------------------------------------------------------------------
 
@@ -108,6 +107,8 @@ unique.mc.simp <- list(work=seq.work[ac.mc.simp$aggIndex, ], hw=seq.hw[ac.mc.sim
                        fam=seq.fam[ac.mc.simp$aggIndex, ])
 
 mcdist.simp.om <- seqdistmc(unique.mc.simp, method="OM", indel=1, sm="CONSTANT") 
+# are these the same? Confirmed yes
+mcdist.simp.om2 <- seqMD(unique.mc.simp, method="OM", indel=1, sm="CONSTANT", what="diss") 
 
 # Detailed
 mc.det<-seqMD(channels=list(work=seq.work.ow, hw=seq.hw.hrs.alt, fam=seq.fam))
@@ -117,9 +118,11 @@ ac.mc.det <- wcAggregateCases(mc.det)
 ac.mc.det
 
 unique.mc.det <- list(work=seq.work.ow[ac.mc.det$aggIndex, ], hw=seq.hw.hrs.alt[ac.mc.det$aggIndex, ], 
-                       fam=seq.fam[ac.mc.det$aggIndex, ])
+                      fam=seq.fam[ac.mc.det$aggIndex, ])
 
 mcdist.det.om <- seqdistmc(unique.mc.det, method="OM", indel=1, sm="CONSTANT") 
+# are these the same?
+mcdist.det.om2 <- seqMD(unique.mc.det, method="OM", indel=1, sm="CONSTANT", what="diss") 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Preparatory work required for rendering the plot ---- 
@@ -138,7 +141,17 @@ x <- 2:15 ## this is number of clusters
 
 # Extract r2 and silhouette for the combined clustering
 
-## More detailed sequence alphabets, with weights
+## More detailed sequence alphabets: v1
+mcdist.det.om.pam <- wcKMedRange(mcdist.det.om, 
+                                 kvals = 2:15)
+
+mc.det.val<-mcdist.det.om.pam[[4]]
+
+mc.det.asw <- mc.det.val[,4]
+
+mc.det.r2 <- mc.det.val[,7]
+
+## More detailed sequence alphabets: v1 with weights
 mcdist.det.wt.pam <- wcKMedRange(mcdist.det.om, 
                                  kvals = 2:15,
                                  weights = ac.mc.det$aggWeights)
@@ -149,23 +162,35 @@ mc.det.wt.asw <- mc.det.wt.val[,4]
 
 mc.det.wt.r2 <- mc.det.wt.val[,7]
 
-## Simpler sequence alphabets, with weights
-mcdist.simp.wt.pam <- wcKMedRange(mcdist.simp.om, 
-                                  kvals = 2:15,
-                                  weights = ac.mc.simp$aggWeights)
+## More detailed sequence alphabets: v2
+mcdist.det2.om.pam <- wcKMedRange(mcdist.det.om2, 
+                                  kvals = 2:15)
 
-mc.simp.wt.val<-mcdist.simp.wt.pam[[4]]
+mc.det2.val<-mcdist.det2.om.pam[[4]]
 
-mc.simp.wt.asw <- mc.simp.wt.val[,4]
+mc.det2.asw <- mc.det2.val[,4]
 
-mc.simp.wt.r2 <- mc.simp.wt.val[,7]
+mc.det2.r2 <- mc.det2.val[,7]
+
+# save.image("created data/ukhls/ukhls_cluster-comparison-test.RData")
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # Extract r2 and silhouette for the clustering of family trajectories
+
+fam.pam.test <- wcKMedRange(dist.unique.fam, 
+                            kvals = 2:15)
+
+fam.val<-fam.pam.test[[4]]
+
+fam.asw <- fam.val[,4]
+
+fam.r2 <- fam.val[,7]
+
+# with weights
 fam.pam.wt.test <- wcKMedRange(dist.unique.fam, 
-                               kvals = 2:15,
-                               weights = ac.fam$aggWeights)
+                            kvals = 2:15,
+                            weights = ac.fam$aggWeights)
 
 fam.wt.val<-fam.pam.wt.test[[4]]
 
@@ -173,88 +198,95 @@ fam.wt.asw <- fam.wt.val[,4]
 
 fam.wt.r2 <- fam.wt.val[,7]
 
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-# Extract r2 and silhouette for the clustering of paid labor trajectories
-
-## No Overwork
-work.pam.wt.test <- wcKMedRange(dist.unique.work, 
-                            kvals = 2:15,
-                            weights = ac.work$aggWeights)
-
-work.wt.val<-work.pam.wt.test[[4]]
-
-work.wt.asw <- work.wt.val[,4]
-
-work.wt.r2 <- work.wt.val[,7]
-
-## With Overwork
-work.ow.pam.wt.test <- wcKMedRange(dist.unique.work.ow, 
-                             kvals = 2:15,
-                             weights = ac.work.ow$aggWeights)
-
-work.ow.wt.val<-work.ow.pam.wt.test[[4]]
-
-work.ow.wt.asw <- work.ow.wt.val[,4]
-
-work.ow.wt.r2 <- work.ow.wt.val[,7]
-
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-# Extract r2 and silhouette for the clustering of housework trajectories
-
-## No hours
-hw.pam.wt.test <- wcKMedRange(dist.unique.hw, 
-                           kvals = 2:15,
-                           weights = ac.hw$aggWeights)
-
-hw.wt.val<-hw.pam.wt.test[[4]]
-
-hw.wt.asw <- hw.wt.val[,4]
-
-hw.wt.r2 <- hw.wt.val[,7]
-
-## V1
-hw.hrs.pam.wt.test <- wcKMedRange(dist.unique.hw.hrs, 
-                            kvals = 2:15,
-                            weights = ac.hw.hrs$aggWeights)
-
-hw.hrs.wt.val<-hw.hrs.pam.wt.test[[4]]
-
-hw.hrs.wt.asw <- hw.hrs.wt.val[,4]
-
-hw.hrs.wt.r2 <- hw.hrs.wt.val[,7]
-
-## V2
-hw.hrs.alt.pam.wt.test <- wcKMedRange(dist.unique.hw.hrs.alt, 
-                               kvals = 2:15,
-                               weights = ac.hw.hrs.alt$aggWeights)
-
-hw.hrs.alt.wt.val<-hw.hrs.alt.pam.wt.test[[4]]
-
-hw.hrs.alt.wt.asw <- hw.hrs.alt.wt.val[,4]
-
-hw.hrs.alt.wt.r2 <- hw.hrs.alt.wt.val[,7]
-
 # Save here in case images fail
-save.image("created data/ukhls/ukhls_cluster-comparison.RData")
+save.image("created data/ukhls/ukhls_cluster-comparison-test.RData")
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Create figure comparing separate channels and MCSA ---- 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-pdf("results/Fig5-1_UKHLS.pdf",
-          width=15,
-          height=20)
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Additional figures (compare two family options (weighted and unweighted)
 
-layout.fig1 <- layout(matrix(c(1,2,3,4,5,6,7,8), nrow=4, ncol=2, byrow = TRUE),
-                      heights = c(1,1,1,1,1))
+pdf("results/Fig5-1_UKHLS_Fam-test.pdf",
+    width=12,
+    height=5)
+
+layout.fig1 <- layout(matrix(c(1,2), 1, 2, byrow = TRUE),
+                      heights = c(1,1,1))
 layout.show(layout.fig1)
 
 par(mar = c(5, 5, 3, 3))
 
-# MCSA: Detailed
-plot(x, mc.det.wt.asw, type = "b", frame = FALSE, pch = 19, main="(1a) MCSA: Detailed Sequences", 
+# Family: without weights
+plot(x, fam.asw, type = "b", frame = FALSE, pch = 19, main="(a) Family (no Weights)", 
+     col = "blue", xlab = "N. clusters", ylab = "", ylim = c(0,0.8),
+     cex.main=2,
+     cex.lab=1.6,
+     cex.axis=1.2)
+grid(nx = NULL,
+     ny = NA,
+     lty = 1, col = "gray85", lwd = 1)
+# Add a second line
+lines(x, fam.r2, pch = 19, col = "black", type = "b", lty = 2)
+# Add a legend to the plot
+legend("bottomright", legend=c("ASW", "R2"),
+       col=c("blue", "black"), lty = 1:2, cex=1.2)
+
+# Family: with weights
+plot(x, fam.wt.asw, type = "b", frame = FALSE, pch = 19, main="(b) Family (weighted)", 
+     col = "blue", xlab = "N. clusters", ylab = "", ylim = c(0,0.8),
+     cex.main=2,
+     cex.lab=1.6,
+     cex.axis=1.2)
+grid(nx = NULL,
+     ny = NA,
+     lty = 1, col = "gray85", lwd = 1)
+# Add a second line
+lines(x, fam.wt.r2, pch = 19, col = "black", type = "b", lty = 2)
+# Add a legend to the plot
+legend("bottomright", legend=c("ASW", "R2"),
+       col=c("blue", "black"), lty = 1:2, cex=1.2)
+
+
+dev.off()
+
+# pdf_convert("results/Fig5-1_UKHLS_Fam-test.pdf",
+#            format = "png", dpi = 300, pages = 2,
+#            "results/Fig5-1_UKHLS_Fam-test.png")
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Additional figures (compare three MCSA options)
+
+pdf("results/Fig5-1_UKHLS_MCSA-test.pdf",
+    width=15,
+    height=5)
+
+layout.fig1 <- layout(matrix(c(1,2,3), 1, 3, byrow = TRUE),
+                      heights = c(1,1,1))
+layout.show(layout.fig1)
+
+par(mar = c(5, 5, 3, 3))
+
+
+#  Detailed V1
+plot(x, mc.det.asw, type = "b", frame = FALSE, pch = 19, main="(a) Detailed (Option 1)", 
+     col = "blue", xlab = "N. clusters", ylab = "", ylim = c(0,0.8),
+     cex.main=2,
+     cex.lab=1.6,
+     cex.axis=1.2)
+grid(nx = NULL,
+     ny = NA,
+     lty = 1, col = "gray85", lwd = 1)
+# Add a second line
+lines(x, mc.det.r2, pch = 19, col = "black", type = "b", lty = 2)
+# Add a legend to the plot
+legend("bottomright", legend=c("ASW", "R2"),
+       col=c("blue", "black"), lty = 1:2, cex=1.2)
+
+
+# Detailed v1 - with weights
+plot(x, mc.det.wt.asw, type = "b", frame = FALSE, pch = 19, main="(b) Detailed (Opt 1 weighted)", 
      col = "blue", xlab = "N. clusters", ylab = "", ylim = c(0,0.8),
      cex.main=2,
      cex.lab=1.6,
@@ -268,8 +300,9 @@ lines(x, mc.det.wt.r2, pch = 19, col = "black", type = "b", lty = 2)
 legend("bottomright", legend=c("ASW", "R2"),
        col=c("blue", "black"), lty = 1:2, cex=1.2)
 
-# MCSA: Simple
-plot(x, mc.simp.wt.asw, type = "b", frame = FALSE, pch = 19, main="(1b) MCSA: SImple Sequences", 
+
+# Detailed v2
+plot(x, mc.det2.asw, type = "b", frame = FALSE, pch = 19, main="(c) Detailed (Option 2)", 
      col = "blue", xlab = "N. clusters", ylab = "", ylim = c(0,0.8),
      cex.main=2,
      cex.lab=1.6,
@@ -278,135 +311,7 @@ grid(nx = NULL,
      ny = NA,
      lty = 1, col = "gray85", lwd = 1)
 # Add a second line
-lines(x, mc.simp.wt.r2, pch = 19, col = "black", type = "b", lty = 2)
-# Add a legend to the plot
-legend("bottomright", legend=c("ASW", "R2"),
-       col=c("blue", "black"), lty = 1:2, cex=1.2)
-
-
-# Paid Work Channel: With Overwork
-plot(x, work.ow.wt.asw, type = "b", frame = FALSE, pch = 19, main="(2a) Paid Work (with Overwork)", 
-     col = "blue", xlab = "N. clusters", ylab = "", ylim = c(0,0.8),
-     cex.main=2,
-     cex.lab=1.6,
-     cex.axis=1.2)
-grid(nx = NULL,
-     ny = NA,
-     lty = 1, col = "gray85", lwd = 1)
-# Add a second line
-lines(x, work.ow.wt.r2, pch = 19, col = "black", type = "b", lty = 2)
-# Add a legend to the plot
-legend("bottomright", legend=c("ASW", "R2"),
-       col=c("blue", "black"), lty = 1:2, cex=1.2)
-
-# Paid Work Channel: no Overwork
-plot(x, work.wt.asw, type = "b", frame = FALSE, pch = 19, main="(2b) Paid Work (no Overwork)", 
-     col = "blue", xlab = "N. clusters", ylab = "", ylim = c(0,0.8),
-     cex.main=2,
-     cex.lab=1.6,
-     cex.axis=1.2)
-grid(nx = NULL,
-     ny = NA,
-     lty = 1, col = "gray85", lwd = 1)
-# Add a second line
-lines(x, work.wt.r2, pch = 19, col = "black", type = "b", lty = 2)
-# Add a legend to the plot
-legend("bottomright", legend=c("ASW", "R2"),
-       col=c("blue", "black"), lty = 1:2, cex=1.2)
-
-
-# Housework Channel: Hours with Group-specific thresholds
-plot(x, hw.hrs.wt.asw, type = "b", frame = FALSE, pch = 19, main="(3a) Housework (with Hours)", 
-     col = "blue", xlab = "N. clusters", ylab = "", ylim = c(0,0.8),
-     cex.main=2,
-     cex.lab=1.6,
-     cex.axis=1.2)
-grid(nx = NULL,
-     ny = NA,
-     lty = 1, col = "gray85", lwd = 1)
-# Add a second line
-lines(x, hw.hrs.wt.r2, pch = 19, col = "black", type = "b", lty = 2)
-# Add a legend to the plot
-legend("bottomright", legend=c("ASW", "R2"),
-       col=c("blue", "black"), lty = 1:2, cex=1.2)
-
-
-# Housework Channel: No Hours
-plot(x, hw.wt.asw, type = "b", frame = FALSE, pch = 19, main="(3b) Housework (No Hours)", 
-     col = "blue", xlab = "N. clusters", ylab = "", ylim = c(0,0.8),
-     cex.main=2,
-     cex.lab=1.6,
-     cex.axis=1.2)
-grid(nx = NULL,
-     ny = NA,
-     lty = 1, col = "gray85", lwd = 1)
-# Add a second line
-lines(x, hw.wt.r2, pch = 19, col = "black", type = "b", lty = 2)
-# Add a legend to the plot
-legend("bottomright", legend=c("ASW", "R2"),
-       col=c("blue", "black"), lty = 1:2, cex=1.2)
-
-# Family channel
-plot(x, fam.wt.asw, type = "b", frame = FALSE, pch = 19, main="(4) Family formation",
-     col = "blue", xlab = "N. clusters", ylab = "ASW and R2 value", ylim = c(0,0.8),
-     cex.main=2,
-     cex.lab=1.6,
-     cex.axis=1.2)
-grid(nx = NULL,
-     ny = NA,
-     lty = 1, col = "gray85", lwd = 1)
-# Add a second line
-lines(x, fam.wt.r2, pch = 19, col = "black", type = "b", lty = 2)
-# Add a legend to the plot
-legend("bottomright", legend=c("ASW", "R2"),
-       col=c("blue", "black"), lty = 1:2, cex=1.2)
-
-dev.off()
-
-# pdf convert doesn't work at the moment
-# pdf_convert("results/Fig5-1_UKHLS.pdf",
-#            format = "png", dpi = 300, pages = 2,
-#            "results/Fig5-1_UKHLS.png")
-
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Additional figures (compare two paid work options)
-
-pdf("results/Fig5-1_UKHLS_Work-Options.pdf",
-          width=12,
-          height=5)
-
-layout.fig1 <- layout(matrix(c(1,2), 1, 2, byrow = TRUE),
-                      heights = c(1,1,1))
-layout.show(layout.fig1)
-
-par(mar = c(5, 5, 3, 3))
-
-# Paid Work Channel: Option 1 (used in MCSA)
-plot(x, work.ow.wt.asw, type = "b", frame = FALSE, pch = 19, main="(a) Paid Work (with Overwork)", 
-     col = "blue", xlab = "N. clusters", ylab = "", ylim = c(0,0.8),
-     cex.main=2,
-     cex.lab=1.6,
-     cex.axis=1.2)
-grid(nx = NULL,
-     ny = NA,
-     lty = 1, col = "gray85", lwd = 1)
-# Add a second line
-lines(x, work.ow.wt.r2, pch = 19, col = "black", type = "b", lty = 2)
-# Add a legend to the plot
-legend("bottomright", legend=c("ASW", "R2"),
-       col=c("blue", "black"), lty = 1:2, cex=1.2)
-
-# Paid Work Channel: Option 2
-plot(x, work.wt.asw, type = "b", frame = FALSE, pch = 19, main="(b) Paid Work", 
-     col = "blue", xlab = "N. clusters", ylab = "", ylim = c(0,0.8),
-     cex.main=2,
-     cex.lab=1.6,
-     cex.axis=1.2)
-grid(nx = NULL,
-     ny = NA,
-     lty = 1, col = "gray85", lwd = 1)
-# Add a second line
-lines(x, work.wt.r2, pch = 19, col = "black", type = "b", lty = 2)
+lines(x, mc.det2.r2, pch = 19, col = "black", type = "b", lty = 2)
 # Add a legend to the plot
 legend("bottomright", legend=c("ASW", "R2"),
        col=c("blue", "black"), lty = 1:2, cex=1.2)
@@ -414,77 +319,9 @@ legend("bottomright", legend=c("ASW", "R2"),
 
 dev.off()
 
-# pdf_convert("results/Fig5-1_UKHLS_Work-Options.pdf",
+# pdf_convert("results/Fig5-1_UKHLS_MCSA-test.pdf",
 #            format = "png", dpi = 300, pages = 2,
-#            "results/Fig5-1_UKHLS_Work-Options.png")
-
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Additional figures (compare three housework options)
-
-pdf("results/Fig5-1_UKHLS_HW-Options.pdf",
-          width=15,
-          height=5)
-
-layout.fig1 <- layout(matrix(c(1,2,3), 1, 3, byrow = TRUE),
-                      heights = c(1,1,1))
-layout.show(layout.fig1)
-
-par(mar = c(5, 5, 3, 3))
-
-
-# Housework Channel: Option 1 (used in MCSA)
-plot(x, hw.hrs.wt.asw, type = "b", frame = FALSE, pch = 19, main="(a) Housework Hours", 
-     col = "blue", xlab = "N. clusters", ylab = "", ylim = c(0,0.8),
-     cex.main=2,
-     cex.lab=1.6,
-     cex.axis=1.2)
-grid(nx = NULL,
-     ny = NA,
-     lty = 1, col = "gray85", lwd = 1)
-# Add a second line
-lines(x, hw.hrs.wt.r2, pch = 19, col = "black", type = "b", lty = 2)
-# Add a legend to the plot
-legend("bottomright", legend=c("ASW", "R2"),
-       col=c("blue", "black"), lty = 1:2, cex=1.2)
-
-
-# Housework Channel: Option 2
-plot(x, hw.wt.asw, type = "b", frame = FALSE, pch = 19, main="(b) Housework (no Hours)", 
-     col = "blue", xlab = "N. clusters", ylab = "", ylim = c(0,0.8),
-     cex.main=2,
-     cex.lab=1.6,
-     cex.axis=1.2)
-grid(nx = NULL,
-     ny = NA,
-     lty = 1, col = "gray85", lwd = 1)
-# Add a second line
-lines(x, hw.wt.r2, pch = 19, col = "black", type = "b", lty = 2)
-# Add a legend to the plot
-legend("bottomright", legend=c("ASW", "R2"),
-       col=c("blue", "black"), lty = 1:2, cex=1.2)
-
-
-# Housework Channel: Option 3
-plot(x, hw.hrs.alt.wt.asw, type = "b", frame = FALSE, pch = 19, main="(c) Housework Hours (Option 2)", 
-     col = "blue", xlab = "N. clusters", ylab = "", ylim = c(0,0.8),
-     cex.main=2,
-     cex.lab=1.6,
-     cex.axis=1.2)
-grid(nx = NULL,
-     ny = NA,
-     lty = 1, col = "gray85", lwd = 1)
-# Add a second line
-lines(x, hw.hrs.alt.wt.r2, pch = 19, col = "black", type = "b", lty = 2)
-# Add a legend to the plot
-legend("bottomright", legend=c("ASW", "R2"),
-       col=c("blue", "black"), lty = 1:2, cex=1.2)
-
-
-dev.off()
-
-# pdf_convert("results/Fig5-1_UKHLS_HW-Options.pdf",
-#            format = "png", dpi = 300, pages = 2,
-#            "results/Fig5-1_UKHLS_HW-Options.png")
+#            "results/Fig5-1_UKHLS_MCSA-test.png")
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Save objects for further usage in other scripts ----
