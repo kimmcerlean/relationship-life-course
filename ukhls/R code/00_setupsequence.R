@@ -90,7 +90,7 @@ if (Sys.getenv(c("USERNAME")) == "lpessin") {
 
 # Import imputed datasets using haven 
 data <- read_dta("created data/ukhls/ukhls_couples_imputed_wide.dta")
-data <- data%>%filter(`_mi_m`!=0)
+data <- data%>%filter(`_mi_m`!=0) ## testing with 5 imputations for now to avoid using unique sequences
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Setting up the data ----------------------------------------------------------

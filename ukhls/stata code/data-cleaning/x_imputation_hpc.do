@@ -13,123 +13,15 @@
 * This file takes individuals in couples (created step c)
 * and imputes missing years / variables (esp housework)
 
-********************************************************************************
-* First, a few final steps for imputation
-********************************************************************************
-use "$created_data/ukhls_couples_alldurs_long.dta", clear
+set maxvar 10000
 
-// few final explorations and recodes
-unique pidp // 18613
-unique pidp if hiqual_fixed==. //  620 (3%)
-unique pidp if xw_ethn_dv==. //  548
-unique pidp if xw_racel_dv==. //  597
+cd "/home/kmcerlea/stage/Life Course"
 
-tab xw_memorig xw_sampst, m row // are these perfectly correlated? no
-tab marital_status_imp partnered_imp, m // only need to use one of these
-
-tab aidhrs, m
-fre aidhrs
-// recoding this so the scale makes more sense. will put varies under 20 into 10-19 and varies over 20 into 20-34
-recode aidhrs (8=3)(9=4)(97=.), gen(aidhrs_rec)
-
-label define aidhrs 0 "0" 1 "1-4hrs" 2 "5-9hrs" 3 "10-19hrs" 4 "20-24hrs" 5 "35-49hrs" 6 "50-99hrs" 7 "100+hrs"
-label values aidhrs_rec aidhrs
-
-// explore shape of data before imputation
-histogram total_hours if total_hours > 0 & total_hours < 80, width(1)
-histogram total_hours if total_hours >= 0 & total_hours < 80, width(1)
-histogram howlng if howlng < 50, width(1)
-
-// recode duration so none negative (-2 becomes 0)
-gen duration = relative_duration+2
-browse relative_duration duration
-tab duration, m
-
-// final cleanup of some variables that shouldn't be duplicated but are...
-unique pidp couple_id
-unique couple_id pidp eligible_partner
-unique couple_id pidp eligible_partner min_dur max_dur first_couple_year last_couple_year
-
-sort pidp int_year
-browse pidp eligible_partner int_year year eligible_rel_start_year relative_duration first_couple_year last_couple_year current_rel_start_year min_dur max_dur if min_dur==.
-browse pidp eligible_partner int_year year eligible_rel_start_year relative_duration first_couple_year last_couple_year current_rel_start_year min_dur max_dur if pidp==4029691
-drop if min_dur==. // more than 1 partner in a year
-browse pidp eligible_partner int_year year eligible_rel_start_year relative_duration first_couple_year last_couple_year current_rel_start_year min_dur max_dur if first_couple_year==.
-browse pidp eligible_partner int_year year eligible_rel_start_year relative_duration first_couple_year last_couple_year current_rel_start_year min_dur max_dur if pidp==82295645
-
-quietly unique dob_year, by(pidp) gen(dob_change)
-bysort pidp (dob_change): replace dob_change=dob_change[1]
-tab dob_change, m
-
-sort pidp int_year
-browse pidp int_year dob_year dob_change if dob_change>  1
-by pidp: egen dob = min(dob_year)
-
-browse couple_id pidp eligible_partner int_year orig_record min_dur max_dur first_couple_year last_couple_year
-
-foreach var in min_dur max_dur first_couple_year last_couple_year ever_transition year_transitioned{
-	rename `var' `var'_v0
-}
-
-bysort couple_id: egen min_dur = min(min_dur_v0)
-bysort couple_id: egen first_couple_year = min(first_couple_year_v0)
-bysort couple_id: egen max_dur = max(max_dur_v0)
-bysort couple_id: egen last_couple_year = max(last_couple_year_v0)
-bysort couple_id: egen ever_transition = max(ever_transition_v0)
-bysort couple_id: egen year_transitioned = min(year_transitioned)
-
-sort pidp int_year
-
-********************************************************************************
-* Reshape wide
-********************************************************************************
-local reshape_vars "total_hours work_hours jbhrs jshrs howlng aidhrs aidhrs_rec employed jbstat fimnlabgrs_dv nkids_dv age_youngest_child partnered_imp marital_status_imp fihhmngrs_dv gor_dv orig_record hiqual_dv nchild_dv partnered marital_status_defacto country_all age_all current_rel_start_year current_rel_end_year ivfio sampst hidp psu strata int_year year aidhh aidxhh husits hubuys hufrys huiron humops huboss"
-
-keep couple_id pidp eligible_partner eligible_rel_start_year eligible_rel_end_year eligible_rel_status xw_sex min_dur max_dur first_year_observed first_couple_year last_year_observed last_couple_year duration xw_anychild_dv dob hiqual_fixed xw_ethn_dv xw_memorig xw_sampst xw_racel_dv year_first_birth ever_transition year_transitioned `reshape_vars'
-
-reshape wide `reshape_vars'  ///
-, i(couple_id pidp eligible_partner eligible_rel_start_year eligible_rel_end_year eligible_rel_status xw_sex) ///
- j(duration)
- 
-browse couple_id pidp eligible_partner total_hours* howlng* orig_record*
-
-unique couple_id
- 
-save "$created_data/ukhls_couples_alldurs_wide.dta", replace
-
-// check missings by duration, following: https://www.statalist.org/forums/forum/general-stata-discussion/general/1643775-export-mdesc-table-to-excel
-
-program mmdesc, rclass byable(recall)
-syntax [varlist] [if] [in]
-tempvar touse
-mark `touse' `if' `in'
-local nvars : word count `varlist' 
-tempname matrix 
-matrix `matrix' = J(`nvars', 3, .) 
-local i = 1 
-quietly foreach var of local varlist {
-    count if missing(`var') & `touse' 
-    matrix `matrix'[`i', 1] = r(N) 
-    count if `touse'
-    matrix `matrix'[`i', 2] = r(N) 
-    matrix `matrix'[`i', 3] = `matrix'[`i',1] / `matrix'[`i',2] 
-    local ++i  
-}
-matrix rownames `matrix' = `varlist'                     
-matrix colnames `matrix' = Missing Total Missing/Total 
-matrix list `matrix', noheader 
-return matrix table = `matrix' 
-end
-
-putexcel set "$root/imputation/ukhls_missingtable.xlsx", replace
-mmdesc hidp0-year_transitioned
-putexcel A1 = matrix(r(table))
+use "input data/ukhls_couples_alldurs_wide.dta", clear
 
 ********************************************************************************
 **# Start imputation
 ********************************************************************************
-use "$created_data/ukhls_couples_alldurs_wide.dta", clear
-
 foreach var in dob xw_sex hiqual_fixed xw_ethn_dv xw_memorig xw_sampst eligible_rel_start_year{
 	drop if `var' == . // most of these have no missing, but so educ and race are complete
 }
@@ -337,7 +229,7 @@ mi impute chained
 ;
 #delimit cr
 
-save "$created_data/ukhls_individs_imputed_wide_bysex", replace
+save "created data/stata/ukhls_individs_imputed_wide_bysex.dta", replace
 
 ********************************************************************************
 **# Reshape back to long to look at descriptives
@@ -362,8 +254,9 @@ inspect howlng if imputed==1
 
 mi update
 
-save "$created_data/ukhls_individs_imputed_long_bysex", replace
+save "created data/stata/ukhls_individs_imputed_long_bysex", replace
 
+/*
 // explore congruence between imputed and not
 tabstat total_hours jbhrs howlng, by(imputed) stats(mean sd p50)
 tabstat total_hours jbhrs howlng if xw_sex==1, by(imputed) stats(mean sd p50)
@@ -388,4 +281,4 @@ twoway (line total_hours duration if imputed==0) (line total_hours duration if i
 twoway (line howlng duration if imputed==0) (line howlng duration if imputed==1), legend(order(1 "Observed" 2 "Imputed") rows(1) position(6)) ytitle("Weekly Housework Hours") title("Avg Housework Hours by Duration") xtitle("Marital Duration")
 
 restore
-
+*/

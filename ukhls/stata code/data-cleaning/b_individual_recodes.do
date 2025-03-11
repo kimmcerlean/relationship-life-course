@@ -491,7 +491,7 @@ tab howlng if wavename==6 & howlng>=0, m
 browse survey istrtdaty istrtdatm  howlng if wavename==6
 */
 
-foreach var in howlng husits hubuys hufrys huiron humops huboss jbstat aidhh aidxhh{
+foreach var in howlng husits hubuys hufrys huiron humops huboss jbstat aidhh aidxhh jshrs j2hrs{
 	recode `var' (-10/-1=.)
 }
 
@@ -501,14 +501,49 @@ gen employed=.
 replace employed=0 if inrange(jbstat,3,97)
 replace employed=1 if inlist(jbstat,1,2)
 
-recode jbhrs (-8=0)(-9=.)(-7/-1=.)
+// need to ensure self-employed hours accounted for
+tab jbstat jbhrs  if jbhrs <= 0
+tab jbhrs if jbstat==1, m
+tab jbhrs if jbstat==2, m
+tab j2hrs if jbstat==2 & jbhrs < 0, m
+tab j2hrs if jbstat==2 & jbhrs > 0, m
+
+recode jbhrs (-9=.)(-7/-1=.)
+replace jbhrs = 0 if jbhrs == -8 & inrange(jbstat,3,97)
+replace jbhrs = . if jbhrs == -8 & inlist(jbstat,1,2)
+replace jbhrs = . if jbhrs == -8 & jbstat==.
 
 fre jbot
-recode jbot (-8=0)(-9=.)(-7/-1=.)
+recode jbot (-9=.)(-7/-1=.)
+replace jbot = 0 if jbot == -8 & inrange(jbstat,3,97)
+replace jbot = . if jbot == -8 & inlist(jbstat,1,2)
+replace jbot = . if jbot == -8 & jbstat==.
 
-egen total_hours=rowtotal(jbhrs jbot), missing
+tabstat jbhrs jbot jshrs j2hrs, by(jbstat)
+inspect jshrs if jbstat==1
+inspect jbhrs if jbstat==1
+browse pidp year jbstat jbhrs jbot jshrs j2hrs
+// browse pidp year jbstat jbhrs jbot jshrs j2hrs if jbstat==1
 
-tabstat jbhrs jbot total_hours, by(jbstat)
+gen work_hours = .
+replace work_hours = jbhrs if jbstat!=1 // update with this variable for all EXCEPT self employed
+replace work_hours = jbhrs if jbstat==1 & jbhrs!=. // for self employed - update with jb hours if non-missing (they don't seem to overlap)
+replace work_hours = jshrs if jbstat==1 & work_hours==. // then, update with self-employment hours measure
+replace work_hours = jshrs if work_hours==. & jshrs!=.
+
+egen total_hours=rowtotal(work_hours jbot), missing
+
+tabstat jbhrs jbot work_hours total_hours jshrs j2hrs, by(jbstat)
+gen has_hours=.
+replace has_hours = 0 if total_hours==0
+replace has_hours = 1 if total_hours > 0 & total_hours< 200
+
+tab jbstat has_hours, m row
+tab jbhrs if has_hours==., m
+tab jshrs if has_hours==., m 
+tab j2hrs if has_hours==., m
+
+browse pidp year jbstat work_hours total_hours jbhrs jbot jshrs j2hrs
 
 sum howlng, detail
 sum jbhrs, detail
@@ -609,7 +644,7 @@ tab huboss housework_flag if partnered==1, m col
 browse pidp hidp wavename age_all partnered marital_status_defacto husits howlng hubuys hufrys huiron humops jbhrs
 
 // let's do a check of the variables I either will use for analysis or will use to impute, so I can be sure I a. properly impute and b. properly recoded
-foreach var in jbhrs total_hours howlng aidhrs fimnlabgrs_dv jbstat employed hiqual_dv nchild_dv nkids_dv agechy_dv partnered marital_status_defacto fihhmngrs_dv xw_ethn_dv country_all dob_year year_first_birth xw_memorig xw_sampst ivfio xw_sex{
+foreach var in jbhrs work_hours total_hours howlng aidhrs fimnlabgrs_dv jbstat employed hiqual_dv nchild_dv nkids_dv agechy_dv partnered marital_status_defacto fihhmngrs_dv xw_ethn_dv country_all dob_year year_first_birth xw_memorig xw_sampst ivfio xw_sex{
 	inspect `var'
 }
 

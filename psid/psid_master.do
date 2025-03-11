@@ -62,7 +62,7 @@ global results  "$root/results"
 
 cd "$code"
 /*
-capture log using "$results/LifeCourse_${date}.log", append
+capture log using "$results/logs/LifeCourse_${date}.log", append
 
 /* Get raw PSID data and organize*/
 

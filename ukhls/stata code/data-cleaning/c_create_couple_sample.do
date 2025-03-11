@@ -208,7 +208,7 @@ unique pidp partner_id // partner Id missing a lot bc includes non-partnered yea
 unique pidp eligible_partner 
 
 // first see what missing data is like with the data that exists
-foreach var in jbhrs total_hours howlng aidhrs fimnlabgrs_dv jbstat employed hiqual_dv xw_anychild_dv nchild_dv nkids_dv age_youngest_child partnered marital_status_defacto fihhmngrs_dv xw_ethn_dv xw_racel_dv country_all gor_dv dob_year year_first_birth current_rel_start_year eligible_rel_start_year xw_memorig xw_sampst ivfio xw_sex{
+foreach var in jbhrs work_hours total_hours howlng aidhrs fimnlabgrs_dv jbstat employed hiqual_dv xw_anychild_dv nchild_dv nkids_dv age_youngest_child partnered marital_status_defacto fihhmngrs_dv xw_ethn_dv xw_racel_dv country_all gor_dv dob_year year_first_birth current_rel_start_year eligible_rel_start_year xw_memorig xw_sampst ivfio xw_sex{
 	inspect `var'
 }
 
@@ -297,7 +297,7 @@ sort pidp int_year
 browse pidp eligible_partner int_year age_all dob_year partnered partner_id eligible_rel_start_year eligible_rel_end_year relative_duration couple_id orig_record
 
 // now see the missing again
-foreach var in jbhrs total_hours howlng aidhrs fimnlabgrs_dv jbstat employed hiqual_dv hiqual_fixed xw_anychild_dv nchild_dv nkids_dv age_youngest_child partnered marital_status_defacto fihhmngrs_dv xw_ethn_dv xw_racel_dv country_all gor_dv dob_year year_first_birth current_rel_start_year eligible_rel_start_year xw_memorig xw_sampst ivfio xw_sex{
+foreach var in jbhrs work_hours total_hours howlng aidhrs fimnlabgrs_dv jbstat employed hiqual_dv hiqual_fixed xw_anychild_dv nchild_dv nkids_dv age_youngest_child partnered marital_status_defacto fihhmngrs_dv xw_ethn_dv xw_racel_dv country_all gor_dv dob_year year_first_birth current_rel_start_year eligible_rel_start_year xw_memorig xw_sampst ivfio xw_sex{
 	inspect `var'
 }
 
@@ -325,6 +325,7 @@ save "$created_data/ukhls_couples_alldurs_long.dta", replace
 
 /* need to temporarily export this because i am an idiot and forgot some key variables.
 But already imputed, so going to merge for speed, but will update code later - this note is from 3/2/25 for reference
+Should be fixed 3/11/25 - will delete this note once I fully confirm
 
 preserve
 
