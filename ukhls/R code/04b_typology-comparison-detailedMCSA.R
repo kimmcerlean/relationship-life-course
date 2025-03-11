@@ -82,22 +82,36 @@ if (Sys.getenv(c("USERNAME")) == "lpessin") {
   lapply(required_packages, require, character.only = TRUE)
 }
 
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Load sequences (created in step 00)
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Load sequences ---------------------------------
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-load ("created data/setupsequence.RData")
+load ("created data/ukhls/ukhls_unique-sequences.RData")
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# First need to create MC sequences and OM matrix
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+mc.det<-seqMD(channels=list(work=seq.work.ow, hw=seq.hw.hrs.alt, fam=seq.fam))
+alphabet(mc.det)
+
+ac.mc.det <- wcAggregateCases(mc.det)
+ac.mc.det
+
+unique.mc.det <- list(work=seq.work.ow[ac.mc.det$aggIndex, ], hw=seq.hw.hrs.alt[ac.mc.det$aggIndex, ], 
+                      fam=seq.fam[ac.mc.det$aggIndex, ])
+
+mcdist.det.om <- seqdistmc(unique.mc.det, method="OM", indel=1, sm="CONSTANT") 
+
+
+# Hierarchical cluster analysis, non-squared dissimilarities
+mc.det.ward1 <- hclust(as.dist(mcdist.det.om), 
+                        method = "ward.D",
+                        members = ac.mc.det$aggWeights)
+
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # First compare the 4 v 5 cluster solution --
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-# Hierarchical cluster analysis, non-squared dissimilarities
-mcdist.det.om <- seqdistmc(channels=list(seq.work.ow, seq.hw.hrs.alt, seq.fam), ## Seq states NOT om matrix
-                           method="OM", indel=1, sm="CONSTANT") 
-
-mc.det.ward1 <- hclust(as.dist(mcdist.det.om), 
-                    method = "ward.D")
 
 # Extract the 4-cluster solution
 
@@ -105,7 +119,7 @@ mc.ward.det.4cl <-cutree(mc.det.ward1, k = 4)
 
 # Attach the vector with the 4-cluster solution to the main data.frame
 
-data$mc.ward.det.4cl<-mc.ward.det.4cl
+data$mc.ward.det.4cl<-mc.ward.det.4cl[ac.mc.det$disaggIndex]
 
 # Extract the 5-cluster solution
 
@@ -113,12 +127,12 @@ mc.ward.det.5cl <-cutree(mc.det.ward1, k = 5)
 
 # Attach the vector with the 5-cluster solution to the main data.frame
 
-data$mc.ward.det.5cl<-mc.ward.det.5cl
+data$mc.ward.det.5cl<-mc.ward.det.5cl[ac.mc.det$disaggIndex]
 
-# Compare the two and save to excel
+# Compare and export results
 
 comp.mc.45.det.ward<-table(mc.ward.det.5cl, mc.ward.det.4cl)
-write.csv(comp.mc.45.det.ward,("results/PSID_MC45-detailed-comparison.csv"))
+write.csv(comp.mc.45.det.ward,("results/UKHLS_MC45-detailed-comparison.csv"))
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Prep work for  4 cluster solution --------
@@ -127,23 +141,26 @@ write.csv(comp.mc.45.det.ward,("results/PSID_MC45-detailed-comparison.csv"))
 # Apply PAM clustering + Ward starting point
 # Ward's clustering is explained in Chapter 4
 
-mcdist.om.pam.det.ward <- wcKMedRange(mcdist.det.om, kvals = 2:10,
-                                  initialclust = mc.det.ward1)
+mcdist.om.pam.ward <- wcKMedRange(mcdist.det.om, kvals = 2:10,
+                                  initialclust = mc.det.ward1,
+                                  weights = ac.mc.det$aggWeights)
 
 # Cut tree at cluster==4
 
-mc4 <- mcdist.om.pam.det.ward$clustering$cluster4 # these are sub"folders" in ward output
+mc4 <- mcdist.om.pam.ward$clustering$cluster4[ac.mc.det$disaggIndex]
 
 # Label the clusters from 1 to 4
 labels4<-unique(mc4)
 sort(labels4)
 
 mc4.factor <- factor(mc4, levels = sort(labels4),
-                     c("1", "2", "3", "4"))
+                    c("1", "2", "3", "4"))
+
+mc4.factor.num <- as.numeric(mc4.factor)
 
 # Separate objects for each channel and for each cluster (=4*3)
 
-data$mc4.factor <- as.numeric(mc4.factor)
+data$mc4.factor <- mc4.factor.num[ac.mc.det$disaggIndex]
 
 # Identify position of variables indicating start and end of sequences
 
@@ -168,9 +185,9 @@ mc4.fam4.seq <- seq.fam[data$mc4.factor == "4", ]
 # Obtain relative frequencies of the four clusters
 
 relfreq4 <- data %>% 
-  count(mc4.factor) %>% 
-  mutate(share = n/ sum(n)) %>%
-  arrange(share)
+count(mc4.factor) %>% 
+mutate(share = n/ sum(n)) %>%
+arrange(share)
 
 # Convert relative frequencies to percentages (will be used for labeling the y-axes)
 share <- round(as.numeric(relfreq4$share)*100, 1)
@@ -179,15 +196,14 @@ share <- round(as.numeric(relfreq4$share)*100, 1)
 # This might also be useful to ensure one cluster is not extremely small?
 print(relfreq4)
 
-write.csv(relfreq4,("results/PSID_MC-4cluster-freq-detailed.csv"))
+write.csv(relfreq4,("results/UKHLS_MC-4cluster-freq-detailed.csv"))
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Prep work for 5 cluster solution --------
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # Cut tree at cluster==5
-
-mc5 <- mcdist.om.pam.det.ward$clustering$cluster5 # these are sub"folders" in ward output
+mc5 <- mcdist.om.pam.ward$clustering$cluster5[ac.mc.det$disaggIndex]
 
 # Label the clusters from 1 to 5
 labels5<-unique(mc5)
@@ -196,9 +212,11 @@ sort(labels5)
 mc5.factor <- factor(mc5, levels = sort(labels5),
                      c("1", "2", "3", "4", "5"))
 
+mc5.factor.num <- as.numeric(mc5.factor)
+
 # Separate objects for each channel and for each cluster (=5*3)
 
-data$mc5.factor <- as.numeric(mc5.factor)
+data$mc5.factor <- mc5.factor.num[ac.mc.det$disaggIndex]
 
 # Identify position of variables indicating start and end of sequences
 
@@ -225,9 +243,9 @@ mc5.fam5.seq <- seq.fam[data$mc5.factor == "5", ]
 # Obtain relative frequencies of the five clusters
 
 relfreq5 <- data %>% 
-  count(mc5.factor) %>% 
-  mutate(share = n/ sum(n)) %>%
-  arrange(share)
+count(mc5.factor) %>% 
+mutate(share = n/ sum(n)) %>%
+arrange(share)
 
 # Convert relative frequencies to percentages (will be used for labeling the y-axes)
 share <- round(as.numeric(relfreq5$share)*100, 1)
@@ -236,12 +254,12 @@ share <- round(as.numeric(relfreq5$share)*100, 1)
 # This might also be useful to ensure one cluster is not extremely small?
 print(relfreq5)
 
-write.csv(relfreq5,("results/PSID_MC-5cluster-freq-detailed.csv"))
+write.csv(relfreq5,("results/UKHLS_MC-5cluster-freq-detailed.csv"))
 
-save.image("created data/typology-comparison-detailed-prep.RData")
+save.image("created data/ukhls/UKHLS_typology-comparison-detailed-prep.RData")
 
-# will try to run whole thing in HPC, but saving here just in case figures don't work
-# load("created data/typology-comparison-detailed-prep.RData")
+# sent above to HPC
+# load("created data/ukhls/UKHLS_typology-comparison-detailed-prep.RData")
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Attempt to compile channel charts by cluster -------
@@ -251,7 +269,7 @@ save.image("created data/typology-comparison-detailed-prep.RData")
 # Four cluster solution: state distribution
 
 # This isn't actually working, so just exporting each into a different page
-pdf("results/PSID_MCSA_det_4Cluster.pdf",
+pdf("results/UKHLS_MCSA_det_4Cluster.pdf",
     width=12,
     height=6)
 
@@ -345,24 +363,25 @@ dev.off()
 # Four cluster solution: index plot
 
 # test, following WeightedCluster page 15, can I create silhouette to order sequenceplots?
-sil <-wcSilhouetteObs(mcdist.det.om,mc4,measure="ASW")
-# oh is it doing it by group instead of individually actually a better way to do this also?
+# This is giving me an error and I think it's to with weights (bc error is about mismatch in counts)
+# sil4 <-wcSilhouetteObs(mcdist.simp.om,mc4,measure="ASW",weights = ac.mc.simp$aggWeights)
 
-pdf("results/PSID_MCSA_det_4Cluster_Index_sil.pdf")
-seqIplot(seq.work.ow, group=mc4, sortv=sil)
-seqIplot(seq.hw.hrs.alt, group=mc4, sortv=sil)
-seqIplot(seq.fam, group=mc4, sortv=sil)
-dev.off()
+# pdf("results/UKHLS_MCSA_det_4Cluster_Index_sil.pdf")
+# seqIplot(seq.work, group=mc4, sortv=sil4)
+# seqIplot(seq.hw, group=mc4, sortv=sil4)
+# seqIplot(seq.fam, group=mc4, sortv=sil4)
+# dev.off()
 
-# won't work for HPC, but can use later, bc struggling to open with pdf also
-# pdf_convert("results/PSID_MCSA_det_4Cluster_Index_sil.pdf",
-#            format = "png", dpi = 300, pages = 1,
-#            "results/PSID_MCSA_det_4Cluster_Index_sil.png")
-
-# Original test
-pdf("results/PSID_MCSA_det_4Cluster_Index.pdf",
+# Other option
+pdf("results/UKHLS_MCSA_det_4Cluster_Index.pdf",
           width=12,
           height=6)
+
+# layout.fig1 <- layout(matrix(c(1,2,3,4,5,6,7,8,9,10,11,12), nrow=3, ncol=4, byrow = TRUE)) #,
+# heights = c(2,2,2))
+
+# layout.show(layout.fig1)
+# par(mar = c(5, 5, 3, 3))
 
 # Work
 w1<- ggseqiplot(mc4.work.ow1.seq, sortv="from.end") +
@@ -441,9 +460,15 @@ dev.off()
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Five cluster solution: state distribution
 
-pdf("results/PSID_MCSA_det_5Cluster.pdf",
+pdf("results/UKHLS_MCSA_det_5Cluster.pdf",
           width=12,
           height=6)
+
+# layout.fig1 <- layout(matrix(c(1,2,3,4,5,6,7,8,9,10,11,12), nrow=3, ncol=4, byrow = TRUE)) #,
+# heights = c(2,2,2))
+
+# layout.show(layout.fig1)
+# par(mar = c(5, 5, 3, 3))
 
 # Work
 w1<- ggseqdplot(mc5.work.ow1.seq) + # Cluster 1
@@ -533,17 +558,7 @@ dev.off()
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Five cluster solution: index plot
 
-# test, following WeightedCluster page 15, can I create silhouette to order sequenceplots?
-sil5 <-wcSilhouetteObs(mcdist.det.om,mc5,measure="ASW")
-# oh is it doing it by group instead of individually actually a better way to do this also?
-
-pdf("results/PSID_MCSA_det_5Cluster_Index_sil.pdf")
-seqIplot(seq.work.ow, group=mc5, sortv=sil5)
-seqIplot(seq.hw.hrs.alt, group=mc5, sortv=sil5)
-seqIplot(seq.fam, group=mc5, sortv=sil5)
-dev.off()
-
-pdf("results/PSID_MCSA_det_5Cluster_Index.pdf",
+pdf("results/UKHLS_MCSA_det_5Cluster_Index.pdf",
           width=12,
           height=6)
 
