@@ -22,8 +22,13 @@ set more off
 
 set seed 8675309
 
-net install cleanplots, from("https://tdmize.github.io/data/cleanplots")
+net install cleanplots, from("https://tdmize.github.io/data/cleanplots") replace
 set scheme cleanplots
+
+net install desctable, from("https://tdmize.github.io/data") replace
+
+net install mimrgns, from("http://fmwww.bc.edu/RePEc/bocode/m/") replace
+net install outreg2, from("http://fmwww.bc.edu/RePEc/bocode/o") replace
 
 // define the reference folder for all 
    
@@ -32,9 +37,9 @@ set scheme cleanplots
 	global comp "kim"	// change who is working
 
 /*What do you want this program to do?*/
-	global databuild = 1 //==1 if want to build analysis file from raw data
-	global dataclean = 0 //==1 if want to create and impute data for our analysis specifically
-	global analysis = 0  //==1 if want to do the sequence analysis
+	global dataclean = 1 //==1 if want to build analysis file from raw data
+	global prep = 0 //==1 if want to create and impute data for the cluster analysis in R
+	global analysis = 0  //==1 if want to do the analysis of clusters created in R
 
 /*Setting directories based on ${comp}*/
 	if ("${comp}"=="kim") {
@@ -56,9 +61,10 @@ set scheme cleanplots
 global PSID    "$root/PSID data" /*original PSID data*/
 global temp    "$root/temp data" /*intermediary processing files*/
 global created_data "$root/created data" /*created data*/
-global results  "$root/results"
+global results  "$root/results/PSID"
+global tables  "$root/results/PSID/tables"
+global models "$root/results/PSID/models"
 // global graphs  "$root/graphs"
-// global tables  "$root/tables"
 
 cd "$code"
 /*
@@ -66,7 +72,7 @@ capture log using "$results/logs/LifeCourse_${date}.log", append
 
 /* Get raw PSID data and organize*/
 
-	if (${databuild}==1) {
+	if (${dataclean}==1) {
 	
 	// Starting data analysis
 	
@@ -87,7 +93,7 @@ capture log using "$results/logs/LifeCourse_${date}.log", append
 
 /*Get data for life course sample specifically and clean and impute*/
 
-	if (${dataclean}==1) {
+	if (${prep}==1) {
 	
 		// 1. Use relationship variables to get eligible sample for our analysis and create unique list of individuals
 		do "$code/stata code/analysis/01_get_couple_sample.do"

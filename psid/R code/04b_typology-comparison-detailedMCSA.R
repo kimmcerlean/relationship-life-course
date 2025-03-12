@@ -37,7 +37,7 @@ if (Sys.getenv(c("HOME" )) == "/home/lpessin") {
   required_packages <- c("TraMineR", "TraMineRextras","RColorBrewer", "paletteer", 
                          "colorspace","ggplot2","ggpubr", "ggseqplot",
                          "patchwork", "cluster", "WeightedCluster","dendextend","seqHMM","haven",
-                         "labelled", "readxl", "openxlsx","tidyverse","pdftools","gridExtra")
+                         "labelled", "readxl", "openxlsx","tidyverse","pdftools","gridExtra","foreign")
   lapply(required_packages, require, character.only = TRUE)
 }
 
@@ -45,7 +45,7 @@ if (Sys.getenv(c("HOME" )) == "/home/kmcerlea") {
   required_packages <- c("TraMineR", "TraMineRextras","RColorBrewer", "paletteer", 
                          "colorspace","ggplot2","ggpubr", "ggseqplot",
                          "patchwork", "cluster", "WeightedCluster","dendextend","seqHMM","haven",
-                         "labelled", "readxl", "openxlsx","tidyverse","pdftools","gridExtra")
+                         "labelled", "readxl", "openxlsx","tidyverse","pdftools","gridExtra","foreign")
   lapply(required_packages, require, character.only = TRUE)
 }
 
@@ -54,7 +54,7 @@ if (Sys.getenv(c("USERNAME")) == "mcerl") {
   required_packages <- c("TraMineR", "TraMineRextras","RColorBrewer", "paletteer", 
                          "colorspace","ggplot2","ggpubr", "ggseqplot",
                          "patchwork", "cluster", "WeightedCluster","dendextend","seqHMM","haven",
-                         "labelled", "readxl", "openxlsx","tidyverse","pdftools","gridExtra")
+                         "labelled", "readxl", "openxlsx","tidyverse","pdftools","gridExtra","foreign")
   
   install_if_missing <- function(packages) {
     missing_packages <- packages[!packages %in% installed.packages()[, "Package"]]
@@ -70,7 +70,7 @@ if (Sys.getenv(c("USERNAME")) == "lpessin") {
   required_packages <- c("TraMineR", "TraMineRextras","RColorBrewer", "paletteer", 
                          "colorspace","ggplot2","ggpubr", "ggseqplot",
                          "patchwork", "cluster", "WeightedCluster","dendextend","seqHMM","haven",
-                         "labelled", "readxl", "openxlsx","tidyverse","pdftools","gridExtra")
+                         "labelled", "readxl", "openxlsx","tidyverse","pdftools","gridExtra","foreign")
   
   install_if_missing <- function(packages) {
     missing_packages <- packages[!packages %in% installed.packages()[, "Package"]]
@@ -238,9 +238,12 @@ print(relfreq5)
 
 write.csv(relfreq5,("results/PSID_MC-5cluster-freq-detailed.csv"))
 
+# will try to run whole thing in HPC, but saving here just in case figures don't work
 save.image("created data/typology-comparison-detailed-prep.RData")
 
-# will try to run whole thing in HPC, but saving here just in case figures don't work
+# also, export the data with the clusters attached to use for analysis in stata
+write.dta(data, "created data/PSID_clusters.dta")
+
 # load("created data/typology-comparison-detailed-prep.RData")
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

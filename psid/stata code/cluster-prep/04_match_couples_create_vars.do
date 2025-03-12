@@ -551,6 +551,22 @@ unique unique_id partner_id // so now there are 4363 uniques and 11 observations
 
 save "$created_data/psid_couples_imputed_wide.dta", replace 
 
+********************************************************************************
+* A few small additional extracts needed
+********************************************************************************
+// non imputed data to append to R files later
+gen couple_id = _mi_id
+
+mi extract 0, clear
+
+gen _mi_m = 0
+rename couple_id _mi_id
+
+save "$created_data/psid_couples_base.dta", replace
+
+// fully wide data (not actually sure we need this)
+use "$created_data/psid_couples_imputed_wide.dta", clear
+
 mi convert wide, clear
 
 save "$created_data/psid_couples_imputed_fully_wide.dta", replace // this seems to mess up some observations, so I might have done something wrong in the reshape. will revisit this, but I think getting via long format is fine for now. I wonder if this is because of the category things? okay it was because I dropped the imputed variables the passive ones were based off of; I fixed this.
