@@ -2,7 +2,7 @@
 #    Program: 00_setupsequence.R
 #    Author: Kim McErlean & Lea Pessin 
 #    Date: March 2025
-#    Modified: March 4 2025
+#    Modified: March 12 2025
 #    Goal: setup UKHLS for multichannel sequence analysis of couples' life courses
 # --------------------------------------------------------------------
 # --------------------------------------------------------------------
@@ -90,7 +90,9 @@ if (Sys.getenv(c("USERNAME")) == "lpessin") {
 
 # Import imputed datasets using haven 
 data <- read_dta("created data/ukhls/ukhls_couples_imputed_wide.dta")
-data <- data%>%filter(`_mi_m`!=0) ## testing with 5 imputations for now to avoid using unique sequences
+# data <- data%>%filter(`_mi_m`!=0) ## testing with 5 imputations for now to avoid using unique sequences
+data <- data%>%filter(`_mi_m`==1 | `_mi_m`==2 | `_mi_m`==3 | `_mi_m`==4 | `_mi_m`==5)
+table(data$`_mi_m`)
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Setting up the data ----------------------------------------------------------
