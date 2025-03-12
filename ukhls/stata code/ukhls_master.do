@@ -27,6 +27,12 @@ set seed 8675309
 // net install cleanplots, from("https://tdmize.github.io/data/cleanplots")
 set scheme cleanplots
 
+net install desctable, from("https://tdmize.github.io/data") replace
+
+net install mimrgns, from("http://fmwww.bc.edu/RePEc/bocode/m/") replace
+net install outreg2, from("http://fmwww.bc.edu/RePEc/bocode/o") replace
+
+
 // define the reference folder for all 
    
 /*Where and when are you working on this?*/
@@ -60,9 +66,9 @@ global UKHLS    	"$root/UKHLS data/UKDA-6614-stata/stata/stata13_se" /*original 
 global UKHLS_mh    	"$root/UKHLS data/UKDA-8473-stata/stata" /*UKHLS relationship history data*/
 global temp    		"$root/temp data/ukhls" /*intermediary processing files*/
 global created_data "$root/created data/ukhls" /*created data*/
-global results  	"$root/results"
+global results  	"$root/results/UKHLS"
+global tables  	"$root/results/UKHLS/tables"
 // global graphs  	"$root/graphs"
-// global tables  	"$root/tables"
 
 cd "$code"
 
