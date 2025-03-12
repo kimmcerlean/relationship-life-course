@@ -400,7 +400,7 @@ mi passive: replace rel_type = 3 if duration > max_dur & eligible_rel_status==1 
 mi passive: replace rel_type = 3 if duration > max_dur & eligible_rel_status==99 // estimated attrition
 mi passive: replace rel_type = 3 if duration > max_dur & eligible_rel_status==. // estimated attrition
 mi passive: replace rel_type = 4 if duration > max_dur & eligible_rel_status==0 // past end of relationship and designated ended
-mi passive: replace rel_type = rel_type[_n-1] if rel_type==. & duration >= min_dur & duration <=max_dur & pidp==pidp[_n-1]
+mi passive: replace rel_type = rel_type[_n-1] if rel_type==. & duration >= min_dur & duration <=max_dur & pidp==pidp[_n-1] & rel_type[_n-1]!=0
 mi passive: replace rel_type = rel_type[_n+1] if rel_type==. & duration >= 0 & duration <=max_dur & pidp==pidp[_n+1]
 mi passive: replace rel_type = 1 if rel_type==. // best guess based on current info (this is also like 3 people)
 
@@ -414,6 +414,7 @@ tab rel_type, m
 mi estimate: proportion rel_type
 
 tab rel_type eligible_rel_status, row
+tab rel_type duration
 
 * number of children
 tab num_children_woman num_children_man if inlist(rel_type,1,2) & duration>=0, m
@@ -452,6 +453,10 @@ label values family_type family_type
 mi estimate: proportion family_type
 
 tab family_type rel_type
+tab family_type duration
+
+// browse pidp eligible_partner marital_status_imp rel_type if family_type_end == 0 & duration==0
+// browse pidp eligible_partner marital_status_imp rel_type duration family_type_end if inlist(pidp,32143682,67551242,67626042,748332543)
 
 browse pidp eligible_partner duration eligible_rel_start_year eligible_rel_end_year min_dur max_dur family_type rel_type marital_status_imp couple_num_children_gp eligible_rel_status 
 
