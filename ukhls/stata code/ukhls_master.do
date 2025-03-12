@@ -27,10 +27,10 @@ set seed 8675309
 // net install cleanplots, from("https://tdmize.github.io/data/cleanplots")
 set scheme cleanplots
 
-net install desctable, from("https://tdmize.github.io/data") replace
+// net install desctable, from("https://tdmize.github.io/data") replace
 
-net install mimrgns, from("http://fmwww.bc.edu/RePEc/bocode/m/") replace
-net install outreg2, from("http://fmwww.bc.edu/RePEc/bocode/o") replace
+// net install mimrgns, from("http://fmwww.bc.edu/RePEc/bocode/m/") replace
+// net install outreg2, from("http://fmwww.bc.edu/RePEc/bocode/o") replace
 
 
 // define the reference folder for all 

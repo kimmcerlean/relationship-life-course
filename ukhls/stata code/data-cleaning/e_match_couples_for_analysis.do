@@ -356,13 +356,6 @@ label values duration duration_rec .
 
 browse pidp eligible_partner marital_status_defacto eligible_rel_start_year eligible_rel_end_year year int_year duration duration_rec
 
-// I need to go back to c and pull through transition year - updated this, will delete once I confirm works
-// for now, merging on
-// mi merge m:1 pidp eligible_partner using "$temp/final_couple_lookup.dta", gen(howmatch) // keepusing(ever_transition year_transitioned)
-// drop if howmatch==2
-// drop howmatch
-// mi update
-
 mi passive: gen dur_transitioned=.
 mi passive: replace dur_transitioned = year_transitioned - eligible_rel_start_year
 
@@ -402,7 +395,20 @@ mi passive: replace rel_type = 3 if duration > max_dur & eligible_rel_status==. 
 mi passive: replace rel_type = 4 if duration > max_dur & eligible_rel_status==0 // past end of relationship and designated ended
 mi passive: replace rel_type = rel_type[_n-1] if rel_type==. & duration >= min_dur & duration <=max_dur & pidp==pidp[_n-1] & rel_type[_n-1]!=0
 mi passive: replace rel_type = rel_type[_n+1] if rel_type==. & duration >= 0 & duration <=max_dur & pidp==pidp[_n+1]
+
+// really struggling to fill in the last lingering relationship types...
+gsort pidp eligible_partner _mi_m -duration 
+// browse pidp eligible_partner duration _mi_m rel_type
+mi passive: replace rel_type = rel_type[_n-1] if rel_type==. & duration <=max_dur & pidp==pidp[_n-1] & rel_type[_n-1]!=0
+
+sort pidp eligible_partner _mi_m duration 
+mi passive: replace rel_type = rel_type[_n+1] if rel_type==. & duration >= 0 & duration <=max_dur & pidp==pidp[_n+1]
+mi passive: replace rel_type = rel_type[_n-1] if rel_type==. & duration >= 0 & duration <=max_dur & pidp==pidp[_n-1] & rel_type[_n-1]!=0
+
 mi passive: replace rel_type = 1 if rel_type==. // best guess based on current info (this is also like 3 people)
+mi passive: replace rel_type = rel_type[_n+1] if duration==0 & inlist(rel_type,3,4) & !inlist(rel_type[_n+1],0,3,4) & pidp==pidp[_n+1]
+
+tab rel_type imputed, m
 
 // tab rel_type if imputed==1, m
 // browse pidp eligible_partner marital_status_imp rel_type duration min_dur max_dur int_year eligible_rel_start_year eligible_rel_end_year eligible_rel_status orig_record total_hours if inlist(pidp, 4197647, 30776922, 428992285, 837228245, 428992285) // if inlist(pidp,510699,7731844,30620522,89355405,225385325)
