@@ -68,6 +68,7 @@ global temp    		"$root/temp data/ukhls" /*intermediary processing files*/
 global created_data "$root/created data/ukhls" /*created data*/
 global results  	"$root/results/UKHLS"
 global tables  	"$root/results/UKHLS/tables"
+global models  	"$root/results/UKHLS/models"
 // global graphs  	"$root/graphs"
 
 cd "$code"
