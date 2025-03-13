@@ -2,7 +2,7 @@
 #    Program: 01_mantel-coefficients.R
 #    Author: Kim McErlean & Lea Pessin 
 #    Date: January 2025
-#    Modified: March 4 2025
+#    Modified: March 12 2025
 #    Goal: run mantel coefficients on one imputed datasets
 # --------------------------------------------------------------------
 # --------------------------------------------------------------------
@@ -93,8 +93,30 @@ if (Sys.getenv(c("USERNAME")) == "lpessin") {
 load("created data/ukhls/ukhls_setupsequence.RData")
 
 # Import non-imputed data
- data <- read_dta("created data/ukhls/ukhls_couples_imputed_wide.dta")
- data <- data%>%filter(`_mi_m`== 1) 
+data <- read_dta("created data/ukhls/ukhls_couples_imputed_wide.dta")
+data <- data%>%filter(`_mi_m`== 1) 
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Create sequences just with mi of 1
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ 
+# Couple Paid Work - no OW
+seq.work <- seqdef(data[,col_work], cpal = colspace.work, labels=longlab.work, states= shortlab.work)
+ 
+# Couple Paid Work - OW
+seq.work.ow <- seqdef(data[,col_work.ow], cpal = colspace.work.ow, labels=longlab.work.ow, states= shortlab.work.ow)
+
+# Couple HW - no amounts
+seq.hw <- seqdef(data[,col_hw], cpal = colspace.hw, labels=longlab.hw, states= shortlab.hw)
+
+# Couple HW - amounts v1
+seq.hw.hrs <- seqdef(data[,col_hw.hrs], cpal = colspace.hw.hrs, labels=longlab.hw.hrs, states= shortlab.hw.hrs)
+
+# Couple HW - amounts v2
+seq.hw.hrs.alt <- seqdef(data[,col_hw.hrs.alt], cpal = colspace.hw.hrs.alt, labels=longlab.hw.hrs.alt, 
+                         states= shortlab.hw.hrs.alt)
+# Family channel
+seq.fam <- seqdef(data[,col_fam], cpal = colspace.fam, labels=longlab.fam, states= shortlab.fam)
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Compute standard OM distance matrices for each domain ----
@@ -176,7 +198,7 @@ mantel <- data.frame(association, stats, sig)
 
 print(mantel)
 
-write.xlsx(mantel, "results/ukhls_mantel_coefficients.xlsx")
+write.xlsx(mantel, "results/UKHLS/ukhls_mantel_coefficients_mi1.xlsx")
 
 ## Save
-save.image("created data/ukhls_ukhls_mantel.RData")
+save.image("created data/ukhls/ukhls_mantel_mi1.RData")
