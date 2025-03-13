@@ -118,6 +118,10 @@ replace raceth_woman=raceth_fixed_focal_sp if SEX==1
 capture label define raceth 1 "NH White" 2 "Black" 3 "Hispanic" 4 "NH Asian" 5 "NH Other"
 labe values raceth_man raceth_woman raceth_fixed_focal raceth_fixed_focal_sp raceth
 
+gen same_race=.
+replace same_race=0 if raceth_man!=raceth_woman
+replace same_race=1 if raceth_man==raceth_woman
+
 // make some sort of birth cohort? can also use age to describe within cluster (but categorical will be easier for between cluster)
 // well, age is hard because time-varying. so could just use at time 0
 gen birth_yr_man=birth_yr_all if SEX==1
@@ -146,6 +150,12 @@ replace age_man1 = age_focal_sp1 if SEX==2
 
 gen age_woman1=age_focal1 if SEX==2
 replace age_woman1=age_focal_sp1 if SEX==1
+
+// relationship start as well
+gen rel_cohort=.
+replace rel_cohort = 1 if rel_start_all >=1990 & rel_start_all<2000
+replace rel_cohort = 2 if rel_start_all >=2000 & rel_start_all<2012
+tab rel_cohort, m
 
 // income or earnings (perhaps earnings is a bit endogenous to employment, but could work)
 // these are imputed so need mi passive
@@ -232,6 +242,8 @@ putexcel A36 = "Couple Earnings: Q2"
 putexcel A37 = "Couple Earnings: Q3"
 putexcel A38 = "Couple Earnings: Q4"
 putexcel A39 = "Couple Earnings"
+putexcel A40 = "Rel Cohort: 1990-1999"
+putexcel A41 = "Rel Cohort: 2000+"
 
 // full sample
 forvalues e=1/4{
@@ -320,6 +332,15 @@ mi estimate: mean couple_earnings_t1
 matrix ce = e(b_mi)
 local ce = ce[1,1]
 putexcel B39 = `ce', nformat(#####)
+
+forvalues rc=1/2{
+   capture gen relcoh`rc' = rel_cohort==`rc'
+   mi estimate: mean relcoh`rc'
+   matrix rc`rc' = e(b_mi)
+   local rc`rc' = rc`rc'[1,1]
+   local row = 39+`rc'
+   putexcel B`row' = `rc`rc'', nformat(##.#%)
+}
 
 
 **# // by cluster
@@ -438,6 +459,17 @@ forvalues c=1/5{
 	putexcel `col'39 = `ce', nformat(#####)
 }
 
+forvalues c=1/5{
+	local col: word `c' of `col1'
+	forvalues rc=1/2{
+	   mi estimate, esampvaryok: mean relcoh`rc' if mc5_factor==`c'
+	   matrix rc`rc' = e(b_mi)
+	   local rc`rc' = rc`rc'[1,1]
+	   local row = 39+`rc'
+	   putexcel `col'`row' = `rc`rc'', nformat(##.#%)
+	}
+}
+
 ********************************************************************************
 /* Doesn't work because of no mi_m==0
 *Descriptive table by cluster
@@ -461,3 +493,140 @@ mi estimate: proportion couple_educ_type raceth_woman
 mi estimate: mean couple_earnings_t1
 restore
 */
+
+********************************************************************************
+**# Describe sequences
+********************************************************************************
+// I think the data need to be LONG here (to get average across durations)
+// use "$created_data/PSID_clusters_analysis.dta", clear
+
+// replace mc5_factor=0 if mc5_factor==.
+
+mi reshape long ft_pt_woman_end overwork_woman_end ft_pt_man_end overwork_man_end couple_work_end couple_work_ow_end couple_hw_end couple_hw_hrs_end couple_hw_hrs_alt_end rel_type couple_num_children_gp_end family_type_end in_sample hh_status relationship housework_focal age_focal weekly_hrs_t_focal earnings_t_focal family_income_t partnered_imp educ_focal_imp num_children_imp_hh weekly_hrs_woman weekly_hrs_man housework_woman housework_man partnered_woman partnered_man num_children_woman num_children_man ft_pt_woman overwork_woman ft_pt_man overwork_man ft_pt_det_woman ft_pt_det_man  in_sample_sp hh_status_sp relationship_sp housework_focal_sp age_focal_sp weekly_hrs_t_focal_sp earnings_t_focal_sp family_income_t_sp partnered_imp_sp num_children_imp_hh_sp, i(unique_id partner_id rel_start_all rel_end_all) j(duration) 
+
+tab _mi_m mc5_factor, m
+
+mi passive: gen work_seq = couple_work_ow_end
+mi passive: replace work_seq = 9 if couple_work_ow_end==98
+mi passive: replace work_seq = 10 if couple_work_ow_end==99
+
+mi passive: gen hw_seq = couple_hw_hrs_alt_end
+mi passive: replace hw_seq = 10 if couple_hw_hrs_alt_end==98
+mi passive: replace hw_seq = 11 if couple_hw_hrs_alt_end==99
+
+mi passive: gen fam_seq = family_type_end
+mi passive: replace fam_seq = 9 if family_type_end==98
+mi passive: replace fam_seq = 10 if family_type_end==99
+
+label values work_seq couple_work_ow
+label values hw_seq couple_hw_hrs
+label values fam_seq family_type
+
+putexcel set "$tables/cluster_composition.xlsx", replace
+putexcel B1 = "Full Sample"
+putexcel C1 = "1: Traditional"
+putexcel D1 = "2: Attrition"
+putexcel E1 = "3: Dissolution"
+putexcel F1 = "4: Egal with Kids"
+putexcel G1 = "5: Egal-ish No Kids"
+
+putexcel A2 = "Work"
+putexcel A3 = "Male BW"
+putexcel A4 = "1.5 Male BW"
+putexcel A5 = "Dual FT: no OW"
+putexcel A6 = "Dual FT: his OW"
+putexcel A7 = "Dual FT: her OW"
+putexcel A8 = "Dual FT: both OW"
+putexcel A9 = "Female BW"
+putexcel A10 = "Underwork"
+putexcel A11 = "Dissolved"
+putexcel A12 = "Attrited"
+
+putexcel A14 = "Housework"
+putexcel A15 = "Woman All: High"
+putexcel A16 = "Woman All: Low"
+putexcel A17 = "Woman Most: High"
+putexcel A18 = "Woman Most: Med"
+putexcel A19 = "Woman Most: Low"
+putexcel A20 = "Equal: High"
+putexcel A21 = "Equal: Low"
+putexcel A22 = "Man Most: High"
+putexcel A23 = "Man Most: Low"
+putexcel A24 = "Dissolved"
+putexcel A25 = "Attrited"
+
+putexcel A27 = "Family"
+putexcel A28 = "Married, 0 Ch"
+putexcel A29 = "Married, 1 Ch"
+putexcel A30 = "Married, 2 Ch"
+putexcel A31 = "Married, 3+ Ch"
+putexcel A32 = "Cohab, 0 Ch"
+putexcel A33 = "Cohab, 1 Ch"
+putexcel A34 = "Cohab, 2 Ch"
+putexcel A35 = "Cohab, 3+ Ch"
+putexcel A36 = "Dissolved"
+putexcel A37 = "Attrited"
+
+// full sample
+forvalues w=1/10{
+   capture mi passive: gen work_seq`w' = work_seq==`w'
+   mi estimate: mean work_seq`w'
+   matrix w`w' = e(b_mi)
+   local w`w' = w`w'[1,1]
+   local row = 2+`w'
+   putexcel B`row' = `w`w'', nformat(##.#%)
+}
+
+forvalues h=1/11{
+   capture mi passive: gen hw_seq`h' = hw_seq==`h'
+   mi estimate: mean hw_seq`h'
+   matrix h`h' = e(b_mi)
+   local h`h' = h`h'[1,1]
+   local row = 14+`h'
+   putexcel B`row' = `h`h'', nformat(##.#%)
+}
+
+forvalues f=1/10{
+   capture mi passive: gen fam_seq`f' = fam_seq==`f'
+   mi estimate: mean fam_seq`f'
+   matrix f`f' = e(b_mi)
+   local f`f' = f`f'[1,1]
+   local row = 27+`f'
+   putexcel B`row' = `f`f'', nformat(##.#%)
+}
+
+// by cluster
+local col1 "C D E F G"
+
+forvalues c=1/5{
+	local col: word `c' of `col1'
+	forvalues w=1/10{
+	   mi estimate, esampvaryok: mean work_seq`w' if mc5_factor==`c'
+	   matrix w`w' = e(b_mi)
+	   local w`w' = w`w'[1,1]
+	   local row = 2+`w'
+	   putexcel `col'`row' = `w`w'', nformat(##.#%)
+	}
+}
+
+forvalues c=1/5{
+	local col: word `c' of `col1'
+	forvalues h=1/11{
+	   mi estimate, esampvaryok: mean hw_seq`h' if mc5_factor==`c'
+	   matrix h`h' = e(b_mi)
+	   local h`h' = h`h'[1,1]
+	   local row = 14+`h'
+	   putexcel `col'`row' = `h`h'', nformat(##.#%)
+	}
+}
+
+forvalues c=1/5{
+	local col: word `c' of `col1'
+	forvalues f=1/10{
+	   mi estimate, esampvaryok: mean fam_seq`f' if mc5_factor==`c'
+	   matrix f`f' = e(b_mi)
+	   local f`f' = f`f'[1,1]
+	   local row = 27+`f'
+	   putexcel `col'`row' = `f`f'', nformat(##.#%)
+	}
+}
