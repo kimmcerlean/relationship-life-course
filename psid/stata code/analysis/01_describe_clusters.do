@@ -165,38 +165,299 @@ tab _mi_m couple_earnings_quart1
 mi update
 // mi register regular education_man education_woman couple_educ_type raceth_man raceth_woman birth_yr_man birth_yr_woman bcohort_man bcohort_woman age_man1 age_woman1 // do I need to register?
 
+save "$created_data/PSID_clusters_analysis.dta", replace
+
 ********************************************************************************
-* Within cluster descriptives
+**# Within cluster descriptives
 ********************************************************************************
 *Descriptive table for entire sample
 desctable i.education_man i.education_woman i.couple_educ_type i.raceth_man i.raceth_woman c.age_man1 c.age_woman1 i.bcohort_man i.bcohort_woman i.couple_earnings_quart1 c.couple_earnings_t1, filename("$tables/desc_sample_all") stats(mimean) 
 
 mi estimate: proportion couple_educ_type raceth_woman // validate that this matches
+mi estimate: mean couple_earnings_t1
+
+mi estimate, esampvaryok: proportion couple_educ_type raceth_woman if mc5_factor==1
+mi estimate, esampvaryok: proportion couple_educ_type raceth_woman if mc5_factor==4
+mi estimate, esampvaryok: mean couple_earnings_t1  if mc5_factor==1
+tabstat couple_earnings_t1, by(mc5_factor)
+
+
+// tab education_man, gen(educ_man)
+// mi estimate: proportion education_man
+// mi estimate: mean educ_man1 educ_man2 educ_man3 educ_man4
 
 *Descriptive table by cluster
+putexcel set "$tables/descriptives_by_cluster.xlsx", replace
+putexcel B1 = "Full Sample"
+putexcel C1 = "1: Traditional"
+putexcel D1 = "2: Attrition"
+putexcel E1 = "3: Dissolution"
+putexcel F1 = "4: Egal with Kids"
+putexcel G1 = "5: Egal-ish No Kids"
+putexcel A2 = "Educ Man: LTHS"
+putexcel A3 = "Educ Man: HS"
+putexcel A4 = "Educ Man: Some College"
+putexcel A5 = "Educ Man: College+"
+putexcel A6 = "Educ Woman: LTHS"
+putexcel A7 = "Educ Woman: HS"
+putexcel A8 = "Educ Woman: Some College"
+putexcel A9 = "Educ Woman: College+"
+putexcel A10 = "Couple Educ: Neither College"
+putexcel A11 = "Couple Educ: Her College"
+putexcel A12 = "Couple Educ: Him College"
+putexcel A13 = "Couple Educ: Both College"
+putexcel A14 = "Race Man: NH White"
+putexcel A15 = "Race Man: Black"
+putexcel A16 = "Race Man: Hispanic"
+putexcel A17 = "Race Man: NH Asian"
+putexcel A18 = "Race Man: NH Other"
+putexcel A19 = "Race Woman: NH White"
+putexcel A20 = "Race Woman: Black"
+putexcel A21 = "Race Woman: Hispanic"
+putexcel A22 = "Race Woman: NH Asian"
+putexcel A23 = "Race Woman: NH Other"
+putexcel A24 = "Age Man"
+putexcel A25 = "Age Woman"
+putexcel A26 = "Birth Cohort Man: Pre 1960s"
+putexcel A27 = "Birth Cohort Man: 1960s"
+putexcel A28 = "Birth Cohort Man: 1970s"
+putexcel A29 = "Birth Cohort Man: 1980s+"
+putexcel A30 = "Birth Cohort Woman: Pre 1960s"
+putexcel A31 = "Birth Cohort Woman: 1960s"
+putexcel A32 = "Birth Cohort Woman: 1970s"
+putexcel A33 = "Birth Cohort Woman: 1980s+"
+putexcel A34 = "Couple Earnings: $0"
+putexcel A35 = "Couple Earnings: Q1"
+putexcel A36 = "Couple Earnings: Q2"
+putexcel A37 = "Couple Earnings: Q3"
+putexcel A38 = "Couple Earnings: Q4"
+putexcel A39 = "Couple Earnings"
+
+// full sample
+forvalues e=1/4{
+   capture gen educ_man`e' = education_man==`e'
+   mi estimate: mean educ_man`e'
+   matrix m`e' = e(b_mi)
+   local m`e' = m`e'[1,1]
+   local row = 1+`e'
+   putexcel B`row' = `m`e'', nformat(##.#%)
+}
+
+forvalues e=1/4{
+   capture gen educ_woman`e' = education_woman==`e'
+   mi estimate: mean educ_woman`e'
+   matrix w`e' = e(b_mi)
+   local w`e' = w`e'[1,1]
+   local row = 5+`e'
+   putexcel B`row' = `w`e'', nformat(##.#%)
+}
+
+forvalues e=1/4{
+   capture gen couple_educ`e' = couple_educ_type==`e'
+   mi estimate: mean couple_educ`e'
+   matrix c`e' = e(b_mi)
+   local c`e' = c`e'[1,1]
+   local row = 9+`e'
+   putexcel B`row' = `c`e'', nformat(##.#%)
+}
+
+forvalues r=1/5{
+   capture gen race_man`r' = raceth_man==`r'
+   mi estimate: mean race_man`r'
+   matrix r`r' = e(b_mi)
+   local r`r' = r`r'[1,1]
+   local row = 13+`r'
+   putexcel B`row' = `r`r'', nformat(##.#%)
+}
+
+forvalues r=1/5{
+   capture gen race_woman`r' = raceth_woman==`r'
+   mi estimate: mean race_woman`r'
+   matrix rw`r' = e(b_mi)
+   local rw`r' = rw`r'[1,1]
+   local row = 18+`r'
+   putexcel B`row' = `rw`r'', nformat(##.#%)
+}
+
+mi estimate: mean age_man1
+matrix a = e(b_mi)
+local a = a[1,1]
+putexcel B24 = `a', nformat(##.#)
+
+mi estimate: mean age_woman1
+matrix aw = e(b_mi)
+local aw = aw[1,1]
+putexcel B25 = `aw', nformat(##.#)
+   
+forvalues b=1/4{
+   capture gen bc_man`b' = bcohort_man==`b'
+   mi estimate: mean bc_man`b'
+   matrix b`b' = e(b_mi)
+   local b`b' = b`b'[1,1]
+   local row = 25+`b'
+   putexcel B`row' = `b`b'', nformat(##.#%)
+}
+
+forvalues b=1/4{
+   capture gen bc_woman`b' = bcohort_woman==`b'
+   mi estimate: mean bc_woman`b'
+   matrix bw`b' = e(b_mi)
+   local bw`b' = bw`b'[1,1]
+   local row = 29+`b'
+   putexcel B`row' = `bw`b'', nformat(##.#%)
+}
+
+forvalues ce=0/4{
+   capture mi passive: gen earn_quart`ce' = couple_earnings_quart1==`ce'
+   mi estimate: mean earn_quart`ce'
+   matrix ce`ce' = e(b_mi)
+   local ce`ce' = ce`ce'[1,1]
+   local row = 34+`ce'
+   putexcel B`row' = `ce`ce'', nformat(##.#%)
+}
+
+mi estimate: mean couple_earnings_t1
+matrix ce = e(b_mi)
+local ce = ce[1,1]
+putexcel B39 = `ce', nformat(#####)
+
+
+**# // by cluster
+local col1 "C D E F G"
+
 forvalues c=1/5{
-	preserve
-	keep if mc5_factor == `c'
-	
-	desctable i.education_man i.education_woman i.couple_educ_type i.raceth_man i.raceth_woman c.age_man1 c.age_woman1 i.bcohort_man i.bcohort_woman i.couple_earnings_quart1 c.couple_earnings_t1 if mc5_factor==`c' ///
-	, filename("$tables/desc_cluster_`c'") 	stats(mimean) decimals(4)
-	
-	restore
+	local col: word `c' of `col1'
+	forvalues e=1/4{
+	   mi estimate, esampvaryok: mean educ_man`e' if mc5_factor==`c'
+	   matrix m`e' = e(b_mi)
+	   local m`e' = m`e'[1,1]
+	   local row = 1+`e'
+	   putexcel `col'`row' = `m`e'', nformat(##.#%)
+	}
+}
+
+forvalues c=1/5{
+	local col: word `c' of `col1'
+	forvalues e=1/4{
+	   mi estimate, esampvaryok: mean educ_woman`e' if mc5_factor==`c'
+	   matrix w`e' = e(b_mi)
+	   local w`e' = w`e'[1,1]
+	   local row = 5+`e'
+	   putexcel `col'`row' = `w`e'', nformat(##.#%)
+	}
+}
+
+forvalues c=1/5{
+	local col: word `c' of `col1'
+	forvalues e=1/4{
+	   mi estimate, esampvaryok: mean couple_educ`e' if mc5_factor==`c'
+	   matrix c`e' = e(b_mi)
+	   local c`e' = c`e'[1,1]
+	   local row = 9+`e'
+	   putexcel `col'`row' = `c`e'', nformat(##.#%)
+	}
+}
+
+forvalues c=1/5{
+	local col: word `c' of `col1'
+	forvalues r=1/5{
+	   mi estimate, esampvaryok: mean race_man`r' if mc5_factor==`c'
+	   matrix r`r' = e(b_mi)
+	   local r`r' = r`r'[1,1]
+	   local row = 13+`r'
+	   putexcel `col'`row' = `r`r'', nformat(##.#%)
+	}
+}
+
+forvalues c=1/5{
+	local col: word `c' of `col1'
+	forvalues r=1/5{
+	   mi estimate, esampvaryok: mean race_woman`r'  if mc5_factor==`c'
+	   matrix rw`r' = e(b_mi)
+	   local rw`r' = rw`r'[1,1]
+	   local row = 18+`r'
+	   putexcel `col'`row' = `rw`r'', nformat(##.#%)
+	}
+}
+
+forvalues c=1/5{
+	local col: word `c' of `col1'
+	mi estimate, esampvaryok: mean age_man1 if mc5_factor==`c'
+	matrix a = e(b_mi)
+	local a = a[1,1]
+	putexcel `col'24 = `a', nformat(##.#)
 }
 
 
+forvalues c=1/5{
+	local col: word `c' of `col1'
+	mi estimate, esampvaryok: mean age_woman1 if mc5_factor==`c'
+	matrix aw = e(b_mi)
+	local aw = aw[1,1]
+	putexcel `col'25 = `aw', nformat(##.#)
+}
+
+forvalues c=1/5{
+	local col: word `c' of `col1'
+	forvalues b=1/4{
+	   mi estimate, esampvaryok: mean bc_man`b' if mc5_factor==`c'
+	   matrix b`b' = e(b_mi)
+	   local b`b' = b`b'[1,1]
+	   local row = 25+`b'
+	   putexcel `col'`row' = `b`b'', nformat(##.#%)
+	}
+}
+
+forvalues c=1/5{
+	local col: word `c' of `col1'
+	forvalues b=1/4{
+	   mi estimate, esampvaryok: mean bc_woman`b' if mc5_factor==`c'
+	   matrix bw`b' = e(b_mi)
+	   local bw`b' = bw`b'[1,1]
+	   local row = 29+`b'
+	   putexcel `col'`row' = `bw`b'', nformat(##.#%)
+	}
+}
+
+forvalues c=1/5{
+	local col: word `c' of `col1'
+	forvalues ce=0/4{
+	   mi estimate, esampvaryok: mean earn_quart`ce' if mc5_factor==`c'
+	   matrix ce`ce' = e(b_mi)
+	   local ce`ce' = ce`ce'[1,1]
+	   local row = 34+`ce'
+	   putexcel `col'`row' = `ce`ce'', nformat(##.#%)
+	}
+}
+
+forvalues c=1/5{
+	local col: word `c' of `col1'
+	mi estimate, esampvaryok: mean couple_earnings_t1 if mc5_factor==`c'
+	matrix ce = e(b_mi)
+	local ce = ce[1,1]
+	putexcel `col'39 = `ce', nformat(#####)
+}
+
 ********************************************************************************
-* Between cluster descriptives
-********************************************************************************
-tab couple_educ_type mc5_factor, row // how to do this with mi? Is this just where we have to use regression?
-// yes, the below with no controls matches this exactly
+/* Doesn't work because of no mi_m==0
+*Descriptive table by cluster
+forvalues c=1/5{
+	
+	desctable i.education_man i.education_woman i.couple_educ_type i.raceth_man i.raceth_woman c.age_man1 c.age_woman1 i.bcohort_man i.bcohort_woman i.couple_earnings_quart1 c.couple_earnings_t1 if mc5_factor==`c' ///
+	, filename("$tables/desc_cluster_`c'") 	stats(mimean) decimals(4) // esampvaryok
+	
+}
 
-global controls "i.raceth_man i.raceth_woman c.age_man1 c.age_woman1 c.couple_earnings_t1"
+// (system variable _mi_id updated because of changed number of obs)
+// (7588 m>0 obs dropped because of dropped obs in m=0)
 
-mi estimate: mlogit mc5_factor i.couple_educ_type, cluster(couple_id) baseoutcome(1)
-mimrgns couple_educ_type, predict(outcome(1)) predict(outcome(2)) predict(outcome(3)) predict(outcome(4)) predict(outcome(5)) post // predict(pr) // pwcompare
-outreg2 using "$models/test.xls", stats(coef se ci_low ci_high) sideway label(proper) ctitle(no) replace
+mi estimate, esampvaryok: proportion couple_educ_type raceth_woman if mc5_factor==1
+mi estimate, esampvaryok: mean couple_earnings_t1  if mc5_factor==1
+tabstat couple_earnings_t1, by(mc5_factor)
 
-mi estimate, saving("$models/couple_educ", replace) post: mlogit mc5_factor i.couple_educ_type $controls, cluster(couple_id) baseoutcome(1)
-mimrgns couple_educ_type, predict(outcome(1)) predict(outcome(2)) predict(outcome(3)) predict(outcome(4)) predict(outcome(5)) post // predict(pr) // pwcompare
-outreg2 using "$models/test.xls", stats(coef se ci_low ci_high) sideway label(insert) ctitle(controls) append
+preserve
+keep if mc5_factor==1
+mi estimate: proportion couple_educ_type raceth_woman 
+mi estimate: mean couple_earnings_t1
+restore
+*/
