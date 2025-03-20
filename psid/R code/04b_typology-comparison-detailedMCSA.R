@@ -118,7 +118,7 @@ data$mc.ward.det.5cl<-mc.ward.det.5cl
 # Compare the two and save to excel
 
 comp.mc.45.det.ward<-table(mc.ward.det.5cl, mc.ward.det.4cl)
-write.csv(comp.mc.45.det.ward,("results/PSID_MC45-detailed-comparison.csv"))
+write.csv(comp.mc.45.det.ward,("results/PSID/PSID_MC45-detailed-comparison.csv"))
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Prep work for  4 cluster solution --------
@@ -179,7 +179,7 @@ share <- round(as.numeric(relfreq4$share)*100, 1)
 # This might also be useful to ensure one cluster is not extremely small?
 print(relfreq4)
 
-write.csv(relfreq4,("results/PSID_MC-4cluster-freq-detailed.csv"))
+write.csv(relfreq4,("results/PSID/PSID_MC-4cluster-freq-detailed.csv"))
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Prep work for 5 cluster solution --------
@@ -236,7 +236,7 @@ share <- round(as.numeric(relfreq5$share)*100, 1)
 # This might also be useful to ensure one cluster is not extremely small?
 print(relfreq5)
 
-write.csv(relfreq5,("results/PSID_MC-5cluster-freq-detailed.csv"))
+write.csv(relfreq5,("results/PSID/PSID_MC-5cluster-freq-detailed.csv"))
 
 # will try to run whole thing in HPC, but saving here just in case figures don't work
 save.image("created data/typology-comparison-detailed-prep.RData")
@@ -254,7 +254,7 @@ write.dta(data, "created data/PSID_clusters.dta")
 # Four cluster solution: state distribution
 
 # This isn't actually working, so just exporting each into a different page
-pdf("results/PSID_MCSA_det_4Cluster.pdf",
+pdf("results/PSID/PSID_MCSA_det_4Cluster.pdf",
     width=12,
     height=6)
 
@@ -351,7 +351,7 @@ dev.off()
 sil <-wcSilhouetteObs(mcdist.det.om,mc4,measure="ASW")
 # oh is it doing it by group instead of individually actually a better way to do this also?
 
-pdf("results/PSID_MCSA_det_4Cluster_Index_sil.pdf")
+pdf("results/PSID/PSID_MCSA_det_4Cluster_Index_sil.pdf")
 seqIplot(seq.work.ow, group=mc4, sortv=sil)
 seqIplot(seq.hw.hrs.alt, group=mc4, sortv=sil)
 seqIplot(seq.fam, group=mc4, sortv=sil)
@@ -363,7 +363,7 @@ dev.off()
 #            "results/PSID_MCSA_det_4Cluster_Index_sil.png")
 
 # Original test
-pdf("results/PSID_MCSA_det_4Cluster_Index.pdf",
+pdf("results/PSID/PSID_MCSA_det_4Cluster_Index.pdf",
           width=12,
           height=6)
 
@@ -444,7 +444,7 @@ dev.off()
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Five cluster solution: state distribution
 
-pdf("results/PSID_MCSA_det_5Cluster.pdf",
+pdf("results/PSID/PSID_MCSA_det_5Cluster.pdf",
           width=12,
           height=6)
 
@@ -531,6 +531,9 @@ f15<- ggseqdplot(mc5.fam5.seq) + # Cluster 5
   theme(legend.position="right")
 
 grid.arrange(f11,f12,f13,f14,f15, ncol=2, nrow=3, layout_matrix= rbind(c(1,2),c(3,4),5), newpage=TRUE)
+
+grid.arrange(w1,w2,w3,w4,w5,hw6,hw7,hw8,hw9,hw10,f11,f12,f13,f14,f15,ncol = 5, nrow=3)
+
 dev.off()
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -540,13 +543,26 @@ dev.off()
 sil5 <-wcSilhouetteObs(mcdist.det.om,mc5,measure="ASW")
 # oh is it doing it by group instead of individually actually a better way to do this also?
 
-pdf("results/PSID_MCSA_det_5Cluster_Index_sil.pdf")
+pdf("results/PSID/PSID_MCSA_det_5Cluster_Index_sil.pdf")
 seqIplot(seq.work.ow, group=mc5, sortv=sil5)
 seqIplot(seq.hw.hrs.alt, group=mc5, sortv=sil5)
 seqIplot(seq.fam, group=mc5, sortv=sil5)
 dev.off()
 
-pdf("results/PSID_MCSA_det_5Cluster_Index.pdf",
+# won't work for HPC, but can use later, bc struggling to open with pdf also
+# pdf_convert("results/PSID/PSID_MCSA_det_5Cluster_Index_sil.pdf",
+#           format = "png", dpi = 300, pages = 1,
+#            "results/PSID/PSID_MCSA_5Cluster_work.png")
+# pdf_convert("results/PSID/PSID_MCSA_det_5Cluster_Index_sil.pdf",
+#            format = "png", dpi = 300, pages = 2,
+#            "results/PSID/PSID_MCSA_5Cluster_hw.png")
+#pdf_convert("results/PSID/PSID_MCSA_det_5Cluster_Index_sil.pdf",
+#            format = "png", dpi = 300, pages = 3,
+#            "results/PSID/PSID_MCSA_5Cluster_fam.png")
+
+
+# Alt solution
+pdf("results/PSID/PSID_MCSA_det_5Cluster_Index.pdf",
           width=12,
           height=6)
 

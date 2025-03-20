@@ -37,7 +37,7 @@ if (Sys.getenv(c("HOME" )) == "/home/lpessin") {
   required_packages <- c("TraMineR", "TraMineRextras","RColorBrewer", "paletteer", 
                          "colorspace","ggplot2","ggpubr", "ggseqplot",
                          "patchwork", "cluster", "WeightedCluster","dendextend","seqHMM","haven",
-                         "labelled", "readxl", "openxlsx","tidyverse")
+                         "labelled", "readxl", "openxlsx","tidyverse","gridExtra","foreign")
   lapply(required_packages, require, character.only = TRUE)
 }
 
@@ -46,7 +46,7 @@ if (Sys.getenv(c("USERNAME")) == "mcerl") {
   required_packages <- c("TraMineR", "TraMineRextras","RColorBrewer", "paletteer", 
                          "colorspace","ggplot2","ggpubr", "ggseqplot",
                          "patchwork", "cluster", "WeightedCluster","dendextend","seqHMM","haven",
-                         "labelled", "readxl", "openxlsx","tidyverse")
+                         "labelled", "readxl", "openxlsx","tidyverse","gridExtra","foreign")
   
   install_if_missing <- function(packages) {
     missing_packages <- packages[!packages %in% installed.packages()[, "Package"]]
@@ -62,7 +62,7 @@ if (Sys.getenv(c("USERNAME")) == "lpessin") {
   required_packages <- c("TraMineR", "TraMineRextras","RColorBrewer", "paletteer", 
                          "colorspace","ggplot2","ggpubr", "ggseqplot",
                          "patchwork", "cluster", "WeightedCluster","dendextend","seqHMM","haven",
-                         "labelled", "readxl", "openxlsx","tidyverse")
+                         "labelled", "readxl", "openxlsx","tidyverse","gridExtra","foreign")
   
   install_if_missing <- function(packages) {
     missing_packages <- packages[!packages %in% installed.packages()[, "Package"]]
@@ -246,18 +246,18 @@ longlab.hw.hrs.alt <- c("woman does all: high", "woman does all: low",
 # ------------------------------------------------------------------------------
 #Family type: labels
 
-shortlab.fam <- c("MARc0", "MARc1", "MARc2", "MARc3+",
-                         "COHc0", "COHc1", "COHc2", "COHc3+",
+shortlab.fam <- c("MARc0", "MARc1", "MARc2", "MARc3",
+                         "COHc0", "COHc1", "COHc2", "COHc3",
                          "DISS", "ATT")
 
 longlab.fam <- c("married, 0 Ch", 
                         "married, 1 Ch",
                         "married, 2 Ch",
-                        "married, 3+ Ch",
+                        "married, 3 Ch",
                         "cohab, 0 Ch",
                         "cohab, 1 Ch",
                         "cohab, 2 Ch",
-                        "cohab, 3+ Ch ",
+                        "cohab, 3 Ch ",
                         "dissolved", "attrited")
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -382,8 +382,45 @@ ggseqdplot(seq.fam) +
   scale_x_discrete(labels = 1:10) +
   labs(x = "Year")
 
+
+pdf("results/PSID/PSID_Base_Sequences.pdf",
+    width=12,
+    height=3)
+
+s1<-ggseqdplot(seq.work.ow) +
+  scale_x_discrete(labels = 1:10) +
+  labs(x = "Relationship Duration", y=NULL) + 
+  theme(legend.position="none") +
+  ggtitle("Paid Work") + 
+  theme(plot.title=element_text(hjust=0.5))
+
+s2<-ggseqdplot(seq.hw.hrs.alt) +
+  scale_x_discrete(labels = 1:10) +
+  labs(x = "Relationship Duration", y=NULL) + 
+  theme(legend.position="none") +
+  ggtitle("Housework") + 
+  theme(plot.title=element_text(hjust=0.5))
+
+s3<-ggseqdplot(seq.fam) +
+  scale_x_discrete(labels = 1:10) +
+  labs(x = "Relationship Duration") + 
+  theme(legend.position="none") +
+  ggtitle("Family") + 
+  theme(plot.title=element_text(hjust=0.5))
+
+grid.arrange(s3,s1,s2, ncol=3, nrow=1)
+dev.off()
+
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Save objects for further usage in other scripts ----
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 save.image("created data/setupsequence.RData")
+#load("created data/setupsequence.RData")
+
+# ggseqdplot(seq.fam) +
+#  scale_x_discrete(labels = 1:10) +
+#  labs(x = "Relationship Duration") + 
+#  theme(legend.position="none") +
+#  ggtitle("Family") + 
+#  theme(axis.title=element_text(size=8), axis.text=element_text(size=6))

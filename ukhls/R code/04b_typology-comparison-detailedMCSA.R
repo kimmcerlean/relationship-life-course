@@ -561,6 +561,19 @@ seqIplot(seq.hw.hrs.alt, group=mc5, sortv=sil5)
 seqIplot(seq.fam, group=mc5, sortv=sil5)
 dev.off()
 
+# won't work for HPC, but can use later, bc struggling to open with pdf also
+# pdf_convert("results/UKHLS/UKHLS_MCSA_det_5Cluster_Index_sil.pdf",
+#           format = "png", dpi = 300, pages = 1,
+#            "results/UKHLS/UKHLS_MCSA_5Cluster_work.png")
+# pdf_convert("results/UKHLS/UKHLS_MCSA_det_5Cluster_Index_sil.pdf",
+#            format = "png", dpi = 300, pages = 2,
+#            "results/UKHLS/UKHLS_MCSA_5Cluster_hw.png")
+# pdf_convert("results/UKHLS/UKHLS_MCSA_det_5Cluster_Index_sil.pdf",
+#            format = "png", dpi = 300, pages = 3,
+#            "results/UKHLS/UKHLS_MCSA_5Cluster_fam.png")
+ 
+# Alt option
+
 pdf("results/UKHLS_MCSA_det_5Cluster_Index.pdf",
           width=12,
           height=6)

@@ -394,6 +394,34 @@ ggseqdplot(seq.fam) +
  scale_x_discrete(labels = 1:10) +
   labs(x = "Year")
 
+pdf("results/UKHLS/UKHLS_Base_Sequences.pdf",
+    width=12,
+    height=3)
+
+s1<-ggseqdplot(seq.work.ow) +
+  scale_x_discrete(labels = 1:10) +
+  labs(x = "Relationship Duration", y=NULL) + 
+  theme(legend.position="none") +
+  ggtitle("Paid Work") + 
+  theme(plot.title=element_text(hjust=0.5))
+
+s2<-ggseqdplot(seq.hw.hrs.alt) +
+  scale_x_discrete(labels = 1:10) +
+  labs(x = "Relationship Duration", y=NULL) + 
+  theme(legend.position="none") +
+  ggtitle("Housework") + 
+  theme(plot.title=element_text(hjust=0.5))
+
+s3<-ggseqdplot(seq.fam) +
+  scale_x_discrete(labels = 1:10) +
+  labs(x = "Relationship Duration") + 
+  theme(legend.position="none") +
+  ggtitle("Family") + 
+  theme(plot.title=element_text(hjust=0.5))
+
+grid.arrange(s3,s1,s2, ncol=3, nrow=1)
+dev.off()
+
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Save objects for further usage in other scripts ----
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
