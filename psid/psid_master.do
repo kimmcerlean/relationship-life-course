@@ -30,6 +30,8 @@ net install desctable, from("https://tdmize.github.io/data") replace
 net install mimrgns, from("http://fmwww.bc.edu/RePEc/bocode/m/") replace
 net install outreg2, from("http://fmwww.bc.edu/RePEc/bocode/o") replace
 
+// ssc install coefplot, replace
+
 // define the reference folder for all 
    
 /*Where and when are you working on this?*/

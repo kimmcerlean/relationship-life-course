@@ -33,6 +33,31 @@ mi estimate, saving("$models/couple_educ", replace) post: mlogit mc5_factor i.co
 mimrgns couple_educ_type, predict(outcome(1)) predict(outcome(2)) predict(outcome(3)) predict(outcome(4)) predict(outcome(5)) post // predict(pr) // pwcompare
 outreg2 using "$models/couple_educ.xls", stats(coef se ci_low ci_high) sideway label(insert) ctitle(controls) append
 
+mi estimate: mlogit mc5_factor i.couple_educ_type $educ_controls, cluster(couple_id) baseoutcome(1)
+mimrgns couple_educ_type, predict(outcome(1)) predict(outcome(2)) predict(outcome(3)) predict(outcome(4)) predict(outcome(5)) pwcompare post
+outreg2 using "$models/couple_educ.xls", stats(coef se ci_low ci_high) sideway label(insert) ctitle(compare) append
+
+* trying to make figures
+	mi estimate: mlogit mc5_factor i.couple_educ_type $educ_controls, cluster(couple_id) baseoutcome(1)
+	mimrgns couple_educ_type, predict(outcome(1)) predict(outcome(2)) predict(outcome(3)) predict(outcome(4)) predict(outcome(5)) cmdmargins  // predict(pr) // pwcompare
+	marginsplot, recast(bar) // overlapping, not ideal
+
+	forvalues o=1/5{
+		mi estimate: mlogit mc5_factor i.couple_educ_type $educ_controls, cluster(couple_id) baseoutcome(1)
+		mimrgns couple_educ_type, predict(outcome(`o')) cmdmargins post
+		est store o`o'
+	}
+
+	coefplot o1 o2 o3 o4 o5, recast(bar) // so this is outcome within education, think I want education by outcome?
+	
+	forvalues e=1/4{
+	mi estimate: mlogit mc5_factor i.couple_educ_type $educ_controls, cluster(couple_id) baseoutcome(1)
+	mimrgns `e'.couple_educ_type, predict(outcome(1)) predict(outcome(2)) predict(outcome(3)) predict(outcome(4)) predict(outcome(5)) cmdmargins post
+	est store e`e'
+}
+
+	coefplot e1 e2 e3 e4, recast(bar) // okay, this is better, but maybe I actually need to make 20 combos so I can sort?!
+
 // Woman's race/ethnicity
 global race_controls "i.couple_educ_type i.same_race c.age_man1 c.age_woman1 c.couple_earnings_t1"
 
@@ -47,6 +72,8 @@ mi estimate, saving("$models/raceth", replace) post: mlogit mc5_factor i.raceth_
 mimrgns raceth_woman, predict(outcome(1)) predict(outcome(2)) predict(outcome(3)) predict(outcome(4)) predict(outcome(5)) post
 outreg2 using "$models/raceth.xls", stats(coef se ci_low ci_high) sideway label(insert) ctitle(controls) append
 
+mi estimate: mlogit mc5_factor i.raceth_woman $race_controls, cluster(couple_id) baseoutcome(1)
+mimrgns raceth_woman, predict(outcome(1)) predict(outcome(2)) predict(outcome(3)) predict(outcome(4)) predict(outcome(5)) pwcompare post
 
 // Woman's birth cohort
 global bc_controls "i.raceth_woman i.same_race c.age_man1 c.couple_earnings_t1 i.couple_educ_type"
@@ -73,6 +100,9 @@ outreg2 using "$models/age_woman.xls", stats(coef se ci_low ci_high) sideway lab
 mi estimate, saving("$models/age_woman", replace) post: mlogit mc5_factor i.age_gp_woman1 $age_controls, cluster(couple_id) baseoutcome(1)
 mimrgns age_gp_woman1, predict(outcome(1)) predict(outcome(2)) predict(outcome(3)) predict(outcome(4)) predict(outcome(5)) post
 outreg2 using "$models/age_woman.xls", stats(coef se ci_low ci_high) sideway label(insert) ctitle(controls) append
+
+mi estimate: mlogit mc5_factor i.age_gp_woman1 $age_controls, cluster(couple_id) baseoutcome(1)
+mimrgns age_gp_woman1, predict(outcome(1)) predict(outcome(2)) predict(outcome(3)) predict(outcome(4)) predict(outcome(5)) pwcompare
 
 // Relationship cohort
 global rc_controls "i.raceth_woman i.same_race c.age_man1 c.age_woman1 c.couple_earnings_t1 i.couple_educ_type"

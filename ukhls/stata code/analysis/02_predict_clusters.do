@@ -33,6 +33,9 @@ mi estimate, saving("$models/couple_educ", replace) post: mlogit mc5_factor i.co
 mimrgns couple_educ_type, predict(outcome(1)) predict(outcome(2)) predict(outcome(3)) predict(outcome(4)) predict(outcome(5)) post // predict(pr) // pwcompare
 outreg2 using "$models/couple_educ.xls", stats(coef se ci_low ci_high) sideway label(insert) ctitle(controls) append
 
+mi estimate: mlogit mc5_factor i.couple_educ_type $educ_controls, cluster(couple_id) baseoutcome(1)
+mimrgns couple_educ_type, predict(outcome(1)) predict(outcome(2)) predict(outcome(3)) predict(outcome(4)) predict(outcome(5)) pwcompare 
+
 // Woman's race (not sure there are enough non-Whites, so also doing country here)
 global race_controls "i.couple_educ_type i.same_race c.age_man1 c.age_woman1 c.couple_earnings_t1 i.country1"
 
@@ -60,6 +63,9 @@ mi estimate, saving("$models/country", replace) post: mlogit mc5_factor i.countr
 mimrgns country1, predict(outcome(1)) predict(outcome(2)) predict(outcome(3)) predict(outcome(4)) predict(outcome(5)) post
 outreg2 using "$models/country.xls", stats(coef se ci_low ci_high) sideway label(insert) ctitle(controls) append
 
+mi estimate: mlogit mc5_factor i.country1 $country_controls, cluster(couple_id) baseoutcome(1)
+mimrgns country1, predict(outcome(1)) predict(outcome(2)) predict(outcome(3)) predict(outcome(4)) predict(outcome(5)) pwcompare
+
 // Woman's birth cohort
 global bc_controls "i.race_woman i.same_race c.age_man1 c.couple_earnings_t1 i.couple_educ_type i.country1"
 
@@ -85,6 +91,9 @@ outreg2 using "$models/age_woman.xls", stats(coef se ci_low ci_high) sideway lab
 mi estimate, saving("$models/age_woman", replace) post: mlogit mc5_factor i.age_gp_woman1 $age_controls, cluster(couple_id) baseoutcome(1)
 mimrgns age_gp_woman1, predict(outcome(1)) predict(outcome(2)) predict(outcome(3)) predict(outcome(4)) predict(outcome(5)) post
 outreg2 using "$models/age_woman.xls", stats(coef se ci_low ci_high) sideway label(insert) ctitle(controls) append
+
+mi estimate: mlogit mc5_factor i.age_gp_woman1 $age_controls, cluster(couple_id) baseoutcome(1)
+mimrgns age_gp_woman1, predict(outcome(1)) predict(outcome(2)) predict(outcome(3)) predict(outcome(4)) predict(outcome(5)) pwcompare
 
 // Relationship cohort
 global rc_controls "i.race_woman i.same_race c.age_man1 c.age_woman1 c.couple_earnings_t1 i.couple_educ_type i.country1"
