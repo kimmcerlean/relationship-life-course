@@ -276,3 +276,13 @@ save.image("created data/UKHLS_index_plots.RData")
 # pdf_convert("G:/Other computers/My Laptop/Documents/Research Projects/Relationship Life Course (with LP)/results/figures/UKHLS/UKHLS_MCSA_IndexPlot.pdf",
 #            format = "png", dpi = 300, pages = 1,
 #            "G:/Other computers/My Laptop/Documents/Research Projects/Relationship Life Course (with LP)/results/figures/UKHLS/UKHLS_MCSA_IndexPlot.png")
+
+# pdf_convert("results/UKHLS/UKHLS_MCSA_IndexPlot_silsort.pdf",
+#            format = "png", dpi = 300, pages = 1,
+#            "results/UKHLS/UKHLS_MCSA_IndexPlot_silsort.png")
+
+
+# pdf_convert("results/UKHLS/UKHLS_MCSA_RFPlot.pdf",
+#            format = "png", dpi = 300, pages = 1,
+#            "results/UKHLS/UKHLS_MCSA_RFPlot.png")
+

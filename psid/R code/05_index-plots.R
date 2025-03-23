@@ -278,3 +278,12 @@ save.image("created data/PSID_index_plots.RData")
 # pdf_convert("results/PSID/PSID_MCSA_Index.pdf",
 #            format = "png", dpi = 300, pages = 1,
 #            "results/PSID/PSID_MCSA_Index.png")
+
+# pdf_convert("results/PSID/PSID_MCSA_IndexPlot_silsort.pdf",
+#            format = "png", dpi = 300, pages = 1,
+#            "results/PSID/PSID_MCSA_IndexPlot_silsort.png")
+
+# pdf_convert("results/PSID/PSID_MCSA_RFPlot.pdf",
+#            format = "png", dpi = 300, pages = 1,
+#            "results/PSID/PSID_MCSA_RFPlot.png")
+

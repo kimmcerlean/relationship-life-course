@@ -146,6 +146,14 @@ replace age_man1 = age_all_sp1 if SEX==2
 gen age_woman1=age_all1 if SEX==2
 replace age_woman1=age_all_sp1 if SEX==1
 
+gen age_gp_woman1 = .
+replace age_gp_woman1 = 1 if age_woman1 < = 24
+replace age_gp_woman1 = 2 if age_woman1 > 24 & age_woman1 < = 34
+replace age_gp_woman1 = 3 if age_woman1 > 34 & age_woman1 < = 1000
+
+label define age_gp 1 "18-24" 2 "25-34" 3 "35+"
+label values age_gp_woman1 age_gp
+
 // relationship start as well
 gen rel_cohort=.
 replace rel_cohort = 1 if eligible_rel_start_year >=1900 & eligible_rel_start_year<2000

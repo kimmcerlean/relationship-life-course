@@ -61,6 +61,19 @@ mi estimate, saving("$models/bcohort_woman", replace) post: mlogit mc5_factor i.
 mimrgns bcohort_woman, predict(outcome(1)) predict(outcome(2)) predict(outcome(3)) predict(outcome(4)) predict(outcome(5)) post
 outreg2 using "$models/bcohort_woman.xls", stats(coef se ci_low ci_high) sideway label(insert) ctitle(controls) append
 
+// Woman's age group
+global age_controls "i.raceth_woman i.same_race c.age_man1 c.couple_earnings_t1 i.couple_educ_type"
+
+tab age_gp_woman1 mc5_factor, row 
+
+mi estimate: mlogit mc5_factor i.age_gp_woman1, cluster(couple_id) baseoutcome(1)
+mimrgns age_gp_woman1, predict(outcome(1)) predict(outcome(2)) predict(outcome(3)) predict(outcome(4)) predict(outcome(5)) post
+outreg2 using "$models/age_woman.xls", stats(coef se ci_low ci_high) sideway label(proper) ctitle(base) replace
+
+mi estimate, saving("$models/age_woman", replace) post: mlogit mc5_factor i.age_gp_woman1 $age_controls, cluster(couple_id) baseoutcome(1)
+mimrgns age_gp_woman1, predict(outcome(1)) predict(outcome(2)) predict(outcome(3)) predict(outcome(4)) predict(outcome(5)) post
+outreg2 using "$models/age_woman.xls", stats(coef se ci_low ci_high) sideway label(insert) ctitle(controls) append
+
 // Relationship cohort
 global rc_controls "i.raceth_woman i.same_race c.age_man1 c.age_woman1 c.couple_earnings_t1 i.couple_educ_type"
 
