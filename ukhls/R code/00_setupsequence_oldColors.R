@@ -283,35 +283,29 @@ longlab.fam <- c("married, 0 Ch",
 #Couple Paid Work - no OW: colors
 
 # Work colors
-col1 <- sequential_hcl(5, palette = "BuGn") [1:2] #Male BW
-col2 <- sequential_hcl(5, palette = "Purples")[c(2)] #Dual FT
-col3 <- sequential_hcl(5, palette = "PuRd")[c(2)] #Female BW
-col4 <- sequential_hcl(5, palette = "PuRd")[c(1)]  #UnderWork
-col5 <- sequential_hcl(5, palette = "Grays")[c(2,4)] # Right-censored states
+col1 <- diverging_hcl(5, palette = "Purple-Green")
+col2 <- sequential_hcl(5, palette = "Grays")[c(2,4)] # Right-censored states
 
 # Combine to full color palette
-colspace.work <- c(col1, col2, col3, col4, col5)
+colspace.work <- c(col1, col2)
 
 # ------------------------------------------------------------------------------
 #Couple Paid Work - OW: labels
 
 # Work colors
-col1 <- sequential_hcl(5, palette = "BuGn") [1:2] #Male BW
-col2 <- sequential_hcl(5, palette = "Purples")[1:4] #Dual FT
-col3 <- sequential_hcl(5, palette = "PuRd")[c(2)] #Female BW
-col4 <- sequential_hcl(5, palette = "PuRd")[c(1)]  #UnderWork
-col5 <- sequential_hcl(5, palette = "Grays")[c(2,4)] # Right-censored states
+col1 <- diverging_hcl(8, palette = "Purple-Green")
+col2 <- sequential_hcl(5, palette = "Grays")[c(2,4)] # Right-censored states
 
 # Combine to full color palette
-colspace.work.ow <- c(col1, col2, col3, col4, col5)
+colspace.work.ow <- c(col1, col2)
 
 # ------------------------------------------------------------------------------
 #Couple HW - no amounts: labels
 
 #Housework colors
-col1 <- sequential_hcl(5, palette = "Reds") [c(2)]
-col2 <- sequential_hcl(5, palette = "PurpOr")[c(2)] #W-most
-col3 <- sequential_hcl(5, palette = "OrYel")[c(2)] #Equal
+col1 <- sequential_hcl(5, palette = "OrYel") [c(2)] #W-all
+col2 <- sequential_hcl(5, palette = "Greens")[c(2)] #W-most
+col3 <- sequential_hcl(5, palette = "Reds")[c(2)] #Equal
 col4 <- sequential_hcl(5, palette = "Teal")[c(2)] #M-most
 col5 <- sequential_hcl(5, palette = "Grays")[c(2,4)] # Right-censored states
 
@@ -322,10 +316,10 @@ colspace.hw <- c(col1, col2, col3, col4, col5)
 #Couple HW - amounts v1 (universal ptiles): labels
 
 #Housework colors
-col1 <- sequential_hcl(5, palette = "Reds") [1:2] #W-all
-col2 <- sequential_hcl(5, palette = "PurpOr")[1:3] #W-most
-col3 <- sequential_hcl(5, palette = "OrYel")[2:3] #Equal
-col4 <- sequential_hcl(5, palette = "Teal")[1:2] #M-most
+col1 <- sequential_hcl(5, palette = "OrYel") [2:1] #W-all
+col2 <- sequential_hcl(5, palette = "Greens")[3:1] #W-most
+col3 <- sequential_hcl(5, palette = "Reds")[2:1] #Equal
+col4 <- sequential_hcl(5, palette = "Teal")[2:1] #M-most
 col5 <- sequential_hcl(5, palette = "Grays")[c(2,4)] # Right-censored states
 
 # Combine to full color palette
@@ -335,10 +329,10 @@ colspace.hw.hrs <- c(col1, col2, col3, col4, col5)
 #Couple HW - amounts v2 (group-specific ptiles): labels 
 
 #Housework colors
-col1 <- sequential_hcl(5, palette = "Reds") [1:2] #W-all
-col2 <- sequential_hcl(5, palette = "PurpOr")[1:3] #W-most
-col3 <- sequential_hcl(5, palette = "OrYel")[2:3] #Equal
-col4 <- sequential_hcl(5, palette = "Teal")[1:2] #M-most
+col1 <- sequential_hcl(5, palette = "OrYel") [2:1] #W-all
+col2 <- sequential_hcl(5, palette = "Greens")[3:1] #W-most
+col3 <- sequential_hcl(5, palette = "Reds")[2:1] #Equal
+col4 <- sequential_hcl(5, palette = "Teal")[2:1] #Equal
 col5 <- sequential_hcl(5, palette = "Grays")[c(2,4)] # Right-censored states
 
 # Combine to full color palette
@@ -400,7 +394,7 @@ ggseqdplot(seq.fam) +
  scale_x_discrete(labels = 1:10) +
   labs(x = "Year")
 
-pdf("results/UKHLS/UKHLS_Base_Sequences_newcolor.pdf",
+pdf("results/UKHLS/UKHLS_Base_Sequences.pdf",
     width=12,
     height=3)
 

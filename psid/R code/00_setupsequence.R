@@ -37,7 +37,7 @@ if (Sys.getenv(c("HOME" )) == "/home/lpessin") {
   required_packages <- c("TraMineR", "TraMineRextras","RColorBrewer", "paletteer", 
                          "colorspace","ggplot2","ggpubr", "ggseqplot",
                          "patchwork", "cluster", "WeightedCluster","dendextend","seqHMM","haven",
-                         "labelled", "readxl", "openxlsx","tidyverse","gridExtra","foreign")
+                         "labelled", "readxl", "openxlsx","tidyverse","gridExtra","foreign","pdftools")
   lapply(required_packages, require, character.only = TRUE)
 }
 
@@ -46,7 +46,7 @@ if (Sys.getenv(c("USERNAME")) == "mcerl") {
   required_packages <- c("TraMineR", "TraMineRextras","RColorBrewer", "paletteer", 
                          "colorspace","ggplot2","ggpubr", "ggseqplot",
                          "patchwork", "cluster", "WeightedCluster","dendextend","seqHMM","haven",
-                         "labelled", "readxl", "openxlsx","tidyverse","gridExtra","foreign")
+                         "labelled", "readxl", "openxlsx","tidyverse","gridExtra","foreign","pdftools")
   
   install_if_missing <- function(packages) {
     missing_packages <- packages[!packages %in% installed.packages()[, "Package"]]
@@ -62,7 +62,7 @@ if (Sys.getenv(c("USERNAME")) == "lpessin") {
   required_packages <- c("TraMineR", "TraMineRextras","RColorBrewer", "paletteer", 
                          "colorspace","ggplot2","ggpubr", "ggseqplot",
                          "patchwork", "cluster", "WeightedCluster","dendextend","seqHMM","haven",
-                         "labelled", "readxl", "openxlsx","tidyverse","gridExtra","foreign")
+                         "labelled", "readxl", "openxlsx","tidyverse","gridExtra","foreign","pdftools")
   
   install_if_missing <- function(packages) {
     missing_packages <- packages[!packages %in% installed.packages()[, "Package"]]
@@ -267,33 +267,41 @@ longlab.fam <- c("married, 0 Ch",
 # Define different color palettes ----
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+# https://blog.r-project.org/2019/04/01/hcl-based-color-palettes-in-grdevices/
+
 # ------------------------------------------------------------------------------
 #Couple Paid Work - no OW: colors
 
 # Work colors
-col1 <- diverging_hcl(5, palette = "Purple-Green")
-col2 <- sequential_hcl(5, palette = "Grays")[c(2,4)] # Right-censored states
+col1 <- sequential_hcl(5, palette = "BuGn") [1:2] #Male BW
+col2 <- sequential_hcl(5, palette = "Purples")[c(2)] #Dual FT
+col3 <- sequential_hcl(5, palette = "PuRd")[c(2)] #Female BW
+col4 <- sequential_hcl(5, palette = "PuRd")[c(1)]  #UnderWork
+col5 <- sequential_hcl(5, palette = "Grays")[c(2,4)] # Right-censored states
 
 # Combine to full color palette
-colspace.work <- c(col1, col2)
+colspace.work <- c(col1, col2, col3, col4, col5)
 
 # ------------------------------------------------------------------------------
 #Couple Paid Work - OW: labels
 
 # Work colors
-col1 <- diverging_hcl(8, palette = "Purple-Green")
-col2 <- sequential_hcl(5, palette = "Grays")[c(2,4)] # Right-censored states
+col1 <- sequential_hcl(5, palette = "BuGn") [1:2] #Male BW
+col2 <- sequential_hcl(5, palette = "Purples")[1:4] #Dual FT
+col3 <- sequential_hcl(5, palette = "PuRd")[c(2)] #Female BW
+col4 <- sequential_hcl(5, palette = "PuRd")[c(1)]  #UnderWork
+col5 <- sequential_hcl(5, palette = "Grays")[c(2,4)] # Right-censored states
 
 # Combine to full color palette
-colspace.work.ow <- c(col1, col2)
+colspace.work.ow <- c(col1, col2, col3, col4, col5)
 
 # ------------------------------------------------------------------------------
 #Couple HW - no amounts: labels
 
 #Housework colors
-col1 <- sequential_hcl(5, palette = "OrYel") [c(2)] #W-all
-col2 <- sequential_hcl(5, palette = "Greens")[c(2)] #W-most
-col3 <- sequential_hcl(5, palette = "Reds")[c(2)] #Equal
+col1 <- sequential_hcl(5, palette = "Reds") [c(2)]
+col2 <- sequential_hcl(5, palette = "PurpOr")[c(2)] #W-most
+col3 <- sequential_hcl(5, palette = "OrYel")[c(2)] #Equal
 col4 <- sequential_hcl(5, palette = "Teal")[c(2)] #M-most
 col5 <- sequential_hcl(5, palette = "Grays")[c(2,4)] # Right-censored states
 
@@ -304,10 +312,10 @@ colspace.hw <- c(col1, col2, col3, col4, col5)
 #Couple HW - amounts v1 (universal ptiles): labels
 
 #Housework colors
-col1 <- sequential_hcl(5, palette = "OrYel") [2:1] #W-all
-col2 <- sequential_hcl(5, palette = "Greens")[3:1] #W-most
-col3 <- sequential_hcl(5, palette = "Reds")[2:1] #Equal
-col4 <- sequential_hcl(5, palette = "Teal")[2:1] #M-most
+col1 <- sequential_hcl(5, palette = "Reds") [1:2] #W-all
+col2 <- sequential_hcl(5, palette = "PurpOr")[1:3] #W-most
+col3 <- sequential_hcl(5, palette = "OrYel")[2:3] #Equal
+col4 <- sequential_hcl(5, palette = "Teal")[1:2] #M-most
 col5 <- sequential_hcl(5, palette = "Grays")[c(2,4)] # Right-censored states
 
 # Combine to full color palette
@@ -317,10 +325,10 @@ colspace.hw.hrs <- c(col1, col2, col3, col4, col5)
 #Couple HW - amounts v2 (group-specific ptiles): labels 
 
 #Housework colors
-col1 <- sequential_hcl(5, palette = "OrYel") [2:1] #W-all
-col2 <- sequential_hcl(5, palette = "Greens")[3:1] #W-most
-col3 <- sequential_hcl(5, palette = "Reds")[2:1] #Equal
-col4 <- sequential_hcl(5, palette = "Teal")[2:1] #Equal
+col1 <- sequential_hcl(5, palette = "Reds") [1:2] #W-all
+col2 <- sequential_hcl(5, palette = "PurpOr")[1:3] #W-most
+col3 <- sequential_hcl(5, palette = "OrYel")[2:3] #Equal
+col4 <- sequential_hcl(5, palette = "Teal")[1:2] #M-most
 col5 <- sequential_hcl(5, palette = "Grays")[c(2,4)] # Right-censored states
 
 # Combine to full color palette
@@ -382,8 +390,11 @@ ggseqdplot(seq.fam) +
   scale_x_discrete(labels = 1:10) +
   labs(x = "Year")
 
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Exporting figures
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-pdf("results/PSID/PSID_Base_Sequences.pdf",
+pdf("results/PSID/PSID_Base_Sequences_newcolor.pdf",
     width=12,
     height=3)
 
@@ -410,6 +421,22 @@ s3<-ggseqdplot(seq.fam) +
 
 grid.arrange(s3,s1,s2, ncol=3, nrow=1)
 dev.off()
+
+
+pdf("results/PSID/PSID_Base_Index_newcolor.pdf",
+    width=12,
+    height=5)
+
+i1<-ggseqiplot(seq.fam, sortv="from.end")
+i2<-ggseqiplot(seq.work.ow, sortv="from.end")
+i3<-ggseqiplot(seq.hw.hrs.alt, sortv="from.end")
+
+grid.arrange(i1,i2,i3, ncol=3, nrow=1)
+dev.off()
+
+pdf_convert("results/PSID/PSID_Base_Index_newcolor.pdf",
+            format = "png", dpi = 300, pages = 1,
+            "results/PSID/PSID_Base_Index_newcolor.png")
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Save objects for further usage in other scripts ----

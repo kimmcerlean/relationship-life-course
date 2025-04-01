@@ -1,17 +1,14 @@
 # ---------------------------------------------------------------------
 #    Program: 00_setupsequence.R
 #    Author: Kim McErlean & Lea Pessin 
-#    Date: March 2025
-#    Modified: March 12 2025
-#    Goal: setup UKHLS for multichannel sequence analysis of couples' life courses
+#    Date: January 2025
+#    Modified: March 4 2025
+#    Goal: setup PSID for multichannel sequence analysis of couples' life courses
 # --------------------------------------------------------------------
 # --------------------------------------------------------------------
 
 # clear the environment
 rm(list = ls())
-
-#note to put this on github otherwise this script is not usable for Kim. Think I updated this below?
-#.libPaths("G:/My Drive/R Library") #leas library
 
 options(repos=c(CRAN="https://cran.r-project.org"))
 
@@ -19,13 +16,14 @@ options(repos=c(CRAN="https://cran.r-project.org"))
 lea <- 'C:/Users/lpessin/OneDrive - Istituto Universitario Europeo/1. WeEqualize - Team Folder/Papers/Cross National Analysis of the Division of Labor across the Relationship Life Course' #leas folder
 kim <- 'C:/Users/mcerl/Istituto Universitario Europeo/Pessin, Lea - 1. WeEqualize - Team Folder/Papers/Cross National Analysis of the Division of Labor across the Relationship Life Course' # Kim
 lea.server <- '/home/lpessin/stage/Life Course'
-kim.server <- '/home/kmcerlea/stage/Life Course'
 
-if (Sys.getenv(c("USERNAME")) == "mcerl") { setwd(kim); .libPaths("G:/Other computers/My Laptop/Documents/R/R library") }
-if (Sys.getenv(c("USERNAME")) == "lpessin") { setwd(lea); .libPaths("G:/My Drive/R Library")  }
+if (Sys.getenv(c("USERNAME")) == "mcerl") { setwd(kim) }
+if (Sys.getenv(c("USERNAME")) == "lpessin") { setwd(lea) }
 if (Sys.getenv(c("HOME" )) == "/home/lpessin") { setwd(lea.server) }
-if (Sys.getenv(c("HOME" )) == "/home/kmcerlea") { setwd(kim.server) }
 getwd() # check it worked
+
+# set library path for whomever is running the script
+if (Sys.getenv(c("USERNAME")) == "lpessin") { .libPaths("G:/My Drive/R Library") }
 
 # ~~~~~~~~~~~~~~~~~~
 # Load packages ----
@@ -39,15 +37,7 @@ if (Sys.getenv(c("HOME" )) == "/home/lpessin") {
   required_packages <- c("TraMineR", "TraMineRextras","RColorBrewer", "paletteer", 
                          "colorspace","ggplot2","ggpubr", "ggseqplot",
                          "patchwork", "cluster", "WeightedCluster","dendextend","seqHMM","haven",
-                         "labelled", "readxl", "openxlsx","tidyverse")
-  lapply(required_packages, require, character.only = TRUE)
-}
-
-if (Sys.getenv(c("HOME" )) == "/home/kmcerlea") {
-  required_packages <- c("TraMineR", "TraMineRextras","RColorBrewer", "paletteer", 
-                         "colorspace","ggplot2","ggpubr", "ggseqplot",
-                         "patchwork", "cluster", "WeightedCluster","dendextend","seqHMM","haven",
-                         "labelled", "readxl", "openxlsx","tidyverse")
+                         "labelled", "readxl", "openxlsx","tidyverse","gridExtra","foreign")
   lapply(required_packages, require, character.only = TRUE)
 }
 
@@ -56,7 +46,7 @@ if (Sys.getenv(c("USERNAME")) == "mcerl") {
   required_packages <- c("TraMineR", "TraMineRextras","RColorBrewer", "paletteer", 
                          "colorspace","ggplot2","ggpubr", "ggseqplot",
                          "patchwork", "cluster", "WeightedCluster","dendextend","seqHMM","haven",
-                         "labelled", "readxl", "openxlsx","tidyverse")
+                         "labelled", "readxl", "openxlsx","tidyverse","gridExtra","foreign")
   
   install_if_missing <- function(packages) {
     missing_packages <- packages[!packages %in% installed.packages()[, "Package"]]
@@ -72,7 +62,7 @@ if (Sys.getenv(c("USERNAME")) == "lpessin") {
   required_packages <- c("TraMineR", "TraMineRextras","RColorBrewer", "paletteer", 
                          "colorspace","ggplot2","ggpubr", "ggseqplot",
                          "patchwork", "cluster", "WeightedCluster","dendextend","seqHMM","haven",
-                         "labelled", "readxl", "openxlsx","tidyverse")
+                         "labelled", "readxl", "openxlsx","tidyverse","gridExtra","foreign")
   
   install_if_missing <- function(packages) {
     missing_packages <- packages[!packages %in% installed.packages()[, "Package"]]
@@ -89,10 +79,8 @@ if (Sys.getenv(c("USERNAME")) == "lpessin") {
 # ~~~~~~~~~~~~~~~~
 
 # Import imputed datasets using haven 
-data <- read_dta("created data/ukhls/ukhls_couples_imputed_wide.dta")
-# data <- data%>%filter(`_mi_m`!=0) ## testing with 5 imputations for now to avoid using unique sequences
-data <- data%>%filter(`_mi_m`==1 | `_mi_m`==2 | `_mi_m`==3 | `_mi_m`==4 | `_mi_m`==5)
-table(data$`_mi_m`)
+data <- read_dta("created data/psid_couples_imputed_wide.dta")
+data <- data%>%filter(`_mi_m`!=0)
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Setting up the data ----------------------------------------------------------
@@ -112,13 +100,13 @@ table(data$`_mi_m`)
 ## couple_work_end: Couple-level work indicator (overwork not split out)
 ## couple_work_ow_end: Couple-level work indicator (overwork split out)
 ## couple_hw_end:	Couple-level housework indicator, no indicator of time spent 
-  ## on HW
+## on HW
 ## couple_hw_hrs_end:	Couple-level housework indicator, split by time spent on 
-  ##HW, percentiles created at total sample level
+##HW, percentiles created at total sample level
 ## couple_hw_hrs_alt_end:	Couple-level housework indicator, split by time spent 
-  ##on HW, percentiles created within a specific subgroup (e.g. she does most)
+##on HW, percentiles created within a specific subgroup (e.g. she does most)
 ## family_type_end:	Type of family based on relationship type + number of 
-  ##children
+##children
 
 # ------------------------------------------------------------------------------
 ### We identify columns that contain our sequence analysis input variables
@@ -190,87 +178,87 @@ col_fam =which(colnames(data)%in%lab_t)
 #Couple Paid Work - no OW: labels
 
 shortlab.work <- c("MBW", "1.5MBW", 
-                      "dualFT", "FBW", 
-                      "underWK",
-                      "DISS", "ATT")
+                   "dualFT", "FBW", 
+                   "underWK",
+                   "DISS", "ATT")
 
 longlab.work <- c("male breadwinner", "1.5 male breadwinner", 
-                   "dual full-time", "female breadwinner", 
-                   "under work",
-                   "dissolved", "attrited")
+                  "dual full-time", "female breadwinner", 
+                  "under work",
+                  "dissolved", "attrited")
 
 # ------------------------------------------------------------------------------
 #Couple Paid Work - WITH OW: labels
 
 shortlab.work.ow <- c("MBW", "1.5MBW", 
-                   "dualFT", "dualFT-hisOW", 
-                   "dualFT-herOW", "dualOW",
-                   "FBW", "underWK",
-                   "DISS", "ATT")
+                      "dualFT", "dualFT-hisOW", 
+                      "dualFT-herOW", "dualOW",
+                      "FBW", "underWK",
+                      "DISS", "ATT")
 
 longlab.work.ow <- c("male breadwinner", "1.5 male breadwinner", 
-                  "dual full-time", "dual full-time & his overwork", 
-                  "dual full-time & her overwork", "dual overwork",
-                  "female breadwinner", "under work", 
-                  "dissolved", "attrited")
+                     "dual full-time", "dual full-time & his overwork", 
+                     "dual full-time & her overwork", "dual overwork",
+                     "female breadwinner", "under work", 
+                     "dissolved", "attrited")
 
 # ------------------------------------------------------------------------------
 #Couple HW - no amounts: labels
 
 shortlab.hw <- c("W-all", "W-most", 
-                   "equal", "M-most", 
-                   "DISS", "ATT")
+                 "equal", "M-most", 
+                 "DISS", "ATT")
 
 longlab.hw <- c("woman does all", "woman does most", 
-                  "equal", "man does most", 
-                  "dissolved", "attrited")
+                "equal", "man does most", 
+                "dissolved", "attrited")
 
 # ------------------------------------------------------------------------------
 #Couple HW - amounts v1 (universal ptiles): labels
 
 shortlab.hw.hrs <- c("W-all:high", "W-all:low",
-                 "W-most:high", "W-most:med", "W-most:low",
-                 "equal:high", "equal:low", 
-                 "M-most:high","M-most:low", 
-                 "DISS", "ATT")
+                     "W-most:high", "W-most:med", "W-most:low",
+                     "equal:high", "equal:low", 
+                     "M-most:high","M-most:low", 
+                     "DISS", "ATT")
 
 longlab.hw.hrs <- c("woman does all: high", "woman does all: low",
-                "woman does most: high", "woman does most: med", "woman does most: low", 
-                "equal:high", "equal:low", 
-                "man does most: high", "man does most: low",  
-                "dissolved", "attrited")
+                    "woman does most: high", "woman does most: med", "woman does most: low", 
+                    "equal:high", "equal:low", 
+                    "man does most: high", "man does most: low",  
+                    "dissolved", "attrited")
 
 # ------------------------------------------------------------------------------
 #Couple HW - amounts v2 (group-specific ptiles): labels 
 
 shortlab.hw.hrs.alt <- c("W-all:high", "W-all:low",
-                    "W-most:high", "W-most:med", "W-most:low",
-                    "equal:high", "equal:low", 
-                    "M-most:high","M-most:low", 
-                    "DISS", "ATT")
+                         "W-most:high", "W-most:med", "W-most:low",
+                         "equal:high", "equal:low", 
+                         "M-most:high","M-most:low", 
+                         "DISS", "ATT")
 
 longlab.hw.hrs.alt <- c("woman does all: high", "woman does all: low",
-                  "woman does most: high", "woman does most: med", "woman does most: low", 
-                  "equal:high", "equal:low", 
-                  "man does most: high", "man does most: low",  
-                  "dissolved", "attrited")
+                        "woman does most: high", "woman does most: med", "woman does most: low", 
+                        "equal:high", "equal:low", 
+                        "man does most: high", "man does most: low",  
+                        "dissolved", "attrited")
 
 # ------------------------------------------------------------------------------
 #Family type: labels
 
 shortlab.fam <- c("MARc0", "MARc1", "MARc2", "MARc3",
-                         "COHc0", "COHc1", "COHc2", "COHc3",
-                         "DISS", "ATT")
+                  "COHc0", "COHc1", "COHc2", "COHc3",
+                  "DISS", "ATT")
 
 longlab.fam <- c("married, 0 Ch", 
-                        "married, 1 Ch",
-                        "married, 2 Ch",
-                        "married, 3 Ch",
-                        "cohab, 0 Ch",
-                        "cohab, 1 Ch",
-                        "cohab, 2 Ch",
-                        "cohab, 3 Ch ",
-                        "dissolved", "attrited")
+                 "married, 1 Ch",
+                 "married, 2 Ch",
+                 "married, 3 Ch",
+                 "cohab, 0 Ch",
+                 "cohab, 1 Ch",
+                 "cohab, 2 Ch",
+                 "cohab, 3 Ch ",
+                 "dissolved", "attrited")
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -279,18 +267,17 @@ longlab.fam <- c("married, 0 Ch",
 # Define different color palettes ----
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+# https://blog.r-project.org/2019/04/01/hcl-based-color-palettes-in-grdevices/
+
 # ------------------------------------------------------------------------------
 #Couple Paid Work - no OW: colors
 
 # Work colors
-col1 <- sequential_hcl(5, palette = "BuGn") [1:2] #Male BW
-col2 <- sequential_hcl(5, palette = "Purples")[c(2)] #Dual FT
-col3 <- sequential_hcl(5, palette = "PuRd")[c(2)] #Female BW
-col4 <- sequential_hcl(5, palette = "PuRd")[c(1)]  #UnderWork
-col5 <- sequential_hcl(5, palette = "Grays")[c(2,4)] # Right-censored states
+col1 <- diverging_hcl(5, palette = "Purple-Green")
+col2 <- sequential_hcl(5, palette = "Grays")[c(2,4)] # Right-censored states
 
 # Combine to full color palette
-colspace.work <- c(col1, col2, col3, col4, col5)
+colspace.work <- c(col1, col2)
 
 # ------------------------------------------------------------------------------
 #Couple Paid Work - OW: labels
@@ -305,13 +292,24 @@ col5 <- sequential_hcl(5, palette = "Grays")[c(2,4)] # Right-censored states
 # Combine to full color palette
 colspace.work.ow <- c(col1, col2, col3, col4, col5)
 
+col6 <- sequential_hcl(8, palette = "Viridis")
+col7 <- sequential_hcl(5, palette = "Grays")[c(2,4)] # Right-censored states
+
+colspace.work.ow.a<- c(col6, col7)
+                      
+# Orig
+col1 <- diverging_hcl(8, palette = "Purple-Green")
+col2 <- sequential_hcl(5, palette = "Grays")[c(2,4)] # Right-censored states
+
+
 # ------------------------------------------------------------------------------
 #Couple HW - no amounts: labels
 
 #Housework colors
-col1 <- sequential_hcl(5, palette = "Reds") [c(2)]
-col2 <- sequential_hcl(5, palette = "PurpOr")[c(2)] #W-most
-col3 <- sequential_hcl(5, palette = "OrYel")[c(2)] #Equal
+# col1 <- sequential_hcl(5, palette = "OrYel") [c(2)] #W-all
+col1 <- sequential_hcl(5, palette = "Teal") [c(2)]
+col2 <- sequential_hcl(5, palette = "Greens", direction=-1)[c(2)] #W-most
+col3 <- sequential_hcl(5, palette = "Reds")[c(2)] #Equal
 col4 <- sequential_hcl(5, palette = "Teal")[c(2)] #M-most
 col5 <- sequential_hcl(5, palette = "Grays")[c(2,4)] # Right-censored states
 
@@ -322,23 +320,34 @@ colspace.hw <- c(col1, col2, col3, col4, col5)
 #Couple HW - amounts v1 (universal ptiles): labels
 
 #Housework colors
-col1 <- sequential_hcl(5, palette = "Reds") [1:2] #W-all
-col2 <- sequential_hcl(5, palette = "PurpOr")[1:3] #W-most
-col3 <- sequential_hcl(5, palette = "OrYel")[2:3] #Equal
-col4 <- sequential_hcl(5, palette = "Teal")[1:2] #M-most
+# col1 <- sequential_hcl(5, palette = "OrYel") [2:1] #W-all
+col1 <- sequential_hcl(5, palette = "Reds") [2:1] #W-all
+col2 <- sequential_hcl(5, palette = "OrYel")[3:1] #W-most
+col3 <- sequential_hcl(5, palette = "Sunset")[2:1] #Equal
+col4 <- sequential_hcl(5, palette = "Teal")[2:1] #M-most
 col5 <- sequential_hcl(5, palette = "Grays")[c(2,4)] # Right-censored states
 
 # Combine to full color palette
 colspace.hw.hrs <- c(col1, col2, col3, col4, col5)
 
+col1a <- sequential_hcl(5, palette = "Reds") [1:2] #W-all
+col2a <- sequential_hcl(5, palette = "OrYel")[1:3] #W-most
+col3a <- sequential_hcl(5, palette = "Sunset")[1:2] #Equal
+col4a <- sequential_hcl(5, palette = "Teal")[1:2] #M-most
+colspace.hw.hrs.a <- c(col1a, col2a, col3a, col4a, col5)
+
+col2b <- sequential_hcl(5, palette = "PurpOr")[1:3] #W-most
+col3b <- sequential_hcl(5, palette = "OrYel")[2:3] #Equal
+colspace.hw.hrs.b <- c(col1a, col2b, col3b, col4a, col5)
+
 # ------------------------------------------------------------------------------
 #Couple HW - amounts v2 (group-specific ptiles): labels 
 
 #Housework colors
-col1 <- sequential_hcl(5, palette = "Reds") [1:2] #W-all
-col2 <- sequential_hcl(5, palette = "PurpOr")[1:3] #W-most
-col3 <- sequential_hcl(5, palette = "OrYel")[2:3] #Equal
-col4 <- sequential_hcl(5, palette = "Teal")[1:2] #M-most
+col1 <- sequential_hcl(5, palette = "OrYel") [2:1] #W-all
+col2 <- sequential_hcl(5, palette = "Greens")[3:1] #W-most
+col3 <- sequential_hcl(5, palette = "Reds")[2:1] #Equal
+col4 <- sequential_hcl(5, palette = "Teal")[2:1] #Equal
 col5 <- sequential_hcl(5, palette = "Grays")[c(2,4)] # Right-censored states
 
 # Combine to full color palette
@@ -366,6 +375,7 @@ ggseqdplot(seq.work) +
 
 # Couple Paid Work - OW
 seq.work.ow <- seqdef(data[,col_work.ow], cpal = colspace.work.ow, labels=longlab.work.ow, states= shortlab.work.ow)
+seq.work.ow.a <- seqdef(data[,col_work.ow], cpal = colspace.work.ow.a, labels=longlab.work.ow, states= shortlab.work.ow)
 
 ggseqdplot(seq.work.ow) +
   scale_x_discrete(labels = 1:10) +
@@ -375,13 +385,15 @@ ggseqdplot(seq.work.ow) +
 seq.hw <- seqdef(data[,col_hw], cpal = colspace.hw, labels=longlab.hw, states= shortlab.hw)
 
 ggseqdplot(seq.hw) +
- scale_x_discrete(labels = 1:10) +
+  scale_x_discrete(labels = 1:10) +
   labs(x = "Year")
 
 # Couple HW - amounts v1
 seq.hw.hrs <- seqdef(data[,col_hw.hrs], cpal = colspace.hw.hrs, labels=longlab.hw.hrs, states= shortlab.hw.hrs)
+seq.hw.hrs.a <- seqdef(data[,col_hw.hrs], cpal = colspace.hw.hrs.a, labels=longlab.hw.hrs, states= shortlab.hw.hrs)
+seq.hw.hrs.b <- seqdef(data[,col_hw.hrs], cpal = colspace.hw.hrs.b, labels=longlab.hw.hrs, states= shortlab.hw.hrs)
 
- ggseqdplot(seq.hw.hrs) +
+ggseqdplot(seq.hw.hrs.b) +
   scale_x_discrete(labels = 1:10) +
   labs(x = "Year")
 
@@ -397,10 +409,11 @@ ggseqdplot(seq.hw.hrs.alt) +
 seq.fam <- seqdef(data[,col_fam], cpal = colspace.fam, labels=longlab.fam, states= shortlab.fam)
 
 ggseqdplot(seq.fam) +
- scale_x_discrete(labels = 1:10) +
+  scale_x_discrete(labels = 1:10) +
   labs(x = "Year")
 
-pdf("results/UKHLS/UKHLS_Base_Sequences_newcolor.pdf",
+
+pdf("results/PSID/PSID_Base_Sequences.pdf",
     width=12,
     height=3)
 
@@ -432,4 +445,12 @@ dev.off()
 # Save objects for further usage in other scripts ----
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-save.image("created data/ukhls/ukhls_setupsequence.RData")
+save.image("created data/setupsequence.RData")
+#load("created data/setupsequence.RData")
+
+# ggseqdplot(seq.fam) +
+#  scale_x_discrete(labels = 1:10) +
+#  labs(x = "Relationship Duration") + 
+#  theme(legend.position="none") +
+#  ggtitle("Family") + 
+#  theme(axis.title=element_text(size=8), axis.text=element_text(size=6))
