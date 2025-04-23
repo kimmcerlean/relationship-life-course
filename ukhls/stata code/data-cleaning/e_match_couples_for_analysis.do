@@ -646,8 +646,76 @@ browse pidp eligible_partner _mi_id _mi_miss _mi_m couple_work_end* couple_hw_en
 unique pidp eligible_partner // so now there are 6271 uniques and 11 observations for each (base + 10 imputations) - so 68981 observations
 unique pidp eligible_partner, by(_mi_m)
 
+// create indicator of complete sequences
+gen complete_seq = .
+replace complete_seq = 0 if max_dur < 9
+replace complete_seq = 1 if max_dur >= 9 // so 9 is really 10 (because 0-9 = 1-10)
+
+tab rel_type10 if complete_seq==1, m
+browse pidp eligible_partner min_dur max_dur complete_seq rel_type* // okay, so max_dur is based on start of 0, but I changed it, so now need it to be +1
+
+// then create indicator of length of complete sequence
+gen sequence_length_alt=max_dur + 1
+replace sequence_length_alt = 10 if sequence_length_alt > 10
+
+tab sequence_length_alt complete_seq, m
+
+gen sequence_length = .
+forvalues d=1/10{
+	replace sequence_length = `d' if sequence_length==. & inlist(rel_type`d',3,4)
+}
+
+replace sequence_length = sequence_length - 1 
+
+tab sequence_length complete_seq, m
+tab sequence_length sequence_length_alt, m
+
+replace sequence_length = sequence_length_alt if sequence_length==. & complete_seq==0
+replace sequence_length = sequence_length_alt if sequence_length==0 & complete_seq==0
+replace sequence_length = 10 if complete_seq==1
+
+// note how ended (attrit or dissolve)
+tab eligible_rel_status complete_seq, m
+browse pidp eligible_partner min_dur max_dur sequence_length eligible_rel_status complete_seq rel_type*
+
+gen status_end = .
+forvalues d=1/10{
+	local e = `d' + 1
+	replace status_end = rel_type`e' if sequence_length == `d'
+}
+
+label values status_end rel_type
+tab status_end complete_seq, m
+
+browse pidp eligible_partner  min_dur max_dur sequence_length status_end eligible_rel_status rel_type* couple_work_end* if complete_seq==0 // & inlist(status_end,1,2)
+
+gen how_end=.
+replace how_end = 0 if complete_seq==1 // intact
+replace how_end = 1 if complete_seq==0 & status_end==4 // dissolved
+replace how_end = 2 if complete_seq==0 & status_end==3 // attrit
+
+label define how_end 0 "Intact" 1 "Dissolved" 2 "Attrited"
+label values how_end how_end
+
+tab how_end complete_seq, m
+
+mi update
+
 save "$created_data/ukhls_couples_imputed_wide.dta", replace 
 
+********************************************************************************
+* A few small additional extracts needed
+********************************************************************************
+// just complete sequences
+use "$created_data/ukhls_couples_imputed_wide.dta", clear
+
+keep if complete_seq==1
+
+mi update
+
+save "$created_data/ukhls_couples_imputed_wide_complete.dta", replace 
+
+// fully wide data (not actually sure we need this)
 mi convert wide, clear
 
 save "$created_data/ukhls_couples_imputed_fully_wide.dta", replace
