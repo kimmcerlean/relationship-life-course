@@ -180,7 +180,7 @@ pdf("results/UKHLS/UKHLS_cluster_comparison_complete_sequences.pdf", # doesn't n
     width=20,
     height=10)
 
-layout.fig1 <- layout(matrix(c(1,2,3,4), nrow=1, ncol=1, byrow = TRUE),
+layout.fig1 <- layout(matrix(c(1,2,3,4), nrow=1, ncol=4, byrow = TRUE),
                       heights = c(1,1,1,1,1))
 layout.show(layout.fig1)
 
@@ -217,7 +217,7 @@ legend("bottomright", legend=c("ASW", "R2"),
        col=c("blue", "black"), lty = 1:2, cex=1.2)
 
 # Housework Channel: Hours with Group-specific thresholds
-plot(x, hw.hrs.asw, type = "b", frame = FALSE, pch = 19, main="(3a) Housework (with Hours)", 
+plot(x, hw.hrs.alt.asw, type = "b", frame = FALSE, pch = 19, main="(3a) Housework (with Hours)", 
      col = "blue", xlab = "N. clusters", ylab = "", ylim = c(0,0.8),
      cex.main=2,
      cex.lab=1.6,
@@ -226,7 +226,7 @@ grid(nx = NULL,
      ny = NA,
      lty = 1, col = "gray85", lwd = 1)
 # Add a second line
-lines(x, hw.hrs.r2, pch = 19, col = "black", type = "b", lty = 2)
+lines(x, hw.hrs.alt.r2, pch = 19, col = "black", type = "b", lty = 2)
 # Add a legend to the plot
 legend("bottomright", legend=c("ASW", "R2"),
        col=c("blue", "black"), lty = 1:2, cex=1.2)
