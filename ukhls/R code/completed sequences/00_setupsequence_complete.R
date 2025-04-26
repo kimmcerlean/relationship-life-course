@@ -236,7 +236,7 @@ colspace.hw.hrs.alt <- c(col1, col2, col3, col4)
 # ------------------------------------------------------------------------------
 # Family colors
 col1 <- sequential_hcl(5, palette = "Blues")[4:1]   # Married states
-col2 <- sequential_hcl(5, palette = "Oranges")[4:1] # Cohabitation states
+col2 <- sequential_hcl(15, palette = "Inferno")[15:12]   # Cohabitation states
 col3 <- sequential_hcl(5, palette = "Grays")[c(2,4)] # Right-censored states
 
 # Combine to full color palette

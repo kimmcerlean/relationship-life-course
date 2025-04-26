@@ -296,7 +296,3 @@ save.image("created data/typology-comparison-complete-prep.RData")
 write.dta(data, "created data/PSID_clusters_complete_sequences.dta")
 
 # load("created data/typology-comparison-complete-prep.RData")
-
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Now make figures comparing the different cluster solutions
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

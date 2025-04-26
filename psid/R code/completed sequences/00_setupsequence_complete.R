@@ -200,6 +200,7 @@ longlab.fam <- c("married, 0 Ch",
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # https://blog.r-project.org/2019/04/01/hcl-based-color-palettes-in-grdevices/
+# https://repec.sowi.unibe.ch/stata/palettes/colors.html
 
 # ------------------------------------------------------------------------------
 #Couple Paid Work - OW: labels
@@ -228,10 +229,14 @@ colspace.hw.hrs.alt <- c(col1, col2, col3, col4)
 # ------------------------------------------------------------------------------
 # Family colors
 col1 <- sequential_hcl(5, palette = "Blues")[4:1]   # Married states
-col2 <- sequential_hcl(5, palette = "Oranges")[4:1] # Cohabitation states
+col2 <- sequential_hcl(15, palette = "Inferno")[15:12]   # Cohabitation states
+
+#col2 <- sequential_hcl(8, palette = "Sunset")[c(8)] # Cohabitation states
+#col3 <- sequential_hcl(8, palette = "Heat2")[7:5] # Cohabitation states
 
 # Combine to full color palette
 colspace.fam <- c(col1, col2)
+# colspace.fam <- c(col1, col2, col3)
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Creating the sequence objects for each channel
