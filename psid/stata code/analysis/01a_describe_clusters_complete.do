@@ -31,13 +31,13 @@ unique couple_id, by(mc7_factor)
 tab mc7_factor
 
 gen cluster=.
-replace cluster=1 if mc7_factor==4
-replace cluster=2 if mc7_factor==1
-replace cluster=3 if mc7_factor==7
+replace cluster=1 if mc7_factor==6
+replace cluster=2 if mc7_factor==3
+replace cluster=3 if mc7_factor==2
 replace cluster=4 if mc7_factor==5
-replace cluster=5 if mc7_factor==2
-replace cluster=6 if mc7_factor==3
-replace cluster=7 if mc7_factor==6
+replace cluster=5 if mc7_factor==7
+replace cluster=6 if mc7_factor==1
+replace cluster=7 if mc7_factor==4
 
 unique couple_id, by(cluster)
 tab cluster, m
@@ -67,8 +67,8 @@ browse unique_id partner_id _mi_m cluster
 // there are no sequence objects here. Are there supposed to be? Or we just care about cluster membership?
 
 // for now, very crude labels
-capture label define cluster 1 "Many children" 2 "Overwork with Late Transition to Parenthood" 3 "Continuous Employment with Less Children Later" ///
- 4 "Transition to Neotraditional" 5 "Traditional" 6 "Continuous Employment with More Children" 7 "Childfree Continuous Employment"
+capture label define cluster 7 "Many children" 6 "Overwork with Late Transition to Parenthood" 5 "Continuous Employment with Less Children Later" ///
+ 4 "Transition to Neotraditional" 3 "Traditional" 2 "Continuous Employment with More Children" 1 "Childfree Continuous Employment"
 label values cluster cluster
 
 tab cluster, m
@@ -204,13 +204,13 @@ tabstat couple_earnings_t1, by(cluster)
 *Descriptive table by cluster
 putexcel set "$tables/descriptives_by_cluster_complete.xlsx", replace
 putexcel B1 = "Full Sample"
-putexcel C1 = "1: Many Children"
-putexcel D1 = "2: OW and Late Parenthood"
-putexcel E1 = "3: Continuous Work and Less Children"
+putexcel C1 = "1: Continuous Work and Childfree"
+putexcel D1 = "2: Continuous Work and More Children"
+putexcel E1 = "3: Traditional"
 putexcel F1 = "4: Trans to Neotraditional"
-putexcel G1 = "5: Traditional"
-putexcel H1 = "6: Continuous Work and More Children"
-putexcel I1 = "7: Continuous Work and Childfree"
+putexcel G1 = "5: Continuous Work and Less Children"
+putexcel H1 = "6: OW and Late Parenthood"
+putexcel I1 = "7: Many Children"
 
 putexcel A2 = "Educ Man: LTHS"
 putexcel A3 = "Educ Man: HS"
@@ -501,13 +501,13 @@ tab fam_seq, m
 
 putexcel set "$tables/cluster_composition_complete.xlsx", replace
 putexcel B1 = "Full Sample"
-putexcel C1 = "1: Many Children"
-putexcel D1 = "2: OW and Late Parenthood"
-putexcel E1 = "3: Continuous Work and Less Children"
+putexcel C1 = "1: Continuous Work and Childfree"
+putexcel D1 = "2: Continuous Work and More Children"
+putexcel E1 = "3: Traditional"
 putexcel F1 = "4: Trans to Neotraditional"
-putexcel G1 = "5: Traditional"
-putexcel H1 = "6: Continuous Work and More Children"
-putexcel I1 = "7: Continuous Work and Childfree"
+putexcel G1 = "5: Continuous Work and Less Children"
+putexcel H1 = "6: OW and Late Parenthood"
+putexcel I1 = "7: Many Children"
 
 putexcel A2 = "Work"
 putexcel A3 = "Male BW"

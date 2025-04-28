@@ -316,13 +316,34 @@ write.xlsx(state.time.hw, "results/UKHLS/ukhls_hw_statedurs.xlsx")
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # Family
-seqtrate(seq.fam) # transition rates
+trate.fam <- seqtrate(seq.fam) # transition rates
+trate.fam.c1 <- seqtrate(mc7.fam2.seq) # real cluster 1
+trate.fam.c2 <- seqtrate(mc7.fam1.seq) # real cluster 2
+trate.fam.c3 <- seqtrate(mc7.fam4.seq) # real cluster 3
+trate.fam.c4 <- seqtrate(mc7.fam5.seq) # real cluster 4
+trate.fam.c5 <- seqtrate(mc7.fam7.seq) # real cluster 5
+trate.fam.c6 <- seqtrate(mc7.fam6.seq) # real cluster 6
+trate.fam.c7 <- seqtrate(mc7.fam3.seq) # real cluster 7
 
 # Work
-seqtrate(seq.work.ow) # transition rates
+trate.work <- seqtrate(seq.work.ow) # transition rates
+trate.work.c1 <- seqtrate(mc7.work.ow2.seq)
+trate.work.c2 <- seqtrate(mc7.work.ow1.seq)
+trate.work.c3 <- seqtrate(mc7.work.ow4.seq)
+trate.work.c4 <- seqtrate(mc7.work.ow5.seq)
+trate.work.c5 <- seqtrate(mc7.work.ow7.seq)
+trate.work.c6 <- seqtrate(mc7.work.ow6.seq)
+trate.work.c7 <- seqtrate(mc7.work.ow3.seq)
 
 # Housework
-seqtrate(seq.hw.hrs.alt) # transition rates
+trate.hw <- seqtrate(seq.hw.hrs.alt) # transition rates
+trate.hw.c1 <- seqtrate(mc7.hw.hrs2.seq)
+trate.hw.c2 <- seqtrate(mc7.hw.hrs1.seq)
+trate.hw.c3 <- seqtrate(mc7.hw.hrs4.seq)
+trate.hw.c4 <- seqtrate(mc7.hw.hrs5.seq)
+trate.hw.c5 <- seqtrate(mc7.hw.hrs7.seq)
+trate.hw.c6 <- seqtrate(mc7.hw.hrs6.seq)
+trate.hw.c7 <- seqtrate(mc7.hw.hrs3.seq)
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Age at relationship transitions

@@ -317,12 +317,33 @@ write.xlsx(state.time.hw, "results/PSID/psid_hw_statedurs.xlsx")
 
 # Family
 seqtrate(seq.fam) # transition rates
+seqtrate(mc7.fam4.seq) # real cluster 1
+seqtrate(mc7.fam1.seq)
+seqtrate(mc7.fam7.seq)
+seqtrate(mc7.fam5.seq)
+seqtrate(mc7.fam2.seq)
+seqtrate(mc7.fam3.seq)
+seqtrate(mc7.fam6.seq)
 
 # Work
 seqtrate(seq.work.ow) # transition rates
+seqtrate(mc7.work.ow4.seq)
+seqtrate(mc7.work.ow1.seq)
+seqtrate(mc7.work.ow7.seq)
+seqtrate(mc7.work.ow5.seq)
+seqtrate(mc7.work.ow2.seq)
+seqtrate(mc7.work.ow3.seq)
+seqtrate(mc7.work.ow6.seq)
 
 # Housework
 seqtrate(seq.hw.hrs.alt) # transition rates
+seqtrate(mc7.hw.hrs4.seq)
+seqtrate(mc7.hw.hrs1.seq)
+seqtrate(mc7.hw.hrs7.seq)
+seqtrate(mc7.hw.hrs5.seq)
+seqtrate(mc7.hw.hrs2.seq)
+seqtrate(mc7.hw.hrs3.seq)
+seqtrate(mc7.hw.hrs6.seq)
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Age at relationship transitions

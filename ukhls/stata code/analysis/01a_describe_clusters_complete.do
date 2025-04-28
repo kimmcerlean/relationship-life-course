@@ -30,13 +30,13 @@ unique couple_id, by(mc7_factor)
 tab mc7_factor
 
 gen cluster=.
-replace cluster=1 if mc7_factor==2
-replace cluster=2 if mc7_factor==1
-replace cluster=3 if mc7_factor==4
+replace cluster=1 if mc7_factor==3
+replace cluster=2 if mc7_factor==6
+replace cluster=3 if mc7_factor==7
 replace cluster=4 if mc7_factor==5
-replace cluster=5 if mc7_factor==7
-replace cluster=6 if mc7_factor==6
-replace cluster=7 if mc7_factor==3
+replace cluster=5 if mc7_factor==4
+replace cluster=6 if mc7_factor==1
+replace cluster=7 if mc7_factor==2
 
 unique couple_id, by(cluster)
 tab cluster, m
@@ -67,8 +67,8 @@ mi update
 browse pidp eligible_partner _mi_m cluster
 
 // for now, very crude labels
-capture label define cluster 1 "Underwork" 2 "Childfree and Neotraditional" 3 "Neotraditional with Children" 4 "Traditional" ///
-5 "Cohabiting, Childfree, and Egalitarian" 6 "Transition to Neotraditional" 7 "Childfree Employment"
+capture label define cluster 7 "Underwork" 6 "Childfree and Neotraditional" 5 "Neotraditional with Children" 4 "Traditional" ///
+3 "Cohabiting, Childfree, and Egalitarian" 2 "Transition to Neotraditional" 1 "Childfree Employment"
 label values cluster cluster
 
 tab cluster, m
@@ -216,13 +216,13 @@ tabstat couple_earnings_t1, by(cluster)
 *Descriptive table by cluster
 putexcel set "$tables/UKHLS_descriptives_by_cluster_complete.xlsx", replace
 putexcel B1 = "Full Sample"
-putexcel C1 = "1: Underwork"
-putexcel D1 = "2: Childfree and Neotraditional"
-putexcel E1 = "3: Neotraditional with Children"
+putexcel C1 = "1: Childfree Employment"
+putexcel D1 = "2: Trans to Neotraditional"
+putexcel E1 = "3: Cohab, CF, and Egalitarian"
 putexcel F1 = "4: Traditional"
-putexcel G1 = "5: Cohab, CF, and Egalitarian"
-putexcel H1 = "6: Trans to Neotraditional"
-putexcel I1 = "7: Childfree Employment"
+putexcel G1 = "5: Neotraditional with Children"
+putexcel H1 = "6: Childfree and Neotraditional"
+putexcel I1 = "7: Underwork"
 
 putexcel A2 = "Educ Man: Degree"
 putexcel A3 = "Educ Man: Other Higher Degree"
@@ -563,13 +563,13 @@ tab fam_seq, m
 
 putexcel set "$tables/UKHLS_cluster_composition_complete.xlsx", replace
 putexcel B1 = "Full Sample"
-putexcel C1 = "1: Underwork"
-putexcel D1 = "2: Childfree and Neotraditional"
-putexcel E1 = "3: Neotraditional with Children"
+putexcel C1 = "1: Childfree Employment"
+putexcel D1 = "2: Trans to Neotraditional"
+putexcel E1 = "3: Cohab, CF, and Egalitarian"
 putexcel F1 = "4: Traditional"
-putexcel G1 = "5: Cohab, CF, and Egalitarian"
-putexcel H1 = "6: Trans to Neotraditional"
-putexcel I1 = "7: Childfree Employment"
+putexcel G1 = "5: Neotraditional with Children"
+putexcel H1 = "6: Childfree and Neotraditional"
+putexcel I1 = "7: Underwork"
 
 putexcel A2 = "Work"
 putexcel A3 = "Male BW"

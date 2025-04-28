@@ -322,7 +322,7 @@ data <- data |>
 data <- data |>
   count(cluster) |>  # wt = weight40
   mutate(share = n/ sum(n)) |>
-  arrange(share) |> 
+  arrange(desc(share)) |> 
   mutate(mc.factor = glue("Cluster {row_number()}
                             ({round(share*100,1)}%)"),
          mc.factor = factor(mc.factor)) |> 

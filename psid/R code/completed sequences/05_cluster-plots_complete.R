@@ -334,7 +334,7 @@ data <- data |>
 data <- data |>
   count(cluster) |>  # wt = weight40
   mutate(share = n/ sum(n)) |>
-  arrange(share) |> 
+  arrange(desc(share)) |> 
   mutate(mc.factor = glue("Cluster {row_number()}
                             ({round(share*100,1)}%)"),
          mc.factor = factor(mc.factor)) |> 
@@ -355,7 +355,7 @@ pdf("results/PSID/PSID_MCSA_SDPlot_complete_mc7.pdf",
     height=28)
 
 seqplotMD(channels=list(Family=seq.fam,Work=seq.work.ow,Housework=seq.hw.hrs.alt),
-          group = data$mc.factor, type="d",
+          group = data$mc.factor.x, type="d",
           xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE)  
 
 dev.off()
@@ -366,7 +366,7 @@ pdf("results/PSID/PSID_MCSA_FreqPlot_complete_mc7.pdf",
     height=28)
 
 seqplotMD(channels=list(Family=seq.fam,Work=seq.work.ow,Housework=seq.hw.hrs.alt),
-          group = data$mc.factor, type="f",
+          group = data$mc.factor.x, type="f",
           xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE)  
 
 dev.off()
@@ -378,7 +378,7 @@ pdf("results/PSID/PSID_MCSA_RF100Plot_start_complete_mc7.pdf",
     height=28)
 
 seqplotMD(channels=list(Family=seq.fam,Work=seq.work.ow,Housework=seq.hw.hrs.alt),
-          group = data$mc.factor, type="rf", diss=mcdist.det.om,
+          group = data$mc.factor.x, type="rf", diss=mcdist.det.om,
           xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
           dom.byrow=FALSE,k=100,sortv="from.start")
 
@@ -390,7 +390,7 @@ pdf("results/PSID/PSID_MCSA_RF100Plot_startd1_complete_mc7.pdf",
     height=28)
 
 seqplotMD(channels=list(Family=seq.fam,Work=seq.work.ow,Housework=seq.hw.hrs.alt),
-          group = data$mc.factor, type="rf", diss=mcdist.det.om,
+          group = data$mc.factor.x, type="rf", diss=mcdist.det.om,
           xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
           dom.byrow=FALSE,k=100,sortv="from.start",dom.crit=-1)
 
@@ -403,7 +403,7 @@ pdf("results/PSID/PSID_MCSA_RF100Plot_end_complete_mc7.pdf",
     height=28)
 
 seqplotMD(channels=list(Family=seq.fam,Work=seq.work.ow,Housework=seq.hw.hrs.alt),
-          group = data$mc.factor, type="rf", diss=mcdist.det.om,
+          group = data$mc.factor.x, type="rf", diss=mcdist.det.om,
           xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
           dom.byrow=FALSE,k=100,sortv="from.end")
 
