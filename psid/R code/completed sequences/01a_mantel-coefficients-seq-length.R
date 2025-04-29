@@ -34,7 +34,7 @@ if (Sys.getenv(c("HOME" )) == "/home/lpessin") {
   required_packages <- c("TraMineR", "TraMineRextras","RColorBrewer", "paletteer", 
                          "colorspace","ggplot2","ggpubr", "ggseqplot", "vegan",
                          "patchwork", "cluster", "WeightedCluster","dendextend","seqHMM","haven",
-                         "labelled", "readxl", "openxlsx","tidyverse")
+                         "labelled", "readxl", "openxlsx","tidyverse","ecodist")
   lapply(required_packages, require, character.only = TRUE)
 }
 
@@ -42,7 +42,7 @@ if (Sys.getenv(c("HOME" )) == "/home/kmcerlea") {
   required_packages <- c("TraMineR", "TraMineRextras","RColorBrewer", "paletteer", 
                          "colorspace","ggplot2","ggpubr", "ggseqplot", "vegan",
                          "patchwork", "cluster", "WeightedCluster","dendextend","seqHMM","haven",
-                         "labelled", "readxl", "openxlsx","tidyverse")
+                         "labelled", "readxl", "openxlsx","tidyverse","ecodist")
   lapply(required_packages, require, character.only = TRUE)
 }
 
@@ -51,7 +51,7 @@ if (Sys.getenv(c("USERNAME")) == "mcerl") {
   required_packages <- c("TraMineR", "TraMineRextras","RColorBrewer", "paletteer", 
                          "colorspace","ggplot2","ggpubr", "ggseqplot", "vegan",
                          "patchwork", "cluster", "WeightedCluster","dendextend","seqHMM","haven",
-                         "labelled", "readxl", "openxlsx","tidyverse")
+                         "labelled", "readxl", "openxlsx","tidyverse","ecodist")
   
   install_if_missing <- function(packages) {
     missing_packages <- packages[!packages %in% installed.packages()[, "Package"]]
@@ -67,7 +67,7 @@ if (Sys.getenv(c("USERNAME")) == "lpessin") {
   required_packages <- c("TraMineR", "TraMineRextras","RColorBrewer", "paletteer", 
                          "colorspace","ggplot2","ggpubr", "ggseqplot", "vegan",
                          "patchwork", "cluster", "WeightedCluster","dendextend","seqHMM","haven",
-                         "labelled", "readxl", "openxlsx","tidyverse")
+                         "labelled", "readxl", "openxlsx","tidyverse","ecodist")
   
   install_if_missing <- function(packages) {
     missing_packages <- packages[!packages %in% installed.packages()[, "Package"]]
@@ -1245,6 +1245,48 @@ sig <- c(mantel_ow.hw.hrs.alt.c4$signif, mantel_ow.fam.c4$signif, mantel_hw.hrs.
 mantel_length <- data.frame(comparison, stats, sig)
 
 write.xlsx(mantel_length, "results/PSID/psid_mantel_length_comparison.xlsx")
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Test bootstrapping for confidence intervals
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Complete sequences: length of 10
+mantel_ow.hw.hrs.alt.c10 = mantel(dist.work.ow.om.c10, dist.hw.hrs.alt.om.c10)
+mantel_ow.fam.c10 = mantel(dist.work.ow.om.c10, dist.fam.om.c10)
+mantel_hw.hrs.alt.fam.c10 = mantel(dist.hw.hrs.alt.om.c10, dist.fam.om.c10)
+
+mantel(dist.work.ow.om.c10, dist.hw.hrs.alt.om.c10, permutations=1000)
+
+# Vegan
+test.work.dist <- as.matrix(dist.work.ow.om.c10)
+test.fam.dist <- as.matrix(dist.fam.om.c10)
+mantel(dist.work.ow.om.c10 ~ dist.fam.om.c10, nperm=100)
+
+# Ecodist
+# https://stat.ethz.ch/pipermail/r-help/2011-January/266062.html
+test.work.dist <- dist(dist.work.ow.om.c10)
+test.fam.dist <- dist(dist.fam.om.c10)
+mantel(lower(dist.work.ow.om.c10) ~ lower(dist.fam.om.c10), nperm=100)
+
+# need these to match, and do these match ecodist
+mantel(dist.work.ow.om.c10, dist.fam.om.c10, permutations=999)
+mantel_ow.fam.c10$statistic
+quantile(mantel_ow.fam.c10$perm, probs=c(.90, .95, .975, .99))
+
+mantel.test.work.fam <- mantel(lower(dist.work.ow.om.c10) ~ lower(dist.fam.om.c10), nperm=100)
+mantel.test.work.hw <- mantel(lower(dist.work.ow.om.c10) ~ lower(dist.hw.hrs.alt.om.c10), nperm=100)
+mantel.test.hw.fam <- mantel(lower(dist.hw.hrs.alt.om.c10) ~ lower(dist.fam.om.c10), nperm=100)
+
+mantel.df.work.fam <- data.frame(mantel.test.work.fam)
+mantel.df.work.hw <- data.frame(mantel.test.work.hw)
+mantel.df.hw.fam <- data.frame(mantel.test.hw.fam)
+mantel.col <- c('mantelr','pval1','pval2','pval3','llim.2.5%','ulim.97.5%')
+mantel.df <- data.frame(mantel.col, mantel.df.work.fam, mantel.df.work.hw, mantel.df.hw.fam)
+
+write.xlsx(mantel.df, "results/PSID/psid_mantel_ci_test.xlsx")
+
+# compare to previous estimates
+mantel_ow.fam.c10$statistic
+mantel_ow.fam.c10$signif
 
 # ~~~~~~~~~~~~~~~~~~~~~~
 ## Save

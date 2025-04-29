@@ -40,7 +40,7 @@ if (Sys.getenv(c("HOME" )) == "/home/lpessin") {
                          "labelled", "readxl", "openxlsx","tidyverse","pdftools","gridExtra","foreign",
                          "reshape2", "Hmisc", "knitr", "kableExtra","OpenMx","grDevices","corrplot",
                          "car", "factoextra","nnet", "descr", "stats", "psych", "effects","ggh4x",
-                         "expss", "vtable", "dplyr", "forcats")
+                         "expss", "vtable", "dplyr", "forcats","ecodist")
   lapply(required_packages, require, character.only = TRUE)
 }
 
@@ -51,7 +51,7 @@ if (Sys.getenv(c("HOME" )) == "/home/kmcerlea") {
                          "labelled", "readxl", "openxlsx","tidyverse","pdftools","gridExtra","foreign",
                          "reshape2", "Hmisc", "knitr", "kableExtra","OpenMx","grDevices","corrplot",
                          "car", "factoextra","nnet", "descr", "stats", "psych", "effects","ggh4x",
-                         "expss", "vtable", "dplyr", "forcats")
+                         "expss", "vtable", "dplyr", "forcats","ecodist")
   lapply(required_packages, require, character.only = TRUE)
 }
 
@@ -63,7 +63,7 @@ if (Sys.getenv(c("USERNAME")) == "mcerl") {
                          "labelled", "readxl", "openxlsx","tidyverse","pdftools","gridExtra","foreign",
                          "reshape2", "Hmisc", "knitr", "kableExtra","OpenMx","grDevices","corrplot",
                          "car", "factoextra","nnet", "descr", "stats", "psych", "effects","ggh4x",
-                         "expss", "vtable", "dplyr", "forcats")
+                         "expss", "vtable", "dplyr", "forcats","ecodist")
   
   install_if_missing <- function(packages) {
     missing_packages <- packages[!packages %in% installed.packages()[, "Package"]]
@@ -82,7 +82,7 @@ if (Sys.getenv(c("USERNAME")) == "lpessin") {
                          "labelled", "readxl", "openxlsx","tidyverse","pdftools","gridExtra","foreign",
                          "reshape2", "Hmisc", "knitr", "kableExtra","OpenMx","grDevices","corrplot",
                          "car", "factoextra","nnet", "descr", "stats", "psych", "effects","ggh4x",
-                         "expss", "vtable", "dplyr", "forcats")
+                         "expss", "vtable", "dplyr", "forcats","ecodist")
   
   install_if_missing <- function(packages) {
     missing_packages <- packages[!packages %in% installed.packages()[, "Package"]]
@@ -222,6 +222,27 @@ sig <- c(mantel_work.hw.c1$signif, mantel_work.fam.c1$signif, mantel_hw.fam.c1$s
 mantel_cluster <- data.frame(cluster, stats, sig)
 
 write.xlsx(mantel_cluster, "results/PSID/psid_mantel_cluster_comparison.xlsx")
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## confidence intervals at overall level
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+##### Total
+mantel.work.hw.ci <- mantel(lower(dist.work) ~ lower(dist.hw), nperm=1000)
+mantel.work.fam.ci <- mantel(lower(dist.work) ~ lower(dist.fam), nperm=1000)
+mantel.hw.fam.ci <- mantel(lower(dist.hw) ~ lower(dist.fam), nperm=1000)
+
+mantel.df.work.hw.ci <- data.frame(mantel.work.hw.ci)
+mantel.df.work.fam.ci <- data.frame(mantel.work.fam.ci)
+mantel.df.hw.fam.ci <- data.frame(mantel.hw.fam.ci)
+
+mantel.col <- c('mantelr','pval1','pval2','pval3','llim.2.5%','ulim.97.5%')
+
+mantel.df <- data.frame(mantel.col, mantel.df.work.hw.ci, 
+                        mantel.df.work.fam.ci, mantel.df.hw.fam.ci)
+
+write.xlsx(mantel.df, "results/PSID/psid_mantel_ci.xlsx")
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## Save
