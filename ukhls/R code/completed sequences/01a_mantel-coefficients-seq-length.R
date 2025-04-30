@@ -1250,3 +1250,23 @@ write.xlsx(mantel_length, "results/UKHLS/ukhls_mantel_length_comparison.xlsx")
 # ~~~~~~~~~~~~~~~~~~~~~~
 
 save.image("created data/ukhls/mantel-seq-length.RData")
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~
+## Confidence intervals
+# ~~~~~~~~~~~~~~~~~~~~~~
+mantel.test.work.fam <- mantel(lower(dist.work.ow.om.c10) ~ lower(dist.fam.om.c10), nperm=100)
+mantel.test.work.hw <- mantel(lower(dist.work.ow.om.c10) ~ lower(dist.hw.hrs.alt.om.c10), nperm=100)
+mantel.test.hw.fam <- mantel(lower(dist.hw.hrs.alt.om.c10) ~ lower(dist.fam.om.c10), nperm=100)
+
+mantel.df.work.fam <- data.frame(mantel.test.work.fam)
+mantel.df.work.hw <- data.frame(mantel.test.work.hw)
+mantel.df.hw.fam <- data.frame(mantel.test.hw.fam)
+mantel.col <- c('mantelr','pval1','pval2','pval3','llim.2.5%','ulim.97.5%')
+mantel.df <- data.frame(mantel.col, mantel.df.work.fam, mantel.df.hw.fam, mantel.df.work.hw)
+
+write.xlsx(mantel.df, "results/UKHLS/tables/ukhls_mantel_ci_mi1.xlsx")
+
+# compare to previous estimates
+mantel_ow.fam.c10$statistic
+mantel_ow.fam.c10$signif

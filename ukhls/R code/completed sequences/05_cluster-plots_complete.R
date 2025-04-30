@@ -15,8 +15,8 @@ options(repos=c(CRAN="https://cran.r-project.org"))
 
 
 # set WD for whomever is running the script
-lea <- 'C:/Users/lpessin/OneDrive - Istituto Universitario Europeo/1. WeEqualize - Team Folder/Papers/Cross National Analysis of the Division of Labor across the Relationship Life Course' #leas folder
-kim <- 'C:/Users/mcerl/Istituto Universitario Europeo/Pessin, Lea - 1. WeEqualize - Team Folder/Papers/Cross National Analysis of the Division of Labor across the Relationship Life Course' # Kim
+lea <- 'C:/Users/lpessin/OneDrive - Istituto Universitario Europeo/1. WeEqualize - Team Folder/Papers/Relationship Life Course' #leas folder
+kim <- 'C:/Users/mcerl/Istituto Universitario Europeo/Pessin, Lea - 1. WeEqualize - Team Folder/Papers/Relationship Life Course' # Kim
 lea.server <- '/home/lpessin/stage/Life Course'
 kim.server <- '/home/kmcerlea/stage/Life Course'
 
@@ -330,6 +330,17 @@ data <- data |>
   right_join(data, by = "cluster") |> 
   arrange(id2)
 
+# Need a new column with real cluster values
+
+real.cluster<-c(1,2,3,4,5,6,7)
+mc7.factor<-c(7,3,6,1,4,5,2)
+cluster.id<-c("Cluster 1 (14.7%)", "Cluster 2 (16.8%)", "Cluster 3 (16.5%)", "Cluster 4 (12.1%)",
+              "Cluster 5 (13.4%)", "Cluster 6 (14.6%)", "Cluster 7 (11.9%)")
+cluster_lookup <- data.frame(mc7.factor,cluster.id)
+
+data$real.cluster <- data %>%
+  left_join(cluster_lookup, by="mc7.factor")
+
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Create plots --------------------------------
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -384,4 +395,17 @@ seqplotMD(channels=list(Family=seq.fam,Work=seq.work.ow,Housework=seq.hw.hrs.alt
 
 dev.off()
 
+### Current cluster order (For Lund Workshop)
 
+#### Relative frequency: 100 K, sort 1a (start, domain1)
+pdf("results/UKHLS/UKHLS_MCSA_RF100Plot_042925.pdf",
+    width=15,
+    height=28)
+
+seqplotMD(channels=list('Paid Work'=seq.work.ow,Family=seq.fam,Housework=seq.hw.hrs.alt),
+          group = data$real.cluster$cluster.id, type="rf", diss=mcdist.det.om,
+          xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
+          dom.byrow=FALSE,k=100,sortv="from.start",dom.crit=2,
+          cex.legend=0.7)
+
+dev.off()

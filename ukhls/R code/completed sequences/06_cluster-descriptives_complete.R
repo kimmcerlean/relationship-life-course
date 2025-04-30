@@ -362,6 +362,15 @@ data$time_child.coh <- seqfpos(seq.fam, state="COHc1")
 
 data$time_child <- with(data, pmin(time_child.mar, time_child.coh, na.rm = TRUE)) 
 
+# want to do integral potential of each category
+# Marriage
+data$fam_integr_marr <- seqipos(seq.fam, dss=NULL, pos.states=c('MARc0','MARc1','MARc2','MARc3'), 
+                                neg.states=NULL, index="integr", pow=1, w=.5, with.missing=FALSE)
+
+# Cohabitation
+data$fam_integr_coh <- seqipos(seq.fam, dss=NULL, pos.states=c('COHc0','COHc1','COHc2','COHc3'), 
+                               neg.states=NULL, index="integr", pow=1, w=.5, with.missing=FALSE)
+
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Explore valence-based metrics
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -379,6 +388,25 @@ data$work_ppos <- posindic.work$Ppos
 data$work_nvolat <- posindic.work$Nvolat
 data$work_integr <- posindic.work$Integr
 
+# want to do integral potential of each category
+# Dual FT
+data$work_integr_dual <- seqipos(seq.work.ow, dss=NULL, pos.states=c('dualFT','dualFT-hisOW', 'dualFT-herOW', 'dualOW'), 
+                                 neg.states=NULL, index="integr", pow=1, w=.5, with.missing=FALSE)
+
+# Male BW
+data$work_integr_mbw <- seqipos(seq.work.ow, dss=NULL, pos.states=c('MBW','1.5MBW'), 
+                                neg.states=NULL, index="integr", pow=1, w=.5, with.missing=FALSE)
+
+# Female BW
+data$work_integr_fbw <- seqipos(seq.work.ow, dss=NULL, pos.states=c('FBW'), 
+                                neg.states=NULL, index="integr", pow=1, w=.5, with.missing=FALSE)
+
+# Underwork
+data$work_integr_under <- seqipos(seq.work.ow, dss=NULL, pos.states=c('underWK'), 
+                                  neg.states=NULL, index="integr", pow=1, w=.5, with.missing=FALSE)
+
+
+
 ## Housework
 posindic.hw<-seqindic(seq.hw.hrs.alt, indic=c("ppos", "nvolat", "integr"),
                       ipos.args=list(pos.states=c('equal:high', 'equal:low')))
@@ -389,6 +417,20 @@ posindic.hw<-seqindic(seq.hw.hrs.alt, indic=c("ppos", "nvolat", "integr"),
 data$hw_ppos <- posindic.hw$Ppos
 data$hw_nvolat <- posindic.hw$Nvolat
 data$hw_integr <- posindic.hw$Integr
+
+
+# want to do integral potential of each category
+# Equal
+data$hw_integr_eq <- seqipos(seq.hw.hrs.alt, dss=NULL, pos.states=c('equal:high', 'equal:low'), 
+                             neg.states=NULL, index="integr", pow=1, w=.5, with.missing=FALSE)
+
+# Her Most or All
+data$hw_integr_her <- seqipos(seq.hw.hrs.alt, dss=NULL, pos.states=c('W-all:high', 'W-all:low', 'W-most:high', 'W-most:med', 'W-most:low'), 
+                              neg.states=NULL, index="integr", pow=1, w=.5, with.missing=FALSE)
+
+# Him Most or All
+data$hw_integr_him <- seqipos(seq.hw.hrs.alt, dss=NULL, pos.states=c('M-most:high', 'M-most:low'), 
+                              neg.states=NULL, index="integr", pow=1, w=.5, with.missing=FALSE)
 
 ######## Attemption degradation - seems cool because quantifies movement between "good" and "bad" states
 ######## so again thinking egal / specialized
@@ -436,6 +478,27 @@ sumtable(domain_table, digits = 4, numformat = NA, group = 'clusters', group.tes
 #seqstatf(seq.fam) # frequency by state (will do in stata)
 #seqstatd(seq.fam) # frequency by duration
 
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Export metrics at overall level
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+overall_metrics <- subset(data,
+                          select = c(fam_spells, fam_states, fam_recu, fam_trans,
+                                     fam_meand, fam_volat, fam_turb2n, 
+                                     work_spells, work_states, work_recu, work_trans,
+                                     work_meand, work_volat, work_turb2n, 
+                                     hw_spells, hw_states, hw_recu, hw_trans,
+                                     hw_meand, hw_volat, hw_turb2n,
+                                     work_nvolat, work_degrad, hw_nvolat, hw_degrad,
+                                     work_integr_dual, work_integr_mbw, work_integr_fbw, work_integr_under,
+                                     hw_integr_eq, hw_integr_her, hw_integr_him,
+                                     fam_integr_marr, fam_integr_coh)
+)
+
+
+sumtable(overall_metrics, digits = 4, fixed.digits = TRUE, numformat = NA, 
+         out='csv', file='results/UKHLS/tables/UKHLS_Overall_Sequence_Metrics.csv')
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Save

@@ -11,8 +11,8 @@
 options(repos=c(CRAN="https://cran.r-project.org"))
 
 # set WD for whomever is running the script
-lea <- 'C:/Users/lpessin/OneDrive - Istituto Universitario Europeo/1. WeEqualize - Team Folder/Papers/Cross National Analysis of the Division of Labor across the Relationship Life Course' #leas folder
-kim <- 'C:/Users/mcerl/Istituto Universitario Europeo/Pessin, Lea - 1. WeEqualize - Team Folder/Papers/Cross National Analysis of the Division of Labor across the Relationship Life Course' # Kim
+lea <- 'C:/Users/lpessin/OneDrive - Istituto Universitario Europeo/1. WeEqualize - Team Folder/Papers/Relationship Life Course' #leas folder
+kim <- 'C:/Users/mcerl/Istituto Universitario Europeo/Pessin, Lea - 1. WeEqualize - Team Folder/Papers/Relationship Life Course' # Kim
 lea.server <- '/home/lpessin/stage/Life Course'
 kim.server <- '/home/kmcerlea/stage/Life Course'
 
@@ -1280,9 +1280,9 @@ mantel.df.work.fam <- data.frame(mantel.test.work.fam)
 mantel.df.work.hw <- data.frame(mantel.test.work.hw)
 mantel.df.hw.fam <- data.frame(mantel.test.hw.fam)
 mantel.col <- c('mantelr','pval1','pval2','pval3','llim.2.5%','ulim.97.5%')
-mantel.df <- data.frame(mantel.col, mantel.df.work.fam, mantel.df.work.hw, mantel.df.hw.fam)
+mantel.df <- data.frame(mantel.col, mantel.df.work.fam, mantel.df.hw.fam, mantel.df.work.hw)
 
-write.xlsx(mantel.df, "results/PSID/psid_mantel_ci_test.xlsx")
+write.xlsx(mantel.df, "results/PSID/tables/psid_mantel_ci_mi1.xlsx")
 
 # compare to previous estimates
 mantel_ow.fam.c10$statistic

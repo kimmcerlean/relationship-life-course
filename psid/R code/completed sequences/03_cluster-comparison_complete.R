@@ -14,8 +14,8 @@ options(repos=c(CRAN="https://cran.r-project.org"))
 
 
 # set WD for whomever is running the script
-lea <- 'C:/Users/lpessin/OneDrive - Istituto Universitario Europeo/1. WeEqualize - Team Folder/Papers/Cross National Analysis of the Division of Labor across the Relationship Life Course' #leas folder
-kim <- 'C:/Users/mcerl/Istituto Universitario Europeo/Pessin, Lea - 1. WeEqualize - Team Folder/Papers/Cross National Analysis of the Division of Labor across the Relationship Life Course' # Kim
+lea <- 'C:/Users/lpessin/OneDrive - Istituto Universitario Europeo/1. WeEqualize - Team Folder/Papers/Relationship Life Course' #leas folder
+kim <- 'C:/Users/mcerl/Istituto Universitario Europeo/Pessin, Lea - 1. WeEqualize - Team Folder/Papers/Relationship Life Course' # Kim
 lea.server <- '/home/lpessin/stage/Life Course'
 kim.server <- '/home/kmcerlea/stage/Life Course'
 
@@ -185,7 +185,7 @@ par(mar = c(5, 5, 3, 3))
 
 # MCSA: Detailed
 plot(x, mc.det.asw, type = "b", frame = FALSE, pch = 19, main="(1a) MCSA: Detailed Sequences", 
-     col = "blue", xlab = "N. clusters", ylab = "", ylim = c(0,0.8),
+     col = "blue", xlab = "N. clusters", ylab = "", ylim = c(0,0.8), xlim=c(2,16),
      cex.main=2,
      cex.lab=1.6,
      cex.axis=1.2)
@@ -195,7 +195,7 @@ grid(nx = NULL,
 # Add a second line
 lines(x, mc.det.r2, pch = 19, col = "black", type = "b", lty = 2)
 # Add a legend to the plot
-legend("bottomright", legend=c("ASW", "R2"),
+legend("topright", legend=c("ASW", "R2"),
        col=c("blue", "black"), lty = 1:2, cex=1.2)
 
 # Paid Work Channel: With Overwork
@@ -255,3 +255,25 @@ dev.off()
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # save.image("created data/cluster-comparison-complete.RData")
+
+
+pdf("results/PSID/PSID_MCSA_comparison_complete.pdf", # doesn't need to be cairo so removed for now (might not work)
+    width=10,
+    height=8)
+
+# MCSA: Detailed
+plot(x, mc.det.asw, type = "b", frame = FALSE, pch = 19, main="United States", 
+     col = "blue", xlab = "N. clusters", ylab = "", ylim = c(0,0.4), xlim=c(2,16),
+     cex.main=2,
+     cex.lab=1.6,
+     cex.axis=1.2)
+grid(nx = NULL,
+     ny = NA,
+     lty = 1, col = "gray85", lwd = 1)
+# Add a second line
+lines(x, mc.det.r2, pch = 19, col = "black", type = "b", lty = 2)
+# Add a legend to the plot
+legend("topright", legend=c("ASW", "R2"),
+       col=c("blue", "black"), lty = 1:2, cex=1.2)
+
+dev.off()

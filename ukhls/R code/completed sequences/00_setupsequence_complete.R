@@ -288,12 +288,12 @@ s2<-ggseqdplot(seq.hw.hrs.alt) +
 
 s3<-ggseqdplot(seq.fam) +
   scale_x_discrete(labels = 1:10) +
-  labs(x = "Relationship Duration") + 
+  labs(x = "Relationship Duration", y=NULL) + 
   theme(legend.position="none") +
   ggtitle("Family") + 
   theme(plot.title=element_text(hjust=0.5))
 
-grid.arrange(s3,s1,s2, ncol=3, nrow=1)
+grid.arrange(s1,s3,s2, ncol=3, nrow=1)
 dev.off()
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -15,8 +15,8 @@ options(repos=c(CRAN="https://cran.r-project.org"))
 
 
 # set WD for whomever is running the script
-lea <- 'C:/Users/lpessin/OneDrive - Istituto Universitario Europeo/1. WeEqualize - Team Folder/Papers/Cross National Analysis of the Division of Labor across the Relationship Life Course' #leas folder
-kim <- 'C:/Users/mcerl/Istituto Universitario Europeo/Pessin, Lea - 1. WeEqualize - Team Folder/Papers/Cross National Analysis of the Division of Labor across the Relationship Life Course' # Kim
+lea <- 'C:/Users/lpessin/OneDrive - Istituto Universitario Europeo/1. WeEqualize - Team Folder/Papers/Relationship Life Course' #leas folder
+kim <- 'C:/Users/mcerl/Istituto Universitario Europeo/Pessin, Lea - 1. WeEqualize - Team Folder/Papers/Relationship Life Course' # Kim
 lea.server <- '/home/lpessin/stage/Life Course'
 kim.server <- '/home/kmcerlea/stage/Life Course'
 
@@ -328,6 +328,41 @@ data <- data |>
   mutate(cluster = mc7,
          id2 = row_number())
 
+# Need a new column with real cluster values
+
+# this isn't working
+#data %>%
+#  mutate(
+#    cluster7 = case_when(
+#      mc7.factor == 6 ~ 1,
+#      mc7.factor == 7 ~ 2,
+#      mc7.factor == 3 ~ 3,
+#      mc7.factor == 1 ~ 4,
+#      mc7.factor == 5 ~ 5,
+#      mc7.factor == 2 ~ 6,
+#      mc7.factor == 4 ~ 7
+#    )
+#  )
+
+real.cluster<-c(1,2,3,4,5,6,7)
+mc7.factor<-c(6,7,3,1,5,2,4)
+cluster.id<-c("Cluster 1 (18.1%)", "Cluster 2 (13.1%)", "Cluster 3 (17.2%)", "Cluster 4 (10.4%)",
+              "Cluster 5 (15.4%)", "Cluster 6 (15.6%)", "Cluster 7 (10.1%)")
+cluster_lookup <- data.frame(mc7.factor,cluster.id)
+
+#data |>
+#  left_join(cluster_lookup |> select(real.cluster,mc7.factor))
+
+data$real.cluster <- data %>%
+  left_join(cluster_lookup, by="mc7.factor")
+            
+#data$real.cluster <- data %>%
+#  left_join(cluster_lookup, by="mc7.factor" %>%
+#              select(cluster.id))
+
+#data <- data %>%
+#  left_join(cluster_lookup |> select(real.cluster,cluster.id,mc7.factor))
+
 # Obtain relative frequencies of the seven cluster (using weights)
 # Convert relative frequencies to percentages (used for labeling the y-axes)
 
@@ -377,7 +412,7 @@ pdf("results/PSID/PSID_MCSA_RF100Plot_start_complete_mc7.pdf",
     width=15,
     height=28)
 
-seqplotMD(channels=list(Family=seq.fam,Work=seq.work.ow,Housework=seq.hw.hrs.alt),
+seqplotMD(channels=list(Family=seq.fam,"Paid Work"=seq.work.ow,Housework=seq.hw.hrs.alt),
           group = data$mc.factor.x, type="rf", diss=mcdist.det.om,
           xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
           dom.byrow=FALSE,k=100,sortv="from.start")
@@ -389,7 +424,7 @@ pdf("results/PSID/PSID_MCSA_RF100Plot_startd1_complete_mc7.pdf",
     width=15,
     height=28)
 
-seqplotMD(channels=list(Family=seq.fam,Work=seq.work.ow,Housework=seq.hw.hrs.alt),
+seqplotMD(channels=list(Family=seq.fam,"Paid Work"=seq.work.ow,Housework=seq.hw.hrs.alt),
           group = data$mc.factor.x, type="rf", diss=mcdist.det.om,
           xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
           dom.byrow=FALSE,k=100,sortv="from.start",dom.crit=-1)
@@ -408,3 +443,23 @@ seqplotMD(channels=list(Family=seq.fam,Work=seq.work.ow,Housework=seq.hw.hrs.alt
           dom.byrow=FALSE,k=100,sortv="from.end")
 
 dev.off()
+
+
+### Current cluster order (For Lund Workshop)
+
+#### Relative frequency: 100 K, sort 1a (start, domain1)
+pdf("results/PSID/PSID_MCSA_RF100Plot_042925.pdf",
+    width=15,
+    height=28)
+
+seqplotMD(channels=list('Paid Work'=seq.work.ow,Family=seq.fam,Housework=seq.hw.hrs.alt),
+          group = data$real.cluster$cluster.id, type="rf", diss=mcdist.det.om,
+          xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
+          dom.byrow=FALSE,k=100,sortv="from.start",dom.crit=2,
+          cex.legend=0.7)
+
+dev.off()
+
+pdf_convert("results/PSID/PSID_MCSA_RF100Plot_042925.pdf",
+            format = "png", dpi = 300, pages = 1,
+            "results/PSID/PSID_MCSA_RF100Plot_042925.png")
