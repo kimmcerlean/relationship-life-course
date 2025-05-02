@@ -409,3 +409,17 @@ seqplotMD(channels=list('Paid Work'=seq.work.ow,Family=seq.fam,Housework=seq.hw.
           cex.legend=0.7)
 
 dev.off()
+
+# want to play around with size, because this isn't great for powerpoint
+#### Relative frequency: 100 K, sort 1a (start, domain1)
+pdf("results/UKHLS/UKHLS_MCSA_RF100Plot_resize.pdf",
+    width=15,
+    height=42)
+
+seqplotMD(channels=list('Paid Work'=seq.work.ow,Family=seq.fam,Housework=seq.hw.hrs.alt),
+          group = data$real.cluster$cluster.id, type="rf", diss=mcdist.det.om,
+          xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
+          dom.byrow=FALSE,k=100,sortv="from.start",dom.crit=2,
+          cex.legend=0.7)
+
+dev.off()
