@@ -1,9 +1,9 @@
 # ---------------------------------------------------------------------
-#    Program: 00_setupsequence.R
+#    Program: cluster-comparison
 #    Author: Kim McErlean & Lea Pessin 
 #    Date: January 2025
-#    Modified: March 4 2025
-#    Goal: setup PSID for multichannel sequence analysis of couples' life courses
+#    Modified: May 15 2025
+#    Goal: compare clusters for SC v. MC solution - just complete sequences
 # --------------------------------------------------------------------
 # --------------------------------------------------------------------
 
@@ -35,26 +35,26 @@ getwd() # check it worked
 
 if (Sys.getenv(c("HOME" )) == "/home/lpessin") {
   required_packages <- c("TraMineR", "TraMineRextras","RColorBrewer", "paletteer", 
-                         "colorspace","ggplot2","ggpubr", "ggseqplot",
+                         "colorspace","ggplot2","ggpubr", "ggseqplot", "gridExtra",
                          "patchwork", "cluster", "WeightedCluster","dendextend","seqHMM","haven",
-                         "labelled", "readxl", "openxlsx","tidyverse","gridExtra","foreign","pdftools")
+                         "labelled", "readxl", "openxlsx","tidyverse","pdftools")
   lapply(required_packages, require, character.only = TRUE)
 }
 
 if (Sys.getenv(c("HOME" )) == "/home/kmcerlea") {
   required_packages <- c("TraMineR", "TraMineRextras","RColorBrewer", "paletteer", 
-                         "colorspace","ggplot2","ggpubr", "ggseqplot",
+                         "colorspace","ggplot2","ggpubr", "ggseqplot", "gridExtra",
                          "patchwork", "cluster", "WeightedCluster","dendextend","seqHMM","haven",
-                         "labelled", "readxl", "openxlsx","tidyverse","gridExtra","foreign","pdftools")
+                         "labelled", "readxl", "openxlsx","tidyverse","pdftools")
   lapply(required_packages, require, character.only = TRUE)
 }
 
 
 if (Sys.getenv(c("USERNAME")) == "mcerl") {
   required_packages <- c("TraMineR", "TraMineRextras","RColorBrewer", "paletteer", 
-                         "colorspace","ggplot2","ggpubr", "ggseqplot",
+                         "colorspace","ggplot2","ggpubr", "ggseqplot", "gridExtra",
                          "patchwork", "cluster", "WeightedCluster","dendextend","seqHMM","haven",
-                         "labelled", "readxl", "openxlsx","tidyverse","gridExtra","foreign","pdftools")
+                         "labelled", "readxl", "openxlsx","tidyverse","pdftools")
   
   install_if_missing <- function(packages) {
     missing_packages <- packages[!packages %in% installed.packages()[, "Package"]]
@@ -68,9 +68,9 @@ if (Sys.getenv(c("USERNAME")) == "mcerl") {
 
 if (Sys.getenv(c("USERNAME")) == "lpessin") {
   required_packages <- c("TraMineR", "TraMineRextras","RColorBrewer", "paletteer", 
-                         "colorspace","ggplot2","ggpubr", "ggseqplot",
+                         "colorspace","ggplot2","ggpubr", "ggseqplot", "gridExtra",
                          "patchwork", "cluster", "WeightedCluster","dendextend","seqHMM","haven",
-                         "labelled", "readxl", "openxlsx","tidyverse","gridExtra","foreign","pdftools")
+                         "labelled", "readxl", "openxlsx","tidyverse","pdftools")
   
   install_if_missing <- function(packages) {
     missing_packages <- packages[!packages %in% installed.packages()[, "Package"]]
@@ -82,37 +82,22 @@ if (Sys.getenv(c("USERNAME")) == "lpessin") {
   lapply(required_packages, require, character.only = TRUE)
 }
 
-# ~~~~~~~~~~~~~~~~
-# Import data ----
-# ~~~~~~~~~~~~~~~~
 
-# Import imputed datasets using haven 
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Load data and restrict to subset of sequences
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 data <- read_dta("created data/psid_couples_wide_truncated.dta")
 data <- data%>%filter(`_mi_m`!=0)
 
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Setting up the data ----------------------------------------------------------
-## Identifying the columns with the sequence states
-## Creating short and long labels
-## Choosing colors
-## Creating sequences
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Filter to just 6 individuals (some with complete seq, some without)
+# this matches the test file I've been using
+data <- data%>%filter(unique_id==4032 | unique_id==6032 | unique_id==7005 | 
+                        unique_id==4039 | unique_id==88171 | unique_id==297030)
 
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Identifying the columns in which we have sequence variables
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-## couple_work_ow_end: Couple-level work indicator (overwork split out)
-## couple_hw_hrs_alt_end:	Couple-level housework indicator, split by time spent 
-##on HW, percentiles created within a specific subgroup (e.g. she does most)
-## family_type_end:	Type of family based on relationship type + number of 
-##children
-
-# ------------------------------------------------------------------------------
-### We identify columns that contain our sequence analysis input variables
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Then create sequence objects just for these sequences
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 t = 1:10 #Number of time units (10 years - don't want to use year 11)
 
@@ -242,51 +227,56 @@ colspace.fam <- c(col1, col2)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # Couple Paid Work - OW
-seq.work.ow <- seqdef(data[,col_work.ow], cpal = colspace.work.ow, labels=longlab.work.ow, states= shortlab.work.ow,right=NA)
-seqlength(seq.work.ow)
-seq.len.work<-seqlength(seq.work.ow, with.missing = FALSE)
+seq.work.ow <- seqdef(data[,col_work.ow], cpal = colspace.work.ow, 
+                      labels=longlab.work.ow, states= shortlab.work.ow,right=NA)
 
-ggseqdplot(seq.work.ow) +
-  scale_x_discrete(labels = 1:10) +
-  labs(x = "Year")
+seq.hw.hrs.alt <- seqdef(data[,col_hw.hrs.alt], cpal = colspace.hw.hrs.alt,
+                         labels=longlab.hw.hrs.alt, states= shortlab.hw.hrs.alt,right=NA)
 
-# So default is atually already missing=false
-#ggseqdplot(seq.work.ow, with.missing=TRUE) +
-#  scale_x_discrete(labels = 1:10) +
-#  labs(x = "Year")
+seq.fam <- seqdef(data[,col_fam], cpal = colspace.fam, labels=longlab.fam,
+                  states= shortlab.fam,right=NA)
 
-# Couple HW - amounts v2
-seq.hw.hrs.alt <- seqdef(data[,col_hw.hrs.alt], cpal = colspace.hw.hrs.alt, labels=longlab.hw.hrs.alt, 
-                         states= shortlab.hw.hrs.alt,right=NA)
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Now, turn to multichannel sequences
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+# Preparatory work required for rendering the plot
+
+
+# Defining the label for the x-axis 
+
+xtlab<-seq(1,10, by = 1) ## Think this is for number of states
+
+
+# Defining the range of the x axis 
+
+x <- 2:15 ## this is number of clusters
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+# Extract r2 and silhouette for the combined clustering
+
+mcsa<-seqMD(channels=list(seq.work.ow, seq.hw.hrs.alt, seq.fam),
+            with.missing=TRUE,
+            what="MDseq") ##, right=NA)
+seqlength(mcsa)
+seqlength(mcsa, with.missing = FALSE) # okay, this isn't working, 
+# but all sequences are same length across domains, so can just use 1 domain
 
 seq.len.hw<-seqlength(seq.hw.hrs.alt, with.missing = FALSE)
-
-ggseqdplot(seq.hw.hrs.alt) +
-  scale_x_discrete(labels = 1:10) +
-  labs(x = "Year")
-
-# Family channel
-seq.fam <- seqdef(data[,col_fam], cpal = colspace.fam, labels=longlab.fam, states= shortlab.fam,right=NA)
-
 seq.len.fam<-seqlength(seq.fam, with.missing = FALSE)
 
-ggseqdplot(seq.fam) +
-  scale_x_discrete(labels = 1:10) +
-  labs(x = "Year")
-
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Dissimilarity matrix
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-# First set costs of sm to 0 for missing
+# Now create costs: set sm to 0 for missing
 fam.miss.cost <- seqcost(seq.fam, method="CONSTANT", 
-                              miss.cost=0, with.missing=TRUE, miss.cost.fixed=TRUE)
+                         miss.cost=0, with.missing=TRUE, miss.cost.fixed=TRUE)
 
 work.miss.cost <- seqcost(seq.work.ow, method="CONSTANT", 
-                         miss.cost=0, with.missing=TRUE, miss.cost.fixed=TRUE)
+                          miss.cost=0, with.missing=TRUE, miss.cost.fixed=TRUE)
 
 hw.miss.cost <- seqcost(seq.hw.hrs.alt, method="CONSTANT", 
-                         miss.cost=0, with.missing=TRUE, miss.cost.fixed=TRUE)
+                        miss.cost=0, with.missing=TRUE, miss.cost.fixed=TRUE)
 
 # Then make indel costs very high
 fam.miss.indel<- rep(1,ncol(fam.miss.cost$sm))
@@ -301,17 +291,15 @@ hw.miss.indel<- rep(1,ncol(hw.miss.cost$sm))
 hw.miss.indel[length(hw.miss.indel)] <- 99999
 hw.miss.indel
 
-# Now use these costs to create NON-normalized matrices
-dist.work.om <- seqdist(seq.work.ow, method="OM", indel=work.miss.indel, 
-                           sm= work.miss.cost$sm, with.missing=TRUE)
 
-dist.hw.om <- seqdist(seq.hw.hrs.alt, method="OM", indel=hw.miss.indel, 
-                              sm= hw.miss.cost$sm, with.missing=TRUE)
+## Now create multi-channel distance
+mcdist.det.om <- seqdistmc(channels=list(seq.work.ow, seq.hw.hrs.alt, seq.fam), ## Seq states NOT om matrix
+                           method="OM", 
+                           indel=list(work.miss.indel,hw.miss.indel, fam.miss.indel),
+                           sm=list(work.miss.cost$sm, hw.miss.cost$sm, fam.miss.cost$sm),
+                           with.missing=TRUE) 
 
-dist.fam.om <- seqdist(seq.fam, method="OM", indel=fam.miss.indel, 
-                           sm= fam.miss.cost$sm, with.missing=TRUE)
-
-# Then create matrices of shortest length 
+## Create length matrix
 fam.min.len <- matrix(NA,ncol=length(seq.len.fam),nrow=length(seq.len.fam))
 for (i in 1:length(seq.len.fam)){
   for (j in 1:length(seq.len.fam)){
@@ -319,99 +307,80 @@ for (i in 1:length(seq.len.fam)){
   }
 }
 
-work.min.len <- matrix(NA,ncol=length(seq.len.work),nrow=length(seq.len.work))
-for (i in 1:length(seq.len.work)){
-  for (j in 1:length(seq.len.work)){
-    work.min.len[i,j] <- min(c(seq.len.work[i],seq.len.work[j]))
-  }
-}
+## Divide by length matrix
+mcdist.det.min <- mcdist.det.om / fam.min.len
 
-hw.min.len <- matrix(NA,ncol=length(seq.len.hw),nrow=length(seq.len.hw))
-for (i in 1:length(seq.len.hw)){
-  for (j in 1:length(seq.len.hw)){
-    hw.min.len[i,j] <- min(c(seq.len.hw[i],seq.len.hw[j]))
-  }
-}
+## Now, go through next steps - but use the normalized matrix instead
+mcdist.det.min.pam <- wcKMedRange(mcdist.det.min, 
+                                 kvals = 2:15)
 
-# Then normalize based on that length
+mc.min.val<-mcdist.det.min.pam[[4]]
+
+mc.min.asw <- mc.min.val[,4]
+
+mc.min.r2 <- mc.min.val[,7]
+
+## Compare to original
+
+mcdist.det.om.pam <- wcKMedRange(mcdist.det.om, 
+                                 kvals = 2:15)
+
+mc.om.val<-mcdist.det.om.pam[[4]]
+
+mc.om.asw <- mc.om.val[,4]
+
+mc.om.r2 <- mc.om.val[,7]
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Create figure comparing separate channels and MCSA ---- 
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+pdf("results/PSID/truncated_sequences_cluster_test.pdf")
+
+# MCSA: Normalized
+p1<-plot(x, mc.min.asw, type = "b", frame = FALSE, pch = 19, main="MCSA: Normalized", 
+     col = "blue", xlab = "N. clusters", ylab = "", ylim = c(0,0.8), xlim=c(2,16),
+     cex.main=2,
+     cex.lab=1.6,
+     cex.axis=1.2)
+grid(nx = NULL,
+     ny = NA,
+     lty = 1, col = "gray85", lwd = 1)
+# Add a second line
+lines(x, mc.min.r2, pch = 19, col = "black", type = "b", lty = 2)
+# Add a legend to the plot
+legend("topright", legend=c("ASW", "R2"),
+       col=c("blue", "black"), lty = 1:2, cex=1.2)
+
+# MCSA: Not Normalized
+p2<-plot(x, mc.om.asw, type = "b", frame = FALSE, pch = 19, main="MCSA: Not Normalized", 
+     col = "blue", xlab = "N. clusters", ylab = "", ylim = c(0,0.8), xlim=c(2,16),
+     cex.main=2,
+     cex.lab=1.6,
+     cex.axis=1.2)
+grid(nx = NULL,
+     ny = NA,
+     lty = 1, col = "gray85", lwd = 1)
+# Add a second line
+lines(x, mc.om.r2, pch = 19, col = "black", type = "b", lty = 2)
+# Add a legend to the plot
+legend("topright", legend=c("ASW", "R2"),
+       col=c("blue", "black"), lty = 1:2, cex=1.2)
+
+# grid.arrange(p1, p2, ncol=2, nrow=1)
+dev.off()
+
+## okay, this truncated behavior is diff to the state distribution plot
+dist.fam.om <- seqdist(seq.fam, method="OM", indel=fam.miss.indel, 
+                       sm= fam.miss.cost$sm, with.missing=TRUE)
+
 dist.fam.min<-dist.fam.om / fam.min.len
-dist.work.min<-dist.work.om / work.min.len
-dist.hw.min<-dist.hw.om / hw.min.len
 
-# Temp save in case figures fail
+ggseqrfplot(seq.fam, diss=dist.fam.min, sortv="from.start",
+            which.plot="medoids") + theme(legend.position="none")
 
-save.image("created data/setupsequence-truncated.RData")
+seqrfplot(seq.fam, diss=dist.fam.min, sortv="from.end",
+          which.plot="medoids", with.missing=FALSE) + theme(legend.position="none")
 
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Exporting figures
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-pdf("results/PSID/PSID_Base_Sequences_truncated.pdf",
-    width=12,
-    height=3)
-
-s1<-ggseqdplot(seq.work.ow) +
-  scale_x_discrete(labels = 1:10) +
-  labs(x = "Relationship Duration", y=NULL) + 
-  theme(legend.position="none") +
-  ggtitle("Paid Work") + 
-  theme(plot.title=element_text(hjust=0.5))
-
-s2<-ggseqdplot(seq.hw.hrs.alt) +
-  scale_x_discrete(labels = 1:10) +
-  labs(x = "Relationship Duration", y=NULL) + 
-  theme(legend.position="none") +
-  ggtitle("Housework") + 
-  theme(plot.title=element_text(hjust=0.5))
-
-s3<-ggseqdplot(seq.fam) +
-  scale_x_discrete(labels = 1:10) +
-  labs(x = "Relationship Duration", y=NULL) + 
-  theme(legend.position="none") +
-  ggtitle("Family") + 
-  theme(plot.title=element_text(hjust=0.5))
-
-grid.arrange(s1,s3,s2, ncol=3, nrow=1)
-dev.off()
-
-
-#pdf("results/PSID/PSID_Base_Index_truncated.pdf",
-#    width=12,
-#    height=5)
-
-#i1<-ggseqiplot(seq.fam, sortv="from.start")
-#i2<-ggseqiplot(seq.work.ow, sortv="from.start")
-#i3<-ggseqiplot(seq.hw.hrs.alt, sortv="from.start")
-
-#grid.arrange(i1,i2,i3, ncol=3, nrow=1)
-#dev.off()
-
-#pdf_convert("results/PSID/PSID_Base_Index_truncated.pdf",
-#            format = "png", dpi = 300, pages = 1,
-#            "results/PSID/PSID_Base_Index_truncated.png")
-
-
-pdf("results/PSID/PSID_Base_RF_truncated.pdf",
-    width=12,
-    height=5)
-
-rf1<-ggseqrfplot(seq.fam, diss=dist.fam.min, k=500, sortv="from.start",
-                 which.plot="medoids") + theme(legend.position="none")
-
-rf2<-ggseqrfplot(seq.work.ow, diss=dist.work.min, k=500, sortv="from.start",
-                 which.plot="medoids") + theme(legend.position="none")
-
-rf3<-ggseqrfplot(seq.hw.hrs.alt, diss=dist.hw.min, k=500, sortv="from.start",
-                 which.plot="medoids") + theme(legend.position="none")
-
-grid.arrange(rf1,rf2,rf3, ncol=3, nrow=1)
-dev.off()
-
-
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Save objects for further usage in other scripts ----
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-save.image("created data/setupsequence-truncated.RData")
-#load("created data/setupsequence-truncated.RData")
-
+seqiplot(seq.fam)
