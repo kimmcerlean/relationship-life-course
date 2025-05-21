@@ -2,7 +2,7 @@
 #    Program: 00_setupsequence.R
 #    Author: Kim McErlean & Lea Pessin 
 #    Date: March 2025
-#    Modified: April 23 2025
+#    Modified: May 21 2025
 #    Goal: setup UKHLS for multichannel sequence analysis of couples' life courses
 # --------------------------------------------------------------------
 # --------------------------------------------------------------------
@@ -16,8 +16,8 @@ rm(list = ls())
 options(repos=c(CRAN="https://cran.r-project.org"))
 
 # set WD for whomever is running the script
-lea <- 'C:/Users/lpessin/OneDrive - Istituto Universitario Europeo/1. WeEqualize - Team Folder/Papers/Cross National Analysis of the Division of Labor across the Relationship Life Course' #leas folder
-kim <- 'C:/Users/mcerl/Istituto Universitario Europeo/Pessin, Lea - 1. WeEqualize - Team Folder/Papers/Cross National Analysis of the Division of Labor across the Relationship Life Course' # Kim
+lea <- 'C:/Users/lpessin/OneDrive - Istituto Universitario Europeo/1. WeEqualize - Team Folder/Papers/Relationship Life Course' #leas folder
+kim <- 'C:/Users/mcerl/Istituto Universitario Europeo/Pessin, Lea - 1. WeEqualize - Team Folder/Papers/Relationship Life Course' # Kim
 lea.server <- '/home/lpessin/stage/Life Course'
 kim.server <- '/home/kmcerlea/stage/Life Course'
 
@@ -114,7 +114,7 @@ data <- data%>%filter(`_mi_m`!=0)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ## couple_work_ow_end: Couple-level work indicator (overwork split out)
-## couple_hw_hrs_alt_end:	Couple-level housework indicator, split by time spent 
+## couple_hw_hrs_combo_end:	Couple-level housework indicator, split by time spent 
   ##on HW, percentiles created within a specific subgroup (e.g. she does most)
 ## family_type_end:	Type of family based on relationship type + number of 
   ##children
@@ -138,9 +138,9 @@ col_work.ow=which(colnames(data)%in%lab_t)
 
 lab_t=c()
 for (i in 1:10){
-  lab_t[i]=paste("couple_hw_hrs_alt_end",i, sep="")
+  lab_t[i]=paste("couple_hw_hrs_combo_end",i, sep="")
 }
-col_hw.hrs.alt =which(colnames(data)%in%lab_t) 
+col_hw.hrs.combo =which(colnames(data)%in%lab_t) 
 
 # ------------------------------------------------------------------------------
 #Family type: columns
@@ -162,34 +162,30 @@ col_fam =which(colnames(data)%in%lab_t)
 #Couple Paid Work - WITH OW: labels
 
 shortlab.work.ow <- c("MBW", "1.5MBW", 
-                   "dualFT", "dualFT-hisOW", 
-                   "dualFT-herOW", "dualOW",
-                   "FBW", "underWK")
+                      "dualFT", "dualFT-anyOW", 
+                      "FBW", "underWK")
 
 longlab.work.ow <- c("male breadwinner", "1.5 male breadwinner", 
-                  "dual full-time", "dual full-time & his overwork", 
-                  "dual full-time & her overwork", "dual overwork",
-                  "female breadwinner", "under work")
+                     "dual full-time", "dual full-time & any overwork", 
+                     "female breadwinner", "under work")
+
 
 # ------------------------------------------------------------------------------
 #Couple HW - amounts v2 (group-specific ptiles): labels 
 
-shortlab.hw.hrs.alt <- c("W-all:high", "W-all:low",
-                    "W-most:high", "W-most:med", "W-most:low",
-                    "equal:high", "equal:low", 
-                    "M-most:high","M-most:low")
+shortlab.hw.hrs.combo <- c("W-most:high", "W-most:low",
+                           "equal:high", "equal:low", 
+                           "M-most:all")
 
-longlab.hw.hrs.alt <- c("woman does all: high", "woman does all: low",
-                  "woman does most: high", "woman does most: med", "woman does most: low", 
-                  "equal:high", "equal:low", 
-                  "man does most: high", "man does most: low")
+longlab.hw.hrs.combo <- c("woman does most/all: high", "woman does most/all: low",
+                          "equal:high", "equal:low", 
+                          "man does most: all")
 
 # ------------------------------------------------------------------------------
 #Family type: labels
 
 shortlab.fam <- c("MARc0", "MARc1", "MARc2", "MARc3",
-                         "COHc0", "COHc1", "COHc2", "COHc3",
-                         "DISS", "ATT")
+                         "COHc0", "COHc1", "COHc2", "COHc3")
 
 longlab.fam <- c("married, 0 Ch", 
                         "married, 1 Ch",
@@ -198,8 +194,7 @@ longlab.fam <- c("married, 0 Ch",
                         "cohab, 0 Ch",
                         "cohab, 1 Ch",
                         "cohab, 2 Ch",
-                        "cohab, 3 Ch ",
-                        "dissolved", "attrited")
+                        "cohab, 3 Ch ")
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -213,7 +208,7 @@ longlab.fam <- c("married, 0 Ch",
 
 # Work colors
 col1 <- sequential_hcl(5, palette = "BuGn") [1:2] #Male BW
-col2 <- sequential_hcl(5, palette = "Purples")[1:4] #Dual FT
+col2 <- sequential_hcl(5, palette = "Purples")[1:2] #Dual FT
 col3 <- sequential_hcl(5, palette = "PuRd")[c(2)] #Female BW
 col4 <- sequential_hcl(5, palette = "PuRd")[c(1)]  #UnderWork
 
@@ -225,22 +220,23 @@ colspace.work.ow <- c(col1, col2, col3, col4)
 #Couple HW - amounts v2 (group-specific ptiles): labels 
 
 #Housework colors
-col1 <- sequential_hcl(5, palette = "Reds") [1:2] #W-all
-col2 <- sequential_hcl(5, palette = "PurpOr")[1:3] #W-most
+# col1 <- sequential_hcl(5, palette = "Reds") [1:2] #W-all
+col1 <- sequential_hcl(5, palette = "PurpOr")[c(1)] #W-most
+col2 <- sequential_hcl(5, palette = "PurpOr")[c(3)] #W-most
 col3 <- sequential_hcl(5, palette = "OrYel")[2:3] #Equal
-col4 <- sequential_hcl(5, palette = "Teal")[1:2] #M-most
+col4 <- sequential_hcl(5, palette = "Teal")[c(2)] #M-most
 
 # Combine to full color palette
-colspace.hw.hrs.alt <- c(col1, col2, col3, col4)
+colspace.hw.hrs.combo <- c(col1, col2, col3, col4)
 
 # ------------------------------------------------------------------------------
 # Family colors
 col1 <- sequential_hcl(5, palette = "Blues")[4:1]   # Married states
 col2 <- sequential_hcl(15, palette = "Inferno")[15:12]   # Cohabitation states
-col3 <- sequential_hcl(5, palette = "Grays")[c(2,4)] # Right-censored states
+#col3 <- sequential_hcl(5, palette = "Grays")[c(2,4)] # Right-censored states
 
 # Combine to full color palette
-colspace.fam <- c(col1, col2, col3)
+colspace.fam <- c(col1, col2)
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Creating the sequence objects for each channel
@@ -253,11 +249,11 @@ ggseqdplot(seq.work.ow) +
   scale_x_discrete(labels = 1:10) +
   labs(x = "Year")
 
-# Couple HW - amounts v2
-seq.hw.hrs.alt <- seqdef(data[,col_hw.hrs.alt], cpal = colspace.hw.hrs.alt, labels=longlab.hw.hrs.alt, 
-                         states= shortlab.hw.hrs.alt)
+# Couple HW - consolidated
+seq.hw.hrs.combo <- seqdef(data[,col_hw.hrs.combo], cpal = colspace.hw.hrs.combo, labels=longlab.hw.hrs.combo, 
+                           states= shortlab.hw.hrs.combo)
 
-ggseqdplot(seq.hw.hrs.alt) +
+ggseqdplot(seq.hw.hrs.combo) +
   scale_x_discrete(labels = 1:10) +
   labs(x = "Year")
 
@@ -267,6 +263,10 @@ seq.fam <- seqdef(data[,col_fam], cpal = colspace.fam, labels=longlab.fam, state
 ggseqdplot(seq.fam) +
  scale_x_discrete(labels = 1:10) +
   labs(x = "Year")
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Exporting figures
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 pdf("results/UKHLS/UKHLS_Base_Sequences_complete.pdf",
     width=12,
@@ -279,7 +279,7 @@ s1<-ggseqdplot(seq.work.ow) +
   ggtitle("Paid Work") + 
   theme(plot.title=element_text(hjust=0.5))
 
-s2<-ggseqdplot(seq.hw.hrs.alt) +
+s2<-ggseqdplot(seq.hw.hrs.combo) +
   scale_x_discrete(labels = 1:10) +
   labs(x = "Relationship Duration", y=NULL) + 
   theme(legend.position="none") +

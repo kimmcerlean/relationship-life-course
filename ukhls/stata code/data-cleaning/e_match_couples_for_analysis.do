@@ -206,25 +206,47 @@ label values couple_work couple_work
 // mi estimate: proportion couple_work
 
 * with overwork
+mi passive: gen couple_work_ow_detailed=.
+mi passive: replace couple_work_ow_detailed = 1 if ft_pt_man == 2 & ft_pt_woman == 0
+mi passive: replace couple_work_ow_detailed = 2 if ft_pt_man == 2 & ft_pt_woman == 1
+mi passive: replace couple_work_ow_detailed = 3 if ft_pt_man == 2 & ft_pt_woman == 2 & overwork_man==0 & overwork_woman==0
+mi passive: replace couple_work_ow_detailed = 4 if ft_pt_man == 2 & ft_pt_woman == 2 & overwork_man==1 & overwork_woman==0
+mi passive: replace couple_work_ow_detailed = 5 if ft_pt_man == 2 & ft_pt_woman == 2 & overwork_man==0 & overwork_woman==1
+mi passive: replace couple_work_ow_detailed = 6 if ft_pt_man == 2 & ft_pt_woman == 2 & overwork_man==1 & overwork_woman==1
+mi passive: replace couple_work_ow_detailed = 7 if ft_pt_man == 0 & ft_pt_woman == 2
+mi passive: replace couple_work_ow_detailed = 7 if ft_pt_man == 1 & ft_pt_woman == 2
+mi passive: replace couple_work_ow_detailed = 8 if ft_pt_man == 1 & ft_pt_woman == 1
+mi passive: replace couple_work_ow_detailed = 8 if ft_pt_man == 0 & ft_pt_woman == 0
+mi passive: replace couple_work_ow_detailed = 8 if ft_pt_man == 0 & ft_pt_woman == 1
+mi passive: replace couple_work_ow_detailed = 8 if ft_pt_man == 1 & ft_pt_woman == 0
+
+label define couple_work_ow_detailed 1 "male bw" 2 "1.5 male bw" 3 "dual FT: no OW" 4 "dual FT: his OW" 5 "dual FT: her OW" 6 "dual FT: both OW" /// 
+7 "female bw" 8 "under work"
+label values couple_work_ow_detailed couple_work_ow_detailed
+
+mi estimate: proportion couple_work_ow_detailed
+
+// rename couple_work_ow couple_work_ow_detailed
+// rename couple_work_ow_end couple_work_ow_detailed_end
+
+* Consolidated overwork version (new - 5/21/25)
 mi passive: gen couple_work_ow=.
 mi passive: replace couple_work_ow = 1 if ft_pt_man == 2 & ft_pt_woman == 0
 mi passive: replace couple_work_ow = 2 if ft_pt_man == 2 & ft_pt_woman == 1
 mi passive: replace couple_work_ow = 3 if ft_pt_man == 2 & ft_pt_woman == 2 & overwork_man==0 & overwork_woman==0
-mi passive: replace couple_work_ow = 4 if ft_pt_man == 2 & ft_pt_woman == 2 & overwork_man==1 & overwork_woman==0
-mi passive: replace couple_work_ow = 5 if ft_pt_man == 2 & ft_pt_woman == 2 & overwork_man==0 & overwork_woman==1
-mi passive: replace couple_work_ow = 6 if ft_pt_man == 2 & ft_pt_woman == 2 & overwork_man==1 & overwork_woman==1
-mi passive: replace couple_work_ow = 7 if ft_pt_man == 0 & ft_pt_woman == 2
-mi passive: replace couple_work_ow = 7 if ft_pt_man == 1 & ft_pt_woman == 2
-mi passive: replace couple_work_ow = 8 if ft_pt_man == 1 & ft_pt_woman == 1
-mi passive: replace couple_work_ow = 8 if ft_pt_man == 0 & ft_pt_woman == 0
-mi passive: replace couple_work_ow = 8 if ft_pt_man == 0 & ft_pt_woman == 1
-mi passive: replace couple_work_ow = 8 if ft_pt_man == 1 & ft_pt_woman == 0
+mi passive: replace couple_work_ow = 4 if ft_pt_man == 2 & ft_pt_woman == 2 & (overwork_man==1 | overwork_woman==1)
+mi passive: replace couple_work_ow = 5 if ft_pt_man == 0 & ft_pt_woman == 2
+mi passive: replace couple_work_ow = 5 if ft_pt_man == 1 & ft_pt_woman == 2
+mi passive: replace couple_work_ow = 6 if ft_pt_man == 1 & ft_pt_woman == 1
+mi passive: replace couple_work_ow = 6 if ft_pt_man == 0 & ft_pt_woman == 0
+mi passive: replace couple_work_ow = 6 if ft_pt_man == 0 & ft_pt_woman == 1
+mi passive: replace couple_work_ow = 6 if ft_pt_man == 1 & ft_pt_woman == 0
 
-label define couple_work_ow 1 "male bw" 2 "1.5 male bw" 3 "dual FT: no OW" 4 "dual FT: his OW" 5 "dual FT: her OW" 6 "dual FT: both OW" /// 
-7 "female bw" 8 "under work"
+capture label drop couple_work_ow
+label define couple_work_ow 1 "male bw" 2 "1.5 male bw" 3 "dual FT: no OW" 4 "dual FT: any OW" 5 "female bw" 6 "under work"
 label values couple_work_ow couple_work_ow
 
-mi estimate: proportion couple_work couple_work_ow
+mi estimate: proportion couple_work_ow_detailed couple_work_ow
 
 // unpaid work
 mi passive: egen couple_hw_total = rowtotal(housework_woman housework_man)
@@ -296,6 +318,11 @@ sum housework_woman if couple_hw==2, det
 histogram housework_woman if inlist(couple_hw,1,2) & housework_woman < 50
 sum housework_woman if inlist(couple_hw,1,2), det
 
+// alt cutpoints: within she does most OR all
+	mi passive: egen hw_hilow_woman_combo = cut(housework_woman) if housework_woman!=0 & inlist(couple_hw,1,2), group(2)
+	tab hw_hilow_woman_combo if inlist(couple_hw,1,2)
+	tabstat housework_woman, by(hw_hilow_woman_combo)
+
 twoway (histogram housework_woman if couple_hw==1 & housework_woman < 50, width(1) color(blue%30)) (histogram housework_woman if couple_hw==2 & housework_woman < 50, width(1) color(red%30)), legend(order(1 "She does all" 2 "She does most") rows(1) position(6)) xtitle("Weekly HW Hours among Equal HW Couples")
 
 ** should I lookat if he does most? bc that is essentially same size (actually larger) than woman all
@@ -342,6 +369,20 @@ mi passive: replace couple_hw_hrs_alt = 7 if housework_woman==0 & housework_man=
 label values couple_hw_hrs_alt couple_hw_hrs
 
 mi estimate: proportion couple_hw couple_hw_hrs couple_hw_hrs_alt 
+
+* Consolidated housework + hours variable
+mi passive: gen couple_hw_hrs_combo=.
+mi passive: replace couple_hw_hrs_combo = 1 if inlist(couple_hw,1,2) & hw_hilow_woman_combo==1 // 1 = high, 0 = low
+mi passive: replace couple_hw_hrs_combo = 2 if inlist(couple_hw,1,2) & hw_hilow_woman_combo==0 
+mi passive: replace couple_hw_hrs_combo = 3 if couple_hw==3 & couple_hw_total > =20 & couple_hw_total < 500 // 20 is the median
+mi passive: replace couple_hw_hrs_combo = 4 if couple_hw==3 & couple_hw_total < 20
+mi passive: replace couple_hw_hrs_combo = 5 if couple_hw==4
+mi passive: replace couple_hw_hrs_combo = 4 if housework_woman==0 & housework_man==0  // neither is so small, just put in equal low
+
+label define couple_hw_hrs_combo 1 "Woman Most: High" 2 "Woman Most: Low" 3 "Equal: High" 4 "Equal: Low" 5 "Man Most: All"
+label values couple_hw_hrs_combo couple_hw_hrs_combo
+
+mi estimate: proportion couple_hw couple_hw_hrs_alt couple_hw_hrs_combo
 
 //	capture drop couple_hw_hrs_end
 //	mi update
@@ -478,7 +519,7 @@ foreach var in ft_pt_woman overwork_woman ft_pt_man overwork_man couple_work cou
 } 
 
 // designate that relationship dissolved and create versions of all variables that stop at this point
-foreach var in ft_pt_woman overwork_woman ft_pt_man overwork_man ft_pt_det_woman ft_pt_det_man couple_work couple_work_ow couple_hw couple_hw_hrs couple_hw_hrs_alt couple_num_children_gp family_type{
+foreach var in ft_pt_woman overwork_woman ft_pt_man overwork_man ft_pt_det_woman ft_pt_det_man couple_work couple_work_ow_detailed couple_work_ow couple_hw couple_hw_hrs couple_hw_hrs_alt couple_hw_hrs_combo couple_num_children_gp family_type{
 	capture drop `var'_end
 	mi update
 	mi passive: gen `var'_end = `var'
@@ -486,17 +527,19 @@ foreach var in ft_pt_woman overwork_woman ft_pt_man overwork_man ft_pt_det_woman
 	mi passive: replace `var'_end = 99 if rel_type==3 // attrit
 }
 
-foreach var in ft_pt_woman_end overwork_woman_end ft_pt_man_end ft_pt_det_woman_end ft_pt_det_man_end overwork_man_end couple_work_end couple_work_ow_end couple_hw_end couple_hw_hrs_end couple_hw_hrs_alt_end couple_num_children_gp_end family_type_end{
+foreach var in ft_pt_woman_end overwork_woman_end ft_pt_man_end ft_pt_det_woman_end ft_pt_det_man_end overwork_man_end couple_work_end couple_work_ow_detailed_end couple_work_ow_end couple_hw_end couple_hw_hrs_end couple_hw_hrs_alt_end couple_hw_hrs_combo_end couple_num_children_gp_end family_type_end{
 	assert `var' !=. if _mi_m!=0
 }
 
 label values ft_pt_man_end ft_pt_woman_end ft_pt
 label values ft_pt_det_man_end ft_pt_det_woman_end ft_pt_det
 label values couple_work_end couple_work
+label values couple_work_ow_detailed_end couple_work_ow_detailed
 label values couple_work_ow_end couple_work_ow
 label values couple_hw_end couple_hw
 label values couple_hw_hrs_end couple_hw_hrs
 label values couple_hw_hrs_alt_end couple_hw_hrs
+label values couple_hw_hrs_combo_end couple_hw_hrs_combo
 label values family_type_end family_type
 
 // cross-tabs to explore to figure out potential new variables
@@ -634,14 +677,14 @@ mi update
 **# Reshape back to wide to see the data by duration and compare to long estimates
 ********************************************************************************
 
-mi reshape wide age_all fihhmngrs_dv gor_dv nkids_dv jbstat aidhh aidxhh aidhrs howlng work_hours jbhrs fimnlabgrs_dv nchild_dv hiqual_dv country_all employed total_hours age_youngest_child partnered_imp marital_status_imp aidhrs_rec int_year orig_record age_all_sp fihhmngrs_dv_sp gor_dv_sp nkids_dv_sp jbstat_sp aidhrs_sp howlng_sp work_hours_sp jbhrs_sp fimnlabgrs_dv_sp employed_sp total_hours_sp age_youngest_child_sp partnered_imp_sp marital_status_imp_sp aidhrs_rec_sp weekly_hrs_woman weekly_hrs_man housework_woman housework_man marital_status_woman marital_status_man partnered_woman partnered_man num_children_woman num_children_man ft_pt_woman overwork_woman ft_pt_man overwork_man ft_pt_det_woman ft_pt_det_man couple_work couple_work_ow  couple_hw_total woman_hw_share hw_terc_woman hw_hilow_woman hw_hilow_man couple_hw hw_hilow_woman_gp1 hw_hilow_woman_gp2 hw_hilow_man_gp4 couple_hw_hrs couple_hw_hrs_alt rel_type couple_num_children couple_num_children_gp family_type ft_pt_woman_end overwork_woman_end ft_pt_man_end overwork_man_end ft_pt_det_woman_end ft_pt_det_man_end couple_work_end couple_work_ow_end couple_hw_end couple_hw_hrs_end couple_hw_hrs_alt_end couple_num_children_gp_end family_type_end ///
+mi reshape wide age_all fihhmngrs_dv gor_dv nkids_dv jbstat aidhh aidxhh aidhrs howlng work_hours jbhrs fimnlabgrs_dv nchild_dv hiqual_dv country_all employed total_hours age_youngest_child partnered_imp marital_status_imp aidhrs_rec int_year orig_record age_all_sp fihhmngrs_dv_sp gor_dv_sp nkids_dv_sp jbstat_sp aidhrs_sp howlng_sp work_hours_sp jbhrs_sp fimnlabgrs_dv_sp employed_sp total_hours_sp age_youngest_child_sp partnered_imp_sp marital_status_imp_sp aidhrs_rec_sp weekly_hrs_woman weekly_hrs_man housework_woman housework_man marital_status_woman marital_status_man partnered_woman partnered_man num_children_woman num_children_man ft_pt_woman overwork_woman ft_pt_man overwork_man ft_pt_det_woman ft_pt_det_man couple_work couple_work_ow couple_work_ow_detailed  couple_hw_total woman_hw_share hw_terc_woman hw_hilow_woman hw_hilow_man couple_hw hw_hilow_woman_gp1 hw_hilow_woman_gp2 hw_hilow_man_gp4 hw_hilow_woman_combo couple_hw_hrs couple_hw_hrs_alt couple_hw_hrs_combo rel_type couple_num_children couple_num_children_gp family_type ft_pt_woman_end overwork_woman_end ft_pt_man_end overwork_man_end ft_pt_det_woman_end ft_pt_det_man_end couple_work_end couple_work_ow_detailed_end couple_work_ow_end couple_hw_end couple_hw_hrs_end couple_hw_hrs_alt_end couple_hw_hrs_combo_end couple_num_children_gp_end family_type_end ///
 , i(pidp eligible_partner eligible_rel_start_year eligible_rel_end_year eligible_rel_status) j(duration)
 
 tab _mi_miss, m // see what happens if I reshape but DON'T convert
 tab _mi_m, m
 
-browse pidp eligible_partner _mi_id _mi_miss _mi_m couple_work_end*
-browse pidp eligible_partner _mi_id _mi_miss _mi_m couple_work_end* couple_hw_end* if inrange(_mi_m,1,10)
+browse pidp eligible_partner _mi_id _mi_miss _mi_m couple_work_end* couple_work_ow_end* couple_hw_hrs_combo_end*
+browse pidp eligible_partner _mi_id _mi_miss _mi_m couple_work_end* couple_work_ow_end* couple_hw_hrs_combo_end* if inrange(_mi_m,1,10)
 
 unique pidp eligible_partner // so now there are 6271 uniques and 11 observations for each (base + 10 imputations) - so 68981 observations
 unique pidp eligible_partner, by(_mi_m)
@@ -653,6 +696,7 @@ replace complete_seq = 1 if max_dur >= 9 // so 9 is really 10 (because 0-9 = 1-1
 
 tab rel_type10 if complete_seq==1, m
 browse pidp eligible_partner min_dur max_dur complete_seq rel_type* // okay, so max_dur is based on start of 0, but I changed it, so now need it to be +1
+// browse pidp eligible_partner min_dur max_dur complete_seq rel_type* if complete_seq==1 & rel_type10==3
 
 // then create indicator of length of complete sequence
 gen sequence_length_alt=max_dur + 1
@@ -668,11 +712,17 @@ forvalues d=1/10{
 replace sequence_length = sequence_length - 1 
 
 tab sequence_length complete_seq, m
+replace complete_seq=0 if complete_seq==1 & sequence_length < 10
+drop if sequence_length==0
+
+tab sequence_length complete_seq, m
 tab sequence_length sequence_length_alt, m
 
 replace sequence_length = sequence_length_alt if sequence_length==. & complete_seq==0
-replace sequence_length = sequence_length_alt if sequence_length==0 & complete_seq==0
+// replace sequence_length = sequence_length_alt if sequence_length==0 & complete_seq==0
 replace sequence_length = 10 if complete_seq==1
+
+// browse pidp eligible_partner min_dur max_dur sequence_length complete_seq rel_type* if complete_seq==1 & rel_type10==3
 
 // note how ended (attrit or dissolve)
 tab eligible_rel_status complete_seq, m
@@ -711,10 +761,14 @@ use "$created_data/ukhls_couples_imputed_wide.dta", clear
 
 keep if complete_seq==1
 
+// browse pidp eligible_partner min_dur max_dur  _mi_m sequence_length couple_hw_hrs_combo_end* couple_work_ow_end* rel_type* if couple_work_ow_end1==. & _mi_m!=0
+// browse pidp eligible_partner min_dur max_dur  _mi_m sequence_length couple_hw_hrs_combo_end* couple_work_ow_end* rel_type* if pidp==293086125
+
 mi update
 
 save "$created_data/ukhls_couples_imputed_wide_complete.dta", replace 
 
+/*
 // fully wide data (not actually sure we need this)
 mi convert wide, clear
 
@@ -729,3 +783,4 @@ browse pidp eligible_partner couple_work_end1 _*_couple_work_end1 _mi_miss
 mi estimate: proportion rel_type1 couple_work_ow_end1 family_type_end1 // okay NOW there are the right number of couples AND they match what I did when long
 mi estimate: proportion rel_type1 rel_type2 rel_type3 rel_type4 rel_type5 rel_type6 rel_type7 rel_type8 rel_type9 rel_type10 rel_type11 // ensure all have the right number of people now aka 6263
 mi estimate: proportion couple_work_ow_end1 couple_work_ow_end2 couple_work_ow_end3 couple_work_ow_end4 couple_work_ow_end5 couple_work_ow_end6 couple_work_ow_end7 couple_work_ow_end8 couple_work_ow_end9 couple_work_ow_end10 couple_work_ow_end11 // ensure all have the right number of people now aka 6263 - wanted to do with created / imputed var, not just a constant one (rel type is constant)
+*/
