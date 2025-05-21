@@ -182,25 +182,46 @@ label values couple_work couple_work
 mi estimate: proportion couple_work
 
 * with overwork
+mi passive: gen couple_work_ow_detailed=.
+mi passive: replace couple_work_ow_detailed = 1 if ft_pt_man == 2 & ft_pt_woman == 0
+mi passive: replace couple_work_ow_detailed = 2 if ft_pt_man == 2 & ft_pt_woman == 1
+mi passive: replace couple_work_ow_detailed = 3 if ft_pt_man == 2 & ft_pt_woman == 2 & overwork_man==0 & overwork_woman==0
+mi passive: replace couple_work_ow_detailed = 4 if ft_pt_man == 2 & ft_pt_woman == 2 & overwork_man==1 & overwork_woman==0
+mi passive: replace couple_work_ow_detailed = 5 if ft_pt_man == 2 & ft_pt_woman == 2 & overwork_man==0 & overwork_woman==1
+mi passive: replace couple_work_ow_detailed = 6 if ft_pt_man == 2 & ft_pt_woman == 2 & overwork_man==1 & overwork_woman==1
+mi passive: replace couple_work_ow_detailed = 7 if ft_pt_man == 0 & ft_pt_woman == 2
+mi passive: replace couple_work_ow_detailed = 7 if ft_pt_man == 1 & ft_pt_woman == 2
+mi passive: replace couple_work_ow_detailed = 8 if ft_pt_man == 1 & ft_pt_woman == 1
+mi passive: replace couple_work_ow_detailed = 8 if ft_pt_man == 0 & ft_pt_woman == 0
+mi passive: replace couple_work_ow_detailed = 8 if ft_pt_man == 0 & ft_pt_woman == 1
+mi passive: replace couple_work_ow_detailed = 8 if ft_pt_man == 1 & ft_pt_woman == 0
+
+label define couple_work_ow_detailed 1 "male bw" 2 "1.5 male bw" 3 "dual FT: no OW" 4 "dual FT: his OW" 5 "dual FT: her OW" 6 "dual FT: both OW" /// 
+7 "female bw" 8 "under work"
+label values couple_work_ow_detailed couple_work_ow_detailed
+
+mi estimate: proportion couple_work_ow_detailed
+
+// rename couple_work_ow couple_work_ow_detailed
+// rename couple_work_ow_end couple_work_ow_detailed_end
+
+* Consolidated overwork version (new - 5/21/25)
 mi passive: gen couple_work_ow=.
 mi passive: replace couple_work_ow = 1 if ft_pt_man == 2 & ft_pt_woman == 0
 mi passive: replace couple_work_ow = 2 if ft_pt_man == 2 & ft_pt_woman == 1
 mi passive: replace couple_work_ow = 3 if ft_pt_man == 2 & ft_pt_woman == 2 & overwork_man==0 & overwork_woman==0
-mi passive: replace couple_work_ow = 4 if ft_pt_man == 2 & ft_pt_woman == 2 & overwork_man==1 & overwork_woman==0
-mi passive: replace couple_work_ow = 5 if ft_pt_man == 2 & ft_pt_woman == 2 & overwork_man==0 & overwork_woman==1
-mi passive: replace couple_work_ow = 6 if ft_pt_man == 2 & ft_pt_woman == 2 & overwork_man==1 & overwork_woman==1
-mi passive: replace couple_work_ow = 7 if ft_pt_man == 0 & ft_pt_woman == 2
-mi passive: replace couple_work_ow = 7 if ft_pt_man == 1 & ft_pt_woman == 2
-mi passive: replace couple_work_ow = 8 if ft_pt_man == 1 & ft_pt_woman == 1
-mi passive: replace couple_work_ow = 8 if ft_pt_man == 0 & ft_pt_woman == 0
-mi passive: replace couple_work_ow = 8 if ft_pt_man == 0 & ft_pt_woman == 1
-mi passive: replace couple_work_ow = 8 if ft_pt_man == 1 & ft_pt_woman == 0
+mi passive: replace couple_work_ow = 4 if ft_pt_man == 2 & ft_pt_woman == 2 & (overwork_man==1 | overwork_woman==1)
+mi passive: replace couple_work_ow = 5 if ft_pt_man == 0 & ft_pt_woman == 2
+mi passive: replace couple_work_ow = 5 if ft_pt_man == 1 & ft_pt_woman == 2
+mi passive: replace couple_work_ow = 6 if ft_pt_man == 1 & ft_pt_woman == 1
+mi passive: replace couple_work_ow = 6 if ft_pt_man == 0 & ft_pt_woman == 0
+mi passive: replace couple_work_ow = 6 if ft_pt_man == 0 & ft_pt_woman == 1
+mi passive: replace couple_work_ow = 6 if ft_pt_man == 1 & ft_pt_woman == 0
 
-label define couple_work_ow 1 "male bw" 2 "1.5 male bw" 3 "dual FT: no OW" 4 "dual FT: his OW" 5 "dual FT: her OW" 6 "dual FT: both OW" /// 
-7 "female bw" 8 "under work"
+label define couple_work_ow 1 "male bw" 2 "1.5 male bw" 3 "dual FT: no OW" 4 "dual FT: any OW" 5 "female bw" 6 "under work"
 label values couple_work_ow couple_work_ow
 
-mi estimate: proportion couple_work_ow
+mi estimate: proportion couple_work_ow_detailed couple_work_ow
 
 // unpaid work
 mi passive: egen couple_hw_total = rowtotal(housework_woman housework_man)
@@ -272,6 +293,11 @@ sum housework_woman if couple_hw==2, det
 histogram housework_woman if inlist(couple_hw,1,2) & housework_woman < 50
 sum housework_woman if inlist(couple_hw,1,2), det
 
+// alt cutpoints: within she does most OR all
+	mi passive: egen hw_hilow_woman_combo = cut(housework_woman) if housework_woman!=0 & inlist(couple_hw,1,2), group(2)
+	tab hw_hilow_woman_combo if inlist(couple_hw,1,2)
+	tabstat housework_woman, by(hw_hilow_woman_combo)
+
 twoway (histogram housework_woman if couple_hw==1 & housework_woman < 50, width(1) color(blue%30)) (histogram housework_woman if couple_hw==2 & housework_woman < 50, width(1) color(red%30)), legend(order(1 "She does all" 2 "She does most") rows(1) position(6)) xtitle("Weekly HW Hours among Equal HW Couples")
 
 ** should I lookat if he does most? bc that is essentially same size (actually larger) than woman all
@@ -318,6 +344,20 @@ mi passive: replace couple_hw_hrs_alt = 7 if housework_woman==0 & housework_man=
 label values couple_hw_hrs_alt couple_hw_hrs
 
 mi estimate: proportion couple_hw couple_hw_hrs couple_hw_hrs_alt 
+
+* Consolidated housework + hours variable
+mi passive: gen couple_hw_hrs_combo=.
+mi passive: replace couple_hw_hrs_combo = 1 if inlist(couple_hw,1,2) & hw_hilow_woman_combo==1 // 1 = high, 0 = low
+mi passive: replace couple_hw_hrs_combo = 2 if inlist(couple_hw,1,2) & hw_hilow_woman_combo==0 
+mi passive: replace couple_hw_hrs_combo = 3 if couple_hw==3 & couple_hw_total > =20 & couple_hw_total < 500 // 20 is the median
+mi passive: replace couple_hw_hrs_combo = 4 if couple_hw==3 & couple_hw_total < 20
+mi passive: replace couple_hw_hrs_combo = 5 if couple_hw==4
+mi passive: replace couple_hw_hrs_combo = 4 if housework_woman==0 & housework_man==0  // neither is so small, just put in equal low
+
+label define couple_hw_hrs_combo 1 "Woman Most: High" 2 "Woman Most: Low" 3 "Equal: High" 4 "Equal: Low" 5 "Man Most: All"
+label values couple_hw_hrs_combo couple_hw_hrs_combo
+
+mi estimate: proportion couple_hw couple_hw_hrs_alt couple_hw_hrs_combo
 
 //	capture drop couple_hw_hrs_end
 //	mi update
@@ -427,7 +467,7 @@ foreach var in ft_pt_woman overwork_woman ft_pt_man overwork_man couple_work cou
 } 
 
 // designate that relationship dissolved and create versions of all variables that stop at this point
-foreach var in ft_pt_woman overwork_woman ft_pt_man overwork_man ft_pt_det_woman ft_pt_det_man couple_work couple_work_ow couple_hw couple_hw_hrs couple_hw_hrs_alt couple_num_children_gp family_type{
+foreach var in ft_pt_woman overwork_woman ft_pt_man overwork_man ft_pt_det_woman ft_pt_det_man couple_work couple_work_ow_detailed couple_work_ow couple_hw couple_hw_hrs couple_hw_hrs_alt couple_hw_hrs_combo couple_num_children_gp family_type{
 	capture drop `var'_end
 	mi update
 	mi passive: gen `var'_end = `var'
@@ -435,17 +475,19 @@ foreach var in ft_pt_woman overwork_woman ft_pt_man overwork_man ft_pt_det_woman
 	mi passive: replace `var'_end = 99 if rel_type==3 // attrit
 }
 
-foreach var in ft_pt_woman_end overwork_woman_end ft_pt_man_end ft_pt_det_woman_end ft_pt_det_man_end overwork_man_end couple_work_end couple_work_ow_end couple_hw_end couple_hw_hrs_end couple_hw_hrs_alt_end couple_num_children_gp_end family_type_end{
+foreach var in ft_pt_woman_end overwork_woman_end ft_pt_man_end ft_pt_det_woman_end ft_pt_det_man_end overwork_man_end couple_work_end couple_work_ow_detailed_end couple_work_ow_end couple_hw_end couple_hw_hrs_end couple_hw_hrs_alt_end couple_hw_hrs_combo_end couple_num_children_gp_end family_type_end{
 	assert `var' !=. if _mi_m!=0
 }
 
 label values ft_pt_man_end ft_pt_woman_end ft_pt
 label values ft_pt_det_man_end ft_pt_det_woman_end ft_pt_det
 label values couple_work_end couple_work
+label values couple_work_ow_detailed_end couple_work_ow_detailed
 label values couple_work_ow_end couple_work_ow
 label values couple_hw_end couple_hw
 label values couple_hw_hrs_end couple_hw_hrs
 label values couple_hw_hrs_alt_end couple_hw_hrs
+label values couple_hw_hrs_combo_end couple_hw_hrs_combo
 label values family_type_end family_type
 
 // cross-tabs to explore to figure out potential new variables
@@ -532,7 +574,7 @@ gen duration_v0 = duration
 replace duration = duration + 1
 
 // use "$created_data/psid_couples_imputed_long_deduped.dta", clear
-keep ft_pt_woman_end overwork_woman_end ft_pt_man_end overwork_man_end couple_work_end couple_work_ow_end couple_hw_end couple_hw_hrs_end couple_hw_hrs_alt_end rel_type couple_num_children_gp_end family_type_end unique_id partner_id rel_start_all rel_end_all duration  min_dur max_dur last_yr_observed ended _mi_miss _mi_id _mi_m SEX in_sample hh_status relationship housework_focal age_focal weekly_hrs_t_focal earnings_t_focal family_income_t partnered_imp educ_focal_imp num_children_imp_hh weekly_hrs_woman weekly_hrs_man housework_woman housework_man partnered_woman partnered_man num_children_woman num_children_man ft_pt_woman overwork_woman ft_pt_man overwork_man ft_pt_det_woman ft_pt_det_man rel_status rel_type_constant transition_yr FIRST_BIRTH_YR sample_type has_psid_gene birth_yr_all raceth_fixed_focal fixed_education SEX_sp in_sample_sp hh_status_sp relationship_sp housework_focal_sp age_focal_sp weekly_hrs_t_focal_sp earnings_t_focal_sp family_income_t_sp partnered_imp_sp num_children_imp_hh_sp  FIRST_BIRTH_YR_sp sample_type_sp has_psid_gene_sp birth_yr_all_sp raceth_fixed_focal_sp fixed_education_sp // think I need to keep the base variables the passive variables I created are based off of, otherwise, they are reset back to missing I think, which causes problems when I reshape.
+keep ft_pt_woman_end overwork_woman_end ft_pt_man_end overwork_man_end couple_work_end couple_work_ow_detailed_end couple_work_ow_end couple_hw_end couple_hw_hrs_end couple_hw_hrs_alt_end couple_hw_hrs_combo_end rel_type couple_num_children_gp_end family_type_end unique_id partner_id rel_start_all rel_end_all duration  min_dur max_dur last_yr_observed ended _mi_miss _mi_id _mi_m SEX in_sample hh_status relationship housework_focal age_focal weekly_hrs_t_focal earnings_t_focal family_income_t partnered_imp educ_focal_imp num_children_imp_hh weekly_hrs_woman weekly_hrs_man housework_woman housework_man partnered_woman partnered_man num_children_woman num_children_man ft_pt_woman overwork_woman ft_pt_man overwork_man ft_pt_det_woman ft_pt_det_man rel_status rel_type_constant transition_yr FIRST_BIRTH_YR sample_type has_psid_gene birth_yr_all raceth_fixed_focal fixed_education SEX_sp in_sample_sp hh_status_sp relationship_sp housework_focal_sp age_focal_sp weekly_hrs_t_focal_sp earnings_t_focal_sp family_income_t_sp partnered_imp_sp num_children_imp_hh_sp  FIRST_BIRTH_YR_sp sample_type_sp has_psid_gene_sp birth_yr_all_sp raceth_fixed_focal_sp fixed_education_sp couple_work_ow_detailed couple_work_ow couple_hw_hrs_combo // think I need to keep the base variables the passive variables I created are based off of, otherwise, they are reset back to missing I think, which causes problems when I reshape.
 
 mi update
 
@@ -540,12 +582,12 @@ mi update
 **# Reshape back to wide to see the data by duration and compare to long estimates
 ********************************************************************************
 
-mi reshape wide ft_pt_woman_end overwork_woman_end ft_pt_man_end overwork_man_end couple_work_end couple_work_ow_end couple_hw_end couple_hw_hrs_end couple_hw_hrs_alt_end rel_type couple_num_children_gp_end family_type_end in_sample hh_status relationship housework_focal age_focal weekly_hrs_t_focal earnings_t_focal family_income_t partnered_imp educ_focal_imp num_children_imp_hh weekly_hrs_woman weekly_hrs_man housework_woman housework_man partnered_woman partnered_man num_children_woman num_children_man ft_pt_woman overwork_woman ft_pt_man overwork_man ft_pt_det_woman ft_pt_det_man  in_sample_sp hh_status_sp relationship_sp housework_focal_sp age_focal_sp weekly_hrs_t_focal_sp earnings_t_focal_sp family_income_t_sp partnered_imp_sp num_children_imp_hh_sp, i(unique_id partner_id rel_start_all rel_end_all) j(duration) // SEX SEX_sp rel_status rel_type_constant transition_yr FIRST_BIRTH_YR FIRST_BIRTH_YR_sp sample_type sample_type_sp has_psid_gene has_psid_gene_sp birth_yr_all birth_yr_all_sp raceth_fixed_focal raceth_fixed_focal_sp fixed_education fixed_education_sp
+mi reshape wide ft_pt_woman_end overwork_woman_end ft_pt_man_end overwork_man_end couple_work_end couple_work_ow_detailed_end couple_work_ow_end couple_hw_end couple_hw_hrs_end couple_hw_hrs_alt_end couple_hw_hrs_combo_end rel_type couple_num_children_gp_end family_type_end in_sample hh_status relationship housework_focal age_focal weekly_hrs_t_focal earnings_t_focal family_income_t partnered_imp educ_focal_imp num_children_imp_hh weekly_hrs_woman weekly_hrs_man housework_woman housework_man partnered_woman partnered_man num_children_woman num_children_man ft_pt_woman overwork_woman ft_pt_man overwork_man ft_pt_det_woman ft_pt_det_man  in_sample_sp hh_status_sp relationship_sp housework_focal_sp age_focal_sp weekly_hrs_t_focal_sp earnings_t_focal_sp family_income_t_sp partnered_imp_sp num_children_imp_hh_sp couple_work_ow_detailed couple_work_ow couple_hw_hrs_combo, i(unique_id partner_id rel_start_all rel_end_all) j(duration) // SEX SEX_sp rel_status rel_type_constant transition_yr FIRST_BIRTH_YR FIRST_BIRTH_YR_sp sample_type sample_type_sp has_psid_gene has_psid_gene_sp birth_yr_all birth_yr_all_sp raceth_fixed_focal raceth_fixed_focal_sp fixed_education fixed_education_sp
 
 tab _mi_miss, m // see what happens if I reshape but DON'T convert
 tab _mi_m, m
-browse unique unique_id partner_id _mi_id _mi_miss _mi_m couple_work_end*
-browse unique unique_id partner_id _mi_id _mi_miss _mi_m couple_work_end* if inrange(_mi_id,1,10)
+browse unique unique_id partner_id _mi_id _mi_miss _mi_m couple_work_end* couple_work_ow_end* couple_hw_hrs_combo_end*
+browse unique unique_id partner_id _mi_id _mi_miss _mi_m couple_work_end* couple_work_ow_end* couple_hw_hrs_combo_end* if inrange(_mi_id,1,10)
 
 unique unique_id partner_id // so now there are 4363 uniques and 11 observations for each (base + 10 imputations)
 
@@ -602,7 +644,7 @@ replace how_end = 2 if complete_seq==0 & status_end==3 // attrit
 label define how_end 0 "Intact" 1 "Dissolved" 2 "Attrited"
 label values how_end how_end
 
-tab how_end complete_seq
+tab how_end complete_seq, m
 
 mi update
 
@@ -621,25 +663,25 @@ save "$created_data/psid_couples_imputed_wide_complete.dta", replace
 // truncated data (so not attrit or dissolve - set to missing instead)
 use "$created_data/psid_couples_imputed_wide.dta", clear
 
-browse unique_id partner_id complete_seq sequence_length couple_work_ow_end* couple_hw_hrs_alt_end* family_type_end*
+browse unique_id partner_id complete_seq sequence_length couple_work_ow_end* couple_hw_hrs_combo_end* family_type_end*
 fre couple_work_ow_end5
-fre couple_hw_hrs_alt_end5
+fre couple_hw_hrs_combo_end5
 fre family_type_end5
 
 forvalues d=1/11{
-	gen couple_work_ow_trunc`d' = couple_work_ow_end`d'
+	capture gen couple_work_ow_trunc`d' = couple_work_ow_end`d'
 	replace couple_work_ow_trunc`d' = . if inlist(couple_work_ow_end`d',98,99)
 	label values couple_work_ow_trunc`d' couple_work_ow
-	gen couple_hw_hrs_alt_trunc`d' = couple_hw_hrs_alt_end`d'
-	replace couple_hw_hrs_alt_trunc`d' = . if inlist(couple_hw_hrs_alt_end`d',98,99)
-	label values couple_hw_hrs_alt_trunc`d' couple_hw_hrs
-	gen family_type_trunc`d' = family_type_end`d'
-	replace family_type_trunc`d' = . if inlist(family_type_end`d',98,99
+	capture gen couple_hw_hrs_combo_trunc`d' = couple_hw_hrs_combo_end`d'
+	replace couple_hw_hrs_combo_trunc`d' = . if inlist(couple_hw_hrs_combo_end`d',98,99)
+	label values couple_hw_hrs_combo_trunc`d' couple_hw_hrs_combo
+	capture gen family_type_trunc`d' = family_type_end`d'
+	replace family_type_trunc`d' = . if inlist(family_type_end`d',98,99)
 	label values family_type_trunc`d' family_type
 }
 
 fre couple_work_ow_trunc5
-fre couple_hw_hrs_alt_trunc5
+fre couple_hw_hrs_combo_trunc5
 fre family_type_trunc5
 
 save "$created_data/psid_couples_wide_truncated.dta", replace 
