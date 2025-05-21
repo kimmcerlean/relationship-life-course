@@ -2,7 +2,7 @@
 #    Program: cluster-comparison
 #    Author: Kim McErlean & Lea Pessin 
 #    Date: January 2025
-#    Modified: April 23 2025
+#    Modified: May 21 2025
 #    Goal: compare clusters for SC v. MC solution - just complete sequences
 # --------------------------------------------------------------------
 # --------------------------------------------------------------------
@@ -94,7 +94,7 @@ load("created data/setupsequence-complete.RData")
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 dist.work.ow.om <- seqdist(seq.work.ow, method="OM", indel=1, sm= "CONSTANT")
-dist.hw.hrs.alt.om <- seqdist(seq.hw.hrs.alt, method="OM", indel=1, sm= "CONSTANT")
+dist.hw.hrs.combo.om <- seqdist(seq.hw.hrs.combo, method="OM", indel=1, sm= "CONSTANT")
 dist.fam.om <- seqdist(seq.fam, method="OM", indel=1, sm= "CONSTANT")
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -115,7 +115,7 @@ x <- 2:15 ## this is number of clusters
 # Extract r2 and silhouette for the combined clustering
 
 ## More detailed sequence alphabets
-mcdist.det.om <- seqdistmc(channels=list(seq.work.ow, seq.hw.hrs.alt, seq.fam), ## Seq states NOT om matrix
+mcdist.det.om <- seqdistmc(channels=list(seq.work.ow, seq.hw.hrs.combo, seq.fam), ## Seq states NOT om matrix
                            method="OM", indel=1, sm="CONSTANT") 
 
 mcdist.det.om.pam <- wcKMedRange(mcdist.det.om, 
@@ -157,23 +157,22 @@ work.ow.r2 <- work.ow.val[,7]
 
 # Extract r2 and silhouette for the clustering of housework trajectories
 ## V2
-hw.hrs.alt.pam.test <- wcKMedRange(dist.hw.hrs.alt.om, 
+hw.hrs.combo.pam.test <- wcKMedRange(dist.hw.hrs.combo.om, 
                                kvals = 2:15)
 
-hw.hrs.alt.val<-hw.hrs.alt.pam.test[[4]]
+hw.hrs.combo.val<-hw.hrs.combo.pam.test[[4]]
 
-hw.hrs.alt.asw <- hw.hrs.alt.val[,4]
+hw.hrs.combo.asw <- hw.hrs.combo.val[,4]
 
-hw.hrs.alt.r2 <- hw.hrs.alt.val[,7]
+hw.hrs.combo.r2 <- hw.hrs.combo.val[,7]
 
 save.image("created data/cluster-comparison-complete.RData")
-# in case it fails here
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Create figure comparing separate channels and MCSA ---- 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-pdf("results/cluster_comparison_complete_sequences.pdf", # doesn't need to be cairo so removed for now (might not work)
+pdf("results/PSID/cluster_comparison_complete_sequences.pdf", # doesn't need to be cairo so removed for now (might not work)
           width=20,
           height=10)
 
@@ -214,7 +213,7 @@ legend("bottomright", legend=c("ASW", "R2"),
        col=c("blue", "black"), lty = 1:2, cex=1.2)
 
 # Housework Channel: Hours with Group-specific thresholds
-plot(x, hw.hrs.alt.asw, type = "b", frame = FALSE, pch = 19, main="(3a) Housework (with Hours)", 
+plot(x, hw.hrs.combo.asw, type = "b", frame = FALSE, pch = 19, main="(3a) Housework (with Hours)", 
      col = "blue", xlab = "N. clusters", ylab = "", ylim = c(0,0.8),
      cex.main=2,
      cex.lab=1.6,
@@ -223,7 +222,7 @@ grid(nx = NULL,
      ny = NA,
      lty = 1, col = "gray85", lwd = 1)
 # Add a second line
-lines(x, hw.hrs.alt.r2, pch = 19, col = "black", type = "b", lty = 2)
+lines(x, hw.hrs.combo.r2, pch = 19, col = "black", type = "b", lty = 2)
 # Add a legend to the plot
 legend("bottomright", legend=c("ASW", "R2"),
        col=c("blue", "black"), lty = 1:2, cex=1.2)

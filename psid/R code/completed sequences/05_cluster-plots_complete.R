@@ -2,7 +2,7 @@
 #    Program: cluster-plots
 #    Author: Kim McErlean & Lea Pessin 
 #    Date: January 2025
-#    Modified: April 24 2025
+#    Modified: May 21 2025
 #    Goal: Create relative frequency and state distribution plots
 #         comparing across cluster solutions
 # --------------------------------------------------------------------
@@ -92,120 +92,6 @@ if (Sys.getenv(c("USERNAME")) == "lpessin") {
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Charts for 5 cluster solution
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Load cluster information created in step 4 
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-load("created data/typology-comparison-complete-prep.RData")
-
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Add cluster information to source data ---- 
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-# Cut tree (this happened in step 4)
-# mc5 <- mcdist.om.pam.det.ward$clustering$cluster5 # these are sub"folders" in ward output
-
-# add cluster membership indicator 
-data <- data |>
-  mutate(cluster = mc5,
-         id2 = row_number())
-
-# Obtain relative frequencies of the five cluster (using weights)
-# Convert relative frequencies to percentages (used for labeling the y-axes)
-
-data <- data |>
-  count(cluster) |>  # wt = weight40
-  mutate(share = n/ sum(n)) |>
-  arrange(share) |> 
-  mutate(mc.factor = glue("Cluster {row_number()}
-                            ({round(share*100,1)}%)"),
-         mc.factor = factor(mc.factor)) |> 
-  select(cluster, mc.factor, share) |> 
-  right_join(data, by = "cluster") |> 
-  arrange(id2)
-
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Create plots --------------------------------
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# for reference:
-# mcdist.det.om <- seqdistmc(channels=list(seq.work.ow, seq.hw.hrs.alt, seq.fam),
-#                           method="OM", indel=1, sm="CONSTANT") 
-
-#### State distribution
-pdf("results/PSID/PSID_MCSA_SDPlot_complete_mc5.pdf",
-    width=15,
-    height=28)
-
-seqplotMD(channels=list(Family=seq.fam,Work=seq.work.ow,Housework=seq.hw.hrs.alt),
-          group = data$mc.factor, type="d",
-          xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE)  
-
-dev.off()
-
-#### Frequency
-pdf("results/PSID/PSID_MCSA_FreqPlot_complete_mc5.pdf",
-    width=15,
-    height=28)
-
-seqplotMD(channels=list(Family=seq.fam,Work=seq.work.ow,Housework=seq.hw.hrs.alt),
-          group = data$mc.factor, type="f",
-          xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE)  
-
-dev.off()
-
-
-#### Relative frequency: 100 K, sort 1 (start)
-pdf("results/PSID/PSID_MCSA_RF100Plot_start_complete_mc5.pdf",
-    width=15,
-    height=28)
-
-seqplotMD(channels=list(Family=seq.fam,Work=seq.work.ow,Housework=seq.hw.hrs.alt),
-          group = data$mc.factor, type="rf", diss=mcdist.det.om,
-          xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
-          dom.byrow=FALSE,k=100,sortv="from.start")
-
-dev.off()
-
-#### Relative frequency: 100 K, sort 1a (start, domain1)
-pdf("results/PSID/PSID_MCSA_RF100Plot_startd1_complete_mc5.pdf",
-    width=15,
-    height=28)
-
-seqplotMD(channels=list(Family=seq.fam,Work=seq.work.ow,Housework=seq.hw.hrs.alt),
-          group = data$mc.factor, type="rf", diss=mcdist.det.om,
-          xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
-          dom.byrow=FALSE,k=100,sortv="from.start",dom.crit=-1)
-
-dev.off()
-
-
-#### Relative frequency: 100 K, sort 2 (end)
-pdf("results/PSID/PSID_MCSA_RF100Plot_end_complete_mc5.pdf",
-    width=15,
-    height=28)
-
-seqplotMD(channels=list(Family=seq.fam,Work=seq.work.ow,Housework=seq.hw.hrs.alt),
-          group = data$mc.factor, type="rf", diss=mcdist.det.om,
-          xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
-          dom.byrow=FALSE,k=100,sortv="from.end")
-
-dev.off()
-
-#### Relative frequency: 100 K, sort 3 (mds)
-#pdf("results/PSID/PSID_MCSA_RFPlot_100k_mds.pdf",
-#    width=15,
-#    height=28)
-
-#seqplotMD(channels=list(Family=seq.fam,Work=seq.work.ow,Housework=seq.hw.hrs.alt),
-#          group = data$mc.factor, type="rf", diss=mcdist.det.om,
-#          xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
-#          dom.byrow=FALSE,k=100,sortv="mds")
-
-#dev.off()
-
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Charts for 6 cluster solution
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -219,7 +105,7 @@ load("created data/typology-comparison-complete-prep.RData")
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # Cut tree (this happened in step 4)
-# mc6 <- mcdist.om.pam.det.ward$clustering$cluster5 # these are sub"folders" in ward output
+# mc6 <- mcdist.om.pam.det.ward$clustering$cluster6 # these are sub"folders" in ward output
 
 # add cluster membership indicator 
 data <- data |>
@@ -244,7 +130,7 @@ data <- data |>
 # Create plots --------------------------------
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # for reference:
-# mcdist.det.om <- seqdistmc(channels=list(seq.work.ow, seq.hw.hrs.alt, seq.fam),
+# mcdist.det.om <- seqdistmc(channels=list(seq.work.ow, seq.hw.hrs.combo, seq.fam),
 #                           method="OM", indel=1, sm="CONSTANT") 
 
 #### State distribution
@@ -252,7 +138,7 @@ pdf("results/PSID/PSID_MCSA_SDPlot_complete_mc6.pdf",
     width=15,
     height=28)
 
-seqplotMD(channels=list(Family=seq.fam,Work=seq.work.ow,Housework=seq.hw.hrs.alt),
+seqplotMD(channels=list('Paid Work'=seq.work.ow,Family=seq.fam,Housework=seq.hw.hrs.combo),
           group = data$mc.factor, type="d",
           xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE)  
 
@@ -263,49 +149,26 @@ pdf("results/PSID/PSID_MCSA_FreqPlot_complete_mc6.pdf",
     width=15,
     height=28)
 
-seqplotMD(channels=list(Family=seq.fam,Work=seq.work.ow,Housework=seq.hw.hrs.alt),
+seqplotMD(channels=list('Paid Work'=seq.work.ow,Family=seq.fam,Housework=seq.hw.hrs.combo),
           group = data$mc.factor, type="f",
           xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE)  
 
 dev.off()
 
 
-#### Relative frequency: 100 K, sort 1 (start)
+#### Relative frequency: 100 K, sort 1a (start, domain1)
 pdf("results/PSID/PSID_MCSA_RF100Plot_start_complete_mc6.pdf",
     width=15,
-    height=28)
+    height=42)
 
-seqplotMD(channels=list(Family=seq.fam,Work=seq.work.ow,Housework=seq.hw.hrs.alt),
+seqplotMD(channels=list('Paid Work'=seq.work.ow,Family=seq.fam,Housework=seq.hw.hrs.combo),
           group = data$mc.factor, type="rf", diss=mcdist.det.om,
           xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
-          dom.byrow=FALSE,k=100,sortv="from.start")
+          dom.byrow=FALSE,k=100,sortv="from.start",dom.crit=2,
+          cex.legend=0.7)
 
 dev.off()
 
-#### Relative frequency: 100 K, sort 1a (start, domain1)
-pdf("results/PSID/PSID_MCSA_RF100Plot_startd1_complete_mc6.pdf",
-    width=15,
-    height=28)
-
-seqplotMD(channels=list(Family=seq.fam,Work=seq.work.ow,Housework=seq.hw.hrs.alt),
-          group = data$mc.factor, type="rf", diss=mcdist.det.om,
-          xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
-          dom.byrow=FALSE,k=100,sortv="from.start",dom.crit=-1)
-
-dev.off()
-
-
-#### Relative frequency: 100 K, sort 2 (end)
-pdf("results/PSID/PSID_MCSA_RF100Plot_end_complete_mc6.pdf",
-    width=15,
-    height=28)
-
-seqplotMD(channels=list(Family=seq.fam,Work=seq.work.ow,Housework=seq.hw.hrs.alt),
-          group = data$mc.factor, type="rf", diss=mcdist.det.om,
-          xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
-          dom.byrow=FALSE,k=100,sortv="from.end")
-
-dev.off()
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Charts for 7 cluster solution
@@ -381,7 +244,7 @@ data <- data |>
 # Create plots --------------------------------
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # for reference:
-# mcdist.det.om <- seqdistmc(channels=list(seq.work.ow, seq.hw.hrs.alt, seq.fam),
+# mcdist.det.om <- seqdistmc(channels=list(seq.work.ow, seq.hw.hrs.combo, seq.fam),
 #                           method="OM", indel=1, sm="CONSTANT") 
 
 #### State distribution
@@ -389,8 +252,8 @@ pdf("results/PSID/PSID_MCSA_SDPlot_complete_mc7.pdf",
     width=15,
     height=28)
 
-seqplotMD(channels=list(Family=seq.fam,Work=seq.work.ow,Housework=seq.hw.hrs.alt),
-          group = data$mc.factor.x, type="d",
+seqplotMD(channels=list('Paid Work'=seq.work.ow,Family=seq.fam,Housework=seq.hw.hrs.combo),
+          group = data$mc.factor, type="d",
           xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE)  
 
 dev.off()
@@ -400,78 +263,20 @@ pdf("results/PSID/PSID_MCSA_FreqPlot_complete_mc7.pdf",
     width=15,
     height=28)
 
-seqplotMD(channels=list(Family=seq.fam,Work=seq.work.ow,Housework=seq.hw.hrs.alt),
-          group = data$mc.factor.x, type="f",
+seqplotMD(channels=list('Paid Work'=seq.work.ow,Family=seq.fam,Housework=seq.hw.hrs.combo),
+          group = data$mc.factor, type="f",
           xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE)  
 
 dev.off()
 
 
-#### Relative frequency: 100 K, sort 1 (start)
+#### Relative frequency: 100 K, sort 1a (start, domain1)
 pdf("results/PSID/PSID_MCSA_RF100Plot_start_complete_mc7.pdf",
-    width=15,
-    height=28)
-
-seqplotMD(channels=list(Family=seq.fam,"Paid Work"=seq.work.ow,Housework=seq.hw.hrs.alt),
-          group = data$mc.factor.x, type="rf", diss=mcdist.det.om,
-          xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
-          dom.byrow=FALSE,k=100,sortv="from.start")
-
-dev.off()
-
-#### Relative frequency: 100 K, sort 1a (start, domain1)
-pdf("results/PSID/PSID_MCSA_RF100Plot_startd1_complete_mc7.pdf",
-    width=15,
-    height=28)
-
-seqplotMD(channels=list(Family=seq.fam,"Paid Work"=seq.work.ow,Housework=seq.hw.hrs.alt),
-          group = data$mc.factor.x, type="rf", diss=mcdist.det.om,
-          xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
-          dom.byrow=FALSE,k=100,sortv="from.start",dom.crit=-1)
-
-dev.off()
-
-
-#### Relative frequency: 100 K, sort 2 (end)
-pdf("results/PSID/PSID_MCSA_RF100Plot_end_complete_mc7.pdf",
-    width=15,
-    height=28)
-
-seqplotMD(channels=list(Family=seq.fam,Work=seq.work.ow,Housework=seq.hw.hrs.alt),
-          group = data$mc.factor.x, type="rf", diss=mcdist.det.om,
-          xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
-          dom.byrow=FALSE,k=100,sortv="from.end")
-
-dev.off()
-
-
-### Current cluster order (For Lund Workshop)
-
-#### Relative frequency: 100 K, sort 1a (start, domain1)
-pdf("results/PSID/PSID_MCSA_RF100Plot_042925.pdf",
-    width=15,
-    height=28)
-
-seqplotMD(channels=list('Paid Work'=seq.work.ow,Family=seq.fam,Housework=seq.hw.hrs.alt),
-          group = data$real.cluster$cluster.id, type="rf", diss=mcdist.det.om,
-          xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
-          dom.byrow=FALSE,k=100,sortv="from.start",dom.crit=2,
-          cex.legend=0.7)
-
-dev.off()
-
-pdf_convert("results/PSID/PSID_MCSA_RF100Plot_042925.pdf",
-            format = "png", dpi = 300, pages = 1,
-            "results/PSID/PSID_MCSA_RF100Plot_042925.png")
-
-# want to play around with size, because this isn't great for powerpoint
-#### Relative frequency: 100 K, sort 1a (start, domain1)
-pdf("results/PSID/PSID_MCSA_RF100Plot_resize.pdf",
     width=15,
     height=42)
 
-seqplotMD(channels=list('Paid Work'=seq.work.ow,Family=seq.fam,Housework=seq.hw.hrs.alt),
-          group = data$real.cluster$cluster.id, type="rf", diss=mcdist.det.om,
+seqplotMD(channels=list('Paid Work'=seq.work.ow,Family=seq.fam,Housework=seq.hw.hrs.combo),
+          group = data$mc.factor, type="rf", diss=mcdist.det.om,
           xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
           dom.byrow=FALSE,k=100,sortv="from.start",dom.crit=2,
           cex.legend=0.7)
