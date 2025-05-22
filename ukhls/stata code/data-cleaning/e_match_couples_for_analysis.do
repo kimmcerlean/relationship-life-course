@@ -397,6 +397,10 @@ label values duration duration_rec .
 
 browse pidp eligible_partner marital_status_defacto eligible_rel_start_year eligible_rel_end_year year int_year duration duration_rec
 
+**# Bookmark #1
+// temp save
+save "$created_data/ukhls_couples_imputed_long_recoded.dta", replace
+
 mi passive: gen dur_transitioned=.
 mi passive: replace dur_transitioned = year_transitioned - eligible_rel_start_year
 
@@ -430,6 +434,8 @@ mi passive: replace rel_type = 2 if ever_transition==1 & duration <= dur_transit
 mi passive: replace rel_type = 2 if duration==0 & marital_status_imp==2
 mi passive: replace rel_type = 2 if rel_type==. & duration==0 & marital_status_imp[_n+1]==2 & pidp==pidp[_n+1]
 mi passive: replace rel_type = 2 if rel_type==. & marital_status_imp==2 & int_year >= eligible_rel_start_year & int_year <= eligible_rel_end_year
+mi passive: replace rel_type = 2 if rel_type==. & duration==0 & marital_status_imp==6 // so if it's first duration and never married, has to be cohab
+mi passive: replace rel_type = 2 if rel_type==. & duration==1 & max_dur>=1 & marital_status_imp==6 // so if it's first duration and never married, has to be cohab
 mi passive: replace rel_type = 3 if duration > max_dur & eligible_rel_status==1 // intact but past end of relationship
 mi passive: replace rel_type = 3 if duration > max_dur & eligible_rel_status==99 // estimated attrition
 mi passive: replace rel_type = 3 if duration > max_dur & eligible_rel_status==. // estimated attrition
@@ -450,9 +456,11 @@ mi passive: replace rel_type = 1 if rel_type==. // best guess based on current i
 mi passive: replace rel_type = rel_type[_n+1] if duration==0 & inlist(rel_type,3,4) & !inlist(rel_type[_n+1],0,3,4) & pidp==pidp[_n+1]
 
 tab rel_type imputed, m
+tab rel_type if _mi_m!=0, m
 
 // tab rel_type if imputed==1, m
 // browse pidp eligible_partner marital_status_imp rel_type duration min_dur max_dur int_year eligible_rel_start_year eligible_rel_end_year eligible_rel_status orig_record total_hours if inlist(pidp, 4197647, 30776922, 428992285, 837228245, 428992285) // if inlist(pidp,510699,7731844,30620522,89355405,225385325)
+// browse pidp eligible_partner min_dur max_dur duration _mi_m   marital_status_imp  rel_type couple_work_ow if pidp==293086125
 
 label define rel_type 0 "Pre-Relationship" 1 "Married" 2 "Cohab" 3 "Attrited" 4 "Broke Up"
 label values rel_type rel_type
@@ -461,7 +469,7 @@ tab rel_type, m
 mi estimate: proportion rel_type
 
 tab rel_type eligible_rel_status, row
-tab rel_type duration
+tab rel_type duration if _mi_m!=0, m
 
 * number of children
 tab num_children_woman num_children_man if inlist(rel_type,1,2) & duration>=0, m
@@ -501,6 +509,7 @@ mi estimate: proportion family_type
 
 tab family_type rel_type
 tab family_type duration
+tab family_type duration if _mi_m!=0, m
 
 // browse pidp eligible_partner marital_status_imp rel_type if family_type_end == 0 & duration==0
 // browse pidp eligible_partner marital_status_imp rel_type duration family_type_end if inlist(pidp,32143682,67551242,67626042,748332543)
@@ -543,8 +552,8 @@ label values couple_hw_hrs_combo_end couple_hw_hrs_combo
 label values family_type_end family_type
 
 // cross-tabs to explore to figure out potential new variables
-tab ft_pt_man_end ft_pt_woman_end, cell
-tab ft_pt_det_man_end ft_pt_det_woman_end, cell
+// tab ft_pt_man_end ft_pt_woman_end, cell
+// tab ft_pt_det_man_end ft_pt_det_woman_end, cell
 
 // final update and save
 
@@ -628,6 +637,7 @@ mi update
 unique pidp eligible_partner // now 6271
 
 save "$created_data/ukhls_couples_imputed_long_deduped.dta", replace
+
 
 ********************************************************************************
 **# Quick descriptives for full sample while long
