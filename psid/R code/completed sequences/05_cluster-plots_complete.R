@@ -184,7 +184,7 @@ load("created data/typology-comparison-complete-prep.RData")
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # Cut tree (this happened in step 4)
-# mc7 <- mcdist.om.pam.det.ward$clustering$cluster5 # these are sub"folders" in ward output
+# mc7 <- mcdist.om.pam.det.ward$clustering$cluster7 # these are sub"folders" in ward output
 
 # add cluster membership indicator 
 data <- data |>

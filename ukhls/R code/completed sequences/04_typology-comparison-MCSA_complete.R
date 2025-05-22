@@ -93,7 +93,7 @@ load("created data/ukhls/ukhls_setupsequence-complete.RData")
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # Hierarchical cluster analysis, non-squared dissimilarities
-mcdist.det.om <- seqdistmc(channels=list(seq.work.ow, seq.hw.hrs.alt, seq.fam), ## Seq states NOT om matrix
+mcdist.det.om <- seqdistmc(channels=list(seq.work.ow, seq.hw.hrs.combo, seq.fam), ## Seq states NOT om matrix
                            method="OM", indel=1, sm="CONSTANT") 
 
 mc.det.ward1 <- hclust(as.dist(mcdist.det.om), 
@@ -104,63 +104,6 @@ mc.det.ward1 <- hclust(as.dist(mcdist.det.om),
 
 mcdist.om.pam.det.ward <- wcKMedRange(mcdist.det.om, kvals = 2:10,
                                       initialclust = mc.det.ward1)
-
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Prep work for 5 cluster solution
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-# Cut tree at cluster==5
-
-mc5 <- mcdist.om.pam.det.ward$clustering$cluster5 # these are sub"folders" in ward output
-
-# Label the clusters from 1 to 5
-labels5<-unique(mc5)
-sort(labels5)
-
-mc5.factor <- factor(mc5, levels = sort(labels5),
-                     c("1", "2", "3", "4", "5"))
-
-# Separate objects for each channel and for each cluster (=5*3)
-
-data$mc5.factor <- as.numeric(mc5.factor)
-
-# Identify position of variables indicating start and end of sequences
-
-mc5.work.ow1.seq <- seq.work.ow[data$mc5.factor == "1", ]
-mc5.work.ow2.seq <- seq.work.ow[data$mc5.factor == "2", ]
-mc5.work.ow3.seq <- seq.work.ow[data$mc5.factor == "3", ]
-mc5.work.ow4.seq <- seq.work.ow[data$mc5.factor == "4", ]
-mc5.work.ow5.seq <- seq.work.ow[data$mc5.factor == "5", ]
-
-mc5.hw.hrs1.seq <- seq.hw.hrs.alt[data$mc5.factor == "1", ]
-mc5.hw.hrs2.seq <- seq.hw.hrs.alt[data$mc5.factor == "2", ]
-mc5.hw.hrs3.seq <- seq.hw.hrs.alt[data$mc5.factor == "3", ]
-mc5.hw.hrs4.seq <- seq.hw.hrs.alt[data$mc5.factor == "4", ]
-mc5.hw.hrs5.seq <- seq.hw.hrs.alt[data$mc5.factor == "5", ]
-
-mc5.fam1.seq <- seq.fam[data$mc5.factor == "1", ]
-mc5.fam2.seq <- seq.fam[data$mc5.factor == "2", ]
-mc5.fam3.seq <- seq.fam[data$mc5.factor == "3", ]
-mc5.fam4.seq <- seq.fam[data$mc5.factor == "4", ]
-mc5.fam5.seq <- seq.fam[data$mc5.factor == "5", ]
-
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-# Obtain relative frequencies of the five clusters
-
-relfreq5 <- data %>% 
-  count(mc5.factor) %>% 
-  mutate(share = n/ sum(n)) %>%
-  arrange(share)
-
-# Convert relative frequencies to percentages (will be used for labeling the y-axes)
-share <- round(as.numeric(relfreq5$share)*100, 1)
-
-# display frequencies of each cluster.
-# This might also be useful to ensure one cluster is not extremely small?
-print(relfreq5)
-
-write.csv(relfreq5,("results/UKHLS/complete_cluster_freq_mc5.csv"))
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Prep work for 6 cluster solution
@@ -190,12 +133,12 @@ mc6.work.ow4.seq <- seq.work.ow[data$mc6.factor == "4", ]
 mc6.work.ow5.seq <- seq.work.ow[data$mc6.factor == "5", ]
 mc6.work.ow6.seq <- seq.work.ow[data$mc6.factor == "6", ]
 
-mc6.hw.hrs1.seq <- seq.hw.hrs.alt[data$mc6.factor == "1", ]
-mc6.hw.hrs2.seq <- seq.hw.hrs.alt[data$mc6.factor == "2", ]
-mc6.hw.hrs3.seq <- seq.hw.hrs.alt[data$mc6.factor == "3", ]
-mc6.hw.hrs4.seq <- seq.hw.hrs.alt[data$mc6.factor == "4", ]
-mc6.hw.hrs5.seq <- seq.hw.hrs.alt[data$mc6.factor == "5", ]
-mc6.hw.hrs6.seq <- seq.hw.hrs.alt[data$mc6.factor == "6", ]
+mc6.hw.hrs1.seq <- seq.hw.hrs.combo[data$mc6.factor == "1", ]
+mc6.hw.hrs2.seq <- seq.hw.hrs.combo[data$mc6.factor == "2", ]
+mc6.hw.hrs3.seq <- seq.hw.hrs.combo[data$mc6.factor == "3", ]
+mc6.hw.hrs4.seq <- seq.hw.hrs.combo[data$mc6.factor == "4", ]
+mc6.hw.hrs5.seq <- seq.hw.hrs.combo[data$mc6.factor == "5", ]
+mc6.hw.hrs6.seq <- seq.hw.hrs.combo[data$mc6.factor == "6", ]
 
 mc6.fam1.seq <- seq.fam[data$mc6.factor == "1", ]
 mc6.fam2.seq <- seq.fam[data$mc6.factor == "2", ]
@@ -251,13 +194,13 @@ mc7.work.ow5.seq <- seq.work.ow[data$mc7.factor == "5", ]
 mc7.work.ow6.seq <- seq.work.ow[data$mc7.factor == "6", ]
 mc7.work.ow7.seq <- seq.work.ow[data$mc7.factor == "7", ]
 
-mc7.hw.hrs1.seq <- seq.hw.hrs.alt[data$mc7.factor == "1", ]
-mc7.hw.hrs2.seq <- seq.hw.hrs.alt[data$mc7.factor == "2", ]
-mc7.hw.hrs3.seq <- seq.hw.hrs.alt[data$mc7.factor == "3", ]
-mc7.hw.hrs4.seq <- seq.hw.hrs.alt[data$mc7.factor == "4", ]
-mc7.hw.hrs5.seq <- seq.hw.hrs.alt[data$mc7.factor == "5", ]
-mc7.hw.hrs6.seq <- seq.hw.hrs.alt[data$mc7.factor == "6", ]
-mc7.hw.hrs7.seq <- seq.hw.hrs.alt[data$mc7.factor == "7", ]
+mc7.hw.hrs1.seq <- seq.hw.hrs.combo[data$mc7.factor == "1", ]
+mc7.hw.hrs2.seq <- seq.hw.hrs.combo[data$mc7.factor == "2", ]
+mc7.hw.hrs3.seq <- seq.hw.hrs.combo[data$mc7.factor == "3", ]
+mc7.hw.hrs4.seq <- seq.hw.hrs.combo[data$mc7.factor == "4", ]
+mc7.hw.hrs5.seq <- seq.hw.hrs.combo[data$mc7.factor == "5", ]
+mc7.hw.hrs6.seq <- seq.hw.hrs.combo[data$mc7.factor == "6", ]
+mc7.hw.hrs7.seq <- seq.hw.hrs.combo[data$mc7.factor == "7", ]
 
 mc7.fam1.seq <- seq.fam[data$mc7.factor == "1", ]
 mc7.fam2.seq <- seq.fam[data$mc7.factor == "2", ]
