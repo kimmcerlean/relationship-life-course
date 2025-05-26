@@ -510,7 +510,7 @@ gen INTERVIEW_NUM_1968 = INTERVIEW_NUM_
 
 unique main_per_id INTERVIEW_NUM_1968
 
-save "$data_tmp\PSID_partner_history.dta", replace // really this is just cohabitation NOT marriages.
+save "$temp\PSID_partner_history.dta", replace // really this is just cohabitation NOT marriages.
 
 ********************************************************************************
 * All relationships
@@ -575,7 +575,7 @@ gen INTERVIEW_NUM_1968 = INTERVIEW_NUM_
 
 unique main_per_id INTERVIEW_NUM_1968
 
-save "$data_tmp\PSID_union_history.dta", replace
+save "$temp\PSID_union_history.dta", replace
 
 browse main_per_id INTERVIEW_NUM_ unique_id MX8* partner_1968_id* partner_per_num* partner_unique_id*
 // compare to this:  "$data_keep\PSID_union_history_created.dta"
@@ -607,4 +607,4 @@ bysort unique_id (marr_rank): gen marr_num = sum(marr_rank != marr_rank[_n-1]) i
 
 drop rank help_var marr_rank marr_help_var
 
-save "$data_tmp\PSID_relationship_list_tomatch.dta", replace
+save "$temp\PSID_relationship_list_tomatch.dta", replace
