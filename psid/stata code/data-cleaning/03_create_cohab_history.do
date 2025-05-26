@@ -516,7 +516,7 @@ save "$data_tmp\PSID_partner_history.dta", replace // really this is just cohabi
 * All relationships
 ********************************************************************************
 
-use "$PSID\family_matrix_68_19.dta", clear // relationship matrix downloaded from PSID site
+use "$PSID\family_matrix_68_21.dta", clear // relationship matrix downloaded from PSID site
 
 unique MX5 MX6 // should match the 82000 in other file? -- okay so it does. I am dumb because I restricted to only partners. omg this explains evertything
 

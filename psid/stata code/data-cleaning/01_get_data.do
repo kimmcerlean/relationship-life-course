@@ -15,8 +15,8 @@
 ********************************************************************************
 * Take downloaded data, turn it into Stata format and rename
 ********************************************************************************
-do "$code/stata code/data-cleaning/J341059.do"
-do "$code/stata code/data-cleaning/J341059_formats.do"
+do "$code/stata code/data-cleaning/J347963.do"
+do "$code/stata code/data-cleaning/J347963_formats.do"
 do "$code/stata code/data-cleaning/00_rename_vars.do"
 
 ********************************************************************************
@@ -65,20 +65,71 @@ drop _merge
 
 gen id=_n
 
-local reshape_vars "RELEASE_ X1968_PERSON_NUM_ INTERVIEW_NUM_ RELATION_ AGE_INDV_ MARITAL_PAIRS_ MOVED_ YRS_EDUCATION_INDV_ TYPE_OF_INCOME_ TOTAL_MONEY_INCOME_ ANNUAL_HOURS_T1_INDV_ RELEASE_NUM2_ FAMILY_COMPOSITION_ AGE_HEAD_ AGE_WIFE_ SEX_HEAD_ AGE_YOUNG_CHILD_ RESPONDENT_WHO_ RACE_1_HEAD_ EMPLOY_STATUS_HEAD_ MARST_DEFACTO_HEAD_ WIDOW_LENGTH_HEAD_ WAGES_T1_HEAD_ FAMILY_INTERVIEW_NUM_ FATHER_EDUC_HEAD_ HRLY_RATE_T1_HEAD_ HRLY_RATE_T1_WIFE_ REGION_ NUM_CHILDREN_ CORE_WEIGHT_ ANNUAL_HOURS_T1_HEAD_ ANNUAL_HOURS_T1_WIFE_ LABOR_INCOME_T1_HEAD_ LABOR_INCOME_T1_WIFE_ TOTAL_INCOME_T1_FAMILY_ TAXABLE_T1_HEAD_WIFE_ EDUC1_HEAD_ EDUC1_WIFE_ WEEKLY_HRS1_T1_WIFE_ WEEKLY_HRS1_T1_HEAD_ TOTAL_HOUSEWORK_T1_HW_ RENT_COST_V1_ MORTGAGE_COST_ HOUSE_VALUE_ HOUSE_STATUS_ VEHICLE_OWN_ POVERTY_THRESHOLD_ SEQ_NUMBER_ RESPONDENT_ FAMILY_ID_SO_ COMPOSITION_CHANGE_ NEW_HEAD_ HOUSEWORK_WIFE_ HOUSEWORK_HEAD_ MOST_HOUSEWORK_T1_ AGE_OLDEST_CHILD_ FOOD_STAMPS_ HRLY_RATE_CURRENT_HEAD_ RELIGION_HEAD_ CHILDCARE_COSTS_ TRANSFER_INCOME_ WELFARE_JOINT_ NEW_WIFE_ FATHER_EDUC_WIFE_ MOTHER_EDUC_WIFE_ MOTHER_EDUC_HEAD_ TYPE_TAXABLE_INCOME_ TOTAL_INCOME_T1_INDV_ COLLEGE_HEAD_ COLLEGE_WIFE_ EDUC_HEAD_ EDUC_WIFE_ SALARY_TYPE_HEAD_ FIRST_MARRIAGE_YR_WIFE_ RELIGION_WIFE_ WORK_MONEY_WIFE_ EMPLOY_STATUS_WIFE_ SALARY_TYPE_WIFE_ HRLY_RATE_CURRENT_WIFE_ RESEPONDENT_WIFE_ WORK_MONEY_HEAD_ MARST_LEGAL_HEAD_ EVER_MARRIED_HEAD_ EMPLOYMENT_INDV_ STUDENT_T1_INDV_ BIRTH_YR_INDV_ COUPLE_STATUS_HEAD_ OTHER_ASSETS_ STOCKS_MF_ WEALTH_NO_EQUITY_ WEALTH_EQUITY_ VEHICLE_VALUE_ RELATION_TO_HEAD_ NUM_MARRIED_HEAD_ FIRST_MARRIAGE_YR_HEAD_ FIRST_MARRIAGE_END_HEAD_ FIRST_WIDOW_YR_HEAD_ FIRST_DIVORCE_YR_HEAD_ FIRST_SEPARATED_YR_HEAD_ LAST_MARRIAGE_YR_HEAD_ LAST_WIDOW_YR_HEAD_ LAST_DIVORCE_YR_HEAD_ LAST_SEPARATED_YR_HEAD_ FAMILY_STRUCTURE_HEAD_ RACE_2_HEAD_ NUM_MARRIED_WIFE_ FIRST_MARRIAGE_END_WIFE_ FIRST_WIDOW_YR_WIFE_ FIRST_DIVORCE_YR_WIFE_ FIRST_SEPARATED_YR_WIFE_ LAST_MARRIAGE_YR_WIFE_ LAST_WIDOW_YR_WIFE_ LAST_DIVORCE_YR_WIFE_ LAST_SEPARATED_YR_WIFE_ FAMILY_STRUCTURE_WIFE_ RACE_1_WIFE_ RACE_2_WIFE_ STATE_ BIRTHS_T1_HEAD_ BIRTHS_T1_WIFE_ BIRTHS_T1_BOTH_ WELFARE_HEAD_1_ WELFARE_WIFE_1_ LABOR_INCOME_T1_INDV_ RELEASE_NUM_ WAGES_CURRENT_HEAD_ WAGES_CURRENT_WIFE_ WAGES_T1_WIFE_ RENT_COST_V2_ DIVIDENDS_HEAD_ DIVIDENDS_WIFE_ WELFARE_HEAD_2_ WELFARE_WIFE_2_ EMPLOY_STATUS1_HEAD_ EMPLOY_STATUS2_HEAD_ EMPLOY_STATUS3_HEAD_ EMPLOY_STATUS1_WIFE_ EMPLOY_STATUS2_WIFE_ EMPLOY_STATUS3_WIFE_ RACE_3_WIFE_ RACE_3_HEAD_ WAGES_ALT_T1_HEAD_ WAGES_ALT_T1_WIFE_ WEEKLY_HRS_T1_HEAD_ WEEKLY_HRS_T1_WIFE_ RACE_4_HEAD_ COR_IMM_WT_ ETHNIC_WIFE_ ETHNIC_HEAD_ CROSS_SECTION_FAM_WT_ LONG_WT_ CROSS_SECTION_WT_ CDS_ELIGIBLE_ TOTAL_HOUSING_ HEALTH_INSURANCE_FAM_ BANK_ASSETS_ LABOR_INC_J1_T1_HEAD_ TOTAL_WEEKS_T1_HEAD_ ANNUAL_HOURS2_T1_HEAD_ LABOR_INC_J1_T1_WIFE_ TOTAL_WEEKS_T1_WIFE_ ANNUAL_HOURS2_T1_WIFE_ WEEKLY_HRS_T2_HEAD_ LABOR_INC_J2_T1_HEAD_ LABOR_INC_J3_T1_HEAD_ LABOR_INC_J4_T1_HEAD_ LABOR_INC_J2_T1_WIFE_ LABOR_INC_J3_T1_WIFE_ LABOR_INC_J4_T1_WIFE_ DIVIDENDS_JOINT_ INTEREST_JOINT_ NUM_JOBS_T1_INDV_ BACHELOR_YR_INDV_ STUDENT_CURRENT_INDV_ COLLEGE_INDV_ SEX_WIFE_ BACHELOR_YR_WIFE_ ENROLLED_WIFE_ BACHELOR_YR_HEAD_ ENROLLED_HEAD_ WAGES2_T1_WIFE_ METRO_ CURRENTLY_WORK_HEAD_ CURRENTLY_WORK_WIFE_ EMPLOY_STATUS_T2_HEAD_ EMPLOY_STATUS_T2_WIFE_ WEEKLY_HRS_T2_WIFE_ START_YR_EMPLOYER_HEAD_ START_YR_EMPLOYER_WIFE_ START_YR_CURRENT_HEAD_ START_YR_CURRENT_WIFE_ START_YR_PREV_HEAD_ START_YR_PREV_WIFE_ YRS_CURRENT_EMPLOY_HEAD_ YRS_CURRENT_EMPLOY_WIFE_ LABOR_INCOME_T2_HEAD_ LABOR_INCOME_T2_WIFE_ WEEKLY_HRS_T2_INDV_ LABOR_INCOME_T2_INDV_ HOUSEWORK_INDV_ RACE_4_WIFE_ HISPANICITY_WIFE_ HISPANICITY_HEAD_ CHILDCARE_HEAD_ CHILDCARE_WIFE_ ADULTCARE_HEAD_ ADULTCARE_WIFE_ TOTAL_INCOME_T2_FAMILY_ WEEKS_WORKED_T2_INDV_ FOLLOW_STATUS_ NUM_IN_HH_ NUM_NONFU_IN_HH_ NEW_WIFE_YEAR_ MOVED_YEAR_ MOVED_MONTH_ SPLITOFF_YEAR_ SPLITOFF_MONTH_ DATA_RECORD_TYPE_ SPLITOFF_ NEW_HEAD_YEAR_ HS_GRAD_HEAD_ ATTENDED_COLLEGE_HEAD_ HIGHEST_DEGREE_HEAD_ HS_GRAD_WIFE_ ATTENDED_COLLEGE_WIFE_ HIGHEST_DEGREE_WIFE_ WHERE_EDUC_HEAD_ FOREIGN_DEG_HEAD_ WHERE_EDUC_WIFE_ FOREIGN_DEG_WIFE_ YR_EDUC_UPD_HEAD_ YR_EDUC_UPD_WIFE_"
+local reshape_vars "RELEASE_ X1968_PERSON_NUM_ INTERVIEW_NUM_ RELATION_ AGE_INDV_ MARITAL_PAIRS_ MOVED_ YRS_EDUCATION_INDV_ TYPE_OF_INCOME_ TOTAL_MONEY_INCOME_ ANNUAL_HOURS_T1_INDV_ RELEASE_NUM2_ FAMILY_COMPOSITION_ AGE_HEAD_ AGE_WIFE_ SEX_HEAD_ AGE_YOUNG_CHILD_ RESPONDENT_WHO_ RACE_1_HEAD_ EMPLOY_STATUS_HEAD_ MARST_DEFACTO_HEAD_ WIDOW_LENGTH_HEAD_ WAGES_T1_HEAD_ FAMILY_INTERVIEW_NUM_ FATHER_EDUC_HEAD_ HRLY_RATE_T1_HEAD_ HRLY_RATE_T1_WIFE_ REGION_ NUM_CHILDREN_ CORE_WEIGHT_ ANNUAL_HOURS_T1_HEAD_ ANNUAL_HOURS_T1_WIFE_ LABOR_INCOME_T1_HEAD_ LABOR_INCOME_T1_WIFE_ TOTAL_INCOME_T1_FAMILY_ TAXABLE_T1_HEAD_WIFE_ EDUC1_HEAD_ EDUC1_WIFE_ WEEKLY_HRS1_T1_WIFE_ WEEKLY_HRS1_T1_HEAD_ TOTAL_HOUSEWORK_T1_HW_ RENT_COST_V1_ MORTGAGE_COST_ HOUSE_VALUE_ HOUSE_STATUS_ VEHICLE_OWN_ POVERTY_THRESHOLD_ SEQ_NUMBER_ RESPONDENT_ FAMILY_ID_SO_ COMPOSITION_CHANGE_ NEW_HEAD_ HOUSEWORK_WIFE_ HOUSEWORK_HEAD_ MOST_HOUSEWORK_T1_ AGE_OLDEST_CHILD_ FOOD_STAMPS_ HRLY_RATE_CURRENT_HEAD_ RELIGION_HEAD_ CHILDCARE_COSTS_ TRANSFER_INCOME_ WELFARE_JOINT_ NEW_WIFE_ FATHER_EDUC_WIFE_ MOTHER_EDUC_WIFE_ MOTHER_EDUC_HEAD_ TYPE_TAXABLE_INCOME_ TOTAL_INCOME_T1_INDV_ COLLEGE_HEAD_ COLLEGE_WIFE_ EDUC_HEAD_ EDUC_WIFE_ SALARY_TYPE_HEAD_ FIRST_MARRIAGE_YR_WIFE_ RELIGION_WIFE_ WORK_MONEY_WIFE_ EMPLOY_STATUS_WIFE_ SALARY_TYPE_WIFE_ HRLY_RATE_CURRENT_WIFE_ RESEPONDENT_WIFE_ WORK_MONEY_HEAD_ MARST_LEGAL_HEAD_ EVER_MARRIED_HEAD_ EMPLOYMENT_INDV_ STUDENT_T1_INDV_ BIRTH_YR_INDV_ COUPLE_STATUS_HEAD_ OTHER_ASSETS_ STOCKS_MF_ WEALTH_NO_EQUITY_ WEALTH_EQUITY_ VEHICLE_VALUE_ RELATION_TO_HEAD_ NUM_MARRIED_HEAD_ FIRST_MARRIAGE_YR_HEAD_ FIRST_MARRIAGE_END_HEAD_ FIRST_WIDOW_YR_HEAD_ FIRST_DIVORCE_YR_HEAD_ FIRST_SEPARATED_YR_HEAD_ LAST_MARRIAGE_YR_HEAD_ LAST_WIDOW_YR_HEAD_ LAST_DIVORCE_YR_HEAD_ LAST_SEPARATED_YR_HEAD_ FAMILY_STRUCTURE_HEAD_ RACE_2_HEAD_ NUM_MARRIED_WIFE_ FIRST_MARRIAGE_END_WIFE_ FIRST_WIDOW_YR_WIFE_ FIRST_DIVORCE_YR_WIFE_ FIRST_SEPARATED_YR_WIFE_ LAST_MARRIAGE_YR_WIFE_ LAST_WIDOW_YR_WIFE_ LAST_DIVORCE_YR_WIFE_ LAST_SEPARATED_YR_WIFE_ FAMILY_STRUCTURE_WIFE_ RACE_1_WIFE_ RACE_2_WIFE_ STATE_ BIRTHS_T1_HEAD_ BIRTHS_T1_WIFE_ BIRTHS_T1_BOTH_ WELFARE_HEAD_1_ WELFARE_WIFE_1_ LABOR_INCOME_T1_INDV_ RELEASE_NUM_ WAGES_CURRENT_HEAD_ WAGES_CURRENT_WIFE_ WAGES_T1_WIFE_ RENT_COST_V2_ DIVIDENDS_HEAD_ DIVIDENDS_WIFE_ WELFARE_HEAD_2_ WELFARE_WIFE_2_ EMPLOY_STATUS1_HEAD_ EMPLOY_STATUS2_HEAD_ EMPLOY_STATUS3_HEAD_ EMPLOY_STATUS1_WIFE_ EMPLOY_STATUS2_WIFE_ EMPLOY_STATUS3_WIFE_ RACE_3_WIFE_ RACE_3_HEAD_ WAGES_ALT_T1_HEAD_ WAGES_ALT_T1_WIFE_ WEEKLY_HRS_T1_HEAD_ WEEKLY_HRS_T1_WIFE_ RACE_4_HEAD_ COR_IMM_WT_ ETHNIC_WIFE_ ETHNIC_HEAD_ CROSS_SECTION_FAM_WT_ LONG_WT_ CROSS_SECTION_WT_ CDS_ELIGIBLE_ TOTAL_HOUSING_ HEALTH_INSURANCE_FAM_ BANK_ASSETS_ LABOR_INC_J1_T1_HEAD_ TOTAL_WEEKS_T1_HEAD_ ANNUAL_HOURS2_T1_HEAD_ LABOR_INC_J1_T1_WIFE_ TOTAL_WEEKS_T1_WIFE_ ANNUAL_HOURS2_T1_WIFE_ WEEKLY_HRS_T2_HEAD_ LABOR_INC_J2_T1_HEAD_ LABOR_INC_J3_T1_HEAD_ LABOR_INC_J4_T1_HEAD_ LABOR_INC_J2_T1_WIFE_ LABOR_INC_J3_T1_WIFE_ LABOR_INC_J4_T1_WIFE_ DIVIDENDS_JOINT_ INTEREST_JOINT_ NUM_JOBS_T1_INDV_ BACHELOR_YR_INDV_ STUDENT_CURRENT_INDV_ COLLEGE_INDV_ SEX_WIFE_ BACHELOR_YR_WIFE_ ENROLLED_WIFE_ BACHELOR_YR_HEAD_ ENROLLED_HEAD_ WAGES2_T1_WIFE_ METRO_ CURRENTLY_WORK_HEAD_ CURRENTLY_WORK_WIFE_ EMPLOY_STATUS_T2_HEAD_ EMPLOY_STATUS_T2_WIFE_ WEEKLY_HRS_T2_WIFE_ START_YR_EMPLOYER_HEAD_ START_YR_EMPLOYER_WIFE_ START_YR_CURRENT_HEAD_ START_YR_CURRENT_WIFE_ START_YR_PREV_HEAD_ START_YR_PREV_WIFE_ YRS_CURRENT_EMPLOY_HEAD_ YRS_CURRENT_EMPLOY_WIFE_ LABOR_INCOME_T2_HEAD_ LABOR_INCOME_T2_WIFE_ WEEKLY_HRS_T2_INDV_ LABOR_INCOME_T2_INDV_ HOUSEWORK_INDV_ RACE_4_WIFE_ HISPANICITY_WIFE_ HISPANICITY_HEAD_ CHILDCARE_HEAD_ CHILDCARE_WIFE_ ADULTCARE_HEAD_ ADULTCARE_WIFE_ TOTAL_INCOME_T2_FAMILY_ WEEKS_WORKED_T2_INDV_ FOLLOW_STATUS_ NUM_IN_HH_ NUM_NONFU_IN_HH_ NEW_WIFE_YEAR_ MOVED_YEAR_ MOVED_MONTH_ SPLITOFF_YEAR_ SPLITOFF_MONTH_ DATA_RECORD_TYPE_ SPLITOFF_ NEW_HEAD_YEAR_ HS_GRAD_HEAD_ ATTENDED_COLLEGE_HEAD_ HIGHEST_DEGREE_HEAD_ HS_GRAD_WIFE_ ATTENDED_COLLEGE_WIFE_ HIGHEST_DEGREE_WIFE_ WHERE_EDUC_HEAD_ FOREIGN_DEG_HEAD_ WHERE_EDUC_WIFE_ FOREIGN_DEG_WIFE_ YR_EDUC_UPD_HEAD_ YR_EDUC_UPD_WIFE_ DENOMINATION_HEAD_ DENOMINATION_WIFE_ DISABILITY_HEAD_ DISABILITY_WIFE_ DISABLE_HOWMUCH_HEAD_ DISABLE_HOWMUCH_WIFE_ DISABLE_WORK_HEAD_ DISABLE_WORK_WIFE_ SR_HEALTH_HEAD_ SR_HEALTH_WIFE_ SR_HEALTH_INDV_ SR_HEALTH_OTHER_ YR_RETIRED_HEAD_ YR_RETIRED_WIFE_"
 
 reshape long `reshape_vars', i(id unique_id sample_type stratum cluster) j(survey_yr)
 
 save "$temp/PSID_full_long.dta", replace
 
 ********************************************************************************
+**# Try to create indicator of MPF from PID
+********************************************************************************
+use "$PSID/pid21.dta", clear // this is at a child level which makes this a little more complicated..
+// should I merge this info on to childbirth history using child?
+
+// (ER30001 * 1000) + ER30002
+// (1968 interview ID multiplied by 1000) plus Person Number
+
+gen unique_id_child = (PID2*1000) + PID3 // this is what I will match to below
+browse PID2 PID3 unique_id_child
+
+gen unique_id_mom = (PID4*1000) + PID5 // these will be for reference
+browse PID4 PID5 unique_id_mom PID19
+rename PID19 in_cah_mom
+
+gen unique_id_dad = (PID23*1000) + PID24
+browse PID23 PID24 unique_id_dad PID37
+rename PID37 in_cah_dad
+
+browse unique_id_child PID2 PID3 unique_id_mom PID4 PID5 unique_id_dad PID23 PID24
+
+keep unique_id_child unique_id_mom unique_id_dad in_cah_mom in_cah_dad
+
+tab in_cah_mom if unique_id_mom!=0
+tab in_cah_dad if unique_id_dad!=0
+
+// actually just going to save this and merge on to below
+save "$temp/child_parent_lookup.dta", replace
+
+********************************************************************************
 **# Prep childbirth history files
 ********************************************************************************
-use "$PSID/cah_85_21.dta", clear
+use "$PSID/cah_85_21.dta", clear // think the problem here is that I don't have the id of the *other* parent. that is annoying
+// okay, we're going to try out merging both...
 
 gen unique_id = (CAH3*1000) + CAH4
 browse CAH3 CAH4 unique_id
 gen unique_id_child = (CAH10*1000) + CAH11
+
+bysort unique_id: egen child_check = max (unique_id_child)
+
+gen cah_any_births=.
+replace cah_any_births = 0 if child_check==0
+replace cah_any_births = 1 if child_check!=0 & child_check!=.
+
+browse unique_id CAH2 unique_id_child child_check cah_any_births // CAH2 is record type. so if no adoptions, get a 0 for that
+
+merge m:1 unique_id_child using "$temp/child_parent_lookup.dta"
+// this feels like not a hugely high match rate?
+// OH is some of this because don't actually have children? bc think still get 1 record here even if no children. yes this is correct.
+drop if _merge==2
+tab cah_any_births _merge // so a lot of the nonmatched are because no children but that doesn't explain all of it
+tab _merge if unique_id_child!=0 // okay, so it's actually mostly just 0s (so I think all of the adoption rows)
+tab CAH2 _merge, row
+
+browse unique_id CAH2 unique_id_child child_check cah_any_births _merge 
+
+drop _merge
 
 /* first rename relevant variables for ease*/
 rename CAH3 int_number
@@ -117,8 +168,57 @@ replace dad_timing = . if inlist(dad_timing,8,9)
 gen no_children=0
 replace no_children=1 if child_int_number==0 & child_per_num==0 
 
+label define sex 1 "Male" 2 "Female"
+label values parent_sex sex
+
+// trying to figure out variables for MPF
+browse unique_id parent_sex unique_id_child unique_id_mom in_cah_mom unique_id_dad in_cah_dad if no_children==0
+
+gen is_mom=0
+replace is_mom=1 if unique_id == unique_id_mom & unique_id!=0
+
+gen is_dad=0
+replace is_dad=1 if unique_id == unique_id_dad & unique_id!=0
+
+tab parent_sex is_mom, m // validate
+tab parent_sex is_dad, m
+tab is_mom is_dad, m
+
+gen which_parent=.
+replace which_parent = 1 if is_mom==1
+replace which_parent = 2 if is_dad==1
+
+label define which_parent 1 "Mom" 2 "Dad"
+label values which_parent which_parent
+
+gen other_parent_id=.
+replace other_parent_id = unique_id_dad if which_parent==1
+replace other_parent_id = unique_id_mom if which_parent==2
+
+inspect other_parent_id if which_parent!=. // so some are 0s because just 1 parent listed
+
+browse unique_id parent_sex which_parent other_parent_id unique_id_child unique_id_mom unique_id_dad if no_children==0
+
+unique other_parent_id if other_parent_id!=0 & other_parent_id!=. & no_children==0, by(unique_id) gen(num_birth_partners)
+bysort unique_id (num_birth_partners): replace num_birth_partners = num_birth_partners[1]
+tab num_birth_partners, m
+tab num_birth_partners no_children, m col
+
+sort unique_id
+browse unique_id which_parent num_birth_partners other_parent_id unique_id_child unique_id_mom unique_id_dad if no_children==0
+
+gen any_mpf = .
+replace any_mpf = 0 if num_birth_partners==1
+replace any_mpf = 0 if num_birth_partners==0 & cah_any_births==1
+replace any_mpf = 1 if num_birth_partners>1 & num_birth_partners<1000
+
+tab any_mpf, m
+tab no_children any_mpf, m
+
+browse unique_id event_type no_children which_parent num_birth_partners any_mpf other_parent_id unique_id_child unique_id_mom unique_id_dad 
+
 // this is currently LONG - one record per birth. want to make WIDE
-local birthvars "int_number per_num unique_id child_int_number child_per_num unique_id_child event_type num_children parent_sex parent_birth_yr parent_birth_mon parent_marital_status birth_order child_sex child_birth_yr child_birth_mon child_hispanicity child_race1 child_race2 child_race3 mom_wanted mom_timing dad_wanted dad_timing"
+local birthvars "int_number per_num unique_id child_int_number child_per_num unique_id_child event_type num_children parent_sex parent_birth_yr parent_birth_mon parent_marital_status birth_order child_sex child_birth_yr child_birth_mon child_hispanicity child_race1 child_race2 child_race3 mom_wanted mom_timing dad_wanted dad_timing any_mpf num_birth_partners cah_any_births other_parent_id"
 
 keep `birthvars'
 
@@ -136,9 +236,11 @@ by unique_id: egen birth_rank = rank(birth_order), unique
 browse unique_id birth_order birth_rank child_birth_yr * 
 tab birth_rank birth_order
 
-reshape wide child_int_number child_per_num unique_id_child event_type parent_marital_status num_children child_sex child_birth_yr child_birth_mon child_hispanicity child_race1 child_race2 child_race3 mom_wanted mom_timing dad_wanted dad_timing birth_order, i(int_number per_num unique_id parent_sex parent_birth_yr parent_birth_mon)  j(birth_rank)
+reshape wide child_int_number child_per_num unique_id_child event_type parent_marital_status num_children child_sex child_birth_yr child_birth_mon child_hispanicity child_race1 child_race2 child_race3 mom_wanted mom_timing dad_wanted dad_timing birth_order other_parent_id, i(int_number per_num unique_id parent_sex parent_birth_yr parent_birth_mon)  j(birth_rank)
 
 gen INTERVIEW_NUM_1968 = int_number
+
+tab cah_any_births any_mpf, m row
 
 foreach var in *{
 	rename `var' cah_`var' // so I know where it came from
@@ -148,14 +250,19 @@ rename cah_int_number int_number
 rename cah_per_num per_num
 rename cah_unique_id unique_id
 rename cah_INTERVIEW_NUM_1968 INTERVIEW_NUM_1968
+rename cah_cah_any_births cah_any_births
 gen partner_id = unique_id
 
 forvalues n=1/20{
 	rename cah_parent_marital_status`n' cah_parent_marst`n' // think getting too long for what I want to work
 }
+
+browse unique_id cah_any_mpf cah_other_parent*
    
 save "$created_data/birth_history_wide.dta", replace
 
+// need to actually increment MPF better GAH bc currently fixed, but in theory, needs to increment with each birth? so I can make time-varying?
+// though - the incidence is so small, an "ever" metric also probably works...
 
 ********************************************************************************
 **# Attempt to get births by individual HH / survey year
@@ -274,3 +381,48 @@ browse main_fam_id hh_births_pre1968 hh_births_2001 cah*
 
 save "$created_data/1968hh_birth_history_file.dta", replace
 */
+
+
+********************************************************************************
+**# Try to get a variable for elderly in HH using family matrix
+********************************************************************************
+// no - this isn't going to work for AGE because age not in this file
+// so - should I actually just do this using the full file before I drop non-couples??
+// just a bit harder to get the PARENT info in that file because only has relationships to reference (I guess I could use parent and parent-in-law?)
+// let's see what makes sense...
+
+use "$PSID/family_matrix_68_21.dta", clear // so this file is by year - the full matrix
+
+gen unique_id = (MX5*1000) + MX6 // 5 = interview number; 6 = person number
+gen unique_id_alter = (MX10*1000) + MX11
+
+// browse MX2 unique_id MX5 MX6 unique_id_alter MX8 MX10 MX11
+browse MX2 unique_id unique_id_alter MX8
+
+gen lives_with_parent=0
+replace lives_with_parent = 1 if inlist(MX8,30,33,35,37,38,39) // okay this is EGO to alter, so if I want ego lives with parent (the alter), they are actually identified as CHILD.
+// the relationship will NOT be parent. I guess I can validate this with relationship to ref later?
+
+gen lives_with_grandparent=0
+replace lives_with_grandparent = 1 if inlist(MX8,60,61,62,63,63,64,65,80,81) // so same, this is GRANDCHILD (and great grandchild)
+
+tab MX8 lives_with_parent, m
+tab MX8 lives_with_grandparent, m
+
+rename MX2 survey_yr
+
+browse unique_id survey_yr lives_with_parent lives_with_grandparent MX8
+
+preserve
+
+collapse (max) lives_with_parent lives_with_grandparent, by(unique_id survey_yr)
+save "$temp/parent_coresidence_lookup.dta", replace
+
+restore
+
+********************************************************************************
+**# Also create a family composition lookup (based on age of coresidents)
+********************************************************************************
+// need to do this since couldn't do with above file
+
+use "$temp/PSID_full_long.dta", clear
