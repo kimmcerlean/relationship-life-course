@@ -220,6 +220,31 @@ gen relationship_duration = survey_yr - rel_start_yr
 browse unique_id survey_yr marital_status_updated rel_start_yr relationship_duration
 
 ********************************************************************************
+* Before recoding, need to merge on a few other variables from various files
+********************************************************************************
+// mpf info
+merge m:1 unique_id using "$created_data/birth_history_wide.dta", keepusing(cah_any_births cah_num_birth_partners cah_any_mpf)
+drop if _merge==2
+drop _merge
+
+tab NUM_BIRTHS cah_any_births, m // perfectly corresponds to "no birth history" collected also
+
+// coresidence with parents
+merge 1:1 unique_id survey_yr using "$temp/parent_coresidence_lookup.dta"
+drop if _merge==2
+drop _merge
+
+// hh composition
+merge m:1 FAMILY_INTERVIEW_NUM_ survey_yr using "$temp/hh_comp_lookup.dta"
+drop if _merge==2
+drop _merge
+
+// I am so dumb; I actually don't really use this info - because I do in later steps.
+// will save here and comment out below
+save "$created_data/PSID_partners_cleaned.dta", replace
+
+/*
+********************************************************************************
 **# Other variable recodes now, like DoL and sociodemographics
 * A lot of this code repurposed from union dissolution work - file 01a
 ********************************************************************************
@@ -648,5 +673,4 @@ gen yr_born_wife = survey_yr- AGE_WIFE_
 gen age_mar_head = rel_start_yr -  yr_born_head
 gen age_mar_wife = rel_start_yr -  yr_born_wife
 browse unique_id survey_yr SEX yr_born_head  yr_born_wife  year_birth AGE_INDV AGE_HEAD_ AGE_WIFE_ rel_start_yr age_mar_head age_mar_wife
-
-save "$created_data/PSID_partners_cleaned.dta", replace
+*/

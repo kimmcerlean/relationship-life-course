@@ -101,7 +101,7 @@ tab rel_start_yr SEX, m // is either one's data more reliable? I tink I fixed th
 
 // figuring out some missing relationship info
 sort survey_yr FAMILY_INTERVIEW_NUM_  unique_id   
-browse unique_id FAMILY_INTERVIEW_NUM_ survey_yr SEX marital_status_updated rel_start_yr female_earn_pct hh_earn_type female_hours_pct hh_hours_type wife_housework_pct housework_bkt
+browse unique_id FAMILY_INTERVIEW_NUM_ survey_yr SEX marital_status_updated rel_start_yr // female_earn_pct_t hh_earn_type_t female_hours_pct hh_hours_type wife_housework_pct housework_bkt
 
 gen has_rel_info=0
 replace has_rel_info=1 if rel_start_yr!=.
@@ -111,7 +111,7 @@ bysort survey_yr FAMILY_INTERVIEW_NUM_: egen rel_start_yr_couple = min(rel_start
 bysort survey_yr FAMILY_INTERVIEW_NUM_: egen rel_end_yr_couple = min(rel_end_yr) // can i fill in the missing partner's data?
 
 sort unique_id partner_id survey_yr
-browse unique_id partner_id FAMILY_INTERVIEW_NUM_ survey_yr SEX marital_status_updated rel_info has_rel_info rel_start_yr rel_start_yr_couple rel_end_yr rel_end_yr_couple female_earn_pct hh_earn_type female_hours_pct hh_hours_type wife_housework_pct housework_bkt
+browse unique_id partner_id FAMILY_INTERVIEW_NUM_ survey_yr SEX marital_status_updated rel_info has_rel_info rel_start_yr rel_start_yr_couple rel_end_yr rel_end_yr_couple // female_earn_pct hh_earn_type female_hours_pct hh_hours_type wife_housework_pct housework_bkt
 
 // think I need to fix duration because for some, I think clock might start again when they transition to cohabitation? get minimum year within a couple as main start date?
 sort unique_id partner_id survey_yr
@@ -199,6 +199,10 @@ browse unique_id partner_id survey_yr rel_start_all marital_status_updated marr_
 // unique unique_id partner_id rel_type_constant
 // browse unique_id partner_id survey_yr rel_type_constant marital_status_updated ever_transition marr_trans if _Unique==2
 
+********************************************************************************
+**# * This is where I do basic sample restrictions
+********************************************************************************
+
 // should I restrict to certain years? aka to help with the cohab problem? well probably should from a time standpoint... and to match to the british one, at least do 1990+?
 tab survey_yr marital_status_updated
 tab rel_start_yr marital_status_updated, m
@@ -210,13 +214,14 @@ bysort unique_id partner_id: egen max_dur = max(dur)
 bysort unique_id partner_id: egen last_yr_observed = max(survey_yr)
 
 browse unique_id partner_id survey_yr SEQ_NUMBER_ main_fam_id FAMILY_INTERVIEW_NUM_ min_dur max_dur rel_start_all rel_start_yr_couple rel_start_yr RELATION_ MARITAL_PAIRS_   if inlist(unique_id, 16032, 16170, 16176)
-
 browse unique_id partner_id survey_yr rel_start_all rel_end_all last_yr_observed relationship_duration min_dur max_dur 
+
 keep if rel_start_all >= 1990 & inlist(min_dur,0,1) // keeping up to two, because if got married in 2001, say, might not appear in survey until 2003, which is a problem. 
-keep if rel_start_all <= 2011
+// keep if rel_start_all <= 2011 // had 2011 when we had 10 year cutoff.
+keep if rel_start_all <=2018 // now will be 2018 because 3 year cutoff (and assume 1st year of full data is 2019, so that's three years)
 
 // restrict to working age?
-tab AGE_HEAD_ employed_t1_head, row
+// tab AGE_HEAD_ employed_t1_head, row
 keep if (AGE_HEAD_>=18 & AGE_HEAD_<=60) &  (AGE_WIFE_>=18 & AGE_WIFE_<=60) // sort of drops off a cliff after 60?
 
 // did i observe it end?

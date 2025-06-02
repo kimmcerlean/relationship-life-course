@@ -31,6 +31,20 @@ net install desctable, from("https://tdmize.github.io/data") replace
 
 net install mimrgns, from("http://fmwww.bc.edu/RePEc/bocode/m/") replace
 net install outreg2, from("http://fmwww.bc.edu/RePEc/bocode/o") replace
+ssc install mdesc, replace
+
+/*
+ INSTALL THESE FIRST
+ssc install sq, replace
+ssc install moremata, replace
+
+net sj 17-3 st0486 // SADI
+net install st0486, replace
+
+net sj 16-3 st0445 // MICT
+net install st0445, replace
+net get st0445 // these go into working directory (the ancillary files); pwd shows current working directory
+*/
 
 // ssc install coefplot, replace
 

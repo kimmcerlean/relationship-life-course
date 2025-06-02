@@ -531,8 +531,9 @@ drop if raceth_fixed_focal==. // for now, just so this is actually complete
 drop if fixed_education==.
 
 mi set wide
-mi register imputed weekly_hrs_t_focal* housework_focal* employed_focal* earnings_t_focal* children* NUM_CHILDREN_* AGE_YOUNG_CHILD_* relationship_* partnered* TOTAL_INCOME_T_FAMILY* num_children_imp_hh*
-mi register regular FIRST_BIRTH_YR birth_yr_all rel_start_all SEX raceth_fixed_focal sample_type rel_type_constant fixed_education
+mi register imputed weekly_hrs_t_focal* housework_focal* employed_focal* earnings_t_focal* children* NUM_CHILDREN_* AGE_YOUNG_CHILD_* relationship_* partnered* TOTAL_INCOME_T_FAMILY* num_children_imp_hh* // to add (May 2025) (need to add to Excel): disabled_focal sr_health_focal num_65up_hh lives_with_parent (possibly recode: lives with parent OR grandparent)
+mi register regular FIRST_BIRTH_YR birth_yr_all rel_start_all SEX raceth_fixed_focal sample_type rel_type_constant fixed_education // considering adding (May 2025): ever_parent_focal num_births_focal (these are time *constant*) birth_timing_rel (or recode so it's like pre-v.post-marital) current_rel_number_main retired_est_focal* (use as time-varying but no need to impute)
+// swap rel_status for rel_type_constant?
 
 // log using "$logdir\mi_education_help.log", replace
 
