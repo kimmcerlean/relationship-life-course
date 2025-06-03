@@ -206,9 +206,102 @@ save "$temp/xwave_tomatch.dta", replace
 
 
 ********************************************************************************
-* Get variables from cross wave files?
+* Attempting to figure out MPF
 ********************************************************************************
+// first, get a list of all child ids by pidp
 use "$UKHLS/xhhrel.dta", clear
 
 browse pidp doby_dv bpx_N bpx_pidp_1 bpx_pidp_2 bpx_pidp_3 bpx_pidp_4 bcx_N bcx_pidp_1 bcx_pidp_2 bcx_pidp_3 bcx_pidp_4 bcx_pidp_5
 
+keep pidp sex bcx_N bcx_pidp_*
+
+reshape long bcx_pidp_, i(pidp sex bcx_N) j(child_no)
+rename bcx_pidp_ bcx_pidp
+
+drop if bcx_pidp == -8 & inrange(child_no,2,16) // so keep one record for all, even if not parent
+
+save "$temp/parent_child_ids.dta", replace 
+
+// now, clean up file to merge on bio parent info using child as connector
+use "$UKHLS/xhhrel.dta", clear
+
+browse pidp sex bpx_N bpx_pidp_1 bpx_sex_1 bpx_pidp_2 bpx_sex_2 bpx_pidp_3 bpx_sex_3 bpx_pidp_4 bpx_sex_4
+tab bpx_pidp_1 if bpx_N==0
+tab bpx_pidp_2 if bpx_N==0
+tab bpx_pidp_3 if bpx_N==0
+tab bpx_pidp_4 if bpx_N==0
+
+drop if bpx_N==0
+
+keep pidp bpx_N bpx_pidp_1 bpx_sex_1 bpx_pidp_2 bpx_sex_2 // bpx_pidp_3 bpx_sex_3 bpx_pidp_4 bpx_sex_4
+rename pidp bcx_pidp
+
+save "$temp/parent_lookup.dta", replace 
+
+// now merge bio parent info of child onto parent / child info by pidp
+use "$temp/parent_child_ids.dta", clear
+
+merge m:1 bcx_pidp using "$temp/parent_lookup.dta"
+drop if _merge==2
+tab bcx_pidp if _merge==1 // basically no children
+drop _merge
+
+browse
+
+recode bpx_sex_1 (-9/0=.)
+recode bpx_sex_2 (-9/0=.)
+
+tab bpx_sex_1 bpx_sex_2, m
+
+gen long pidp_mom = bpx_pidp_1 if bpx_sex_1==2
+replace pidp_mom = bpx_pidp_2 if bpx_sex_2==2 & pidp_mom==.
+
+gen long pidp_dad = bpx_pidp_1 if bpx_sex_1==1
+replace pidp_dad = bpx_pidp_2 if bpx_sex_2==1 & pidp_dad==.
+
+browse pidp sex bcx_pidp pidp_mom pidp_dad bpx_pidp_1 bpx_sex_1 bpx_pidp_2 bpx_sex_2
+
+gen is_mom=0
+replace is_mom=1 if pidp == pidp_mom & pidp!=0
+
+gen is_dad=0
+replace is_dad=1 if pidp == pidp_dad & pidp!=0
+
+tab sex is_mom, m // validate
+tab sex is_dad, m
+tab is_mom is_dad, m
+
+gen which_parent=.
+replace which_parent = 1 if is_mom==1
+replace which_parent = 2 if is_dad==1
+
+label define which_parent 1 "Mom" 2 "Dad"
+label values which_parent which_parent
+
+gen long other_parent_id=.
+replace other_parent_id = pidp_dad if which_parent==1
+replace other_parent_id = pidp_mom if which_parent==2
+
+inspect other_parent_id if which_parent!=. // so some are 0s because just 1 parent listed
+inspect bpx_pidp_2 // aka all of the negatives here
+
+sort pidp child_no
+browse pidp sex child_no bcx_pidp which_parent other_parent_id
+
+unique other_parent_id if other_parent_id!=0 & other_parent_id!=., by(pidp) gen(num_birth_partners)
+bysort pidp (num_birth_partners): replace num_birth_partners = num_birth_partners[1]
+tab num_birth_partners, m
+tab bpx_pidp_2 if bpx_pidp_2 < 0
+
+gen any_mpf = .
+replace any_mpf = 0 if num_birth_partners==0 | num_birth_partners==1
+replace any_mpf = 1 if num_birth_partners>1 & num_birth_partners<1000
+
+rename bcx_N num_bio_kids
+
+preserve
+collapse (max) any_mpf, by(pidp num_bio_kids)
+tab num_bio_kids any_mpf, m
+
+save "$temp/mpf_lookup.dta", replace 
+restore

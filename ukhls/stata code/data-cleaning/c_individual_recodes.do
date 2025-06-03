@@ -194,6 +194,7 @@ label define country 1 "England" 2 "Wales" 3 "Scotland" 4 "N. Ireland"
 label values country_all country
 
 replace gor_dv = . if gor_dv==-9
+label define a_gor_dv 13 "channel islands", add
 
 // so many marital statuses STILL
 tab mlstat survey, m // present legal marital status - has a lot of inapplicable, so doesn't seem right - think only for new people?
@@ -310,6 +311,17 @@ gen employed=.
 replace employed=0 if inrange(jbstat,3,97)
 replace employed=1 if inlist(jbstat,1,2)
 
+* also do want to retain / impute a detailed job status indicator (to get a sense of retirement / disability from that)
+label define a_jbstat 14 "On shared parental leave" 15 "On adoption leave", add 
+
+gen employment_status = jbstat
+replace employment_status = 5 if inlist(jbstat,14,15)
+replace employment_status = 14 if jbstat==97
+label define emp_status 1 "self employed" 2 "Paid employment(ft/pt)" 3 "unemployed" 4 "retired" 5 "on parental leave" 6 "Family care or home" ///
+7 "full-time student" 8 "LT sick or disabled" 9 "Govt training scheme" 10 "Unpaid, family business" 11 "On apprenticeship" 12 "On furlough" ///
+13 "Temporarily laid off/short term working" 14 "other"
+label values employment_status emp_status
+
 // need to ensure self-employed hours accounted for
 tab jbstat jbhrs  if jbhrs <= 0
 tab jbhrs if jbstat==1, m
@@ -376,6 +388,151 @@ sort hidp year
 browse hidp pidp year fimnlabgrs_dv paynu_dv fihhmngrs_dv
 sort pidp year
 
+// other employment-adjacent variables
+* Disability
+	// bhps
+	tab hlltw survey, m // just bhps (Y/N: health limits type or amount of work - most comparable to psid I think)
+	recode hlltw (-9/-1=.)
+	tab hlltwa survey, m // just bhps (how much health limits)
+	tab hlltwa hlltw, m
+
+	gen disabled_scale=.
+	replace disabled_scale=0 if hlltw==2 // not disabled
+	replace disabled_scale=0 if hlltw==1 & hlltwa==4 // not at all - so putting as 0
+	replace disabled_scale=1 if hlltw==1 & hlltwa==3 // just a little
+	replace disabled_scale=2 if hlltw==1 & hlltwa==2 // somewhat
+	replace disabled_scale=3 if hlltw==1 & hlltwa==1 // a lot
+
+	label define dis_scale 0 "Not at all" 1 "A little" 2 "Somewhat" 3 "A lot"
+	label values disabled_scale dis_scale
+
+	tab hlltwa disabled_scale, m
+	tab disabled_scale hlltw, m
+
+	// ukhls
+	tab health survey, m // just ukhls and very few missing (Y/N: longstanding illness or disability)
+	recode health (-9/-1=.)
+
+	recode scsf3a (-10/-1=.)
+	recode scsf3b (-10/-1=.)
+	tab scsf3a health, m col // not super well correlated...
+	tab scsf3b health, m col // not super well correlated...
+	tab scsf3a scsf3b, m // sort of correlated
+	
+tab jbstat hlltw, m // so many people who are disabled are employed by the majority of those with jbstat of disabled have a yes
+tab jbstat health, m // same here
+tab jbstat disabled_scale, m
+tab jbstat scsf3a, m
+
+browse pidp year survey jbstat hlltw disabled_scale health scsf3a scsf3b
+tab hlltw health, m // these never overlap
+
+gen disabled_est = .
+replace disabled_est = 0 if hlltw==2 | health==2
+replace disabled_est = 1 if hlltw==1 | health==1
+tab disabled_est, m
+
+gen empstat_disabled = .
+replace empstat_disabled = 0 if inrange(employment_status,1,7)
+replace empstat_disabled = 0 if inrange(employment_status,9,14)
+replace empstat_disabled = 1 if employment_status==8
+
+tab empstat_disabled, m
+tab empstat_disabled disabled_est, m
+
+* SR health
+browse pidp year survey hlstat sf1 scsf1 
+tab hlstat survey, m // just bhps
+recode sf1 (-9/-1=.)
+tab sf1 survey, m // this is in both?
+recode scsf1 (-9/-1=.)
+tab scsf1 survey, m // just ukhls
+tab sf1 scsf1, m
+
+// For Waves 6 onwards, users will need to combine responses from sf1 and scsf1. I believe this is 2014
+// ugh why are the scales diff?
+// hlstat: Excellent, Good, Fair, Poor, Very Poor
+// the others: Excellent, Very Good, Good, Fair, Poor
+
+gen sr_health = .
+replace sr_health = 1 if survey==2 & hlstat==1 // excellent
+replace sr_health = 3 if survey==2 & hlstat==2 // good
+replace sr_health = 4 if survey==2 & hlstat==3 // fair
+replace sr_health = 5 if survey==2 & hlstat==4 // poor
+replace sr_health = 6 if survey==2 & hlstat==5 // very poor
+replace sr_health = 1 if sr_health==. & survey==2 & sf1==1 // excellent
+replace sr_health = 2 if sr_health==. & survey==2 & sf1==2 // very good
+replace sr_health = 3 if sr_health==. & survey==2 & sf1==3 // good
+replace sr_health = 4 if sr_health==. & survey==2 & sf1==4 // fair
+replace sr_health = 5 if sr_health==. & survey==2 & sf1==5 // poor
+replace sr_health = 1 if survey==1 & (sf1==scsf1) & sf1==1 // excellent
+replace sr_health = 2 if survey==1 & (sf1==scsf1) & sf1==2 // very good
+replace sr_health = 3 if survey==1 & (sf1==scsf1) & sf1==3 // good
+replace sr_health = 4 if survey==1 & (sf1==scsf1) & sf1==4 // fair
+replace sr_health = 5 if survey==1 & (sf1==scsf1) & sf1==5 // poor
+replace sr_health = 1 if survey==1 & ((scsf1==. & sf1==1) | (sf1==. & scsf1==1)) // excellent
+replace sr_health = 2 if survey==1 & ((scsf1==. & sf1==2) | (sf1==. & scsf1==2)) // very good
+replace sr_health = 3 if survey==1 & ((scsf1==. & sf1==3) | (sf1==. & scsf1==3)) // good
+replace sr_health = 4 if survey==1 & ((scsf1==. & sf1==4) | (sf1==. & scsf1==4)) // fair
+replace sr_health = 5 if survey==1 & ((scsf1==. & sf1==5) | (sf1==. & scsf1==5)) // poor
+// let's prioritize scsf as that is self-reported not to interviewer, so maybe more accurate?
+replace sr_health = 1 if survey==1 & sr_health==. & scsf1==1 // excellent
+replace sr_health = 2 if survey==1 & sr_health==. & scsf1==2 // very good
+replace sr_health = 3 if survey==1 & sr_health==. & scsf1==3 // good
+replace sr_health = 4 if survey==1 & sr_health==. & scsf1==4 // fair
+replace sr_health = 5 if survey==1 & sr_health==. & scsf1==5 // poor
+
+label define health 1 "Excellent" 2 "Very Good" 3 "Good" 4 "Fair" 5 "Poor" 6 "Very Poor"
+label values sr_health health
+
+tab sr_health, m
+tab sr_health survey, m
+foreach var in hlstat sf1 scsf1{
+	display "`var'"
+	tab `var' if sr_health==., m
+	tab sr_health `var', m
+}
+
+* Retirement Status
+gen empstat_retired = .
+replace empstat_retired = 0 if inrange(employment_status,1,3)
+replace empstat_retired = 0 if inrange(employment_status,5,14)
+replace empstat_retired = 1 if employment_status==4
+
+tab empstat_retired, m
+
+browse pidp year survey jbstat agexrt retdatem retdatey retchk
+recode retchk (-10/-1=.) // this is missing for almost 99%
+tab retchk empstat_retired, m // no correspondence
+tab retdatem retchk, m // no correspondence here
+tab retdatey retchk, m // no correspondence here
+tab agexrt retchk, m // no correspondence here
+
+tab retdatem empstat_retired, m // okay so some of the yes for retired have a month and most of the inapplicable are truly not retired
+tab retdatey empstat_retired, m // okay so some of the yes for retired have a month and most of the inapplicable are truly not retired
+tab agexrt empstat_retired, m // okay so some of the yes for retired have a month and most of the inapplicable are truly not retired
+
+recode agexrt (-10/-9=.) (-8=0)(-7/-1=.)
+recode retdatem (-10/-9=.) (-8=0)(-7/-1=.)
+recode retdatey (-10/-9=.) (-8=0)(-7/-1=.)
+
+tab agexrt, m // okay these all have like 95% missing so really not useful....
+tab retdatem, m
+tab retdatey, m
+
+// housing status
+tab tenure_dv, m
+recode tenure_dv (-9/-1=.)
+
+gen housing_status_alt=.
+replace housing_status_alt = 1 if tenure_dv== 1 // owned outright
+replace housing_status_alt = 2 if tenure_dv== 2 // owned w mortgage
+replace housing_status_alt = 3 if inrange(tenure_dv,3,7) // rented
+replace housing_status_alt = 4 if tenure_dv== 8 // other
+
+label define housing_status_alt 1 "owned outright" 2 "owned w mortgage" 3 "rented" 4 "other"
+label values housing_status_alt housing_status_alt
+
 // unpaid labor variables
 foreach var in hubuys hufrys huiron humops{ // coding changed starting wave 12 (and then only asked every other year)
 	gen `var'_v0 = `var'
@@ -413,9 +570,23 @@ replace housework_flag = 1 if inlist(wavename,2,4,6,8,10,12,14,15) | inrange(wav
 // 2,4,6,8,10,12,BH01,BH04,BH05,BH06,BH07,BH08,BH09,BH10,BH11,BH12,BH13,BH14,BH15,BH16,BH17,BH18
 
 tab aidhh survey, m
+replace aidhh = . if aidhh==3
 tab aidxhh survey, m
 tab aidhrs survey, m
 recode aidhrs (-8=0)(-10/-9=.)(-7/-1=.)
+
+gen any_aid=.
+replace any_aid = 0 if aidhh==2 & aidxhh==2
+replace any_aid = 1 if aidhh==1 | aidxhh==1
+tab any_aid, m
+
+tab aidhrs any_aid, m
+
+gen aid_hours = aidhrs
+replace aid_hours = 3 if aidhrs ==8 // putting under 20 into 10-19 (because right now, this scale doens't make sense)
+replace aid_hours = 4 if aidhrs ==9 // putting over 20 into 20-34 (because right now, this scale doens't make sense)
+replace aid_hours = . if aidhrs ==97
+label values aid_hours a_aidhrs 
 
 // child variables
 foreach var in nch02_dv nch34_dv nch511_dv nch1215_dv agechy_dv nkids_dv{
@@ -433,12 +604,36 @@ tab xw_anychild_dv, m
 tab xw_ch1by_dv xw_anychild_dv, m
 tab agechy_dv xw_anychild_dv, m
 
+gen ever_parent=.
+replace ever_parent = 0 if xw_anychild_dv==2
+replace ever_parent = 1 if xw_anychild_dv==1
+
 gen year_first_birth = xw_ch1by_dv
 replace year_first_birth = 9999 if xw_anychild_dv==2
 
 gen age_youngest_child = agechy_dv
 replace age_youngest_child = 9999 if agechy_dv==-8
 tab age_youngest_child, m
+
+	// why is it so difficult to get a total number of births?
+	browse pidp year survey ever_parent lnprnt // this is mostly filled in 2009 and 1992. is this updated ? max #?
+
+	// merge on that indicator of mpf I created because I also grab number of births from there as well. still not convinced this is comprehensive
+	merge m:1 pidp using "$temp/mpf_lookup.dta" // okay, not that I have added those without births, it's much better
+	drop if _merge==2
+	drop _merge
+
+	tab any_mpf, m
+	tab ever_parent any_mpf, m
+	replace any_mpf = 0 if xw_anychild_dv==2 // can't have mpf if no kids...
+	// oh, okay, I think this is because I used the HH roster which is based on ever co-residence with children. It is NOT fertility history
+	// so, if never in HH with child, I actually think they will be missing here. is there a fertility history (that is separate the same way marriage is?)
+	
+	// are these congruent
+	tab num_bio_kids ever_parent, m // no, as I suspected (from previous attempt at merging, there are a bunch of zeroes for ever parent==1)
+	tab lnprnt if ever_parent==1 & num_bio_kids==0
+	browse pidp year survey ever_parent num_bio_kids lnprnt // these feel not very congruent. I guess because lprnt is incrementing?
+	// let's return to this later, not actually sure if I need at the moment...
 
 tab husits if partnered==1, m
 tab husits if nchild_dv!=0, m
@@ -452,8 +647,210 @@ tab huboss housework_flag if partnered==1, m col
 
 browse pidp hidp wavename age_all partnered marital_status_defacto husits howlng hubuys hufrys huiron humops jbhrs
 
+// other hh comp variables
+* Number of people over pensionable age (60 for women, 65 for men)
+fre npens_dv
+replace npens_dv = . if npens_dv == -9
+
+* Going to see if I can attempt coresidence with parents
+tab npn_dv survey, m // this is # but only ukhls (not bhps)
+inspect mnspno fnspno hgbiof hgbiom if survey==1
+inspect mnspno fnspno hgbiof hgbiom if survey==2
+browse pidp survey year npn_dv hgbiom mnspno hgbiof fnspno
+
+gen mom_in_hh = 0
+replace mom_in_hh = 1 if hgbiom > 0 & hgbiom!=.
+
+gen dad_in_hh = 0
+replace dad_in_hh = 1 if hgbiof > 0 & hgbiof!=.
+
+egen num_parents_hh = rowtotal(mom_in_hh dad_in_hh)
+tab num_parents_hh npn_dv // generally matches for the UKHLS provided info
+
+// attempt to figure out religion
+foreach var in oprlg1 oprlg0 ff_oprlg0 oprlg0ni ff_oprlg0ni{
+	display "`var'" 
+	tab `var' survey, m
+	tab `var' country_all, m
+}
+
+/*
+oprlg1 // only one in bhps and across countries but still terrible coverage
+oprlg0 // not in bhps , filled in only for e/s/w
+ff_oprlg0 // not in bhps, filled in only for e/s/w
+oprlg0ni // not in bhps and many missing, only filled in for those in NI, but still many missing
+ff_oprlg0ni // not in bhps and many missing, only filled in for those in NI, but still many missing
+*/
+
+gen religion = oprlg1
+replace religion = . if inrange(oprlg1,-10,-1) 
+label values religion a_oprlg1
+
+gen religion_esw = oprlg0
+replace religion_esw = . if inrange(oprlg0,-10,-1) 
+label values religion_esw a_oprlg0
+
+gen ff_religion_esw = ff_oprlg0
+replace ff_religion_esw = . if inrange(ff_oprlg0,-10,-1) 
+label values ff_religion_esw b_ff_oprlg0
+
+gen religion_ni = oprlg0ni
+replace religion_ni = . if inrange(oprlg0ni,-10,-1) 
+label values religion_ni a_oprlg0ni
+
+gen ff_religion_ni = ff_oprlg0ni
+replace ff_religion_ni = . if inrange(ff_oprlg0ni,-10,-1) 
+label values ff_religion_ni b_ff_oprlg0ni
+
+egen religion_values = rownonmiss(religion religion_esw ff_religion_esw religion_ni ff_religion_ni)
+tab religion_values, m
+
+browse pidp survey year country_all religion_values religion religion_esw ff_religion_esw religion_ni ff_religion_ni
+browse pidp survey year country_all religion_values religion religion_esw ff_religion_esw religion_ni ff_religion_ni if religion_values==2
+
+tab religion ff_religion_esw if religion_values==2, m
+
+label define master_religion 1 "no religion" 2 "church of england/anglican" 3 "roman catholic" 4 "church of scotland" 5 "free church or free presbyterian church of scotland" ///
+6 "episcopalian" 7 "methodist" 8 "baptist" 9 "congregational/united reform/urc" 10 "other christian" 11 "christian (no spec denom)" 12 "muslim/islam" 13 "hindu" ///
+14 "jewish" 15 "sikh" 16 "buddhist" 17 "presbyterian" 18 "church of ireland" 19 "brethren" 20 "protestant (unspecified)" 21 "other"
+
+gen master_religion=.
+replace master_religion = 1 if religion_values==1 & (religion_esw==1 | ff_religion_esw==1 | religion_ni==96 | ff_religion_ni==96) // no
+replace master_religion = 2 if religion_values==1 & (religion==2 | religion_esw==2 | ff_religion_esw==2) // church of england
+replace master_religion = 3 if religion_values==1 & (religion==3 | religion_esw==3 | ff_religion_esw==3 | religion_ni==1 | ff_religion_ni==1) // catholic
+replace master_religion = 4 if religion_values==1 & (religion==4 | religion_esw==4 | ff_religion_esw==4) // church of scotland
+replace master_religion = 5 if religion_values==1 & (religion==5 | religion==22 | religion_esw==5 | ff_religion_esw==5 | religion_ni==6 | ff_religion_ni==6) // free church
+replace master_religion = 6 if religion_values==1 & (religion==6 | religion_esw==6 | ff_religion_esw==6) // episcopalian
+replace master_religion = 7 if religion_values==1 & (religion==7 | religion_esw==7 | ff_religion_esw==7 | religion_ni==4 | ff_religion_ni==4) // methodist
+replace master_religion = 8 if religion_values==1 & (religion==8 | religion_esw==8 | ff_religion_esw==8 | religion_ni==5 | ff_religion_ni==5) // baptist
+replace master_religion = 9 if religion_values==1 & (religion==9 | religion_esw==9 | ff_religion_esw==9) // congregational
+replace master_religion = 10 if religion_values==1 & (religion==10 | religion==25 | religion_esw==10 | ff_religion_esw==10 | religion_ni==9 | ff_religion_ni==9) // other christian
+replace master_religion = 11 if religion_values==1 & (religion==11 | religion_esw==11 | ff_religion_esw==11) // christian unspec
+replace master_religion = 12 if religion_values==1 & (religion==12 | religion_esw==12 | ff_religion_esw==12 | religion_ni==13 | ff_religion_ni==13) // muslim
+replace master_religion = 13 if religion_values==1 & (religion==13 | religion_esw==13 | ff_religion_esw==13) // hindu
+replace master_religion = 14 if religion_values==1 & (religion==14 | religion_esw==14 | ff_religion_esw==14 | religion_ni==12 | religion==26) // jewish
+replace master_religion = 15 if religion_values==1 & (religion==15 | religion_esw==15 | ff_religion_esw==15) // sikh
+replace master_religion = 16 if religion_values==1 & (religion==16 | religion_esw==16 | ff_religion_esw==16 | religion_ni==10 | ff_religion_ni==10) // buddhist
+replace master_religion = 17 if religion_values==1 & (religion_ni==2 | ff_religion_ni==2) // presby
+replace master_religion = 18 if religion_values==1 & (religion_ni==3 | ff_religion_ni==3) // church of ireland
+replace master_religion = 19 if religion_values==1 & (religion==23 | religion_ni==7 | ff_religion_ni==7) // brethren
+replace master_religion = 20 if religion_values==1 & (religion==24 | religion_ni==8 | ff_religion_ni==8) // protestant
+replace master_religion = 21 if religion_values==1 & (inlist(religion,17,27,97) | religion_esw==97 | ff_religion_esw==97 | religion_ni==97 | ff_religion_ni==97) // other
+
+replace master_religion = 1 if religion_values==2 & religion==ff_religion_esw & ff_religion_esw==1 // no
+replace master_religion = 2 if religion_values==2 & religion==ff_religion_esw & ff_religion_esw==2 // church of england
+replace master_religion = 3 if religion_values==2 & religion==ff_religion_esw & ff_religion_esw==3 // catholic
+replace master_religion = 4 if religion_values==2 & religion==ff_religion_esw & ff_religion_esw==4 // church of scotland
+replace master_religion = 5 if religion_values==2 & religion==ff_religion_esw & ff_religion_esw==5 // free church
+replace master_religion = 6 if religion_values==2 & religion==ff_religion_esw & ff_religion_esw==6 // episc
+replace master_religion = 7 if religion_values==2 & religion==ff_religion_esw & ff_religion_esw==7 // methodist
+replace master_religion = 8 if religion_values==2 & religion==ff_religion_esw & ff_religion_esw==8 // baptist
+replace master_religion = 9 if religion_values==2 & religion==ff_religion_esw & ff_religion_esw==9 // congregational
+replace master_religion = 10 if religion_values==2 & religion==ff_religion_esw & ff_religion_esw==10 // other christian
+replace master_religion = 11 if religion_values==2 & religion==ff_religion_esw & ff_religion_esw==11 // christian unspec
+replace master_religion = 12 if religion_values==2 & religion==ff_religion_esw & ff_religion_esw==12 // muslim
+replace master_religion = 13 if religion_values==2 & religion==ff_religion_esw & ff_religion_esw==13 // hindu
+replace master_religion = 14 if religion_values==2 & religion==ff_religion_esw & ff_religion_esw==14 // jewish
+replace master_religion = 15 if religion_values==2 & religion==ff_religion_esw & ff_religion_esw==15 // sikh
+replace master_religion = 16 if religion_values==2 & religion==ff_religion_esw & ff_religion_esw==16 // buddhist
+replace master_religion = 21 if religion_values==2 & religion==ff_religion_esw & ff_religion_esw==97 // other
+// based on the below investigation, seems like I should prioritize the ff_esw
+replace master_religion = 1 if religion_values==2 & master_religion==. & ff_religion_esw==1 // no
+replace master_religion = 2 if religion_values==2 & master_religion==. & ff_religion_esw==2 // church of england
+replace master_religion = 3 if religion_values==2 & master_religion==. & ff_religion_esw==3 // catholic
+replace master_religion = 4 if religion_values==2 & master_religion==. & ff_religion_esw==4 // church of scotland
+replace master_religion = 5 if religion_values==2 & master_religion==. & ff_religion_esw==5 // free church
+replace master_religion = 6 if religion_values==2 & master_religion==. & ff_religion_esw==6 // episc
+replace master_religion = 7 if religion_values==2 & master_religion==. & ff_religion_esw==7 // methodist
+replace master_religion = 8 if religion_values==2 & master_religion==. & ff_religion_esw==8 // baptist
+replace master_religion = 9 if religion_values==2 & master_religion==. & ff_religion_esw==9 // congregational
+replace master_religion = 10 if religion_values==2 & master_religion==. & ff_religion_esw==10 // other christian
+replace master_religion = 11 if religion_values==2 & master_religion==. & ff_religion_esw==11 // christian unspec
+replace master_religion = 12 if religion_values==2 & master_religion==. & ff_religion_esw==12 // muslim
+replace master_religion = 13 if religion_values==2 & master_religion==. & ff_religion_esw==13 // hindu
+replace master_religion = 14 if religion_values==2 & master_religion==. & ff_religion_esw==14 // jewish
+replace master_religion = 15 if religion_values==2 & master_religion==. & ff_religion_esw==15 // sikh
+replace master_religion = 16 if religion_values==2 & master_religion==. & ff_religion_esw==16 // buddhist
+replace master_religion = 21 if religion_values==2 & master_religion==. & ff_religion_esw==97 // other
+//
+replace master_religion = 1 if religion_values==2 & master_religion==. & ff_religion_ni==96 // no
+replace master_religion = 3 if religion_values==2 & master_religion==. & ff_religion_ni==1 // catholic
+replace master_religion = 10 if religion_values==2 & master_religion==. & ff_religion_ni==9 // other christian
+replace master_religion = 17 if religion_values==2 & master_religion==. & ff_religion_ni==2 // presbyterian
+replace master_religion = 18 if religion_values==2 & master_religion==. & ff_religion_ni==3 // church of ireland
+replace master_religion = 20 if religion_values==2 & master_religion==. & ff_religion_ni==8 // protestant (unspecified)
+replace master_religion = 21 if religion_values==2 & master_religion==. & ff_religion_ni==97 // other
+
+label values master_religion master_religion
+tab master_religion religion_values, m
+
+unique master_religion if master_religion!=., by(pidp) gen(num_religion)
+bysort pidp (num_religion): replace num_religion = num_religion[1]
+tab num_religion, m // for those who just have 1, should I fill in with that value? or just impute all?
+
+sort pidp year
+browse pidp survey year country_all religion_values num_religion master_religion religion religion_esw ff_religion_esw religion_ni ff_religion_ni // okay after all of this, do most people only have one year with religion info?
+
+bysort pidp: egen religion_est = max(master_religion) if num_religion==1
+replace religion_est = master_religion if num_religion > 1
+label values religion_est master_religion
+
+// browse pidp survey year country_all religion_values num_religion religion_est master_religion religion religion_esw ff_religion_esw religion_ni ff_religion_ni
+
+tab master_religion num_religion,m 
+tab religion_est num_religion,m 
+
+// browse pidp survey year country_all religion_values religion religion_esw ff_religion_esw religion_ni ff_religion_ni if religion_values==2 & master_religion==. // why are these all specifically 2012, 2016, 2020
+// browse pidp survey year country_all religion_values religion religion_esw ff_religion_esw religion_ni ff_religion_ni if inlist(pidp,68105411,68284931,816877207)
+
+// family backround variables
+* parent SES
+tab xw_paedqf, m
+tab xw_maedqf, m
+tab xw_maju, m // the parent working variables (at child age 14) have much better coverage than the education
+tab xw_paju, m // the parent working variables (at child age 14) have much better coverage than the education
+
+browse pidp survey year xw_paedqf xw_paju xw_maedqf xw_maju // okay not really much to do here, think will just need to impute those with no data (using a more consolidated number of variables)
+rename xw_paedqf father_educ
+rename xw_maedqf mother_educ
+rename xw_paju father_empstatus
+rename xw_maju mother_empstatus
+
+* family structure
+tab xw_lvag16, m
+tab xw_lvag14, m
+tab xw_lvag14 xw_lvag16, m // so the family structure is only filled in if not living with both bio parents
+tab lvag14_bh, m // this is mostly missing
+tab lvag14_bh xw_lvag14, m // and no instances where the bh one gives you more info
+tab xw_agelh, m
+tab xw_agelh xw_lvag16, m // also generally only filled in if not living with both
+
+browse pidp survey year xw_lvag16 xw_lvag14 xw_agelh
+
+gen family_structure = .
+replace family_structure = 1 if xw_lvag16==1
+replace family_structure = 0 if xw_lvag16==2
+
+gen family_structure14_det = .
+replace family_structure14_det = xw_lvag14 if family_structure==0
+replace family_structure14_det = 1 if family_structure==1
+replace family_structure14_det = 8 if family_structure14_det==97
+label define lvag14 8 "other", add
+label values family_structure14_det lvag14
+
+tab family_structure14_det, m
+tab family_structure14_det family_structure, m
+
+// respondent info
+gen respondent_self = 0
+replace respondent_self = 1 if inlist(ivfio,1,3)
+
+tab ivfio respondent_self, m
+
+***************************
+***************************
 // let's do a check of the variables I either will use for analysis or will use to impute, so I can be sure I a. properly impute and b. properly recoded
-foreach var in jbhrs work_hours total_hours howlng aidhrs fimnlabgrs_dv jbstat employed hiqual_dv nchild_dv nkids_dv agechy_dv partnered marital_status_defacto fihhmngrs_dv xw_ethn_dv country_all dob_year year_first_birth xw_memorig xw_sampst ivfio xw_sex{
+foreach var in jbhrs work_hours total_hours howlng aidhrs fimnlabgrs_dv jbstat employment_status employed hiqual_dv ever_parent nchild_dv nkids_dv agechy_dv partnered marital_status_defacto fihhmngrs_dv xw_ethn_dv country_all gor_dv dob_year year_first_birth xw_memorig xw_sampst respondent_self xw_sex tenure_dv housing_status_alt master_religion religion_est empstat_disabled disabled_est sr_health empstat_retired any_aid aid_hours npens_dv num_parents_hh any_mpf father_educ father_empstatus mother_educ mother_empstatus family_structure family_structure14_det{
 	inspect `var'
 }
 
@@ -504,11 +901,26 @@ forvalues r=1/14{
 }
 
 replace rel_no = rel_no_alt if rel_no==. & partner_id!=.
+replace rel_no = rel_no_alt if rel_no==. & partnered==1
+tab rel_no partnered, m // this one is more congruent with partnershp status
+tab rel_no_alt partnered, m
 
-browse pidp sex marital_status_defacto year partner_id rel_no mh_partner1 mh_status1 mh_starty1 mh_endy1 mh_partner2 mh_status2 mh_starty2 mh_endy2 mh_partner3 mh_status3  mh_starty3 mh_endy3 mh_partner4 mh_status4
-
-tab rel_no if inlist(marital_status_defacto,1,2), m // so about 4% missing. come back to this - can I see if any started during the survey to at least get duration?
+tab rel_no if inlist(marital_status_defacto,1,2), m // so about 4% missing. come back to this - can I see if any started during the survey to at least get duration? okay, doing what I did for psid and using marital history and estimating based on recorded relationships
 tab year rel_no if inlist(marital_status_defacto,1,2), m row // check that updated marital history file made this consistent again by year
+
+gen rel_counter=0
+forvalues r=1/14{
+	replace rel_counter = rel_counter + 1 if mh_starty`r' < istrtdaty // this is meant to cover all relationship types
+}
+
+browse pidp year marital_status_defacto rel_counter rel_no mh_starty*
+
+browse pidp sex marital_status_defacto year partner_id rel_counter rel_no mh_partner1 mh_status1 mh_starty1 mh_endy1 mh_partner2 mh_status2 mh_starty2 mh_endy2 mh_partner3 mh_status3  mh_starty3 mh_endy3 mh_partner4 mh_status4 if partnered==1 & rel_no==.
+
+gen rel_no_est = rel_no
+replace rel_no_est = rel_counter + 1 if rel_no_est==. & partnered==1 // estimate
+tab rel_no partnered, m
+tab rel_no_est partnered, m
 
 sort pidp year
 // browse pidp year marital_status_defacto
@@ -532,6 +944,7 @@ replace marr_trans=1 if (marital_status_defacto==1 & marital_status_defacto[_n-1
 // browse pidp sex year marital_status_defacto partner_id rel_no rel_start rel_end rel_end_pre marr_trans mh_partner1 mh_status1 mh_starty1 mh_endy1 mh_partner2 mh_status2 mh_starty2 mh_endy2 mh_partner3 mh_status3  mh_starty3 mh_endy3 mh_partner4 mh_status4
 
 // I am going to create individual level versions of these variables for now and then check in next file against partners to make sure they match.
+// using the NON estimated rel_no because that corresponds to the info given in marital history. The ones where I estimate don't have the current partnership recorded in marital history, so I don't want to overwrite the wrong info...
 gen current_rel_start_year=.
 gen current_rel_start_month=.
 gen current_rel_end_year=.
@@ -714,6 +1127,14 @@ replace date_check = 1 if rel_end_all < rel_start_all & rel_end_all!=. & rel_sta
 replace rel_start_all = first_couple_year if date_check==1 & rel_start_all > last_couple_year
 replace rel_end_all = last_couple_year if date_check==1 & rel_end_all < first_couple_year
 
+gen int_date_check=0 if partnered==1
+replace int_date_check =1 if partnered==1 & int_year >= rel_start_all & int_year <= rel_end_all & rel_start_all!=. & rel_end_all!=.
+tab int_date_check if rel_start_all!=.
+tab int_date_check if rel_end_all!=.
+tab int_date_check if rel_start_all!=. & rel_end_all!=.
+
+// browse pidp partner_id int_year marital_status_defacto rel_no rel_no_est rel_start_all rel_end_all status_all current_rel_start_year current_rel_end_year mh_starty1 mh_endy1 mh_starty2 mh_endy2 first_couple_year last_couple_year if partnered==1
+
 save "$created_data/UKHLS_long_all_recoded.dta", replace
 
 // note: this file is still NOT restricted in any way
@@ -721,6 +1142,6 @@ unique pidp // 118405, 807942 total py
 unique pidp partner_id // 135496	
 unique pidp, by(xw_sex) // 56297 m, 62216 w
 unique pidp, by(partnered) // 59866 0, 73581 1
-unique pidp partner_id if partnered==1 & current_rel_start_year==. // 8124 couples. does that feel like too many to be missing?
-unique pidp partner_id if partnered==1 & current_rel_end_year==. //  8150 couples. does that feel like too many to be missing?
+unique pidp partner_id if partnered==1 & current_rel_start_year==. // 8124 couples. does that feel like too many to be missing? okay now 7066
+unique pidp partner_id if partnered==1 & current_rel_end_year==. //  8150 couples. does that feel like too many to be missing? okay now it is 5688. when did this change gah?!
 // unique pidp partner_id if partnered==1, by(current_rel_start_year)
