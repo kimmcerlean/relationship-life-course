@@ -29,6 +29,10 @@ inspect partner_id if partnered==0
 inspect partner_id if partnered==1
 
 keep if partnered==1
+
+// should I fill in rel start year with first year observed? But i do have no idea if relationship started that year or like 20 years prior...
+browse pidp partner_id int_year marital_status_defacto rel_no rel_no_est rel_start rel_start_flag rel_start_all rel_end_all status_all current_rel_start_year current_rel_end_year mh_starty1 mh_endy1 mh_starty2 mh_endy2 mh_starty3 mh_endy3  first_couple_year last_couple_year
+
 drop if rel_start_all==. // will get removed anyway
 
 // then restrictions based on relationship dates
@@ -43,8 +47,10 @@ bysort pidp partner_id: egen max_dur = max(dur)
 sort pidp year
 browse pidp partner_id int_year marital_status_defacto rel_start_all rel_end_all status_all dur min_dur max_dur first_couple_year last_couple_year 
 
+// unique pidp partner_id if rel_start_all >=1991 & rel_start_all<=2019 & inlist(min_dur,0,1), by(rel_start_all)
+
 keep if rel_start_all >= 1991 & inlist(min_dur,0,1) // using 1991 because that is first survey year
-keep if rel_start_all <= 2012 // doing 2012 as some interviews in last wave were 2022
+keep if rel_start_all <= 2019 // doing 2012 as some interviews in last wave were 2022
 
 tab rel_end_all, m // so about 3% missing. should I update with last couple year? SEe below
 tab status_all, m // so <1% missing so prob fine? if ongoing, update current_rel_end_year with last survey year? and call it attrited?
@@ -68,16 +74,17 @@ unique couple_id
 // get list
 preserve
 
-collapse (first) rel_start_all rel_end_all status_all ever_transition min_dur max_dur first_couple_year last_couple_year, by(pidp partner_id couple_id)
+collapse (first) rel_start_all rel_end_all status_all rel_no_est ever_transition min_dur max_dur first_couple_year last_couple_year, by(pidp partner_id couple_id)
 
 gen eligible_couple=1
 rename couple_id eligible_couple_id
 rename rel_start_all eligible_rel_start_year
 rename rel_end_all eligible_rel_end_year
 rename status_all eligible_rel_status
+rename rel_no_est eligible_rel_no
 
 gen long eligible_partner = partner_id 
-by pidp: egen num_rel = count(partner_id)
+by pidp: egen num_rel = count(partner_id) // this is how many relationships in this time frame they are contributing, so not quite the same
 
 browse if num_rel > 1
 
@@ -97,7 +104,7 @@ bysort pidp partner_id: egen max_dur = max(dur)
 
 tab dur, m
 
-merge m:1 pidp partner_id using "$created_data/ukhls_couple_list.dta", keepusing(num_rel eligible_couple eligible_couple_id eligible_rel_start_year eligible_rel_end_year eligible_rel_status eligible_partner) // so I actually want to just merge on pidp because i want to keep them potentially even if not partnered anymore. BUT, can indicate which relationship is the eligible one, if multiple. okay, this won't work because some have multiple partners, so will merge for the specific couple, then create a MAX indicator of whether that person is ever eligible
+merge m:1 pidp partner_id using "$created_data/ukhls_couple_list.dta", keepusing(num_rel eligible_couple eligible_couple_id eligible_rel_start_year eligible_rel_end_year eligible_rel_no eligible_rel_status eligible_partner) // so I actually want to just merge on pidp because i want to keep them potentially even if not partnered anymore. BUT, can indicate which relationship is the eligible one, if multiple. okay, this won't work because some have multiple partners, so will merge for the specific couple, then create a MAX indicator of whether that person is ever eligible
 
 drop if _merge==2
 drop _merge
@@ -118,15 +125,16 @@ replace eligible_rel_start_year = rel_start_all if eligible_rel_start_year==. & 
 replace eligible_rel_end_year = rel_end_all if eligible_rel_end_year==. & rel_end_all !=.
 replace eligible_rel_status = status_all if eligible_rel_status==. & status_all !=.
 label values eligible_rel_status status
+replace eligible_rel_no = rel_no_est if eligible_rel_no==. & rel_no_est !=.
 
-foreach var in eligible_rel_start_year eligible_rel_end_year eligible_rel_status eligible_partner{
+foreach var in eligible_rel_start_year eligible_rel_end_year eligible_rel_status eligible_partner eligible_rel_no{
 	bysort pidp (`var'): replace `var' = `var'[1] if inlist(max_eligible_rels,0,1)
 }
 
 sort pidp year
 // https://www.stata.com/support/faqs/data-management/replacing-missing-values/
 
-foreach var in eligible_rel_start_year eligible_rel_end_year eligible_rel_status eligible_partner{
+foreach var in eligible_rel_start_year eligible_rel_end_year eligible_rel_status eligible_partner eligible_rel_no{
 	replace `var' = `var'[_n-1] if `var'==. & `var'[_n-1]!=. & pidp==pidp[_n-1] & max_eligible_rels > 1
 	gsort pidp -year 
 	replace `var' = `var'[_n-1] if `var'==. & `var'[_n-1]!=. & pidp==pidp[_n-1] & max_eligible_rels > 1
@@ -148,16 +156,17 @@ assert eligible_rel_start_year!=.
 assert eligible_rel_end_year!=.
 // assert eligible_rel_status!=.
 // assert eligible_partner!=. // some people will never have a partner id I think
+// assert eligible_rel_no!=.
 
 sort pidp year
-browse pidp partner_id int_year eligible_partner eligible_rel_start_year eligible_rel_end_year eligible_rel_status rel_start_all rel_end_all status_all max_eligible_rels
+browse pidp partner_id int_year eligible_partner eligible_rel_start_year eligible_rel_end_year eligible_rel_status eligible_rel_no rel_start_all rel_end_all status_all max_eligible_rels rel_no_est
 
 gen post_marital_status=.
 replace post_marital_status = marital_status_defacto if int_year > eligible_rel_end_year
 label values post_marital_status marital_status_defacto
 
 gen post_ended=.
-replace post_ended = 1 if inlist(post_marital_status,3,4,5)
+replace post_ended = 1 if inlist(post_marital_status,3,4,5,6) // actually never married works as well bc that will be status for cohabitors
 bysort pidp (post_ended): replace post_ended=post_ended[1]
 sort pidp year
 
@@ -207,15 +216,10 @@ save "$created_data/ukhls_eligible_for_imputation.dta", replace
 unique pidp partner_id // partner Id missing a lot bc includes non-partnered years, so will be more (bc one missing record, one not)
 unique pidp eligible_partner 
 
-// first see what missing data is like with the data that exists
-foreach var in jbhrs work_hours total_hours howlng aidhrs fimnlabgrs_dv jbstat employed hiqual_dv xw_anychild_dv nchild_dv nkids_dv age_youngest_child partnered marital_status_defacto fihhmngrs_dv xw_ethn_dv xw_racel_dv country_all gor_dv dob_year year_first_birth current_rel_start_year eligible_rel_start_year xw_memorig xw_sampst ivfio xw_sex{
-	inspect `var'
-}
-
 // see if some variables are fixed or change
 unique pidp 
-unique pidp country_all // 19191 instead of 18664 so barely changes 
-unique pidp gor_dv // 20409 so changes more if I get more specific
+unique pidp country_all // 24119 instead of 23301 so barely changes 
+unique pidp gor_dv // 26309 so changes more if I get more specific
 quietly unique gor_dv if gor_dv!=., by(pidp) gen(country_change)
 bysort pidp (country_change): replace country_change=country_change[1]
 tab country_change, m
@@ -231,7 +235,7 @@ in a few cases, racel is asked multiple times, and in those cases,
 racel_dv prioritises the earliest report while ethn_dv prioritises the latest report.
 */
 
-unique pidp hiqual_dv // some more movement here, but barely. 20817 v. 18664
+unique pidp hiqual_dv // some more movement here, but barely. 28401 v. 23301
 quietly unique hiqual_dv if hiqual_dv!=., by(pidp) gen(educ_change)
 bysort pidp (educ_change): replace educ_change=educ_change[1]
 tab educ_change, m
@@ -261,12 +265,18 @@ W_LCHBY4 on datafile W_NEWBORN
 BW_CH1BY on datafile BW_INDRESP/
 */
 
+// first see what missing data is like with the data that exists
+foreach var in jbhrs work_hours total_hours howlng any_aid aid_hours fimnlabgrs_dv employment_status employed hiqual_dv hiqual_fixed ever_parent nchild_dv nkids_dv age_youngest_child partnered marital_status_defacto fihhmngrs_dv npens_dv num_parents_hh xw_ethn_dv xw_racel_dv father_educ mother_educ father_empstatus mother_empstatus family_structure family_structure14_det country_all gor_dv tenure_dv housing_status_alt master_religion religion_est disabled_est sr_health dob_year year_first_birth current_rel_start_year eligible_rel_start_year eligible_rel_no xw_memorig xw_sampst respondent_self xw_sex{
+	inspect `var'
+}
+// partnered_imp marital_status_imp 
+
 **********************************
 // here, we finally rectangularize
 unique pidp
 unique pidp eligible_partner
-unique pidp eligible_rel_start_year //   19619
-unique couple_id // 19588
+unique pidp eligible_rel_start_year //   19619 /  24387 (new)
+unique couple_id // 19588 / 23886 (new)
 
 drop if couple_id==. // this will cause issues later because those are with missing partner info
 
@@ -286,7 +296,7 @@ unique pidp eligible_rel_start_year
 unique couple_id
 
 // pull through fixed variables
-foreach var in pidp eligible_couple_id eligible_partner eligible_rel_start_year eligible_rel_end_year eligible_rel_status min_dur max_dur first_year_observed first_couple_year last_year_observed last_couple_year hiqual_fixed xw_ethn_dv xw_racel_dv dob_year year_first_birth eligible_rel_start_year xw_memorig xw_sampst xw_sex ever_transition year_transitioned mh_status1 mh_status2 mh_status3 mh_status4 mh_status5 mh_status6 mh_status7 mh_status8 mh_status9 mh_status10 mh_status11 mh_status12 mh_status13 mh_status14 mh_starty1 mh_starty2 mh_starty3 mh_starty4 mh_starty5 mh_starty6 mh_starty7 mh_starty8 mh_starty9 mh_starty10 mh_starty11 mh_starty12 mh_starty13 mh_starty14 mh_endy1 mh_endy2 mh_endy3 mh_endy4 mh_endy5 mh_endy6 mh_endy7 mh_endy8 mh_endy9 mh_endy10 mh_endy11 mh_endy12 mh_endy13 mh_endy14 xw_sex xw_coh1m_dv xw_coh1y_dv xw_evercoh_dv xw_lmar1m_dv xw_lmar1y_dv xw_evermar_dv xw_ch1by_dv xw_anychild_dv{
+foreach var in pidp eligible_couple_id eligible_partner eligible_rel_start_year eligible_rel_end_year eligible_rel_status eligible_rel_no min_dur max_dur first_year_observed first_couple_year last_year_observed last_couple_year hiqual_fixed xw_ethn_dv xw_racel_dv dob_year year_first_birth eligible_rel_start_year xw_memorig xw_sampst xw_sex ever_transition year_transitioned mh_status1 mh_status2 mh_status3 mh_status4 mh_status5 mh_status6 mh_status7 mh_status8 mh_status9 mh_status10 mh_status11 mh_status12 mh_status13 mh_status14 mh_starty1 mh_starty2 mh_starty3 mh_starty4 mh_starty5 mh_starty6 mh_starty7 mh_starty8 mh_starty9 mh_starty10 mh_starty11 mh_starty12 mh_starty13 mh_starty14 mh_endy1 mh_endy2 mh_endy3 mh_endy4 mh_endy5 mh_endy6 mh_endy7 mh_endy8 mh_endy9 mh_endy10 mh_endy11 mh_endy12 mh_endy13 mh_endy14 xw_sex xw_coh1m_dv xw_coh1y_dv xw_evercoh_dv xw_lmar1m_dv xw_lmar1y_dv xw_evermar_dv xw_ch1by_dv xw_anychild_dv num_bio_kids ever_parent father_educ mother_educ father_empstatus mother_empstatus family_structure family_structure14_det{
 	bysort couple_id (`var'): replace `var'=`var'[1] if `var'==.
 }
 
@@ -294,12 +304,37 @@ replace int_year = eligible_rel_start_year + relative_duration if int_year==.
 replace age_all = int_year - dob_year if age_all==.
 
 sort pidp int_year
-browse pidp eligible_partner int_year age_all dob_year partnered partner_id eligible_rel_start_year eligible_rel_end_year relative_duration couple_id orig_record
+browse pidp eligible_partner int_year age_all dob_year partnered partner_id eligible_rel_start_year eligible_rel_end_year eligible_rel_no relative_duration couple_id orig_record
+
+// some variables to create now that it's filled in
+* parental status based on year of first birth
+browse pidp int_year ever_parent xw_ch1by_dv year_first_birth
+
+gen current_parent_status=.
+replace current_parent_status = 0 if ever_parent==0
+replace current_parent_status = 0 if ever_parent==1 & int_year < year_first_birth & year_first_birth!=0
+replace current_parent_status = 1 if ever_parent==1 & int_year >= year_first_birth & year_first_birth!=0
+
+tab ever_parent current_parent_status,m 
+tab year_first_birth current_parent_status, m
+
+* first birth timing relative to relationship
+gen birth_timing_rel = eligible_rel_start_year - year_first_birth if year_first_birth!=9999 & year_first_birth!=0
+replace birth_timing_rel = 9999 if year_first_birth==9999
+
+tab birth_timing_rel ever_parent, m
 
 // now see the missing again
-foreach var in jbhrs work_hours total_hours howlng aidhrs fimnlabgrs_dv jbstat employed hiqual_dv hiqual_fixed xw_anychild_dv nchild_dv nkids_dv age_youngest_child partnered marital_status_defacto fihhmngrs_dv xw_ethn_dv xw_racel_dv country_all gor_dv dob_year year_first_birth current_rel_start_year eligible_rel_start_year xw_memorig xw_sampst ivfio xw_sex{
+foreach var in jbhrs work_hours total_hours howlng any_aid aid_hours fimnlabgrs_dv employment_status employed hiqual_dv hiqual_fixed ever_parent nchild_dv current_parent_status nkids_dv age_youngest_child partnered marital_status_defacto fihhmngrs_dv npens_dv num_parents_hh xw_ethn_dv xw_racel_dv father_educ mother_educ father_empstatus mother_empstatus family_structure family_structure14_det country_all gor_dv tenure_dv housing_status_alt master_religion religion_est disabled_est sr_health dob_year year_first_birth birth_timing_rel current_rel_start_year eligible_rel_start_year eligible_rel_no xw_memorig xw_sampst respondent_self xw_sex{
 	inspect `var'
 }
+
+// fill in respondent info with non-sample year when missing
+gen respondent_info = respondent_self
+replace respondent_info = 2 if respondent_self==.
+
+label define resp 0 "proxy" 1 "self" 2 "non-sample"
+label values respondent_info resp
 
 // Can I fill in any - namely marital status / partnership status based on history variables? anything about children with birth history also?
 browse pidp int_year partnered marital_status_defacto eligible_rel_start_year eligible_rel_end_year current_rel_start_year current_rel_end_year mh_*
