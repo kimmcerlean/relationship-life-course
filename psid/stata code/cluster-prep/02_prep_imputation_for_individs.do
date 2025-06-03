@@ -2177,6 +2177,9 @@ tab retired_est_focal empstat_retired_focal, m
 
 browse unique_id partner_id survey_yr ever_retired min_yr_retired_focal max_yr_retired_focal retired_est_focal empstat_retired_focal if ever_retired==1
 
+// recode respondent_who for non-survey years
+replace RESPONDENT_WHO_ = 9 if RESPONDENT_WHO_==. & survey_yr>2021
+
 // get ready to reshape back
 gen duration_rec=duration+2 // negatives won't work in reshape or with sq commands - so make -2 0
 
@@ -2278,6 +2281,20 @@ tab educ_focal_imp2, m
 browse unique_id min_educ max_educ educ_focal_imp* if educ_focal_imp2==.
 
 gen fixed_education=educ_focal_imp2 // duration 0
+
+// might need to attempt to fill in more disabled status - causing problems with imputation
+browse unique_id disabled_focal*
+egen max_disabled_focal = rowmax(disabled_focal*) // if max disabled = 0 then means never observed as disabled. let's give them zeroes for all?
+egen min_disabled_focal = rowmin(disabled_focal*) // if max disabled = 0 then means never observed as disabled. let's give them zeroes for all?
+tab min_disabled_focal max_disabled_focal, m  // very few disabled whole time (will have 1 for min)
+
+forvalues d=0/14{
+	capture gen disabled_imp_focal`d' = disabled_focal`d'
+	replace disabled_imp_focal`d' = 0 if disabled_imp_focal`d' ==. &  max_disabled_focal==0
+	replace disabled_imp_focal`d' = 1 if disabled_imp_focal`d' ==. &  min_disabled_focal==1
+}
+
+browse unique_id max_disabled_focal  disabled_imp_focal* disabled_focal*
 
 **# Here the data is now reshaped wide, by duration
 save "$created_data/individs_by_duration_wide.dta", replace
