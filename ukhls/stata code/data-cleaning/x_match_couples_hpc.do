@@ -18,12 +18,33 @@ mi passive: replace weekly_hrs_woman=total_hours_sp if SEX==1
 mi passive: gen weekly_hrs_man=total_hours if SEX==1
 mi passive: replace weekly_hrs_man=total_hours_sp if SEX==2
 
+*detailed employment status
+mi passive: gen employment_status_woman=employment_status if SEX==2
+mi passive: replace employment_status_woman=employment_status_sp if SEX==1
+
+mi passive: gen employment_status_man=employment_status if SEX==1
+mi passive: replace employment_status_man=employment_status_sp if SEX==2
+
+*monthly earnings
+mi passive: gen monthly_earnings_woman=fimnlabgrs_dv if SEX==2
+mi passive: replace monthly_earnings_woman=fimnlabgrs_dv_sp if SEX==1
+
+mi passive: gen monthly_earnings_man=fimnlabgrs_dv if SEX==1
+mi passive: replace monthly_earnings_man=fimnlabgrs_dv_sp if SEX==2
+
 *unpaid work
 mi passive: gen housework_woman=howlng if SEX==2
 mi passive: replace housework_woman=howlng_sp if SEX==1
 
 mi passive: gen housework_man=howlng if SEX==1
 mi passive: replace housework_man=howlng_sp if SEX==2
+
+*care work
+mi passive: gen carework_woman=aid_hours if SEX==2
+mi passive: replace carework_woman=aid_hours_sp if SEX==1
+
+mi passive: gen carework_man=aid_hours if SEX==1
+mi passive: replace carework_man=aid_hours_sp if SEX==2
 
 *relationship status
 tab marital_status_imp partnered_imp, m col
@@ -45,6 +66,12 @@ mi passive: replace partnered_man = 1 if inlist(marital_status_man,1,2)
 tab partnered_woman partnered_man, m
 tab partnered_woman partnered_man if imputed==1, m // well these could also be partnerships that occurred outside of focal partnership
 
+gen rel_no_woman=eligible_rel_no if SEX==2
+replace rel_no_woman=eligible_rel_no_sp if SEX==1
+
+gen rel_no_man=eligible_rel_no if SEX==1
+replace rel_no_man=eligible_rel_no_sp if SEX==2
+
 *number of children
 tab nkids_dv nkids_dv_sp, m
 tab nkids_dv nkids_dv_sp if imputed==1
@@ -56,30 +83,242 @@ mi passive: replace num_children_woman=nkids_dv_sp if SEX==1
 mi passive: gen num_children_man=nkids_dv if SEX==1
 mi passive: replace num_children_man=nkids_dv_sp if SEX==2
 
+// some demographics
+* Region
+mi passive: gen region_woman=gor_dv if SEX==2
+mi passive: replace region_woman=gor_dv_sp if SEX==1
+
+mi passive: gen region_man=gor_dv if SEX==1
+mi passive: replace region_man=gor_dv_sp if SEX==2
+
+* Housing status
+mi passive: gen housing_woman=tenure_dv if SEX==2
+mi passive: replace housing_woman=tenure_dv_sp if SEX==1
+
+mi passive: gen housing_man=tenure_dv if SEX==1
+mi passive: replace housing_man=tenure_dv_sp if SEX==2
+
+* Religion
+mi passive: gen religion_woman=master_religion if SEX==2
+mi passive: replace religion_woman=master_religion_sp if SEX==1
+
+mi passive: gen religion_man=master_religion if SEX==1
+mi passive: replace religion_man=master_religion_sp if SEX==2
+
+*Disability status
+mi passive: gen disabled_woman=disabled_est if SEX==2
+mi passive: replace disabled_woman=disabled_est_sp if SEX==1
+
+mi passive: gen disabled_man=disabled_est if SEX==1
+mi passive: replace disabled_man=disabled_est_sp if SEX==2
+
+* Self-rated health
+mi passive: gen sr_health_woman=sr_health if SEX==2
+mi passive: replace sr_health_woman=sr_health_sp if SEX==1
+
+mi passive: gen sr_health_man=sr_health if SEX==1
+mi passive: replace sr_health_man=sr_health_sp if SEX==2
+
+* Father education
+mi passive: gen father_educ_woman=father_educ if SEX==2
+mi passive: replace father_educ_woman=father_educ_sp if SEX==1
+
+mi passive: gen father_educ_man=father_educ if SEX==1
+mi passive: replace father_educ_man=father_educ_sp if SEX==2
+
+* Mother education
+mi passive: gen mother_educ_woman=mother_educ if SEX==2
+mi passive: replace mother_educ_woman=mother_educ_sp if SEX==1
+
+mi passive: gen mother_educ_man=mother_educ if SEX==1
+mi passive: replace mother_educ_man=mother_educ_sp if SEX==2
+
+* Family structure growing up
+mi passive: gen family_structure_woman=family_structure if SEX==2
+mi passive: replace family_structure_woman=family_structure_sp if SEX==1
+
+mi passive: gen family_structure_man=family_structure if SEX==1
+mi passive: replace family_structure_man=family_structure_sp if SEX==2
+
+* Year of first birth
+mi passive: gen yr_first_birth_woman=year_first_birth_imp if SEX==2
+mi passive: replace yr_first_birth_woman=year_first_birth_imp_sp if SEX==1
+
+mi passive: gen yr_first_birth_man=year_first_birth_imp if SEX==1
+mi passive: replace yr_first_birth_man=year_first_birth_imp_sp if SEX==2
+
 // Stata assert command to check new variables created from imputed  
-foreach var in weekly_hrs_woman weekly_hrs_man housework_woman housework_man marital_status_woman marital_status_man partnered_woman partnered_man num_children_woman num_children_man{  
+foreach var in weekly_hrs_woman weekly_hrs_man employment_status_woman employment_status_man monthly_earnings_woman monthly_earnings_man housework_woman housework_man carework_woman carework_man marital_status_woman marital_status_man partnered_woman partnered_man rel_no_woman rel_no_man num_children_woman num_children_man region_woman region_man housing_woman housing_man religion_woman religion_man disabled_woman disabled_man sr_health_woman sr_health_man father_educ_woman father_educ_man mother_educ_woman mother_educ_man family_structure_woman family_structure_man yr_first_birth_woman yr_first_birth_man{  
+	inspect `var' if _mi_m != 0  
+	assert `var' != . if _mi_m != 0  
+} capture drop weekly_hrs_woman weekly_hrs_man housework_woman housework_man partnered_woman partnered_man num_children_woman num_children_man
+mi update
+
+// first, let's make gendered versions of each variable
+*paid work
+mi passive: gen weekly_hrs_woman=total_hours if SEX==2
+mi passive: replace weekly_hrs_woman=total_hours_sp if SEX==1
+
+mi passive: gen weekly_hrs_man=total_hours if SEX==1
+mi passive: replace weekly_hrs_man=total_hours_sp if SEX==2
+
+*detailed employment status
+mi passive: gen employment_status_woman=employment_status if SEX==2
+mi passive: replace employment_status_woman=employment_status_sp if SEX==1
+
+mi passive: gen employment_status_man=employment_status if SEX==1
+mi passive: replace employment_status_man=employment_status_sp if SEX==2
+
+*monthly earnings
+mi passive: gen monthly_earnings_woman=fimnlabgrs_dv if SEX==2
+mi passive: replace monthly_earnings_woman=fimnlabgrs_dv_sp if SEX==1
+
+mi passive: gen monthly_earnings_man=fimnlabgrs_dv if SEX==1
+mi passive: replace monthly_earnings_man=fimnlabgrs_dv_sp if SEX==2
+
+*unpaid work
+mi passive: gen housework_woman=howlng if SEX==2
+mi passive: replace housework_woman=howlng_sp if SEX==1
+
+mi passive: gen housework_man=howlng if SEX==1
+mi passive: replace housework_man=howlng_sp if SEX==2
+
+*care work
+mi passive: gen carework_woman=aid_hours if SEX==2
+mi passive: replace carework_woman=aid_hours_sp if SEX==1
+
+mi passive: gen carework_man=aid_hours if SEX==1
+mi passive: replace carework_man=aid_hours_sp if SEX==2
+
+*relationship status
+tab marital_status_imp partnered_imp, m col
+
+mi passive: gen marital_status_woman=marital_status_imp if SEX==2
+mi passive: replace marital_status_woman=marital_status_imp_sp if SEX==1
+
+mi passive: gen marital_status_man=marital_status_imp if SEX==1
+mi passive: replace marital_status_man=marital_status_imp_sp if SEX==2
+
+mi passive: gen partnered_woman=.
+mi passive: replace partnered_woman = 0 if inlist(marital_status_woman,3,4,5,6)
+mi passive: replace partnered_woman = 1 if inlist(marital_status_woman,1,2)
+
+mi passive: gen partnered_man=.
+mi passive: replace partnered_man = 0 if inlist(marital_status_man,3,4,5,6)
+mi passive: replace partnered_man = 1 if inlist(marital_status_man,1,2)
+
+tab partnered_woman partnered_man, m
+tab partnered_woman partnered_man if imputed==1, m // well these could also be partnerships that occurred outside of focal partnership
+
+gen rel_no_woman=eligible_rel_no if SEX==2
+replace rel_no_woman=eligible_rel_no_sp if SEX==1
+
+gen rel_no_man=eligible_rel_no if SEX==1
+replace rel_no_man=eligible_rel_no_sp if SEX==2
+
+*number of children
+tab nkids_dv nkids_dv_sp, m
+tab nkids_dv nkids_dv_sp if imputed==1
+tab nkids_dv nkids_dv_sp if imputed==0 // match generally better here
+
+mi passive: gen num_children_woman=nkids_dv if SEX==2
+mi passive: replace num_children_woman=nkids_dv_sp if SEX==1
+
+mi passive: gen num_children_man=nkids_dv if SEX==1
+mi passive: replace num_children_man=nkids_dv_sp if SEX==2
+
+// some demographics
+* Region
+mi passive: gen region_woman=gor_dv if SEX==2
+mi passive: replace region_woman=gor_dv_sp if SEX==1
+
+mi passive: gen region_man=gor_dv if SEX==1
+mi passive: replace region_man=gor_dv_sp if SEX==2
+
+* Housing status
+mi passive: gen housing_woman=tenure_dv if SEX==2
+mi passive: replace housing_woman=tenure_dv_sp if SEX==1
+
+mi passive: gen housing_man=tenure_dv if SEX==1
+mi passive: replace housing_man=tenure_dv_sp if SEX==2
+
+* Religion
+mi passive: gen religion_woman=master_religion if SEX==2
+mi passive: replace religion_woman=master_religion_sp if SEX==1
+
+mi passive: gen religion_man=master_religion if SEX==1
+mi passive: replace religion_man=master_religion_sp if SEX==2
+
+*Disability status
+mi passive: gen disabled_woman=disabled_est if SEX==2
+mi passive: replace disabled_woman=disabled_est_sp if SEX==1
+
+mi passive: gen disabled_man=disabled_est if SEX==1
+mi passive: replace disabled_man=disabled_est_sp if SEX==2
+
+* Self-rated health
+mi passive: gen sr_health_woman=sr_health if SEX==2
+mi passive: replace sr_health_woman=sr_health_sp if SEX==1
+
+mi passive: gen sr_health_man=sr_health if SEX==1
+mi passive: replace sr_health_man=sr_health_sp if SEX==2
+
+* Father education
+mi passive: gen father_educ_woman=father_educ if SEX==2
+mi passive: replace father_educ_woman=father_educ_sp if SEX==1
+
+mi passive: gen father_educ_man=father_educ if SEX==1
+mi passive: replace father_educ_man=father_educ_sp if SEX==2
+
+* Mother education
+mi passive: gen mother_educ_woman=mother_educ if SEX==2
+mi passive: replace mother_educ_woman=mother_educ_sp if SEX==1
+
+mi passive: gen mother_educ_man=mother_educ if SEX==1
+mi passive: replace mother_educ_man=mother_educ_sp if SEX==2
+
+* Family structure growing up
+mi passive: gen family_structure_woman=family_structure if SEX==2
+mi passive: replace family_structure_woman=family_structure_sp if SEX==1
+
+mi passive: gen family_structure_man=family_structure if SEX==1
+mi passive: replace family_structure_man=family_structure_sp if SEX==2
+
+* Year of first birth
+mi passive: gen yr_first_birth_woman=year_first_birth_imp if SEX==2
+mi passive: replace yr_first_birth_woman=year_first_birth_imp_sp if SEX==1
+
+mi passive: gen yr_first_birth_man=year_first_birth_imp if SEX==1
+mi passive: replace yr_first_birth_man=year_first_birth_imp_sp if SEX==2
+
+// Stata assert command to check new variables created from imputed  
+foreach var in weekly_hrs_woman weekly_hrs_man employment_status_woman employment_status_man monthly_earnings_woman monthly_earnings_man housework_woman housework_man carework_woman carework_man marital_status_woman marital_status_man partnered_woman partnered_man rel_no_woman rel_no_man num_children_woman num_children_man region_woman region_man housing_woman housing_man religion_woman religion_man disabled_woman disabled_man sr_health_woman sr_health_man father_educ_woman father_educ_man mother_educ_woman mother_educ_man family_structure_woman family_structure_man yr_first_birth_woman yr_first_birth_man{  
 	inspect `var' if _mi_m != 0  
 	assert `var' != . if _mi_m != 0  
 } 
+
+**# Bookmark #1
+// temp save
+save "created data/stata/ukhls_couples_imputed_long_recoded.dta", replace
 
 // paid work
 mi passive: gen ft_pt_woman = .
 mi passive: replace ft_pt_woman = 0 if weekly_hrs_woman==0 // not working
 mi passive: replace ft_pt_woman = 1 if weekly_hrs_woman > 0 & weekly_hrs_woman < 35 // PT
-mi passive: replace ft_pt_woman = 2 if weekly_hrs_woman >=35 & weekly_hrs_woman < 180 // FT
+mi passive: replace ft_pt_woman = 2 if weekly_hrs_woman >=35 & weekly_hrs_woman < 200 // FT
 
 mi passive: gen overwork_woman=. // Cha and Weeden = 50 hrs, Cha 2010 = 50 and 60, Munsch = 60
 mi passive: replace overwork_woman = 0 if weekly_hrs_woman >= 0 & weekly_hrs_woman < 50
-mi passive: replace overwork_woman = 1 if weekly_hrs_woman >=50 & weekly_hrs_woman < 180 
+mi passive: replace overwork_woman = 1 if weekly_hrs_woman >=50 & weekly_hrs_woman < 200 
 
 mi passive: gen ft_pt_man = .
 mi passive: replace ft_pt_man = 0 if weekly_hrs_man==0 // not working
 mi passive: replace ft_pt_man = 1 if weekly_hrs_man > 0 & weekly_hrs_man < 35 // PT
-mi passive: replace ft_pt_man = 2 if weekly_hrs_man >=35 & weekly_hrs_man < 180 // FT
+mi passive: replace ft_pt_man = 2 if weekly_hrs_man >=35 & weekly_hrs_man < 200 // FT
 
 mi passive: gen overwork_man=. // Cha and Weeden = 50 hrs, Cha 2010 = 50 and 60, Munsch = 60
 mi passive: replace overwork_man = 0 if weekly_hrs_man >= 0 & weekly_hrs_man < 50
-mi passive: replace overwork_man = 1 if weekly_hrs_man >=50 & weekly_hrs_man < 180 
+mi passive: replace overwork_man = 1 if weekly_hrs_man >=50 & weekly_hrs_man < 200 
 
 label define ft_pt 0 "Not working" 1 "PT" 2 "FT"
 label values ft_pt_woman ft_pt_man ft_pt
@@ -103,14 +342,14 @@ mi passive: replace ft_pt_det_woman = 0 if weekly_hrs_woman==0 // not working
 mi passive: replace ft_pt_det_woman = 1 if weekly_hrs_woman > 0 & weekly_hrs_woman < 20 // PT: low - either do median using r(p50) or use 20 and cite K&Z? doing the latter for now
 mi passive: replace ft_pt_det_woman = 2 if weekly_hrs_woman >= 20 & weekly_hrs_woman < 35 // PT: high
 mi passive: replace ft_pt_det_woman = 3 if weekly_hrs_woman >=35 & weekly_hrs_woman < 50 // FT: normal
-mi passive: replace ft_pt_det_woman = 4 if weekly_hrs_woman >=50 & weekly_hrs_woman < 180 // FT: overwork
+mi passive: replace ft_pt_det_woman = 4 if weekly_hrs_woman >=50 & weekly_hrs_woman < 200 // FT: overwork
 
 mi passive: gen ft_pt_det_man = .
 mi passive: replace ft_pt_det_man = 0 if weekly_hrs_man==0 // not working
 mi passive: replace ft_pt_det_man = 1 if weekly_hrs_man > 0 & weekly_hrs_man < 20 // PT: low - either do median using r(p50) or use 20 and cite K&Z?
 mi passive: replace ft_pt_det_man = 2 if weekly_hrs_man >= 20 & weekly_hrs_man < 35 // PT: high
 mi passive: replace ft_pt_det_man = 3 if weekly_hrs_man >=35 & weekly_hrs_man < 50 // FT: normal
-mi passive: replace ft_pt_det_man = 4 if weekly_hrs_man >=50 & weekly_hrs_man < 180 // FT: overwork
+mi passive: replace ft_pt_det_man = 4 if weekly_hrs_man >=50 & weekly_hrs_man < 200 // FT: overwork
 
 label define ft_pt_det 0 "not working" 1 "PT < 20hrs" 2 "PT 20-35" 3 "FT: Normal" 4 "FT: OW"
 label values ft_pt_det_woman ft_pt_det_man ft_pt_det
@@ -141,25 +380,47 @@ label values couple_work couple_work
 // mi estimate: proportion couple_work
 
 * with overwork
+mi passive: gen couple_work_ow_detailed=.
+mi passive: replace couple_work_ow_detailed = 1 if ft_pt_man == 2 & ft_pt_woman == 0
+mi passive: replace couple_work_ow_detailed = 2 if ft_pt_man == 2 & ft_pt_woman == 1
+mi passive: replace couple_work_ow_detailed = 3 if ft_pt_man == 2 & ft_pt_woman == 2 & overwork_man==0 & overwork_woman==0
+mi passive: replace couple_work_ow_detailed = 4 if ft_pt_man == 2 & ft_pt_woman == 2 & overwork_man==1 & overwork_woman==0
+mi passive: replace couple_work_ow_detailed = 5 if ft_pt_man == 2 & ft_pt_woman == 2 & overwork_man==0 & overwork_woman==1
+mi passive: replace couple_work_ow_detailed = 6 if ft_pt_man == 2 & ft_pt_woman == 2 & overwork_man==1 & overwork_woman==1
+mi passive: replace couple_work_ow_detailed = 7 if ft_pt_man == 0 & ft_pt_woman == 2
+mi passive: replace couple_work_ow_detailed = 7 if ft_pt_man == 1 & ft_pt_woman == 2
+mi passive: replace couple_work_ow_detailed = 8 if ft_pt_man == 1 & ft_pt_woman == 1
+mi passive: replace couple_work_ow_detailed = 8 if ft_pt_man == 0 & ft_pt_woman == 0
+mi passive: replace couple_work_ow_detailed = 8 if ft_pt_man == 0 & ft_pt_woman == 1
+mi passive: replace couple_work_ow_detailed = 8 if ft_pt_man == 1 & ft_pt_woman == 0
+
+label define couple_work_ow_detailed 1 "male bw" 2 "1.5 male bw" 3 "dual FT: no OW" 4 "dual FT: his OW" 5 "dual FT: her OW" 6 "dual FT: both OW" /// 
+7 "female bw" 8 "under work"
+label values couple_work_ow_detailed couple_work_ow_detailed
+
+mi estimate: proportion couple_work_ow_detailed
+
+// rename couple_work_ow couple_work_ow_detailed
+// rename couple_work_ow_end couple_work_ow_detailed_end
+
+* Consolidated overwork version (new - 5/21/25)
 mi passive: gen couple_work_ow=.
 mi passive: replace couple_work_ow = 1 if ft_pt_man == 2 & ft_pt_woman == 0
 mi passive: replace couple_work_ow = 2 if ft_pt_man == 2 & ft_pt_woman == 1
 mi passive: replace couple_work_ow = 3 if ft_pt_man == 2 & ft_pt_woman == 2 & overwork_man==0 & overwork_woman==0
-mi passive: replace couple_work_ow = 4 if ft_pt_man == 2 & ft_pt_woman == 2 & overwork_man==1 & overwork_woman==0
-mi passive: replace couple_work_ow = 5 if ft_pt_man == 2 & ft_pt_woman == 2 & overwork_man==0 & overwork_woman==1
-mi passive: replace couple_work_ow = 6 if ft_pt_man == 2 & ft_pt_woman == 2 & overwork_man==1 & overwork_woman==1
-mi passive: replace couple_work_ow = 7 if ft_pt_man == 0 & ft_pt_woman == 2
-mi passive: replace couple_work_ow = 7 if ft_pt_man == 1 & ft_pt_woman == 2
-mi passive: replace couple_work_ow = 8 if ft_pt_man == 1 & ft_pt_woman == 1
-mi passive: replace couple_work_ow = 8 if ft_pt_man == 0 & ft_pt_woman == 0
-mi passive: replace couple_work_ow = 8 if ft_pt_man == 0 & ft_pt_woman == 1
-mi passive: replace couple_work_ow = 8 if ft_pt_man == 1 & ft_pt_woman == 0
+mi passive: replace couple_work_ow = 4 if ft_pt_man == 2 & ft_pt_woman == 2 & (overwork_man==1 | overwork_woman==1)
+mi passive: replace couple_work_ow = 5 if ft_pt_man == 0 & ft_pt_woman == 2
+mi passive: replace couple_work_ow = 5 if ft_pt_man == 1 & ft_pt_woman == 2
+mi passive: replace couple_work_ow = 6 if ft_pt_man == 1 & ft_pt_woman == 1
+mi passive: replace couple_work_ow = 6 if ft_pt_man == 0 & ft_pt_woman == 0
+mi passive: replace couple_work_ow = 6 if ft_pt_man == 0 & ft_pt_woman == 1
+mi passive: replace couple_work_ow = 6 if ft_pt_man == 1 & ft_pt_woman == 0
 
-label define couple_work_ow 1 "male bw" 2 "1.5 male bw" 3 "dual FT: no OW" 4 "dual FT: his OW" 5 "dual FT: her OW" 6 "dual FT: both OW" /// 
-7 "female bw" 8 "under work"
+capture label drop couple_work_ow
+label define couple_work_ow 1 "male bw" 2 "1.5 male bw" 3 "dual FT: no OW" 4 "dual FT: any OW" 5 "female bw" 6 "under work"
 label values couple_work_ow couple_work_ow
 
-mi estimate: proportion couple_work couple_work_ow
+mi estimate: proportion couple_work_ow_detailed couple_work_ow
 
 // unpaid work
 mi passive: egen couple_hw_total = rowtotal(housework_woman housework_man)
@@ -231,6 +492,11 @@ sum housework_woman if couple_hw==2, det
 // histogram housework_woman if inlist(couple_hw,1,2) & housework_woman < 50
 sum housework_woman if inlist(couple_hw,1,2), det
 
+// alt cutpoints: within she does most OR all
+	mi passive: egen hw_hilow_woman_combo = cut(housework_woman) if housework_woman!=0 & inlist(couple_hw,1,2), group(2)
+	tab hw_hilow_woman_combo if inlist(couple_hw,1,2)
+	tabstat housework_woman, by(hw_hilow_woman_combo)
+
 // twoway (histogram housework_woman if couple_hw==1 & housework_woman < 50, width(1) color(blue%30)) (histogram housework_woman if couple_hw==2 & housework_woman < 50, width(1) color(red%30)), legend(order(1 "She does all" 2 "She does most") rows(1) position(6)) xtitle("Weekly HW Hours among Equal HW Couples")
 
 ** should I lookat if he does most? bc that is essentially same size (actually larger) than woman all
@@ -278,6 +544,20 @@ label values couple_hw_hrs_alt couple_hw_hrs
 
 mi estimate: proportion couple_hw couple_hw_hrs couple_hw_hrs_alt 
 
+* Consolidated housework + hours variable
+mi passive: gen couple_hw_hrs_combo=.
+mi passive: replace couple_hw_hrs_combo = 1 if inlist(couple_hw,1,2) & hw_hilow_woman_combo==1 // 1 = high, 0 = low
+mi passive: replace couple_hw_hrs_combo = 2 if inlist(couple_hw,1,2) & hw_hilow_woman_combo==0 
+mi passive: replace couple_hw_hrs_combo = 3 if couple_hw==3 & couple_hw_total > =20 & couple_hw_total < 500 // 20 is the median
+mi passive: replace couple_hw_hrs_combo = 4 if couple_hw==3 & couple_hw_total < 20
+mi passive: replace couple_hw_hrs_combo = 5 if couple_hw==4
+mi passive: replace couple_hw_hrs_combo = 4 if housework_woman==0 & housework_man==0  // neither is so small, just put in equal low
+
+label define couple_hw_hrs_combo 1 "Woman Most: High" 2 "Woman Most: Low" 3 "Equal: High" 4 "Equal: Low" 5 "Man Most: All"
+label values couple_hw_hrs_combo couple_hw_hrs_combo
+
+mi estimate: proportion couple_hw couple_hw_hrs_alt couple_hw_hrs_combo
+
 //	capture drop couple_hw_hrs_end
 //	mi update
 //	mi passive: gen couple_hw_hrs_end = couple_hw_hrs
@@ -293,6 +573,13 @@ mi passive: gen dur_transitioned=.
 mi passive: replace dur_transitioned = year_transitioned - eligible_rel_start_year
 
 tab year_transitioned ever_transition, m
+
+**# Bookmark #2
+// temp save
+save "created data/stata/ukhls_couples_imputed_long_recoded.dta", replace
+
+/* only run through here for now, want to check this because I know this part gets problematic...
+might go back to hpc to do the dissolved / attrit versions of the variables? but need to see
 
 tab marital_status_defacto if int_year >= year_transitioned & int_year < = eligible_rel_end_year & imputed==0, m
 tab marital_status_imp if int_year >= year_transitioned & int_year < = eligible_rel_end_year, m // so generally already fine
@@ -416,3 +703,4 @@ tab ft_pt_det_man_end ft_pt_det_woman_end, cell
 mi update
 
 save "created data/stata/ukhls_couples_imputed_long_recodes.dta", replace
+*/

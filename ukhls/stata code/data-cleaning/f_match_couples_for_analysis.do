@@ -22,9 +22,9 @@ use "$created_data/ukhls_individs_imputed_long_bysex", clear
 // browse pidp eligible_partner duration _mi_miss _mi_m _mi_id imputed
 
 // just keep necessary variables - i think this doesn't work if I try to keep variables that weren't imputed
-local partnervars "total_hours work_hours jbhrs howlng any_aid aidhrs aid_hours employed employment_status jbstat fimnlabgrs_dv nkids_dv age_youngest_child partnered_imp marital_status_imp npens_dv num_parents_hh fihhmngrs_dv gor_dv tenure_dv master_religion disabled_est sr_health father_educ mother_educ father_empstatus mother_empstatus family_structure xw_sex xw_memorig xw_sampst xw_racel_dv ever_parent current_parent_status xw_anychild_dv year_first_birth_imp birth_timing_rel xw_ethn_dv dob hiqual_fixed first_year_observed last_year_observed imputed age_all respondent_info" // orig_record hiqual_dv nchild_dv partnered marital_status_defacto country_all current_rel_start_year current_rel_end_year ivfio sampst hidp psu strata int_year year aidhh aidxhh husits hubuys hufrys huiron humops huboss year_first_birth
+local partnervars "total_hours work_hours jbhrs howlng any_aid aidhrs aid_hours employed employment_status jbstat fimnlabgrs_dv nkids_dv age_youngest_child partnered_imp marital_status_imp npens_dv num_parents_hh fihhmngrs_dv gor_dv tenure_dv master_religion disabled_est sr_health father_educ mother_educ father_empstatus mother_empstatus family_structure xw_sex xw_memorig xw_sampst xw_racel_dv ever_parent current_parent_status xw_anychild_dv year_first_birth_imp birth_timing_rel xw_ethn_dv dob hiqual_fixed first_year_observed last_year_observed imputed age_all respondent_info eligible_rel_no" // orig_record hiqual_dv nchild_dv partnered marital_status_defacto country_all current_rel_start_year current_rel_end_year ivfio sampst hidp psu strata int_year year aidhh aidxhh husits hubuys hufrys huiron humops huboss year_first_birth
 
-keep pidp eligible_partner eligible_rel_start_year eligible_rel_end_year eligible_rel_no eligible_rel_status duration min_dur max_dur first_couple_year last_couple_year _mi_miss _mi_m _mi_id  `partnervars'
+keep pidp eligible_partner eligible_rel_start_year eligible_rel_end_year eligible_rel_status duration min_dur max_dur first_couple_year last_couple_year _mi_miss _mi_m _mi_id  `partnervars'
 
 mi rename eligible_partner x
 mi rename pidp eligible_partner
@@ -52,7 +52,7 @@ use "$created_data/ukhls_individs_imputed_long_bysex", clear
 bysort couple_id: egen rowcount = count(duration) if _mi_m==0
 // drop if rowcount==30 | rowcount==45
 
-mi merge 1:1 pidp eligible_partner duration using "$temp/ukhls_partner_data_imputed.dta", gen(howmatch) // keep(match) 
+mi merge 1:1 pidp eligible_partner duration using "$temp/ukhls_partner_data_imputed.dta", keep(match) // gen(howmatch)
 // unique pidp eligible_partner, by(howmatch) // this feels like a terrible match rate? but I checked in the original couple list, and it was generally similar. I think the match rate for UKHLS is low (this was true for relative density as well). and I looked at the survey info files and these feel right.
 // browse pidp eligible_partner couple_id if howmatch==2
 
@@ -83,12 +83,33 @@ mi passive: replace weekly_hrs_woman=total_hours_sp if SEX==1
 mi passive: gen weekly_hrs_man=total_hours if SEX==1
 mi passive: replace weekly_hrs_man=total_hours_sp if SEX==2
 
+*detailed employment status
+mi passive: gen employment_status_woman=employment_status if SEX==2
+mi passive: replace employment_status_woman=employment_status_sp if SEX==1
+
+mi passive: gen employment_status_man=employment_status if SEX==1
+mi passive: replace employment_status_man=employment_status_sp if SEX==2
+
+*monthly earnings
+mi passive: gen monthly_earnings_woman=fimnlabgrs_dv if SEX==2
+mi passive: replace monthly_earnings_woman=fimnlabgrs_dv_sp if SEX==1
+
+mi passive: gen monthly_earnings_man=fimnlabgrs_dv if SEX==1
+mi passive: replace monthly_earnings_man=fimnlabgrs_dv_sp if SEX==2
+
 *unpaid work
 mi passive: gen housework_woman=howlng if SEX==2
 mi passive: replace housework_woman=howlng_sp if SEX==1
 
 mi passive: gen housework_man=howlng if SEX==1
 mi passive: replace housework_man=howlng_sp if SEX==2
+
+*care work
+mi passive: gen carework_woman=aid_hours if SEX==2
+mi passive: replace carework_woman=aid_hours_sp if SEX==1
+
+mi passive: gen carework_man=aid_hours if SEX==1
+mi passive: replace carework_man=aid_hours_sp if SEX==2
 
 *relationship status
 tab marital_status_imp partnered_imp, m col
@@ -110,6 +131,12 @@ mi passive: replace partnered_man = 1 if inlist(marital_status_man,1,2)
 tab partnered_woman partnered_man, m
 tab partnered_woman partnered_man if imputed==1, m // well these could also be partnerships that occurred outside of focal partnership
 
+gen rel_no_woman=eligible_rel_no if SEX==2
+replace rel_no_woman=eligible_rel_no_sp if SEX==1
+
+gen rel_no_man=eligible_rel_no if SEX==1
+replace rel_no_man=eligible_rel_no_sp if SEX==2
+
 *number of children
 tab nkids_dv nkids_dv_sp, m
 tab nkids_dv nkids_dv_sp if imputed==1
@@ -121,11 +148,79 @@ mi passive: replace num_children_woman=nkids_dv_sp if SEX==1
 mi passive: gen num_children_man=nkids_dv if SEX==1
 mi passive: replace num_children_man=nkids_dv_sp if SEX==2
 
+// some demographics
+* Region
+mi passive: gen region_woman=gor_dv if SEX==2
+mi passive: replace region_woman=gor_dv_sp if SEX==1
+
+mi passive: gen region_man=gor_dv if SEX==1
+mi passive: replace region_man=gor_dv_sp if SEX==2
+
+* Housing status
+mi passive: gen housing_woman=tenure_dv if SEX==2
+mi passive: replace housing_woman=tenure_dv_sp if SEX==1
+
+mi passive: gen housing_man=tenure_dv if SEX==1
+mi passive: replace housing_man=tenure_dv_sp if SEX==2
+
+* Religion
+mi passive: gen religion_woman=master_religion if SEX==2
+mi passive: replace religion_woman=master_religion_sp if SEX==1
+
+mi passive: gen religion_man=master_religion if SEX==1
+mi passive: replace religion_man=master_religion_sp if SEX==2
+
+*Disability status
+mi passive: gen disabled_woman=disabled_est if SEX==2
+mi passive: replace disabled_woman=disabled_est_sp if SEX==1
+
+mi passive: gen disabled_man=disabled_est if SEX==1
+mi passive: replace disabled_man=disabled_est_sp if SEX==2
+
+* Self-rated health
+mi passive: gen sr_health_woman=sr_health if SEX==2
+mi passive: replace sr_health_woman=sr_health_sp if SEX==1
+
+mi passive: gen sr_health_man=sr_health if SEX==1
+mi passive: replace sr_health_man=sr_health_sp if SEX==2
+
+* Father education
+mi passive: gen father_educ_woman=father_educ if SEX==2
+mi passive: replace father_educ_woman=father_educ_sp if SEX==1
+
+mi passive: gen father_educ_man=father_educ if SEX==1
+mi passive: replace father_educ_man=father_educ_sp if SEX==2
+
+* Mother education
+mi passive: gen mother_educ_woman=mother_educ if SEX==2
+mi passive: replace mother_educ_woman=mother_educ_sp if SEX==1
+
+mi passive: gen mother_educ_man=mother_educ if SEX==1
+mi passive: replace mother_educ_man=mother_educ_sp if SEX==2
+
+* Family structure growing up
+mi passive: gen family_structure_woman=family_structure if SEX==2
+mi passive: replace family_structure_woman=family_structure_sp if SEX==1
+
+mi passive: gen family_structure_man=family_structure if SEX==1
+mi passive: replace family_structure_man=family_structure_sp if SEX==2
+
+* Year of first birth
+mi passive: gen yr_first_birth_woman=year_first_birth_imp if SEX==2
+mi passive: replace yr_first_birth_woman=year_first_birth_imp_sp if SEX==1
+
+mi passive: gen yr_first_birth_man=year_first_birth_imp if SEX==1
+mi passive: replace yr_first_birth_man=year_first_birth_imp_sp if SEX==2
+
 // Stata assert command to check new variables created from imputed  
-foreach var in weekly_hrs_woman weekly_hrs_man housework_woman housework_man marital_status_woman marital_status_man partnered_woman partnered_man num_children_woman num_children_man{  
+foreach var in weekly_hrs_woman weekly_hrs_man employment_status_woman employment_status_man monthly_earnings_woman monthly_earnings_man housework_woman housework_man carework_woman carework_man marital_status_woman marital_status_man partnered_woman partnered_man rel_no_woman rel_no_man num_children_woman num_children_man region_woman region_man housing_woman housing_man religion_woman religion_man disabled_woman disabled_man sr_health_woman sr_health_man father_educ_woman father_educ_man mother_educ_woman mother_educ_man family_structure_woman family_structure_man yr_first_birth_woman yr_first_birth_man{  
 	inspect `var' if _mi_m != 0  
 	assert `var' != . if _mi_m != 0  
 } 
+
+**# Bookmark #1
+// temp save
+save "$created_data/ukhls_couples_imputed_long_recoded.dta", replace
 
 // paid work
 mi passive: gen ft_pt_woman = .

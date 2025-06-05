@@ -72,6 +72,7 @@ global models  	"$root/results/UKHLS/models"
 // global graphs  	"$root/graphs"
 
 cd "$code"
+// cd "C:\Users\kmcerlea\Istituto Universitario Europeo\Pessin, Lea - 1. WeEqualize - Team Folder\Papers\Relationship Life Course"
 
 /*
 capture log using "$results/logs/LifeCourse_${date}.log", append
