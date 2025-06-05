@@ -22,9 +22,9 @@ use "$created_data/ukhls_individs_imputed_long_bysex", clear
 // browse pidp eligible_partner duration _mi_miss _mi_m _mi_id imputed
 
 // just keep necessary variables - i think this doesn't work if I try to keep variables that weren't imputed
-local partnervars "total_hours work_hours jbhrs howlng aidhrs aidhrs_rec employed jbstat fimnlabgrs_dv nkids_dv age_youngest_child partnered_imp marital_status_imp fihhmngrs_dv gor_dv xw_sex xw_memorig xw_sampst xw_racel_dv xw_anychild_dv xw_ethn_dv dob hiqual_fixed first_year_observed last_year_observed imputed age_all" // orig_record hiqual_dv nchild_dv partnered marital_status_defacto country_all current_rel_start_year current_rel_end_year ivfio sampst hidp psu strata int_year year aidhh aidxhh husits hubuys hufrys huiron humops huboss year_first_birth
+local partnervars "total_hours work_hours jbhrs howlng any_aid aidhrs aid_hours employed employment_status jbstat fimnlabgrs_dv nkids_dv age_youngest_child partnered_imp marital_status_imp npens_dv num_parents_hh fihhmngrs_dv gor_dv tenure_dv master_religion disabled_est sr_health father_educ mother_educ father_empstatus mother_empstatus family_structure xw_sex xw_memorig xw_sampst xw_racel_dv ever_parent current_parent_status xw_anychild_dv year_first_birth_imp birth_timing_rel xw_ethn_dv dob hiqual_fixed first_year_observed last_year_observed imputed age_all respondent_info" // orig_record hiqual_dv nchild_dv partnered marital_status_defacto country_all current_rel_start_year current_rel_end_year ivfio sampst hidp psu strata int_year year aidhh aidxhh husits hubuys hufrys huiron humops huboss year_first_birth
 
-keep pidp eligible_partner eligible_rel_start_year eligible_rel_end_year eligible_rel_status duration min_dur max_dur first_couple_year last_couple_year _mi_miss _mi_m _mi_id  `partnervars'
+keep pidp eligible_partner eligible_rel_start_year eligible_rel_end_year eligible_rel_no eligible_rel_status duration min_dur max_dur first_couple_year last_couple_year _mi_miss _mi_m _mi_id  `partnervars'
 
 mi rename eligible_partner x
 mi rename pidp eligible_partner
@@ -35,9 +35,9 @@ foreach var in `partnervars'{
 	mi rename `var' `var'_sp
 }
 
-// not sure what happened here...but it's like 9 couples so this is fine for now
+// not sure what happened here...okay this is actually fine now
 bysort pidp eligible_partner: egen rowcount = count(duration) if _mi_m==0
-drop if rowcount==30 | rowcount==45
+// drop if rowcount==30 | rowcount==45
 
 mi update
 
@@ -50,9 +50,9 @@ use "$created_data/ukhls_individs_imputed_long_bysex", clear
 
 // not sure what happened here...but it's like 9 couples so this is fine for now
 bysort couple_id: egen rowcount = count(duration) if _mi_m==0
-drop if rowcount==30 | rowcount==45
+// drop if rowcount==30 | rowcount==45
 
-mi merge 1:1 pidp eligible_partner duration using "$temp/ukhls_partner_data_imputed.dta", keep(match) // gen(howmatch)
+mi merge 1:1 pidp eligible_partner duration using "$temp/ukhls_partner_data_imputed.dta", gen(howmatch) // keep(match) 
 // unique pidp eligible_partner, by(howmatch) // this feels like a terrible match rate? but I checked in the original couple list, and it was generally similar. I think the match rate for UKHLS is low (this was true for relative density as well). and I looked at the survey info files and these feel right.
 // browse pidp eligible_partner couple_id if howmatch==2
 

@@ -1,44 +1,4 @@
-********************************************************************************
-********************************************************************************
-* Project: Relationship Life Course Analysis
-* Code owner: Kimberly McErlean
-* Started: September 2024
-* File name: d_imputation
-********************************************************************************
-********************************************************************************
-
-********************************************************************************
-* Description
-********************************************************************************
-* This file takes individuals in couples (created step c)
-* and imputes missing years / variables (esp housework)
-
-set maxvar 10000
-
-cd "/home/kmcerlea/stage/Life Course"
-
-use "input data/ukhls_couples_alldurs_wide.dta", clear
-
-********************************************************************************
-**# Start imputation
-********************************************************************************
-bysort couple_id: gen couples=_n
-// browse couple_id pidp eligible_partner eligible_rel_start_year couples work_hours* if couples > 1
-bysort couple_id: egen num_records = max(couples)
-// browse couple_id pidp eligible_partner eligible_rel_start_year couples work_hours* if inlist(couple_id,782, 1586, 4190 ,4190, 6860, 7134)
-keep if num_records==1
-
-foreach var in dob xw_sex hiqual_fixed xw_ethn_dv xw_memorig xw_sampst eligible_rel_start_year eligible_rel_no respondent_info0 respondent_info1 respondent_info2 respondent_info3 respondent_info4 respondent_info5 respondent_info6 respondent_info7 respondent_info8 respondent_info9 respondent_info10 respondent_info11 respondent_info12 respondent_info13 respondent_info14{ // birth_timing_rel
-	inspect `var'
-	drop if `var' == . // most of these have no missing, but so educ and race are complete
-}
-
-mi set wide
-mi register imputed total_hours* work_hours* howlng* any_aid* aid_hours* employed* employment_status* jbstat* fimnlabgrs_dv* current_parent_status* nkids_dv* age_youngest_child* partnered_imp* marital_status_imp* npens_dv* num_parents_hh* fihhmngrs_dv* gor_dv* tenure_dv* master_religion* disabled_est* sr_health* xw_anychild_dv father_educ mother_educ father_empstatus mother_empstatus family_structure birth_timing_rel ever_parent family_structure14_det year_first_birth_imp // jbhrs*
-
-mi register regular dob xw_sex hiqual_fixed xw_ethn_dv xw_memorig xw_sampst eligible_rel_start_year eligible_rel_no respondent_info*
-mi xtset, clear
-mi stset, clear
+// ssc install mimpt, replace
 
 // start imputation
 #delimit ;
@@ -362,24 +322,46 @@ mi impute chained
 (pmm, knn(5) include (i.father_educ i.mother_educ i.family_structure year_first_birth_imp)) birth_timing_rel
 (pmm, knn(5) include (i.father_educ i.mother_educ i.family_structure birth_timing_rel)) year_first_birth_imp
 
-= dob i.xw_ethn_dv i.xw_memorig i.xw_sampst i.hiqual_fixed eligible_rel_no, by(xw_sex) chaindots add(10) rseed(12345) noimputed augment force showcommand // dryrun // noisily i.eligible_rel_start_year
+= dob i.xw_ethn_dv i.xw_memorig i.xw_sampst i.hiqual_fixed eligible_rel_no, by(xw_sex) chaindots add(1) rseed(12345) noimputed augment force showcommand noisily // skipnonconvergence(2) // dryrun //  i.eligible_rel_start_year
 
 ;
 #delimit cr
 
-save "created data/stata/ukhls_individs_imputed_wide_bysex.dta", replace
+
+save "$temp/ukhls_imputed_wide_bysex_mi1.dta", replace
+
+use "$temp/ukhls_imputed_wide_bysex_mi1.dta", clear
+// wait, it didn't impute everything?
+// Note: Right-hand-side variables (or weights) have missing values;
+//      model parameters estimated using listwise deletion.
+// everything got imputed up to 23115
+
+foreach var in dob xw_ethn_dv xw_memorig xw_sampst hiqual_fixed eligible_rel_no xw_sex{
+	inspect `var' // I am confused bc none of these have missing and all add up to 23115...
+}
+// is it maybe bc I registered some other variables as regular that have missing??
+
+foreach var in dob xw_sex hiqual_fixed xw_ethn_dv xw_memorig xw_sampst eligible_rel_start_year eligible_rel_no respondent_info*{
+	inspect `var' // GAH was it respondent info? I think was just listwise deleted, which is what I should have done before I imputed, so that is fine. There are 83 missing at all durations...I think this was the couple id issue i identified and fixed
+}
+
+bysort couple_id: gen couples=_n
+bysort couple_id: egen num_records = max(couples)
+tab num_records, m
+keep if num_records==1
+
+save "$temp/ukhls_imputed_wide_bysex_mi1.dta", replace
 
 ********************************************************************************
-**# Reshape back to long to look at descriptives
+**# Quick check of congruence here to be sure not completely off base...
 ********************************************************************************
-
 mi reshape long total_hours work_hours jbhrs jshrs howlng any_aid aidhrs aid_hours employed employment_status jbstat fimnlabgrs_dv current_parent_status nkids_dv age_youngest_child partnered_imp marital_status_imp npens_dv num_parents_hh fihhmngrs_dv gor_dv orig_record hiqual_dv nchild_dv partnered marital_status_defacto country_all age_all current_rel_start_year current_rel_end_year ivfio sampst hidp psu strata int_year year aidhh aidxhh husits hubuys hufrys huiron humops huboss tenure_dv housing_status_alt master_religion religion_est disabled_est sr_health respondent_info ///
 , i(couple_id pidp eligible_partner eligible_rel_start_year eligible_rel_end_year eligible_rel_status xw_sex) ///
  j(duration)
  
-mi convert flong
+mi convert flong, replace
 
-// browse couple_id pidp eligible_partner duration total_hours howlng _mi_miss _mi_m _mi_id
+browse couple_id pidp eligible_partner duration total_hours howlng _mi_miss _mi_m _mi_id
 
 gen imputed=0
 replace imputed=1 if inrange(_mi_m,1,10)
@@ -392,31 +374,61 @@ inspect howlng if imputed==1
 
 mi update
 
-save "created data/stata/ukhls_individs_imputed_long_bysex.dta", replace
+tabstat total_hours work_hours howlng aid_hours employment_status fimnlabgrs_dv nkids_dv age_youngest_child partnered_imp marital_status_imp npens_dv num_parents_hh fihhmngrs_dv gor_dv tenure_dv master_religion disabled_est sr_health  father_educ mother_educ father_empstatus mother_empstatus family_structure year_first_birth_imp birth_timing_rel, by(imputed) stats(mean sd p50) columns(statistics) 
 
-/*
-// explore congruence between imputed and not
-tabstat total_hours jbhrs howlng, by(imputed) stats(mean sd p50)
-tabstat total_hours jbhrs howlng if xw_sex==1, by(imputed) stats(mean sd p50)
-tabstat total_hours jbhrs howlng if xw_sex==2, by(imputed) stats(mean sd p50)
-
-tabstat total_hours jbhrs howlng aidhrs_rec employed jbstat fimnlabgrs_dv nkids_dv age_youngest_child partnered_imp marital_status_imp fihhmngrs_dv gor_dv age_all dob hiqual_fixed xw_ethn_dv, by(imputed) stats(mean sd p50) columns(statistics)
+tab employment_status imputed, col
+tab aid_hours imputed, col
+tab marital_status_imp imputed, col
+tab master_religion imputed, col
+tab tenure_dv imputed, col
+tab disabled_est imputed, col
+tab sr_health imputed, col
+tab father_educ imputed, col
+tab mother_educ imputed, col
+tab family_structure imputed, col
 
 twoway (histogram total_hours if imputed==0 & total_hours <=80, width(2) color(blue%30)) (histogram total_hours if imputed==1 & total_hours <=80, width(2) color(red%30)), legend(order(1 "Observed" 2 "Imputed") rows(1) position(6)) xtitle("Weekly Employment Hours")
-// more zeroes for men than women
-twoway (histogram total_hours if imputed==0 & xw_sex==1 & total_hours <=80, width(2) color(blue%30)) (histogram total_hours if imputed==1 & xw_sex==1 & total_hours <=80, width(2) color(red%30)), legend(order(1 "Observed" 2 "Imputed") rows(1) position(6)) xtitle("Weekly Employment Hours")
-twoway (histogram total_hours if imputed==0 & xw_sex==2 & total_hours <=80, width(2) color(blue%30)) (histogram total_hours if imputed==1 & xw_sex==2 & total_hours <=80, width(2) color(red%30)), legend(order(1 "Observed" 2 "Imputed") rows(1) position(6)) xtitle("Weekly Employment Hours")
-
-// housework much more aligned
+twoway (histogram work_hours if imputed==0 & work_hours <=80, width(2) color(blue%30)) (histogram work_hours if imputed==1 & work_hours <=80, width(2) color(red%30)), legend(order(1 "Observed" 2 "Imputed") rows(1) position(6)) xtitle("Weekly Employment Hours")
 twoway (histogram howlng if imputed==0 & howlng<=50, width(2) color(blue%30)) (histogram howlng if imputed==1 & howlng<=50, width(2) color(red%30)), legend(order(1 "Observed" 2 "Imputed") rows(1) position(6)) xtitle("Weekly Housework Hours")
 
-preserve
 
-collapse (mean) total_hours jbhrs howlng, by(duration imputed)
+********************************************************************************
+**# Notes and troubleshooting
+********************************************************************************
 
-twoway (line total_hours duration if imputed==0) (line total_hours duration if imputed==1), legend(order(1 "Observed" 2 "Imputed") rows(1) position(6)) ytitle("Weekly Employment Hours") title("Avg Employment Hours by Duration") xtitle("Marital Duration") //  yscale(range(30 40))
+/*
+forvalues d=0/14{
+	inspect disabled_est`d'
+}
+*/
 
-twoway (line howlng duration if imputed==0) (line howlng duration if imputed==1), legend(order(1 "Observed" 2 "Imputed") rows(1) position(6)) ytitle("Weekly Housework Hours") title("Avg Housework Hours by Duration") xtitle("Marital Duration")
 
-restore
+/* 
+// https://www.statalist.org/forums/forum/general-stata-discussion/general/1356391-mi-impute-chained-with-predictive-mean-matching-pmm-for-categorical-variables
+is this problematic for categories like religion? where the ordering and distance are arbitrary?
+Not only are you ordering them, you are putting them in an arbitrary order with a distance of 1 between each category 
+(neither of these are a problem for the binary outcome case above). If you re-ordered your categories, you would get 
+quite different imputations. Using PMM instead of regress cannot fix these problems, the only thing it does is some cosmetic 
+cover-up by making sure imputed values are observable.
+
+
+okay but in a different post, this man says PMM is okay and he recommends it (at least for categorical variables with a large number of categories): https://www.statalist.org/forums/forum/general-stata-discussion/general/1342957-mi-impute-chained-error-many-perfect-predictors
+
+but then this person recommends k nearest neighbor matching / PMM: https://www.statalist.org/forums/forum/general-stata-discussion/general/1458779-multiple-imputation-chained-equation-not-converging
+(and Clyde agrees)
+
+also I should possibly consider using ologit in some cases? i.e. for the categorical variables with very small numbers (e.g. number of parents in HH) - since those clearly have a sort order...
+is that better than jumping to PMM?
+
+I wonder if some of this is my fault - should I make some of the factor variables (i.e. religion, employment status) continuous when predictors?
+Just, to me, they are not continuous variables because the categories do not mean anything in reference to each other
+
+more recommendations in favor of PMM:
+https://github.com/amices/mice/discussions/383
+https://stefvanbuuren.name/fimd/sec-modelform.html
+WAIT there is a whole article: https://journals.sagepub.com/doi/full/10.1177/09622802231198795
+(Logistic regression vs. predictive mean matching for imputing binary covariates)
+
+https://statisticalhorizons.com/predictive-mean-matching/
+// if using stata, dO NOT USE DEFAULT # OF MATCHES (which is 1 - so this is good, I am already not doing that...). He actually says 5 is good. 10 can be too many for small data sets
 */
