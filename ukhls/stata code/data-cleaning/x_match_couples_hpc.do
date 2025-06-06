@@ -2,6 +2,7 @@ set maxvar 10000
 
 cd "/home/kmcerlea/stage/Life Course"
 
+/*
 use "created data/stata/ukhls_couples_imputed_long.dta", clear
 
 ********************************************************************************
@@ -147,159 +148,16 @@ mi passive: replace yr_first_birth_woman=year_first_birth_imp_sp if SEX==1
 mi passive: gen yr_first_birth_man=year_first_birth_imp if SEX==1
 mi passive: replace yr_first_birth_man=year_first_birth_imp_sp if SEX==2
 
-// Stata assert command to check new variables created from imputed  
-foreach var in weekly_hrs_woman weekly_hrs_man employment_status_woman employment_status_man monthly_earnings_woman monthly_earnings_man housework_woman housework_man carework_woman carework_man marital_status_woman marital_status_man partnered_woman partnered_man rel_no_woman rel_no_man num_children_woman num_children_man region_woman region_man housing_woman housing_man religion_woman religion_man disabled_woman disabled_man sr_health_woman sr_health_man father_educ_woman father_educ_man mother_educ_woman mother_educ_man family_structure_woman family_structure_man yr_first_birth_woman yr_first_birth_man{  
-	inspect `var' if _mi_m != 0  
-	assert `var' != . if _mi_m != 0  
-} capture drop weekly_hrs_woman weekly_hrs_man housework_woman housework_man partnered_woman partnered_man num_children_woman num_children_man
+**# Bookmark #1
+// temp save
 mi update
-
-// first, let's make gendered versions of each variable
-*paid work
-mi passive: gen weekly_hrs_woman=total_hours if SEX==2
-mi passive: replace weekly_hrs_woman=total_hours_sp if SEX==1
-
-mi passive: gen weekly_hrs_man=total_hours if SEX==1
-mi passive: replace weekly_hrs_man=total_hours_sp if SEX==2
-
-*detailed employment status
-mi passive: gen employment_status_woman=employment_status if SEX==2
-mi passive: replace employment_status_woman=employment_status_sp if SEX==1
-
-mi passive: gen employment_status_man=employment_status if SEX==1
-mi passive: replace employment_status_man=employment_status_sp if SEX==2
-
-*monthly earnings
-mi passive: gen monthly_earnings_woman=fimnlabgrs_dv if SEX==2
-mi passive: replace monthly_earnings_woman=fimnlabgrs_dv_sp if SEX==1
-
-mi passive: gen monthly_earnings_man=fimnlabgrs_dv if SEX==1
-mi passive: replace monthly_earnings_man=fimnlabgrs_dv_sp if SEX==2
-
-*unpaid work
-mi passive: gen housework_woman=howlng if SEX==2
-mi passive: replace housework_woman=howlng_sp if SEX==1
-
-mi passive: gen housework_man=howlng if SEX==1
-mi passive: replace housework_man=howlng_sp if SEX==2
-
-*care work
-mi passive: gen carework_woman=aid_hours if SEX==2
-mi passive: replace carework_woman=aid_hours_sp if SEX==1
-
-mi passive: gen carework_man=aid_hours if SEX==1
-mi passive: replace carework_man=aid_hours_sp if SEX==2
-
-*relationship status
-tab marital_status_imp partnered_imp, m col
-
-mi passive: gen marital_status_woman=marital_status_imp if SEX==2
-mi passive: replace marital_status_woman=marital_status_imp_sp if SEX==1
-
-mi passive: gen marital_status_man=marital_status_imp if SEX==1
-mi passive: replace marital_status_man=marital_status_imp_sp if SEX==2
-
-mi passive: gen partnered_woman=.
-mi passive: replace partnered_woman = 0 if inlist(marital_status_woman,3,4,5,6)
-mi passive: replace partnered_woman = 1 if inlist(marital_status_woman,1,2)
-
-mi passive: gen partnered_man=.
-mi passive: replace partnered_man = 0 if inlist(marital_status_man,3,4,5,6)
-mi passive: replace partnered_man = 1 if inlist(marital_status_man,1,2)
-
-tab partnered_woman partnered_man, m
-tab partnered_woman partnered_man if imputed==1, m // well these could also be partnerships that occurred outside of focal partnership
-
-gen rel_no_woman=eligible_rel_no if SEX==2
-replace rel_no_woman=eligible_rel_no_sp if SEX==1
-
-gen rel_no_man=eligible_rel_no if SEX==1
-replace rel_no_man=eligible_rel_no_sp if SEX==2
-
-*number of children
-tab nkids_dv nkids_dv_sp, m
-tab nkids_dv nkids_dv_sp if imputed==1
-tab nkids_dv nkids_dv_sp if imputed==0 // match generally better here
-
-mi passive: gen num_children_woman=nkids_dv if SEX==2
-mi passive: replace num_children_woman=nkids_dv_sp if SEX==1
-
-mi passive: gen num_children_man=nkids_dv if SEX==1
-mi passive: replace num_children_man=nkids_dv_sp if SEX==2
-
-// some demographics
-* Region
-mi passive: gen region_woman=gor_dv if SEX==2
-mi passive: replace region_woman=gor_dv_sp if SEX==1
-
-mi passive: gen region_man=gor_dv if SEX==1
-mi passive: replace region_man=gor_dv_sp if SEX==2
-
-* Housing status
-mi passive: gen housing_woman=tenure_dv if SEX==2
-mi passive: replace housing_woman=tenure_dv_sp if SEX==1
-
-mi passive: gen housing_man=tenure_dv if SEX==1
-mi passive: replace housing_man=tenure_dv_sp if SEX==2
-
-* Religion
-mi passive: gen religion_woman=master_religion if SEX==2
-mi passive: replace religion_woman=master_religion_sp if SEX==1
-
-mi passive: gen religion_man=master_religion if SEX==1
-mi passive: replace religion_man=master_religion_sp if SEX==2
-
-*Disability status
-mi passive: gen disabled_woman=disabled_est if SEX==2
-mi passive: replace disabled_woman=disabled_est_sp if SEX==1
-
-mi passive: gen disabled_man=disabled_est if SEX==1
-mi passive: replace disabled_man=disabled_est_sp if SEX==2
-
-* Self-rated health
-mi passive: gen sr_health_woman=sr_health if SEX==2
-mi passive: replace sr_health_woman=sr_health_sp if SEX==1
-
-mi passive: gen sr_health_man=sr_health if SEX==1
-mi passive: replace sr_health_man=sr_health_sp if SEX==2
-
-* Father education
-mi passive: gen father_educ_woman=father_educ if SEX==2
-mi passive: replace father_educ_woman=father_educ_sp if SEX==1
-
-mi passive: gen father_educ_man=father_educ if SEX==1
-mi passive: replace father_educ_man=father_educ_sp if SEX==2
-
-* Mother education
-mi passive: gen mother_educ_woman=mother_educ if SEX==2
-mi passive: replace mother_educ_woman=mother_educ_sp if SEX==1
-
-mi passive: gen mother_educ_man=mother_educ if SEX==1
-mi passive: replace mother_educ_man=mother_educ_sp if SEX==2
-
-* Family structure growing up
-mi passive: gen family_structure_woman=family_structure if SEX==2
-mi passive: replace family_structure_woman=family_structure_sp if SEX==1
-
-mi passive: gen family_structure_man=family_structure if SEX==1
-mi passive: replace family_structure_man=family_structure_sp if SEX==2
-
-* Year of first birth
-mi passive: gen yr_first_birth_woman=year_first_birth_imp if SEX==2
-mi passive: replace yr_first_birth_woman=year_first_birth_imp_sp if SEX==1
-
-mi passive: gen yr_first_birth_man=year_first_birth_imp if SEX==1
-mi passive: replace yr_first_birth_man=year_first_birth_imp_sp if SEX==2
+save "created data/stata/ukhls_couples_imputed_long_recoded.dta", replace
 
 // Stata assert command to check new variables created from imputed  
 foreach var in weekly_hrs_woman weekly_hrs_man employment_status_woman employment_status_man monthly_earnings_woman monthly_earnings_man housework_woman housework_man carework_woman carework_man marital_status_woman marital_status_man partnered_woman partnered_man rel_no_woman rel_no_man num_children_woman num_children_man region_woman region_man housing_woman housing_man religion_woman religion_man disabled_woman disabled_man sr_health_woman sr_health_man father_educ_woman father_educ_man mother_educ_woman mother_educ_man family_structure_woman family_structure_man yr_first_birth_woman yr_first_birth_man{  
 	inspect `var' if _mi_m != 0  
 	assert `var' != . if _mi_m != 0  
 } 
-
-**# Bookmark #1
-// temp save
-save "created data/stata/ukhls_couples_imputed_long_recoded.dta", replace
 
 // paid work
 mi passive: gen ft_pt_woman = .
@@ -578,7 +436,7 @@ tab year_transitioned ever_transition, m
 // temp save
 save "created data/stata/ukhls_couples_imputed_long_recoded.dta", replace
 
-/* only run through here for now, want to check this because I know this part gets problematic...
+only run through here for now, want to check this because I know this part gets problematic...
 might go back to hpc to do the dissolved / attrit versions of the variables? but need to see
 
 tab marital_status_defacto if int_year >= year_transitioned & int_year < = eligible_rel_end_year & imputed==0, m
@@ -671,9 +529,12 @@ foreach var in ft_pt_woman overwork_woman ft_pt_man overwork_man couple_work cou
 	// inspect `var' if _mi_m != 0  
 	assert `var' != . if _mi_m != 0  
 } 
+*/
+
+use "created data/stata/ukhls_couples_imputed_long_recoded.dta", clear
 
 // designate that relationship dissolved and create versions of all variables that stop at this point
-foreach var in ft_pt_woman overwork_woman ft_pt_man overwork_man ft_pt_det_woman ft_pt_det_man couple_work couple_work_ow couple_hw couple_hw_hrs couple_hw_hrs_alt couple_num_children_gp family_type{
+foreach var in ft_pt_woman overwork_woman ft_pt_man overwork_man ft_pt_det_woman ft_pt_det_man couple_work couple_work_ow_detailed couple_work_ow couple_hw couple_hw_hrs couple_hw_hrs_alt couple_hw_hrs_combo couple_num_children_gp family_type{
 	capture drop `var'_end
 	mi update
 	mi passive: gen `var'_end = `var'
@@ -681,26 +542,27 @@ foreach var in ft_pt_woman overwork_woman ft_pt_man overwork_man ft_pt_det_woman
 	mi passive: replace `var'_end = 99 if rel_type==3 // attrit
 }
 
-foreach var in ft_pt_woman_end overwork_woman_end ft_pt_man_end ft_pt_det_woman_end ft_pt_det_man_end overwork_man_end couple_work_end couple_work_ow_end couple_hw_end couple_hw_hrs_end couple_hw_hrs_alt_end couple_num_children_gp_end family_type_end{
+foreach var in ft_pt_woman_end overwork_woman_end ft_pt_man_end ft_pt_det_woman_end ft_pt_det_man_end overwork_man_end couple_work_end couple_work_ow_detailed_end couple_work_ow_end couple_hw_end couple_hw_hrs_end couple_hw_hrs_alt_end couple_hw_hrs_combo_end couple_num_children_gp_end family_type_end{
 	assert `var' !=. if _mi_m!=0
 }
 
 label values ft_pt_man_end ft_pt_woman_end ft_pt
 label values ft_pt_det_man_end ft_pt_det_woman_end ft_pt_det
 label values couple_work_end couple_work
+label values couple_work_ow_detailed_end couple_work_ow_detailed
 label values couple_work_ow_end couple_work_ow
 label values couple_hw_end couple_hw
 label values couple_hw_hrs_end couple_hw_hrs
 label values couple_hw_hrs_alt_end couple_hw_hrs
+label values couple_hw_hrs_combo_end couple_hw_hrs_combo
 label values family_type_end family_type
 
 // cross-tabs to explore to figure out potential new variables
-tab ft_pt_man_end ft_pt_woman_end, cell
-tab ft_pt_det_man_end ft_pt_det_woman_end, cell
+// tab ft_pt_man_end ft_pt_woman_end, cell
+// tab ft_pt_det_man_end ft_pt_det_woman_end, cell
 
 // final update and save
 
 mi update
 
-save "created data/stata/ukhls_couples_imputed_long_recodes.dta", replace
-*/
+save "created data/stata/ukhls_couples_imputed_long_recoded.dta", replace

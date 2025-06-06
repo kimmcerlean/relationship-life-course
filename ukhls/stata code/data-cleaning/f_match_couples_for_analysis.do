@@ -492,14 +492,14 @@ label values duration duration_rec .
 
 browse pidp eligible_partner marital_status_defacto eligible_rel_start_year eligible_rel_end_year year int_year duration duration_rec
 
-**# Bookmark #1
-// temp save
-save "$created_data/ukhls_couples_imputed_long_recoded.dta", replace
-
 mi passive: gen dur_transitioned=.
 mi passive: replace dur_transitioned = year_transitioned - eligible_rel_start_year
 
 tab year_transitioned ever_transition, m
+
+**# Bookmark #1
+// temp save
+save "$created_data/ukhls_couples_imputed_long_recoded.dta", replace
 
 browse pidp eligible_partner int_year duration marital_status_imp ever_transition year_transitioned dur_transitioned eligible_rel_start_year eligible_rel_end_year eligible_rel_status duration_rec
 
@@ -547,8 +547,9 @@ sort pidp eligible_partner _mi_m duration
 mi passive: replace rel_type = rel_type[_n+1] if rel_type==. & duration >= 0 & duration <=max_dur & pidp==pidp[_n+1]
 mi passive: replace rel_type = rel_type[_n-1] if rel_type==. & duration >= 0 & duration <=max_dur & pidp==pidp[_n-1] & rel_type[_n-1]!=0
 
-mi passive: replace rel_type = 1 if rel_type==. // best guess based on current info (this is also like 3 people)
-mi passive: replace rel_type = rel_type[_n+1] if duration==0 & inlist(rel_type,3,4) & !inlist(rel_type[_n+1],0,3,4) & pidp==pidp[_n+1]
+//actually don't need this now
+// mi passive: replace rel_type = 1 if rel_type==. // best guess based on current info (this is also like 3 people)
+// mi passive: replace rel_type = rel_type[_n+1] if duration==0 & inlist(rel_type,3,4) & !inlist(rel_type[_n+1],0,3,4) & pidp==pidp[_n+1]
 
 tab rel_type imputed, m
 tab rel_type if _mi_m!=0, m
@@ -565,6 +566,10 @@ mi estimate: proportion rel_type
 
 tab rel_type eligible_rel_status, row
 tab rel_type duration if _mi_m!=0, m
+// browse pidp duration marital_status_imp rel_type min_dur max_dur ever_transition if duration==0 & inlist(rel_type, 3,4) &_mi_m!=0
+// browse pidp duration marital_status_imp rel_type min_dur max_dur _mi_m if inlist(pidp, 558175969, 286316725)
+
+mi passive: replace rel_type = 2 if duration==0 & inlist(rel_type,3,4) & inrange(marital_status_imp,3,6)
 
 * number of children
 tab num_children_woman num_children_man if inlist(rel_type,1,2) & duration>=0, m
@@ -610,6 +615,10 @@ tab family_type duration if _mi_m!=0, m
 // browse pidp eligible_partner marital_status_imp rel_type duration family_type_end if inlist(pidp,32143682,67551242,67626042,748332543)
 
 browse pidp eligible_partner duration eligible_rel_start_year eligible_rel_end_year min_dur max_dur family_type rel_type marital_status_imp couple_num_children_gp eligible_rel_status 
+
+**# Bookmark #1
+// temp save
+save "$created_data/ukhls_couples_imputed_long_recoded.dta", replace
 
 // use "$created_data/ukhls_couples_imputed_long_recoded.dta", clear
 
@@ -712,9 +721,9 @@ tab family_type if imputed==1
 tab family_type SEX if imputed==1, col
 
 // keep if inlist(per_id,1,3,5,7,9,11)
-unique pidp eligible_partner // 14126
+unique pidp eligible_partner // 14126 / 16522 new
 keep if SEX==2
-unique pidp eligible_partner // 7063, was 14126
+unique pidp eligible_partner // 7063 / 8261 new
 
 // need to do age restrictions (18-60)
 // keep if age_all>=18 & age_all<=60 // wait, if I drop these now, won't be rectangular anymore...
@@ -729,7 +738,7 @@ drop if age_eligible==0
 
 mi update
 
-unique pidp eligible_partner // now 6271
+unique pidp eligible_partner // now 6271 / 7410 new
 
 save "$created_data/ukhls_couples_imputed_long_deduped.dta", replace
 
@@ -738,25 +747,25 @@ save "$created_data/ukhls_couples_imputed_long_deduped.dta", replace
 **# Quick descriptives for full sample while long
 ********************************************************************************
 //
-histogram weekly_hrs_woman if couple_work_ow_end==8
-histogram weekly_hrs_man if couple_work_ow_end==8
+histogram weekly_hrs_woman if couple_work_ow_end==6
+histogram weekly_hrs_man if couple_work_ow_end==6
 
-tab ft_pt_det_man_end ft_pt_det_woman_end if couple_work_ow_end==8, cell
+tab ft_pt_det_man_end ft_pt_det_woman_end if couple_work_ow_end==6, cell
 tab ft_pt_man_end ft_pt_woman_end, cell
 
 tab couple_work_ow_end imputed, col
 tab couple_work_end imputed, col
 
 // descriptives at all durations
-desctable i.ft_pt_woman_end i.overwork_woman_end i.ft_pt_det_woman_end i.ft_pt_man_end i.overwork_man_end i.ft_pt_det_man_end i.couple_work_end i.couple_work_ow_end i.couple_hw_end i.couple_hw_hrs_end i.couple_hw_hrs_alt_end i.rel_type i.couple_num_children_gp_end i.family_type_end, filename("$results/ukhls_mi_desc") stats(mimean)
+desctable i.ft_pt_woman_end i.overwork_woman_end i.ft_pt_det_woman_end i.ft_pt_man_end i.overwork_man_end i.ft_pt_det_man_end i.couple_work_end i.couple_work_ow_end i.couple_work_ow_detailed_end i.couple_hw_end i.couple_hw_hrs_end i.couple_hw_hrs_alt_end i.couple_hw_hrs_combo_end i.rel_type i.couple_num_children_gp_end i.family_type_end, filename("$results/ukhls_mi_desc") stats(mimean)
 // desctable i.ft_pt_woman i.overwork_woman i.ft_pt_man i.overwork_man i.couple_work i.couple_work_ow i.couple_hw i.couple_hw_hrs i.rel_type i.couple_num_children_gp i.family_type, filename("$results/mi_desc_all") stats(mimean)  // modify - okay can't use modify but want to see if this replaces the previous or adds a new sheet. okay it replaces the previous oops
 
 mi estimate: proportion couple_work_ow_end family_type_end // validate that this matches. it does
 
 // should I just loop through durations while long? should I confirm the numbers are the same either way? - so here, try to loop through durations
-
+** Note 6/6/25: have not done this yet for updated sequences (with more rel start dates included)** (takes a while - possibly send to HPC)
 forvalues d=0/10{
-	desctable i.ft_pt_woman_end i.overwork_woman_end i.ft_pt_det_woman_end i.ft_pt_man_end i.overwork_man_end i.ft_pt_det_man_end i.couple_work_end i.couple_work_ow_end i.couple_hw_end i.couple_hw_hrs_end i.couple_hw_hrs_alt_end i.rel_type i.couple_num_children_gp_end i.family_type_end if duration==`d', filename("$results/ukhls_mi_desc_`d'") stats(mimean) decimals(4)
+	desctable i.ft_pt_woman_end i.overwork_woman_end i.ft_pt_det_woman_end i.ft_pt_man_end i.overwork_man_end i.ft_pt_det_man_end i.couple_work_end i.couple_work_ow_end i.couple_work_ow_detailed_end i.couple_hw_end i.couple_hw_hrs_end i.couple_hw_hrs_alt_end i.couple_hw_hrs_combo_end i.rel_type i.couple_num_children_gp_end i.family_type_end if duration==`d', filename("$results/ukhls_mi_desc_`d'") stats(mimean) decimals(4)
 }
 
 // mi xeq: proportion couple_hw_end if duration==5 // troubleshooting bc this is where the code stalled. I think this is because some have "neither HW" and some don't. okay, yes that is the problem
@@ -774,7 +783,7 @@ replace duration = duration + 1
 
 // use "$created_data/ukhls_couples_imputed_long_deduped.dta", clear
 
-drop hidp sampst ivfio hubuys hufrys humops huiron husits huboss year marital_status_defacto partnered current_rel_start_year current_rel_end_year rowcount age_flag age_eligible duration_v0 psu strata // think I need to keep the base variables the passive variables I created are based off of, otherwise, they are reset back to missing I think, which causes problems when I reshape.
+drop hidp sampst ivfio hubuys hufrys humops huiron husits huboss year marital_status_defacto partnered current_rel_start_year current_rel_end_year rowcount age_flag age_eligible duration_v0 psu strata religion_est housing_status_alt // any_aid any_aid_sp current_parent_status current_parent_status_sp // think I need to keep the base variables the passive variables I created are based off of, otherwise, they are reset back to missing I think, which causes problems when I reshape.
 
 mi update
 
@@ -782,16 +791,16 @@ mi update
 **# Reshape back to wide to see the data by duration and compare to long estimates
 ********************************************************************************
 
-mi reshape wide age_all fihhmngrs_dv gor_dv nkids_dv jbstat aidhh aidxhh aidhrs howlng work_hours jbhrs fimnlabgrs_dv nchild_dv hiqual_dv country_all employed total_hours age_youngest_child partnered_imp marital_status_imp aidhrs_rec int_year orig_record age_all_sp fihhmngrs_dv_sp gor_dv_sp nkids_dv_sp jbstat_sp aidhrs_sp howlng_sp work_hours_sp jbhrs_sp fimnlabgrs_dv_sp employed_sp total_hours_sp age_youngest_child_sp partnered_imp_sp marital_status_imp_sp aidhrs_rec_sp weekly_hrs_woman weekly_hrs_man housework_woman housework_man marital_status_woman marital_status_man partnered_woman partnered_man num_children_woman num_children_man ft_pt_woman overwork_woman ft_pt_man overwork_man ft_pt_det_woman ft_pt_det_man couple_work couple_work_ow couple_work_ow_detailed  couple_hw_total woman_hw_share hw_terc_woman hw_hilow_woman hw_hilow_man couple_hw hw_hilow_woman_gp1 hw_hilow_woman_gp2 hw_hilow_man_gp4 hw_hilow_woman_combo couple_hw_hrs couple_hw_hrs_alt couple_hw_hrs_combo rel_type couple_num_children couple_num_children_gp family_type ft_pt_woman_end overwork_woman_end ft_pt_man_end overwork_man_end ft_pt_det_woman_end ft_pt_det_man_end couple_work_end couple_work_ow_detailed_end couple_work_ow_end couple_hw_end couple_hw_hrs_end couple_hw_hrs_alt_end couple_hw_hrs_combo_end couple_num_children_gp_end family_type_end ///
+mi reshape wide age_all fihhmngrs_dv gor_dv nkids_dv jbstat aidhh aidxhh aidhrs howlng work_hours jbhrs fimnlabgrs_dv nchild_dv hiqual_dv country_all employed total_hours age_youngest_child partnered_imp marital_status_imp int_year orig_record age_all_sp fihhmngrs_dv_sp gor_dv_sp nkids_dv_sp jbstat_sp aidhrs_sp howlng_sp work_hours_sp jbhrs_sp fimnlabgrs_dv_sp employed_sp total_hours_sp age_youngest_child_sp partnered_imp_sp marital_status_imp_sp weekly_hrs_woman weekly_hrs_man housework_woman housework_man marital_status_woman marital_status_man partnered_woman partnered_man num_children_woman num_children_man ft_pt_woman overwork_woman ft_pt_man overwork_man ft_pt_det_woman ft_pt_det_man couple_work couple_work_ow couple_work_ow_detailed  couple_hw_total woman_hw_share hw_terc_woman hw_hilow_woman hw_hilow_man couple_hw hw_hilow_woman_gp1 hw_hilow_woman_gp2 hw_hilow_man_gp4 hw_hilow_woman_combo couple_hw_hrs couple_hw_hrs_alt couple_hw_hrs_combo rel_type couple_num_children couple_num_children_gp family_type ft_pt_woman_end overwork_woman_end ft_pt_man_end overwork_man_end ft_pt_det_woman_end ft_pt_det_man_end couple_work_end couple_work_ow_detailed_end couple_work_ow_end couple_hw_end couple_hw_hrs_end couple_hw_hrs_alt_end couple_hw_hrs_combo_end couple_num_children_gp_end family_type_end npens_dv tenure_dv jshrs employment_status disabled_est sr_health aid_hours num_parents_hh master_religion respondent_info npens_dv_sp tenure_dv_sp employment_status_sp disabled_est_sp sr_health_sp aid_hours_sp num_parents_hh_sp master_religion_sp respondent_info_sp employment_status_woman employment_status_man monthly_earnings_woman monthly_earnings_man carework_woman carework_man region_woman region_man housing_woman housing_man religion_woman religion_man disabled_woman disabled_man sr_health_woman sr_health_man any_aid any_aid_sp current_parent_status current_parent_status_sp ///
 , i(pidp eligible_partner eligible_rel_start_year eligible_rel_end_year eligible_rel_status) j(duration)
 
 tab _mi_miss, m // see what happens if I reshape but DON'T convert
 tab _mi_m, m
 
-browse pidp eligible_partner _mi_id _mi_miss _mi_m couple_work_end* couple_work_ow_end* couple_hw_hrs_combo_end*
-browse pidp eligible_partner _mi_id _mi_miss _mi_m couple_work_end* couple_work_ow_end* couple_hw_hrs_combo_end* if inrange(_mi_m,1,10)
+browse pidp eligible_partner max_dur _mi_id _mi_miss _mi_m couple_work_end* couple_work_ow_end* couple_hw_hrs_combo_end*
+browse pidp eligible_partner max_dur _mi_id _mi_miss _mi_m couple_work_end* couple_work_ow_end* couple_hw_hrs_combo_end* if inrange(_mi_m,1,10)
 
-unique pidp eligible_partner // so now there are 6271 uniques and 11 observations for each (base + 10 imputations) - so 68981 observations
+unique pidp eligible_partner // so now there are 7410 uniques and 11 observations for each (base + 10 imputations) - so 81510 observations
 unique pidp eligible_partner, by(_mi_m)
 
 // create indicator of complete sequences
@@ -866,12 +875,47 @@ use "$created_data/ukhls_couples_imputed_wide.dta", clear
 
 keep if complete_seq==1
 
+// tab couple_hw_hrs_combo_end10 if _mi_m!=0, m
+// tab couple_work_ow_end10 if _mi_m!=0, m
+// tab family_type_end10 if _mi_m!=0, m
 // browse pidp eligible_partner min_dur max_dur  _mi_m sequence_length couple_hw_hrs_combo_end* couple_work_ow_end* rel_type* if couple_work_ow_end1==. & _mi_m!=0
 // browse pidp eligible_partner min_dur max_dur  _mi_m sequence_length couple_hw_hrs_combo_end* couple_work_ow_end* rel_type* if pidp==293086125
 
 mi update
 
 save "$created_data/ukhls_couples_imputed_wide_complete.dta", replace 
+
+// truncated data (so not attrit or dissolve - set to missing instead)
+use "$created_data/ukhls_couples_imputed_wide.dta", clear
+
+browse pidp eligible_partner complete_seq sequence_length couple_work_ow_end* couple_hw_hrs_combo_end* family_type_end*
+fre couple_work_ow_end5
+fre couple_hw_hrs_combo_end5
+fre family_type_end5
+
+forvalues d=1/11{
+	capture gen couple_work_ow_trunc`d' = couple_work_ow_end`d'
+	replace couple_work_ow_trunc`d' = . if inlist(couple_work_ow_end`d',98,99)
+	label values couple_work_ow_trunc`d' couple_work_ow
+	capture gen couple_hw_hrs_combo_trunc`d' = couple_hw_hrs_combo_end`d'
+	replace couple_hw_hrs_combo_trunc`d' = . if inlist(couple_hw_hrs_combo_end`d',98,99)
+	label values couple_hw_hrs_combo_trunc`d' couple_hw_hrs_combo
+	capture gen family_type_trunc`d' = family_type_end`d'
+	replace family_type_trunc`d' = . if inlist(family_type_end`d',98,99)
+	label values family_type_trunc`d' family_type
+}
+
+fre couple_work_ow_trunc5
+fre couple_hw_hrs_combo_trunc5
+fre family_type_trunc5
+
+tab couple_work_ow_trunc1 if _mi_m!=0, m
+tab couple_hw_hrs_combo_trunc1 if _mi_m!=0, m
+tab family_type_trunc1 if _mi_m!=0, m
+
+// browse pidp eligible_partner complete_seq sequence_length couple_work_ow_trunc* couple_hw_hrs_combo_trunc* family_type_trunc* if _mi_m!=0
+
+save "$created_data/ukhls_couples_wide_truncated.dta", replace 
 
 /*
 // fully wide data (not actually sure we need this)
