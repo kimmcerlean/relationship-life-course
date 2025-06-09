@@ -1,15 +1,17 @@
 # ---------------------------------------------------------------------
-#    Program: setupsequence_truncated.R
+#    Program: cluster-plots
 #    Author: Kim McErlean & Lea Pessin 
 #    Date: January 2025
-#    Modified: March 4 2025
-#    Goal: setup UKHLS for multichannel sequence analysis of couples' life courses;
-#   This file focuses on all sequences, including incomplete ones   
+#    Modified: June 9 2025
+#    Goal: Create relative frequency and state distribution plots
+#         comparing across cluster solutions - all sequences, including truncated
 # --------------------------------------------------------------------
 # --------------------------------------------------------------------
 
 # clear the environment
 rm(list = ls())
+
+# set.seed(25)
 
 options(repos=c(CRAN="https://cran.r-project.org"))
 
@@ -36,26 +38,32 @@ getwd() # check it worked
 
 if (Sys.getenv(c("HOME" )) == "/home/lpessin") {
   required_packages <- c("TraMineR", "TraMineRextras","RColorBrewer", "paletteer", 
-                         "colorspace","ggplot2","ggpubr", "ggseqplot",
+                         "colorspace","ggplot2","ggpubr", "ggseqplot","glue","Cairo",
                          "patchwork", "cluster", "WeightedCluster","dendextend","seqHMM","haven",
-                         "labelled", "readxl", "openxlsx","tidyverse","gridExtra","foreign","pdftools")
+                         "labelled", "readxl", "openxlsx","tidyverse","pdftools","gridExtra","foreign",
+                         "reshape2", "Hmisc", "knitr", "kableExtra","OpenMx","grDevices","corrplot",
+                         "car", "factoextra","nnet", "descr", "stats", "psych", "effects","ggh4x")
   lapply(required_packages, require, character.only = TRUE)
 }
 
 if (Sys.getenv(c("HOME" )) == "/home/kmcerlea") {
   required_packages <- c("TraMineR", "TraMineRextras","RColorBrewer", "paletteer", 
-                         "colorspace","ggplot2","ggpubr", "ggseqplot",
+                         "colorspace","ggplot2","ggpubr", "ggseqplot","glue","Cairo",
                          "patchwork", "cluster", "WeightedCluster","dendextend","seqHMM","haven",
-                         "labelled", "readxl", "openxlsx","tidyverse","gridExtra","foreign","pdftools")
+                         "labelled", "readxl", "openxlsx","tidyverse","pdftools","gridExtra","foreign",
+                         "reshape2", "Hmisc", "knitr", "kableExtra","OpenMx","grDevices","corrplot",
+                         "car", "factoextra","nnet", "descr", "stats", "psych", "effects","ggh4x")
   lapply(required_packages, require, character.only = TRUE)
 }
 
 
 if (Sys.getenv(c("USERNAME")) == "mcerl") {
   required_packages <- c("TraMineR", "TraMineRextras","RColorBrewer", "paletteer", 
-                         "colorspace","ggplot2","ggpubr", "ggseqplot",
+                         "colorspace","ggplot2","ggpubr", "ggseqplot","glue","Cairo",
                          "patchwork", "cluster", "WeightedCluster","dendextend","seqHMM","haven",
-                         "labelled", "readxl", "openxlsx","tidyverse","gridExtra","foreign","pdftools")
+                         "labelled", "readxl", "openxlsx","tidyverse","pdftools","gridExtra","foreign",
+                         "reshape2", "Hmisc", "knitr", "kableExtra","OpenMx","grDevices","corrplot",
+                         "car", "factoextra","nnet", "descr", "stats", "psych", "effects","ggh4x")
   
   install_if_missing <- function(packages) {
     missing_packages <- packages[!packages %in% installed.packages()[, "Package"]]
@@ -69,9 +77,11 @@ if (Sys.getenv(c("USERNAME")) == "mcerl") {
 
 if (Sys.getenv(c("USERNAME")) == "lpessin") {
   required_packages <- c("TraMineR", "TraMineRextras","RColorBrewer", "paletteer", 
-                         "colorspace","ggplot2","ggpubr", "ggseqplot",
+                         "colorspace","ggplot2","ggpubr", "ggseqplot","glue","Cairo",
                          "patchwork", "cluster", "WeightedCluster","dendextend","seqHMM","haven",
-                         "labelled", "readxl", "openxlsx","tidyverse","gridExtra","foreign","pdftools")
+                         "labelled", "readxl", "openxlsx","tidyverse","pdftools","gridExtra","foreign",
+                         "reshape2", "Hmisc", "knitr", "kableExtra","OpenMx","grDevices","corrplot",
+                         "car", "factoextra","nnet", "descr", "stats", "psych", "effects","ggh4x")
   
   install_if_missing <- function(packages) {
     missing_packages <- packages[!packages %in% installed.packages()[, "Package"]]
@@ -83,25 +93,27 @@ if (Sys.getenv(c("USERNAME")) == "lpessin") {
   lapply(required_packages, require, character.only = TRUE)
 }
 
-# ~~~~~~~~~~~~~~~~
-# Import data ----
-# ~~~~~~~~~~~~~~~~
-
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Load data
+# Just one imputation so can attempt to run it here to test diff sort options
+# For rendering the RF plots
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Import imputed datasets using haven 
 data <- read_dta("created data/ukhls/ukhls_couples_wide_truncated.dta")
-data <- data%>%filter(`_mi_m`!=0)
+data <- data%>%filter(`_mi_m`==1)
 
 # Also need to keep people with a minimum sequence length of 3
 table(data$sequence_length)
 data <- data%>%filter(sequence_length>=3)
 
-## testing with 5 imputations for now to avoid using unique sequences
-## (maybe) once we figure this out, can try to add all
-# Actually, now that we are just doing 3+, this might be fine.
-# Will comment out for now to see if will work
-# JK, it's 2^31-1 (I thought it was 2^32 - so too large)
-data <- data%>%filter(`_mi_m`==1 | `_mi_m`==2 | `_mi_m`==3 | `_mi_m`==4 | `_mi_m`==5)
-table(data$`_mi_m`)
+# GAH do I actually have to sort here?
+# select(data, pidp, sequence_length)
+
+# data <- data[order(data$sequence_length),]
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# First, create sequence objects for just one imputation (so can run it here)
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Setting up the data ----------------------------------------------------------
@@ -258,15 +270,9 @@ ggseqdplot(seq.work.ow) +
   scale_x_discrete(labels = 1:10) +
   labs(x = "Year")
 
-# So default is actually already missing=false
-# for reference (confirm I understand what is happening):
-ggseqdplot(seq.work.ow, with.missing=TRUE) +
-  scale_x_discrete(labels = 1:10) +
-  labs(x = "Year")
-
 # Couple HW - amounts v2
 seq.hw.hrs <- seqdef(data[,col_hw.hrs], cpal = colspace.hw.hrs.combo, labels=longlab.hw.hrs.combo, 
-                         states= shortlab.hw.hrs.combo,right=NA)
+                     states= shortlab.hw.hrs.combo,right=NA)
 
 seq.len.hw<-seqlength(seq.hw.hrs, with.missing = FALSE)
 
@@ -289,13 +295,13 @@ ggseqdplot(seq.fam) +
 
 # First set costs of sm to 0 for missing
 fam.miss.cost <- seqcost(seq.fam, method="CONSTANT", 
-                              miss.cost=0, with.missing=TRUE, miss.cost.fixed=TRUE)
+                         miss.cost=0, with.missing=TRUE, miss.cost.fixed=TRUE)
 
 work.miss.cost <- seqcost(seq.work.ow, method="CONSTANT", 
-                         miss.cost=0, with.missing=TRUE, miss.cost.fixed=TRUE)
+                          miss.cost=0, with.missing=TRUE, miss.cost.fixed=TRUE)
 
 hw.miss.cost <- seqcost(seq.hw.hrs, method="CONSTANT", 
-                         miss.cost=0, with.missing=TRUE, miss.cost.fixed=TRUE)
+                        miss.cost=0, with.missing=TRUE, miss.cost.fixed=TRUE)
 
 # Then make indel costs very high
 fam.miss.indel<- rep(1,ncol(fam.miss.cost$sm))
@@ -312,13 +318,13 @@ hw.miss.indel
 
 # Now use these costs to create NON-normalized matrices
 dist.work.om <- seqdist(seq.work.ow, method="OM", indel=work.miss.indel, 
-                           sm= work.miss.cost$sm, with.missing=TRUE)
+                        sm= work.miss.cost$sm, with.missing=TRUE)
 
 dist.hw.om <- seqdist(seq.hw.hrs, method="OM", indel=hw.miss.indel, 
-                              sm= hw.miss.cost$sm, with.missing=TRUE)
+                      sm= hw.miss.cost$sm, with.missing=TRUE)
 
 dist.fam.om <- seqdist(seq.fam, method="OM", indel=fam.miss.indel, 
-                           sm= fam.miss.cost$sm, with.missing=TRUE)
+                       sm= fam.miss.cost$sm, with.missing=TRUE)
 
 # Then create matrices of shortest length 
 fam.min.len <- matrix(NA,ncol=length(seq.len.fam),nrow=length(seq.len.fam))
@@ -347,80 +353,155 @@ dist.fam.min<-dist.fam.om / fam.min.len
 dist.work.min<-dist.work.om / work.min.len
 dist.hw.min<-dist.hw.om / hw.min.len
 
-# Temp save in case figures fail
+## Now create multi-channel distance
+mcdist.det.om <- seqdistmc(channels=list(seq.work.ow, seq.hw.hrs, seq.fam), ## Seq states NOT om matrix
+                           method="OM", 
+                           indel=list(work.miss.indel,hw.miss.indel, fam.miss.indel),
+                           sm=list(work.miss.cost$sm, hw.miss.cost$sm, fam.miss.cost$sm),
+                           with.missing=TRUE) 
 
-save.image("created data/ukhls/ukhls-setupsequence-truncated.RData")
+## Divide by length matrix
+mcdist.det.min <- mcdist.det.om / fam.min.len
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Exporting figures
+# Now create clusters
+# We will just do this for 7
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Hierarchical cluster analysis, non-squared dissimilarities
+mc.det.ward1 <- hclust(as.dist(mcdist.det.min), 
+                       method = "ward.D")
 
-pdf("results/UKHLS/UKHLS_Base_Sequences_truncated.pdf",
-    width=12,
-    height=3)
+# Apply PAM clustering + Ward starting point
+# Ward's clustering is explained in Chapter 4
 
-s1<-ggseqdplot(seq.work.ow) +
-  scale_x_discrete(labels = 1:10) +
-  labs(x = "Relationship Duration", y=NULL) + 
-  theme(legend.position="none") +
-  ggtitle("Paid Work") + 
-  theme(plot.title=element_text(hjust=0.5))
+mcdist.om.pam.ward <- wcKMedRange(mcdist.det.min, kvals = 2:10,
+                                  initialclust = mc.det.ward1)
 
-s2<-ggseqdplot(seq.hw.hrs) +
-  scale_x_discrete(labels = 1:10) +
-  labs(x = "Relationship Duration", y=NULL) + 
-  theme(legend.position="none") +
-  ggtitle("Housework") + 
-  theme(plot.title=element_text(hjust=0.5))
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Add cluster information to source data ---- 
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-s3<-ggseqdplot(seq.fam) +
-  scale_x_discrete(labels = 1:10) +
-  labs(x = "Relationship Duration", y=NULL) + 
-  theme(legend.position="none") +
-  ggtitle("Family") + 
-  theme(plot.title=element_text(hjust=0.5))
+# Cut tree at 7
+mc7 <- mcdist.om.pam.ward$clustering$cluster7 # these are sub"folders" in ward output
 
-grid.arrange(s1,s3,s2, ncol=3, nrow=1)
-dev.off()
+# add cluster membership indicator 
+data <- data |>
+  mutate(cluster = mc7,
+         id2 = row_number())
 
+# Obtain relative frequencies of the seven cluster (using weights)
+# Convert relative frequencies to percentages (used for labeling the y-axes)
 
-#pdf("results/UKHLS/UKHLS_Base_Index_truncated.pdf",
-#    width=12,
-#    height=5)
+data <- data |>
+  count(cluster) |>  # wt = weight40
+  mutate(share = n/ sum(n)) |>
+  arrange(desc(share)) |> 
+  mutate(mc.factor = glue("Cluster {row_number()}
+                            ({round(share*100,1)}%)"),
+         mc.factor = factor(mc.factor)) |> 
+  select(cluster, mc.factor, share) |> 
+  right_join(data, by = "cluster") |> 
+  arrange(id2)
 
-#i1<-ggseqiplot(seq.fam, sortv="from.start")
-#i2<-ggseqiplot(seq.work.ow, sortv="from.start")
-#i3<-ggseqiplot(seq.hw.hrs.alt, sortv="from.start")
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Create plots --------------------------------
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## https://stackoverflow.com/questions/72198066/how-to-sort-a-dataframe-in-the-same-order-as-a-sorted-plot-with-seqiplot-functio
 
-#grid.arrange(i1,i2,i3, ncol=3, nrow=1)
+# No sort
+# sortv="from.start",dom.crit=2,
+# I forgot - if you don't do this, it does the really long option which we prob want to avoid...
+#### Relative frequency: 100 K, sort 1a (start, domain1)
+#pdf("results/UKHLS/truncated cluster options/testing sort orders/UKHLS_rf_mc7_nosort.pdf",
+#    width=15,
+#    height=42)
+
+#seqplotMD(channels=list('Paid Work'=seq.work.ow,Family=seq.fam,Housework=seq.hw.hrs),
+#          group = data$mc.factor, type="rf", diss=mcdist.det.min,
+#          xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
+#          dom.byrow=FALSE,k=100,cex.legend=0.7)
+
 #dev.off()
 
-#pdf_convert("results/UKHLS/UKHLS_Base_Index_truncated.pdf",
-#            format = "png", dpi = 300, pages = 1,
-#            "results/UKHLS/UKHLS_Base_Index_truncated.png")
+# Normal
+#### Relative frequency: 100 K, sort 1a (start, domain1)
+pdf("results/UKHLS/truncated cluster options/testing sort orders/UKHLS_rf_mc7_d2start.pdf",
+    width=15,
+    height=42)
 
+seqplotMD(channels=list('Paid Work'=seq.work.ow,Family=seq.fam,Housework=seq.hw.hrs),
+          group = data$mc.factor, type="rf", diss=mcdist.det.min,
+          xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
+          dom.byrow=FALSE,k=100,sortv="from.start",dom.crit=2,
+          cex.legend=0.7)
 
-pdf("results/UKHLS/UKHLS_Base_RF_truncated.pdf",
-    width=12,
-    height=5)
-
-rf1<-ggseqrfplot(seq.fam, diss=dist.fam.min, k=500, sortv="from.start",
-                 which.plot="medoids") + theme(legend.position="none")
-
-rf2<-ggseqrfplot(seq.work.ow, diss=dist.work.min, k=500, sortv="from.start",
-                 which.plot="medoids") + theme(legend.position="none")
-
-rf3<-ggseqrfplot(seq.hw.hrs, diss=dist.hw.min, k=500, sortv="from.start",
-                 which.plot="medoids") + theme(legend.position="none")
-
-grid.arrange(rf1,rf2,rf3, ncol=3, nrow=1)
 dev.off()
 
+# Will by end retain the lengths? Oh, sort of, but then yeah, the srts of same length not nec. grouped together
+pdf("results/UKHLS/truncated cluster options/testing sort orders/UKHLS_rf_mc7_d2end.pdf",
+    width=15,
+    height=42)
 
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Save objects for further usage in other scripts ----
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+seqplotMD(channels=list('Paid Work'=seq.work.ow,Family=seq.fam,Housework=seq.hw.hrs),
+          group = data$mc.factor, type="rf", diss=mcdist.det.min,
+          xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
+          dom.byrow=FALSE,k=100,sortv="from.end",dom.crit=2,
+          cex.legend=0.7)
 
-save.image("created data/ukhls/ukhls-setupsequence-truncated.RData")
-#load("created data/ukhls/ukhls-setupsequence-truncated.RData")
+dev.off()
 
+# Can I just set the sort variable to length?
+pdf("results/UKHLS/truncated cluster options/testing sort orders/UKHLS_rf_mc7_length.pdf",
+    width=15,
+    height=42)
+
+seqplotMD(channels=list('Paid Work'=seq.work.ow,Family=seq.fam,Housework=seq.hw.hrs),
+          group = data$mc.factor, type="rf", diss=mcdist.det.min,
+          xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
+          dom.byrow=FALSE,k=100,sortv=data$sequence_length, cex.legend=0.7)
+
+dev.off()
+
+# Can I create a custom sort order
+# First, sort by family at time 1
+# Then sort by length?
+# Then create an index to use for sorting?
+
+select(data, pidp, sequence_length, family_type_trunc1)
+data <- data[order(data$family_type_trunc1, data$sequence_length),]
+data$sort_var <- 1:nrow(data)
+select(data, sort_var, pidp, sequence_length, family_type_trunc1, mc.factor)
+
+pdf("results/UKHLS/truncated cluster options/testing sort orders/UKHLS_rf_mc7_custom.pdf",
+    width=15,
+    height=42)
+
+seqplotMD(channels=list('Paid Work'=seq.work.ow,Family=seq.fam,Housework=seq.hw.hrs),
+          group = data$mc.factor, type="rf", diss=mcdist.det.min,
+          xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
+          dom.byrow=FALSE,k=100,sortv=data$sort_var, cex.legend=0.7)
+
+dev.off()
+
+## Do I actually have to sort each duration  to make this work?
+select(data, pidp, sequence_length, family_type_trunc1,family_type_trunc2,family_type_trunc3,family_type_trunc4,
+       family_type_trunc5,family_type_trunc6,family_type_trunc7,family_type_trunc8,family_type_trunc9,family_type_trunc10)
+data <- data[order(data$sequence_length, data$family_type_trunc10, data$family_type_trunc9, 
+                   data$family_type_trunc8, data$family_type_trunc7, data$family_type_trunc6, 
+                   data$family_type_trunc5, data$family_type_trunc4,data$family_type_trunc3, 
+                   data$family_type_trunc2, data$family_type_trunc1),]
+data$sort_fam_length <- 1:nrow(data)
+select(data, sort_fam_length, pidp, sequence_length, family_type_trunc1,family_type_trunc2,family_type_trunc3,family_type_trunc4,
+       family_type_trunc5,family_type_trunc6,family_type_trunc7,family_type_trunc8,family_type_trunc9,family_type_trunc10)
+# this feels even more chaos
+
+pdf("results/UKHLS/truncated cluster options/testing sort orders/UKHLS_rf_mc7_custom2.pdf",
+    width=15,
+    height=42)
+
+seqplotMD(channels=list('Paid Work'=seq.work.ow,Family=seq.fam,Housework=seq.hw.hrs),
+          group = data$mc.factor, type="rf", diss=mcdist.det.min,
+          xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
+          dom.byrow=FALSE,k=100,sortv=data$sort_fam_length, cex.legend=0.7)
+
+dev.off()

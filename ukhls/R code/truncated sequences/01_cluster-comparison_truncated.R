@@ -1,5 +1,5 @@
 # ---------------------------------------------------------------------
-#    Program: cluster-comparison
+#    Program: cluster-comparison_truncated
 #    Author: Kim McErlean & Lea Pessin 
 #    Date: January 2025
 #    Modified: May 15 2025
