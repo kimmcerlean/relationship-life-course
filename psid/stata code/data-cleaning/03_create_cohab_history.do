@@ -16,7 +16,7 @@
 ********************************************************************************
 * First try to get marital history data to merge on
 ********************************************************************************
-use "$PSID/mh85_21.dta", clear
+use "$PSID/mh85_23.dta", clear
 
 gen unique_id = (MH2*1000) + MH3
 browse MH3 MH2 unique_id
@@ -89,12 +89,16 @@ replace in_sample=1 if inrange(SEQ_NUMBER_,1,59)
 
 gen hh_status_=.
 replace hh_status_=0 if SEQ_NUMBER_==0 
+replace hh_status_=0 if survey_yr==1968 & RELATION_==0 // no seq number in 1968
 replace hh_status_=1 if inrange(SEQ_NUMBER_,1,20) // in sample
+replace hh_status_=1 if survey_yr==1968 & inrange(RELATION_,1,9) // no seq number in 1968
 replace hh_status_=2 if inrange(SEQ_NUMBER_,51,59) // institutionalized
 replace hh_status_=3 if inrange(SEQ_NUMBER_,71,80) // new HH 
 replace hh_status_=4 if inrange(SEQ_NUMBER_,81,89) // died
 label define hh_status 0 "not in sample" 1 "in sample" 2 "institutionalized" 3 "new hh" 4 "died"
 label values hh_status_ hh_status
+
+tab survey_yr hh_status,m 
 
 gen has_psid_gene=0
 replace has_psid_gene = 1 if inlist(SAMPLE,1,2)
@@ -204,15 +208,15 @@ tab MARITAL_PAIRS if relationship==2
 // head
 gen rel_type = .
 replace rel_type = 0 if relationship==1 & inrange(MARST_DEFACTO_HEAD_,2,5) // unpartnered
-replace rel_type = 1 if inrange(survey_yr,1977,2021) & relationship==1 & cohab_est_head==2  // married (def)
-replace rel_type = 2 if inrange(survey_yr,1977,2021) & relationship==1 & cohab_est_head==1 // cohab (def)
+replace rel_type = 1 if inrange(survey_yr,1977,2023) & relationship==1 & cohab_est_head==2  // married (def)
+replace rel_type = 2 if inrange(survey_yr,1977,2023) & relationship==1 & cohab_est_head==1 // cohab (def)
 replace rel_type = 3 if inrange(survey_yr,1968,1976) & relationship==1 & MARST_DEFACTO_HEAD_==1  // any rel (pre 1977, we don't know)
 // partner - okay, actually, if partner of head, then head status actually applies to them as well?
 // replace rel_type = 0 if relationship==2 & inrange(MARST_DEFACTO_HEAD_,2,5) // unpartnered - does this make sense? if have a label of partner...
-replace rel_type = 1 if inrange(survey_yr,1977,2021) & relationship==2 & cohab_est_head==2  // married (def)
-replace rel_type = 1 if inrange(survey_yr, 1983,2021) & relationship==2 & RELATION_==20  // married (def) - based on relationship type
-replace rel_type = 2 if inrange(survey_yr,1977,2021) & relationship==2 & cohab_est_head==1 // cohab (def)
-replace rel_type = 2 if inrange(survey_yr,1983,2021) & relationship==2 & RELATION_==22 // cohab (def)
+replace rel_type = 1 if inrange(survey_yr,1977,2023) & relationship==2 & cohab_est_head==2  // married (def)
+replace rel_type = 1 if inrange(survey_yr, 1983,2023) & relationship==2 & RELATION_==20  // married (def) - based on relationship type
+replace rel_type = 2 if inrange(survey_yr,1977,2023) & relationship==2 & cohab_est_head==1 // cohab (def)
+replace rel_type = 2 if inrange(survey_yr,1983,2023) & relationship==2 & RELATION_==22 // cohab (def)
 replace rel_type = 3 if inrange(survey_yr,1968,1976) & relationship==2 // any rel (pre 1977, we don't know)
 // all others (based on being in a marital pair). but, don't know what is the type
 replace rel_type = 0 if relationship==3 & MARITAL_PAIRS==0
@@ -450,7 +454,7 @@ save "$created_data/psid_composition_history.dta", replace
 
 restore
 
-use "$created_data/psid_composition_history.dta", clear
+use "$created_data/psid_composition_history.dta", clear // this is what I use
 tab rel1_start partnered, m // do most ever partnered people at least have rel1 start date?
 tab hh1_start has_psid_gene, m
 tab SAMPLE has_psid_gene, m
@@ -462,6 +466,11 @@ browse unique_id has_psid_gene SAMPLE partnered in_marital_history first_survey_
 **# Using family matrix
 ********************************************************************************
 ********************************************************************************
+// Commenting this out because:
+// a. I don't use this 
+// b. the 2023 family matrix has not yet been released
+
+/*
 
 ********************************************************************************
 * Just cohabitation
@@ -608,3 +617,4 @@ bysort unique_id (marr_rank): gen marr_num = sum(marr_rank != marr_rank[_n-1]) i
 drop rank help_var marr_rank marr_help_var
 
 save "$temp\PSID_relationship_list_tomatch.dta", replace
+*/

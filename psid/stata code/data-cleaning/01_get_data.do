@@ -391,8 +391,7 @@ browse main_fam_id hh_births_pre1968 hh_births_2001 cah*
 save "$created_data/1968hh_birth_history_file.dta", replace
 */
 
-// Stopped here June 10 - the family matrix isn't yet updated...do I try to do something else? or do I wait...
-
+/* This has not yet been updated for 2023 - so using below
 ********************************************************************************
 **# Try to get a variable for elderly in HH using family matrix
 ********************************************************************************
@@ -429,17 +428,21 @@ collapse (max) lives_with_parent lives_with_grandparent, by(unique_id survey_yr)
 save "$temp/parent_coresidence_lookup.dta", replace
 
 restore
+*/
 
 ********************************************************************************
 **# Also create a family composition lookup (based on age of coresidents)
 ********************************************************************************
 // need to do this since couldn't do with above file
+// going to see if I can use these new variables I added as well (about parent ID) to identify if parent is in the HH
 
 use "$temp/PSID_full_long.dta", clear
 
 drop if SEQ_NUMBER_ == 0
+drop if RELATION_ == 0 // no sequence number in 1968
 browse unique_id FAMILY_INTERVIEW_NUM_ main_fam_id survey_yr AGE_INDV_ RELATION_ 
 
+// composition
 gen age65up=0
 replace age65up =1 if  AGE_INDV_ >=65 & AGE_INDV_<200
 
@@ -449,10 +452,69 @@ tab num_65up_hh , m
 sort unique_id survey_yr
 browse unique_id FAMILY_INTERVIEW_NUM_ survey_yr num_65up_hh age65up AGE_INDV_ RELATION_ main_fam_id 
 
+// parent in HH
+browse unique_id survey_yr FAMILY_INTERVIEW_NUM_ father_unique_id mother_unique_id MOTHER_YR_BORN FATHER_YR_BORN
+quietly unique father_unique_id if father_unique_id!=0, by(FAMILY_INTERVIEW_NUM_ survey_yr) gen(num_fathers)
+bysort FAMILY_INTERVIEW_NUM_ survey_yr (num_fathers): replace num_fathers=num_fathers[1]
+
+quietly unique mother_unique_id if mother_unique_id!=0, by(FAMILY_INTERVIEW_NUM_ survey_yr) gen(num_mothers)
+bysort FAMILY_INTERVIEW_NUM_ survey_yr (num_mothers): replace num_mothers=num_mothers[1]
+
+browse unique_id AGE_INDV FAMILY_INTERVIEW_NUM_ survey_yr num_fathers father_unique_id num_mothers mother_unique_id
+// browse unique_id AGE_INDV FAMILY_INTERVIEW_NUM_ survey_yr num_fathers father_unique_id  if num_fathers>10 & num_fathers< 100
+// tab survey_yr if num_fathers>10 & num_fathers< 100 // why is this all 1968? I am confused. Oh - it's because there are no sequence numbers in 1968
+// tab survey_yr if num_fathers>=5 & num_fathers< 100 
+
+// bysort FAMILY_INTERVIEW_NUM_ survey_yr: egen father_no = rank(father_unique_id) if father_unique_id !=0, track // none of these get what I want
+bysort FAMILY_INTERVIEW_NUM_ survey_yr (father_unique_id): gen father_no = sum(father_unique_id != father_unique_id[_n-1]) if father_unique_id!=0
+bysort FAMILY_INTERVIEW_NUM_ survey_yr (mother_unique_id): gen mother_no = sum(mother_unique_id != mother_unique_id[_n-1]) if mother_unique_id!=0
+browse unique_id AGE_INDV FAMILY_INTERVIEW_NUM_ survey_yr father_no father_unique_id  num_fathers mother_no mother_unique_id num_mothers
+
+forvalues n=1/8{
+	gen father_no`n' = father_unique_id if father_no==`n'
+	bysort FAMILY_INTERVIEW_NUM_ survey_yr (father_no`n'): replace father_no`n'=father_no`n'[1]
+	gen mother_no`n' = mother_unique_id if mother_no==`n'
+	bysort FAMILY_INTERVIEW_NUM_ survey_yr (mother_no`n'): replace mother_no`n'=mother_no`n'[1]
+}
+
+browse unique_id AGE_INDV FAMILY_INTERVIEW_NUM_ survey_yr father_no father_unique_id  num_fathers father_no* mother_no mother_unique_id num_mothers mother_no*
+
+forvalues n=1/8{
+	capture drop father`n'_in_hh
+	capture drop mother`n'_in_hh
+
+	gen father`n'_in_hh = .
+	replace father`n'_in_hh = 1  if unique_id == father_no`n'
+	bysort FAMILY_INTERVIEW_NUM_ survey_yr (father`n'_in_hh): replace father`n'_in_hh=father`n'_in_hh[1]
+	capture gen mother`n'_in_hh = .
+	replace mother`n'_in_hh = 1  if unique_id == mother_no`n'
+	bysort FAMILY_INTERVIEW_NUM_ survey_yr (mother`n'_in_hh): replace mother`n'_in_hh=mother`n'_in_hh[1]
+}
+
+browse unique_id AGE_INDV FAMILY_INTERVIEW_NUM_ survey_yr father_no father_unique_id  num_fathers father1_in_hh father2_in_hh father_no1 father_no2 mother_no mother_unique_id num_mothers mother1_in_hh mother2_in_hh mother_no1 mother_no2
+
+// now want to designate if that person's father / mother specifically is in HH
+gen father_in_hh = 0
+gen mother_in_hh = 0
+
+forvalues n=1/8{
+	replace father_in_hh = 1 if father_no`n' == father_unique_id & father`n'_in_hh == 1
+	replace mother_in_hh = 1 if mother_no`n' == mother_unique_id & mother`n'_in_hh == 1
+}
+
+
+// create lookup files
 preserve
 drop if FAMILY_INTERVIEW_NUM_ == .
 
-collapse (max) num_65up_hh (sum) age65up, by(FAMILY_INTERVIEW_NUM_ survey_yr)
+collapse (max) num_65up_hh (sum) age65up, by(FAMILY_INTERVIEW_NUM_ survey_yr) // this at HH level
 save "$temp/hh_comp_lookup.dta", replace
+
+restore
+
+preserve
+
+collapse (max) father_in_hh mother_in_hh, by(unique_id survey_yr) // this at unique level
+save "$temp/parent_coresidence_lookup.dta", replace
 
 restore
