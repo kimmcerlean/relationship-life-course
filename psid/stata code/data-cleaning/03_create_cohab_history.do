@@ -161,6 +161,9 @@ bysort unique_id (hh4_start): replace hh4_start=hh4_start[1]
 gen hh5_start=.
 replace hh5_start=change_yr if entrance_no==5
 bysort unique_id (hh5_start): replace hh5_start=hh5_start[1]
+gen hh6_start=.
+replace hh6_start=change_yr if entrance_no==6
+bysort unique_id (hh6_start): replace hh6_start=hh6_start[1]
 
 gen hh1_end=.
 replace hh1_end=change_yr if leave_no==1
@@ -177,6 +180,9 @@ bysort unique_id (hh4_end): replace hh4_end=hh4_end[1]
 gen hh5_end=.
 replace hh5_end=change_yr if leave_no==5
 bysort unique_id (hh5_end): replace hh5_end=hh5_end[1]
+gen hh6_end=.
+replace hh6_end=change_yr if leave_no==6
+bysort unique_id (hh6_end): replace hh6_end=hh6_end[1]
 
 sort unique_id survey_yr
 browse unique_id survey_yr moved change_yr entrance_no leave_no hh1_start hh1_end hh2_start hh2_end
@@ -450,11 +456,11 @@ collapse 	(mean) rel1_start rel2_start rel3_start rel4_start rel5_start rel1_end
 
 gen partner_id = unique_id // for later matching
 **# Create file
-save "$created_data/psid_composition_history.dta", replace
+save "$created_data/psid_composition_history.dta", replace  // this is what I use
 
 restore
 
-use "$created_data/psid_composition_history.dta", clear // this is what I use
+use "$created_data/psid_composition_history.dta", clear
 tab rel1_start partnered, m // do most ever partnered people at least have rel1 start date?
 tab hh1_start has_psid_gene, m
 tab SAMPLE has_psid_gene, m
