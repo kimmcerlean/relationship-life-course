@@ -518,3 +518,48 @@ collapse (max) father_in_hh mother_in_hh, by(unique_id survey_yr) // this at uni
 save "$temp/parent_coresidence_lookup.dta", replace
 
 restore
+
+******************************
+* Alt family file
+******************************
+// going to attempt to just get mother / father info to merge onto the couple file, because then can compile more info
+use "$temp/PSID_full_long.dta", clear
+drop father_unique_id
+drop mother_unique_id // want to use as lookup based on unique_id later
+
+gen in_sample=.
+replace in_sample=0 if SEQ_NUMBER_==0 | inrange(SEQ_NUMBER_,60,90)
+replace in_sample=0 if survey_yr==1968 & RELATION_==0 // no seq number in 1968
+replace in_sample=1 if inrange(SEQ_NUMBER_,1,59)
+replace in_sample=1 if survey_yr==1968 & RELATION_!=0 // no seq number in 1968
+
+gen moved = 0
+replace moved = 1 if inlist(MOVED_,1,2) & inlist(SPLITOFF_,1,3) // moved in
+replace moved = 2 if inlist(MOVED_,1,2) & inlist(SPLITOFF_,2,4) // splitoff
+replace moved = 3 if inlist(MOVED_,5,6) // moved out
+replace moved = 4 if MOVED_==1 & SPLITOFF_==0 // born
+replace moved = 5 if MOVED_==7
+
+label define moved 0 "no" 1 "Moved in" 2 "Splitoff" 3 "Moved out" 4 "Born" 5 "Died"
+label values moved moved
+
+tab MOVED_YEAR_ moved, m
+tab MOVED_YEAR_ MOVED_, m
+
+gen change_yr=.
+replace change_yr = MOVED_YEAR_ if MOVED_YEAR_ >0 & MOVED_YEAR_ <9000
+replace change_yr = SPLITOFF_YEAR_ if SPLITOFF_YEAR_ >0 & SPLITOFF_YEAR_ <9000
+
+tab change_yr moved, m
+
+keep unique_id FAMILY_INTERVIEW_NUM_ survey_yr in_sample moved change_yr MOVED_  MOVED_MONTH_ MOVED_YEAR_ SPLITOFF_ SPLITOFF_MONTH_ SPLITOFF_YEAR_
+browse unique_id FAMILY_INTERVIEW_NUM_ survey_yr in_sample moved change_yr MOVED_YEAR_ SPLITOFF_YEAR MOVED_ SPLITOFF_ MOVED_MONTH_  SPLITOFF_MONTH_ 
+
+gen father_unique_id = unique_id
+gen mother_unique_id = unique_id
+
+drop unique_id
+rename FAMILY_INTERVIEW_NUM_ fam_id
+
+save "$temp/parent_details_tomatch.dta", replace
+

@@ -28,6 +28,11 @@ browse main_per_id main_fam_id unique_id
 
 browse RELATION_* YRS_EDUC* AGE_INDV_* if inlist(unique_id, 16032, 16176)
 
+// make this to identify later if the parent of either member of the couple is in the household? these are at an individual level
+gen father_unique_id = (FATHER_1968_ID * 1000) + FATHER_PERSON_NUM
+gen mother_unique_id = (MOTHER_1968_ID * 1000) + MOTHER_PERSON_NUM
+browse father_unique_id FATHER_1968_ID FATHER_PERSON_NUM mother_unique_id MOTHER_1968_ID MOTHER_PERSON_NUM FATHER_1988_ID_HEAD MOTHER_1988_ID_HEAD FATHER_1988_ID_WIFE MOTHER_1988_ID_WIFE
+
 // want to see if I can make this time-fixed sample status
 recode main_fam_id (1/2999 = 1 "SRC cross-section") (3001/3441 = 2 "Immigrant 97") (3442/3511 = 3 "Immigrant 99") (4001/4851 = 4 "Immigrant 17/19") (5001/6999  = 5 "1968 Census") (7001/9043 = 6 "Latino 90") (9044/9308 = 7 "Latino 92"), gen(sample_type) 
 /* from FAQ:
@@ -52,14 +57,14 @@ forvalues y=1969/1997{
 	replace in_sample_`y'=1 if inrange(SEQ_NUMBER_`y',1,59)
 }
 
-forvalues y=1999(2)2021{
+forvalues y=1999(2)2023{
 	gen in_sample_`y'=.
 	replace in_sample_`y'=0 if SEQ_NUMBER_`y'==0 | inrange(SEQ_NUMBER_`y',60,90)
 	replace in_sample_`y'=1 if inrange(SEQ_NUMBER_`y',1,59)	
 }
 
 label define hh_status 0 "not in sample" 1 "in sample" 2 "institutionalized" 3 "new hh" 4 "died"
-foreach y of numlist 1969/1997 1999(2)2021{
+foreach y of numlist 1969/1997 1999(2)2023{
 	gen hh_status_`y'=.
 	replace hh_status_`y'=0 if SEQ_NUMBER_`y'==0 
 	replace hh_status_`y'=1 if inrange(SEQ_NUMBER_`y',1,20) // in sample
@@ -79,7 +84,7 @@ forvalues y=1969/1997{
 	label values relationship_`y' relationship
 }
 
-forvalues y=1999(2)2021{
+forvalues y=1999(2)2023{
 	gen relationship_`y'=.
 	replace relationship_`y'=0 if RELATION_`y'==0
 	replace relationship_`y'=1 if inlist(RELATION_`y',1,10)
@@ -89,11 +94,11 @@ forvalues y=1999(2)2021{
 }
 
 // browse unique_id in_sample_* relationship_* MARITAL_PAIRS_* HOUSEWORK_WIFE_* HOUSEWORK_HEAD_*
-keep unique_id main_fam_id sample_type SAMPLE SAMPLE_STATUS_TYPE PERMANENT_ATTRITION ANY_ATTRITION YR_NONRESPONSE_RECENT YR_NONRESPONSE_FIRST FIRST_BIRTH_YR LAST_BIRTH_YR NUM_BIRTHS in_sample_* hh_status* relationship_* MARITAL_PAIRS_* SEX AGE_INDV* YRS_EDUCATION_INDV* EDUC1_WIFE_* EDUC1_HEAD_* EDUC_WIFE_* EDUC_HEAD_* LABOR_INCOME_T1_WIFE_* LABOR_INCOME_T2_WIFE_* WAGES_T1_WIFE_* LABOR_INCOME_T1_HEAD_* LABOR_INCOME_T2_HEAD_* WAGES_T1_HEAD_* TAXABLE_T1_HEAD_WIFE_* WEEKLY_HRS1_T1_WIFE_* WEEKLY_HRS_T1_WIFE_* WEEKLY_HRS1_T1_HEAD_* WEEKLY_HRS_T1_HEAD_* HOUSEWORK_HEAD_* HOUSEWORK_WIFE_* TOTAL_HOUSEWORK_T1_HW_* MOST_HOUSEWORK_T1* EMPLOY_STATUS_HEAD_* EMPLOY_STATUS1_HEAD_* EMPLOY_STATUS2_HEAD_* EMPLOY_STATUS3_HEAD_* EMPLOY_STATUS_WIFE_* EMPLOY_STATUS1_WIFE_* EMPLOY_STATUS2_WIFE_* EMPLOY_STATUS3_WIFE_* NUM_CHILDREN_* AGE_YOUNG_CHILD_* AGE_HEAD_* AGE_WIFE_* TOTAL_INCOME_T1_FAMILY_* FAMILY_INTERVIEW_NUM_* EMPLOY_STATUS_T2_HEAD_* EMPLOY_STATUS_T2_WIFE_* WEEKLY_HRS_T2_HEAD_* WEEKLY_HRS_T2_WIFE_* START_YR_EMPLOYER_HEAD_* START_YR_EMPLOYER_WIFE_* START_YR_CURRENT_HEAD_* START_YR_CURRENT_WIFE_* START_YR_PREV_HEAD_* START_YR_PREV_WIFE_* YRS_CURRENT_EMPLOY_HEAD_* YRS_CURRENT_EMPLOY_WIFE_*  WEEKLY_HRS_T2_INDV_* ANNUAL_HOURS_T1_INDV_* ANNUAL_HOURS_T1_HEAD* ANNUAL_HOURS_T1_WIFE* EMPLOYMENT_INDV* LABOR_INCOME_T1_INDV* LABOR_INCOME_T2_INDV* TOTAL_INCOME_T1_INDV* BIRTH_YR_INDV_* RACE_* HOUSEWORK_INDV_* HISPANICITY_* CHILDCARE_HEAD_* CHILDCARE_WIFE_* ADULTCARE_HEAD_* ADULTCARE_WIFE_* TOTAL_INCOME_T2_FAMILY_* WEEKS_WORKED_T2_INDV_* NUM_IN_HH_* NEW_WIFE_YEAR_* MOVED_* MOVED_YEAR_* MOVED_MONTH_* MOVED_LASTSPRING_HEAD* SPLITOFF_YEAR_* SPLITOFF_MONTH_* DATA_RECORD_TYPE_* SPLITOFF_* FAMILY_ID_SO_* COMPOSITION_CHANGE_* NEW_HEAD_* NEW_WIFE_* NEW_HEAD_YEAR_* NEW_WIFE_YEAR_* BIRTHS_T1_HEAD_* BIRTHS_T1_WIFE_* BIRTHS_T1_BOTH_* COLLEGE_WIFE_* COLLEGE_HEAD_* COLLEGE_INDV_* BACHELOR_YR_INDV_* BACHELOR_YR_WIFE_* BACHELOR_YR_HEAD_* STUDENT_T1_INDV_* STUDENT_CURRENT_INDV_* ENROLLED_WIFE_* ENROLLED_HEAD_* YR_EDUC_UPD_HEAD_* YR_EDUC_UPD_WIFE_* HS_GRAD_HEAD_* ATTENDED_COLLEGE_HEAD_* HIGHEST_DEGREE_HEAD_* HS_GRAD_WIFE_* ATTENDED_COLLEGE_WIFE_* HIGHEST_DEGREE_WIFE_* DISABILITY_HEAD* DISABILITY_WIFE* DISABLE_HOWMUCH_HEAD* DISABLE_HOWMUCH_WIFE* SR_HEALTH_HEAD* SR_HEALTH_WIFE* SR_HEALTH_INDV*  SR_HEALTH_OTHER* YR_RETIRED_HEAD* YR_RETIRED_WIFE* FAMILY_AREA_WIFE* FAMILY_AREA_HEAD* LIVES_FAMILY_HEAD* LIVES_FAMILY_WIFE* FATHER_EDUC_HEAD* MOTHER_EDUC_HEAD* FATHER_EDUC_WIFE* MOTHER_EDUC_WIFE* FAMILY_STRUCTURE_WIFE* FAMILY_STRUCTURE_HEAD* HOUSE_STATUS* RELIGION_HEAD_* RELIGION_WIFE_* DENOMINATION_WIFE_* DENOMINATION_HEAD_* REGION_* RESPONDENT_* RESPONDENT_WHO_* MOVED_SPRING_MO_HEAD* MOVED_SPRING_YR_HEAD*
+keep unique_id main_fam_id sample_type SAMPLE SAMPLE_STATUS_TYPE PERMANENT_ATTRITION ANY_ATTRITION YR_NONRESPONSE_RECENT YR_NONRESPONSE_FIRST FIRST_BIRTH_YR LAST_BIRTH_YR NUM_BIRTHS in_sample_* hh_status* relationship_* MARITAL_PAIRS_* SEX AGE_INDV* YRS_EDUCATION_INDV* EDUC1_WIFE_* EDUC1_HEAD_* EDUC_WIFE_* EDUC_HEAD_* LABOR_INCOME_T1_WIFE_* LABOR_INCOME_T2_WIFE_* WAGES_T1_WIFE_* LABOR_INCOME_T1_HEAD_* LABOR_INCOME_T2_HEAD_* WAGES_T1_HEAD_* TAXABLE_T1_HEAD_WIFE_* WEEKLY_HRS1_T1_WIFE_* WEEKLY_HRS_T1_WIFE_* WEEKLY_HRS1_T1_HEAD_* WEEKLY_HRS_T1_HEAD_* HOUSEWORK_HEAD_* HOUSEWORK_WIFE_* TOTAL_HOUSEWORK_T1_HW_* MOST_HOUSEWORK_T1* EMPLOY_STATUS_HEAD_* EMPLOY_STATUS1_HEAD_* EMPLOY_STATUS2_HEAD_* EMPLOY_STATUS3_HEAD_* EMPLOY_STATUS_WIFE_* EMPLOY_STATUS1_WIFE_* EMPLOY_STATUS2_WIFE_* EMPLOY_STATUS3_WIFE_* NUM_CHILDREN_* AGE_YOUNG_CHILD_* AGE_HEAD_* AGE_WIFE_* TOTAL_INCOME_T1_FAMILY_* FAMILY_INTERVIEW_NUM_* EMPLOY_STATUS_T2_HEAD_* EMPLOY_STATUS_T2_WIFE_* WEEKLY_HRS_T2_HEAD_* WEEKLY_HRS_T2_WIFE_* START_YR_EMPLOYER_HEAD_* START_YR_EMPLOYER_WIFE_* START_YR_CURRENT_HEAD_* START_YR_CURRENT_WIFE_* START_YR_PREV_HEAD_* START_YR_PREV_WIFE_* YRS_CURRENT_EMPLOY_HEAD_* YRS_CURRENT_EMPLOY_WIFE_*  WEEKLY_HRS_T2_INDV_* ANNUAL_HOURS_T1_INDV_* ANNUAL_HOURS_T1_HEAD* ANNUAL_HOURS_T1_WIFE* EMPLOYMENT_INDV* LABOR_INCOME_T1_INDV* LABOR_INCOME_T2_INDV* TOTAL_INCOME_T1_INDV* BIRTH_YR_INDV_* RACE_* HOUSEWORK_INDV_* HISPANICITY_* CHILDCARE_HEAD_* CHILDCARE_WIFE_* ADULTCARE_HEAD_* ADULTCARE_WIFE_* TOTAL_INCOME_T2_FAMILY_* WEEKS_WORKED_T2_INDV_* NUM_IN_HH_* NEW_WIFE_YEAR_* MOVED_* MOVED_YEAR_* MOVED_MONTH_* MOVED_LASTSPRING_HEAD* SPLITOFF_YEAR_* SPLITOFF_MONTH_* DATA_RECORD_TYPE_* SPLITOFF_* FAMILY_ID_SO_* COMPOSITION_CHANGE_* NEW_HEAD_* NEW_WIFE_* NEW_HEAD_YEAR_* NEW_WIFE_YEAR_* BIRTHS_T1_HEAD_* BIRTHS_T1_WIFE_* BIRTHS_T1_BOTH_* BIRTHS_T1_OFUMS_* BIRTHS_T2_BOTH_* BIRTHS_T2_HEAD_* BIRTHS_T2_WIFE_* BIRTHS_T2_OFUMS_* COLLEGE_WIFE_* COLLEGE_HEAD_* COLLEGE_INDV_* BACHELOR_YR_INDV_* BACHELOR_YR_WIFE_* BACHELOR_YR_HEAD_* STUDENT_T1_INDV_* STUDENT_CURRENT_INDV_* ENROLLED_WIFE_* ENROLLED_HEAD_* YR_EDUC_UPD_HEAD_* YR_EDUC_UPD_WIFE_* HS_GRAD_HEAD_* ATTENDED_COLLEGE_HEAD_* HIGHEST_DEGREE_HEAD_* HS_GRAD_WIFE_* ATTENDED_COLLEGE_WIFE_* HIGHEST_DEGREE_WIFE_* DISABILITY_HEAD* DISABILITY_WIFE* DISABLE_HOWMUCH_HEAD* DISABLE_HOWMUCH_WIFE* SR_HEALTH_HEAD* SR_HEALTH_WIFE* SR_HEALTH_INDV*  SR_HEALTH_OTHER* YR_RETIRED_HEAD* YR_RETIRED_WIFE* FAMILY_AREA_WIFE* FAMILY_AREA_HEAD* LIVES_FAMILY_HEAD* LIVES_FAMILY_WIFE* FATHER_EDUC_HEAD* MOTHER_EDUC_HEAD* FATHER_EDUC_WIFE* MOTHER_EDUC_WIFE* FAMILY_STRUCTURE_WIFE* FAMILY_STRUCTURE_HEAD* HOUSE_STATUS* RELIGION_HEAD_* RELIGION_WIFE_* DENOMINATION_WIFE_* DENOMINATION_HEAD_* REGION_* RESPONDENT_* RESPONDENT_WHO_* MOVED_SPRING_MO_HEAD* MOVED_SPRING_YR_HEAD* OFUM*_ID_* OFUM*_REL_* father_unique_id FATHER_YR_BORN mother_unique_id MOTHER_YR_BORN PSID_COHORT
 
 gen partner_id = unique_id
 
-foreach y of numlist 1969/1997 1999(2)2021{
+foreach y of numlist 1969/1997 1999(2)2023{
 	gen in_sample_sp_`y' = in_sample_`y'
 	gen relationship_sp_`y' = relationship_`y'
 	gen MARITAL_PAIRS_sp_`y' = MARITAL_PAIRS_`y'
@@ -116,7 +121,7 @@ forvalues y=1969/1984{ // let's keep a few years to see if we have ANY data for 
 	drop MARITAL_PAIRS_sp_`y'
 }
 
-foreach var in AGE_INDV_ YRS_EDUCATION_INDV_ EDUC1_WIFE_ EDUC1_HEAD_ EDUC_WIFE_ EDUC_HEAD_ LABOR_INCOME_T1_WIFE_ LABOR_INCOME_T2_WIFE_ WAGES_T1_WIFE_ LABOR_INCOME_T1_HEAD_ LABOR_INCOME_T2_HEAD_ WAGES_T1_HEAD_ TAXABLE_T1_HEAD_WIFE_ WEEKLY_HRS1_T1_WIFE_ WEEKLY_HRS_T1_WIFE_ WEEKLY_HRS1_T1_HEAD_ WEEKLY_HRS_T1_HEAD_ HOUSEWORK_HEAD_ HOUSEWORK_WIFE_ TOTAL_HOUSEWORK_T1_HW_ MOST_HOUSEWORK_T1_ EMPLOY_STATUS_HEAD_ EMPLOY_STATUS1_HEAD_ EMPLOY_STATUS2_HEAD_ EMPLOY_STATUS3_HEAD_ EMPLOY_STATUS_WIFE_ EMPLOY_STATUS1_WIFE_ EMPLOY_STATUS2_WIFE_ EMPLOY_STATUS3_WIFE_ NUM_CHILDREN_ AGE_YOUNG_CHILD_ AGE_HEAD_ AGE_WIFE_ TOTAL_INCOME_T1_FAMILY_ FAMILY_INTERVIEW_NUM_ EMPLOY_STATUS_T2_HEAD_ EMPLOY_STATUS_T2_WIFE_ WEEKLY_HRS_T2_HEAD_ WEEKLY_HRS_T2_WIFE_ START_YR_EMPLOYER_HEAD_ START_YR_EMPLOYER_WIFE_ START_YR_CURRENT_HEAD_ START_YR_CURRENT_WIFE_ START_YR_PREV_HEAD_ START_YR_PREV_WIFE_ YRS_CURRENT_EMPLOY_HEAD_ YRS_CURRENT_EMPLOY_WIFE_  WEEKLY_HRS_T2_INDV_ ANNUAL_HOURS_T1_INDV_ ANNUAL_HOURS_T1_HEAD_ ANNUAL_HOURS_T1_WIFE_ EMPLOYMENT_INDV_ LABOR_INCOME_T1_INDV_ LABOR_INCOME_T2_INDV_ TOTAL_INCOME_T1_INDV_ BIRTH_YR_INDV_ RACE_1_HEAD_ RACE_2_HEAD_ RACE_3_HEAD_ RACE_4_HEAD_ RACE_1_WIFE_ RACE_2_WIFE_ RACE_3_WIFE_ RACE_4_WIFE_ HOUSEWORK_INDV_ HISPANICITY_HEAD_ HISPANICITY_WIFE_ CHILDCARE_HEAD_ CHILDCARE_WIFE_ ADULTCARE_HEAD_ ADULTCARE_WIFE_ TOTAL_INCOME_T2_FAMILY_ WEEKS_WORKED_T2_INDV_ NUM_IN_HH_ NEW_WIFE_YEAR_ MOVED_ MOVED_YEAR_ MOVED_MONTH_ SPLITOFF_YEAR_ SPLITOFF_MONTH_ DATA_RECORD_TYPE_ SPLITOFF_ MOVED_sp_ MOVED_YEAR_sp_ SPLITOFF_sp_ SPLITOFF_YEAR_sp_ FAMILY_ID_SO_ COMPOSITION_CHANGE_ NEW_HEAD_ NEW_WIFE_ NEW_WIFE_YEAR_ hh_status_ hh_status_sp_ BIRTHS_T1_HEAD_ BIRTHS_T1_WIFE_ BIRTHS_T1_BOTH_ COLLEGE_WIFE_ COLLEGE_HEAD_ COLLEGE_INDV_ BACHELOR_YR_INDV_ BACHELOR_YR_WIFE_ BACHELOR_YR_HEAD_ STUDENT_T1_INDV_ STUDENT_CURRENT_INDV_ ENROLLED_WIFE_ ENROLLED_HEAD_ NEW_HEAD_YEAR_ YR_EDUC_UPD_HEAD_ YR_EDUC_UPD_WIFE_ HS_GRAD_HEAD_ ATTENDED_COLLEGE_HEAD_ HIGHEST_DEGREE_HEAD_ HS_GRAD_WIFE_ ATTENDED_COLLEGE_WIFE_ HIGHEST_DEGREE_WIFE_ DISABILITY_HEAD_ DISABILITY_WIFE_ DISABLE_HOWMUCH_HEAD_ DISABLE_HOWMUCH_WIFE_ SR_HEALTH_HEAD_ SR_HEALTH_WIFE_ SR_HEALTH_INDV_ SR_HEALTH_OTHER_ YR_RETIRED_HEAD_ YR_RETIRED_WIFE_ FAMILY_AREA_WIFE_ FAMILY_AREA_HEAD_ LIVES_FAMILY_HEAD_ LIVES_FAMILY_WIFE_ FATHER_EDUC_HEAD_ MOTHER_EDUC_HEAD_ FATHER_EDUC_WIFE_ MOTHER_EDUC_WIFE_ FAMILY_STRUCTURE_WIFE_ FAMILY_STRUCTURE_HEAD_ HOUSE_STATUS_ RELIGION_HEAD_ RELIGION_WIFE_ DENOMINATION_WIFE_ DENOMINATION_HEAD_ REGION_ MOVED_LASTSPRING_HEAD_ RESPONDENT_ RESPONDENT_WHO_ MOVED_SPRING_MO_HEAD_ MOVED_SPRING_YR_HEAD_{
+foreach var in AGE_INDV_ YRS_EDUCATION_INDV_ EDUC1_WIFE_ EDUC1_HEAD_ EDUC_WIFE_ EDUC_HEAD_ LABOR_INCOME_T1_WIFE_ LABOR_INCOME_T2_WIFE_ WAGES_T1_WIFE_ LABOR_INCOME_T1_HEAD_ LABOR_INCOME_T2_HEAD_ WAGES_T1_HEAD_ TAXABLE_T1_HEAD_WIFE_ WEEKLY_HRS1_T1_WIFE_ WEEKLY_HRS_T1_WIFE_ WEEKLY_HRS1_T1_HEAD_ WEEKLY_HRS_T1_HEAD_ HOUSEWORK_HEAD_ HOUSEWORK_WIFE_ TOTAL_HOUSEWORK_T1_HW_ MOST_HOUSEWORK_T1_ EMPLOY_STATUS_HEAD_ EMPLOY_STATUS1_HEAD_ EMPLOY_STATUS2_HEAD_ EMPLOY_STATUS3_HEAD_ EMPLOY_STATUS_WIFE_ EMPLOY_STATUS1_WIFE_ EMPLOY_STATUS2_WIFE_ EMPLOY_STATUS3_WIFE_ NUM_CHILDREN_ AGE_YOUNG_CHILD_ AGE_HEAD_ AGE_WIFE_ TOTAL_INCOME_T1_FAMILY_ FAMILY_INTERVIEW_NUM_ EMPLOY_STATUS_T2_HEAD_ EMPLOY_STATUS_T2_WIFE_ WEEKLY_HRS_T2_HEAD_ WEEKLY_HRS_T2_WIFE_ START_YR_EMPLOYER_HEAD_ START_YR_EMPLOYER_WIFE_ START_YR_CURRENT_HEAD_ START_YR_CURRENT_WIFE_ START_YR_PREV_HEAD_ START_YR_PREV_WIFE_ YRS_CURRENT_EMPLOY_HEAD_ YRS_CURRENT_EMPLOY_WIFE_  WEEKLY_HRS_T2_INDV_ ANNUAL_HOURS_T1_INDV_ ANNUAL_HOURS_T1_HEAD_ ANNUAL_HOURS_T1_WIFE_ EMPLOYMENT_INDV_ LABOR_INCOME_T1_INDV_ LABOR_INCOME_T2_INDV_ TOTAL_INCOME_T1_INDV_ BIRTH_YR_INDV_ RACE_1_HEAD_ RACE_2_HEAD_ RACE_3_HEAD_ RACE_4_HEAD_ RACE_1_WIFE_ RACE_2_WIFE_ RACE_3_WIFE_ RACE_4_WIFE_ HOUSEWORK_INDV_ HISPANICITY_HEAD_ HISPANICITY_WIFE_ CHILDCARE_HEAD_ CHILDCARE_WIFE_ ADULTCARE_HEAD_ ADULTCARE_WIFE_ TOTAL_INCOME_T2_FAMILY_ WEEKS_WORKED_T2_INDV_ NUM_IN_HH_ NEW_WIFE_YEAR_ MOVED_ MOVED_YEAR_ MOVED_MONTH_ SPLITOFF_YEAR_ SPLITOFF_MONTH_ DATA_RECORD_TYPE_ SPLITOFF_ MOVED_sp_ MOVED_YEAR_sp_ SPLITOFF_sp_ SPLITOFF_YEAR_sp_ FAMILY_ID_SO_ COMPOSITION_CHANGE_ NEW_HEAD_ NEW_WIFE_ NEW_WIFE_YEAR_ hh_status_ hh_status_sp_ BIRTHS_T1_HEAD_ BIRTHS_T1_WIFE_ BIRTHS_T1_BOTH_ BIRTHS_T1_OFUMS_ BIRTHS_T2_BOTH_ BIRTHS_T2_HEAD_ BIRTHS_T2_WIFE_ BIRTHS_T2_OFUMS_ COLLEGE_WIFE_ COLLEGE_HEAD_ COLLEGE_INDV_ BACHELOR_YR_INDV_ BACHELOR_YR_WIFE_ BACHELOR_YR_HEAD_ STUDENT_T1_INDV_ STUDENT_CURRENT_INDV_ ENROLLED_WIFE_ ENROLLED_HEAD_ NEW_HEAD_YEAR_ YR_EDUC_UPD_HEAD_ YR_EDUC_UPD_WIFE_ HS_GRAD_HEAD_ ATTENDED_COLLEGE_HEAD_ HIGHEST_DEGREE_HEAD_ HS_GRAD_WIFE_ ATTENDED_COLLEGE_WIFE_ HIGHEST_DEGREE_WIFE_ DISABILITY_HEAD_ DISABILITY_WIFE_ DISABLE_HOWMUCH_HEAD_ DISABLE_HOWMUCH_WIFE_ SR_HEALTH_HEAD_ SR_HEALTH_WIFE_ SR_HEALTH_INDV_ SR_HEALTH_OTHER_ YR_RETIRED_HEAD_ YR_RETIRED_WIFE_ FAMILY_AREA_WIFE_ FAMILY_AREA_HEAD_ LIVES_FAMILY_HEAD_ LIVES_FAMILY_WIFE_ FATHER_EDUC_HEAD_ MOTHER_EDUC_HEAD_ FATHER_EDUC_WIFE_ MOTHER_EDUC_WIFE_ FAMILY_STRUCTURE_WIFE_ FAMILY_STRUCTURE_HEAD_ HOUSE_STATUS_ RELIGION_HEAD_ RELIGION_WIFE_ DENOMINATION_WIFE_ DENOMINATION_HEAD_ REGION_ MOVED_LASTSPRING_HEAD_ RESPONDENT_ RESPONDENT_WHO_ MOVED_SPRING_MO_HEAD_ MOVED_SPRING_YR_HEAD_ OFUM*_ID_ OFUM*_REL_{
 	forvalues y=1968/1984{
 		capture drop `var'`y' // in case var not in all years
 	}
@@ -152,7 +157,7 @@ use "$temp/individual_vars_imputation_wide.dta", clear
 // misstable summarize LABOR_INCOME_T2_INDV_*, all
 // misstable summarize WEEKLY_HRS_T2_INDV_*, all
 // misstable summarize ANNUAL_HOURS_T1_INDV_*, all
-misstable summarize *_INDV_* RESPONDENT*, all // okay so NO missings ever LOL, always 0
+misstable summarize *_INDV_* RESPONDENT* *OFUMS* OFUM*, all // okay so NO missings ever LOL, always 0
 // misstable summarize LABOR_INCOME_T2_HEAD_*, all // okay, it is right for head and wife I think?
 misstable summarize *_HEAD_*, all
 misstable summarize *_WIFE_*, all
@@ -178,7 +183,7 @@ forvalues y=1985/1997{
 	capture replace SR_HEALTH_INDV_`y'=. if in_sample_`y'==0
 }
 
-forvalues y=1999(2)2021{
+forvalues y=1999(2)2023{
 	capture replace AGE_INDV_`y'=. if in_sample_`y'==0
 	capture replace EMPLOYMENT_INDV_`y'=. if in_sample_`y'==0
 	capture replace YRS_EDUCATION_INDV_`y'=. if in_sample_`y'==0
@@ -205,7 +210,7 @@ browse unique_id birth_yr BIRTH_YR_INDV_*
 
 drop BIRTH_YR_INDV_*
 
-reshape long MARITAL_PAIRS_ in_sample_ relationship_ FAMILY_INTERVIEW_NUM_ AGE_INDV_ YRS_EDUCATION_INDV_ EDUC1_WIFE_ EDUC1_HEAD_ EDUC_WIFE_ EDUC_HEAD_ LABOR_INCOME_T1_WIFE_ LABOR_INCOME_T2_WIFE_ WAGES_T1_WIFE_ LABOR_INCOME_T1_HEAD_ LABOR_INCOME_T2_HEAD_ WAGES_T1_HEAD_ TAXABLE_T1_HEAD_WIFE_ WEEKLY_HRS1_T1_WIFE_ WEEKLY_HRS_T1_WIFE_ WEEKLY_HRS1_T1_HEAD_ WEEKLY_HRS_T1_HEAD_ HOUSEWORK_HEAD_ HOUSEWORK_WIFE_ TOTAL_HOUSEWORK_T1_HW_ MOST_HOUSEWORK_T1_ EMPLOY_STATUS_HEAD_ EMPLOY_STATUS1_HEAD_ EMPLOY_STATUS2_HEAD_ EMPLOY_STATUS3_HEAD_ EMPLOY_STATUS_WIFE_ EMPLOY_STATUS1_WIFE_ EMPLOY_STATUS2_WIFE_ EMPLOY_STATUS3_WIFE_ NUM_CHILDREN_ AGE_YOUNG_CHILD_ AGE_HEAD_ AGE_WIFE_ TOTAL_INCOME_T1_FAMILY_ EMPLOY_STATUS_T2_HEAD_ EMPLOY_STATUS_T2_WIFE_ WEEKLY_HRS_T2_HEAD_ WEEKLY_HRS_T2_WIFE_ START_YR_EMPLOYER_HEAD_ START_YR_EMPLOYER_WIFE_ START_YR_CURRENT_HEAD_ START_YR_CURRENT_WIFE_ START_YR_PREV_HEAD_ START_YR_PREV_WIFE_ YRS_CURRENT_EMPLOY_HEAD_ YRS_CURRENT_EMPLOY_WIFE_  WEEKLY_HRS_T2_INDV_ ANNUAL_HOURS_T1_INDV_ ANNUAL_HOURS_T1_HEAD_ ANNUAL_HOURS_T1_WIFE_ EMPLOYMENT_INDV_ LABOR_INCOME_T1_INDV_ LABOR_INCOME_T2_INDV_ TOTAL_INCOME_T1_INDV_ RACE_1_HEAD_ RACE_2_HEAD_ RACE_3_HEAD_ RACE_4_HEAD_ RACE_1_WIFE_ RACE_2_WIFE_ RACE_3_WIFE_ RACE_4_WIFE_ HOUSEWORK_INDV_ HISPANICITY_HEAD_ HISPANICITY_WIFE_ CHILDCARE_HEAD_ CHILDCARE_WIFE_ ADULTCARE_HEAD_ ADULTCARE_WIFE_ TOTAL_INCOME_T2_FAMILY_ WEEKS_WORKED_T2_INDV_ NUM_IN_HH_ MOVED_ MOVED_YEAR_ MOVED_MONTH_ SPLITOFF_YEAR_ SPLITOFF_MONTH_ DATA_RECORD_TYPE_ SPLITOFF_ MOVED_sp_ MOVED_YEAR_sp_ SPLITOFF_sp_ SPLITOFF_YEAR_sp_ FAMILY_ID_SO_ COMPOSITION_CHANGE_ NEW_HEAD_ NEW_WIFE_ NEW_HEAD_YEAR_ NEW_WIFE_YEAR_ hh_status_ hh_status_sp_ in_sample_sp_ relationship_sp_ MARITAL_PAIRS_sp_ BIRTHS_T1_HEAD_ BIRTHS_T1_WIFE_ BIRTHS_T1_BOTH_ COLLEGE_WIFE_ COLLEGE_HEAD_ COLLEGE_INDV_ BACHELOR_YR_INDV_ BACHELOR_YR_WIFE_ BACHELOR_YR_HEAD_ STUDENT_T1_INDV_ STUDENT_CURRENT_INDV_ ENROLLED_WIFE_ ENROLLED_HEAD_ YR_EDUC_UPD_HEAD_ YR_EDUC_UPD_WIFE_ HS_GRAD_HEAD_ ATTENDED_COLLEGE_HEAD_ HIGHEST_DEGREE_HEAD_ HS_GRAD_WIFE_ ATTENDED_COLLEGE_WIFE_ HIGHEST_DEGREE_WIFE_ DISABILITY_HEAD_ DISABILITY_WIFE_ DISABLE_HOWMUCH_HEAD_ DISABLE_HOWMUCH_WIFE_ SR_HEALTH_HEAD_ SR_HEALTH_WIFE_ SR_HEALTH_INDV_ SR_HEALTH_OTHER_ YR_RETIRED_HEAD_ YR_RETIRED_WIFE_ FAMILY_AREA_WIFE_ FAMILY_AREA_HEAD_ LIVES_FAMILY_HEAD_ LIVES_FAMILY_WIFE_ FATHER_EDUC_HEAD_ MOTHER_EDUC_HEAD_ FATHER_EDUC_WIFE_ MOTHER_EDUC_WIFE_ FAMILY_STRUCTURE_WIFE_ FAMILY_STRUCTURE_HEAD_ HOUSE_STATUS_ RELIGION_HEAD_ RELIGION_WIFE_ DENOMINATION_WIFE_ DENOMINATION_HEAD_ REGION_ MOVED_LASTSPRING_HEAD_ RESPONDENT_ RESPONDENT_WHO_ MOVED_SPRING_MO_HEAD_ MOVED_SPRING_YR_HEAD_, ///
+reshape long MARITAL_PAIRS_ in_sample_ relationship_ FAMILY_INTERVIEW_NUM_ AGE_INDV_ YRS_EDUCATION_INDV_ EDUC1_WIFE_ EDUC1_HEAD_ EDUC_WIFE_ EDUC_HEAD_ LABOR_INCOME_T1_WIFE_ LABOR_INCOME_T2_WIFE_ WAGES_T1_WIFE_ LABOR_INCOME_T1_HEAD_ LABOR_INCOME_T2_HEAD_ WAGES_T1_HEAD_ TAXABLE_T1_HEAD_WIFE_ WEEKLY_HRS1_T1_WIFE_ WEEKLY_HRS_T1_WIFE_ WEEKLY_HRS1_T1_HEAD_ WEEKLY_HRS_T1_HEAD_ HOUSEWORK_HEAD_ HOUSEWORK_WIFE_ TOTAL_HOUSEWORK_T1_HW_ MOST_HOUSEWORK_T1_ EMPLOY_STATUS_HEAD_ EMPLOY_STATUS1_HEAD_ EMPLOY_STATUS2_HEAD_ EMPLOY_STATUS3_HEAD_ EMPLOY_STATUS_WIFE_ EMPLOY_STATUS1_WIFE_ EMPLOY_STATUS2_WIFE_ EMPLOY_STATUS3_WIFE_ NUM_CHILDREN_ AGE_YOUNG_CHILD_ AGE_HEAD_ AGE_WIFE_ TOTAL_INCOME_T1_FAMILY_ EMPLOY_STATUS_T2_HEAD_ EMPLOY_STATUS_T2_WIFE_ WEEKLY_HRS_T2_HEAD_ WEEKLY_HRS_T2_WIFE_ START_YR_EMPLOYER_HEAD_ START_YR_EMPLOYER_WIFE_ START_YR_CURRENT_HEAD_ START_YR_CURRENT_WIFE_ START_YR_PREV_HEAD_ START_YR_PREV_WIFE_ YRS_CURRENT_EMPLOY_HEAD_ YRS_CURRENT_EMPLOY_WIFE_  WEEKLY_HRS_T2_INDV_ ANNUAL_HOURS_T1_INDV_ ANNUAL_HOURS_T1_HEAD_ ANNUAL_HOURS_T1_WIFE_ EMPLOYMENT_INDV_ LABOR_INCOME_T1_INDV_ LABOR_INCOME_T2_INDV_ TOTAL_INCOME_T1_INDV_ RACE_1_HEAD_ RACE_2_HEAD_ RACE_3_HEAD_ RACE_4_HEAD_ RACE_1_WIFE_ RACE_2_WIFE_ RACE_3_WIFE_ RACE_4_WIFE_ HOUSEWORK_INDV_ HISPANICITY_HEAD_ HISPANICITY_WIFE_ CHILDCARE_HEAD_ CHILDCARE_WIFE_ ADULTCARE_HEAD_ ADULTCARE_WIFE_ TOTAL_INCOME_T2_FAMILY_ WEEKS_WORKED_T2_INDV_ NUM_IN_HH_ MOVED_ MOVED_YEAR_ MOVED_MONTH_ SPLITOFF_YEAR_ SPLITOFF_MONTH_ DATA_RECORD_TYPE_ SPLITOFF_ MOVED_sp_ MOVED_YEAR_sp_ SPLITOFF_sp_ SPLITOFF_YEAR_sp_ FAMILY_ID_SO_ COMPOSITION_CHANGE_ NEW_HEAD_ NEW_WIFE_ NEW_HEAD_YEAR_ NEW_WIFE_YEAR_ hh_status_ hh_status_sp_ in_sample_sp_ relationship_sp_ MARITAL_PAIRS_sp_ BIRTHS_T1_HEAD_ BIRTHS_T1_WIFE_ BIRTHS_T1_BOTH_ BIRTHS_T1_OFUMS_ BIRTHS_T2_BOTH_ BIRTHS_T2_HEAD_ BIRTHS_T2_WIFE_ BIRTHS_T2_OFUMS_ COLLEGE_WIFE_ COLLEGE_HEAD_ COLLEGE_INDV_ BACHELOR_YR_INDV_ BACHELOR_YR_WIFE_ BACHELOR_YR_HEAD_ STUDENT_T1_INDV_ STUDENT_CURRENT_INDV_ ENROLLED_WIFE_ ENROLLED_HEAD_ YR_EDUC_UPD_HEAD_ YR_EDUC_UPD_WIFE_ HS_GRAD_HEAD_ ATTENDED_COLLEGE_HEAD_ HIGHEST_DEGREE_HEAD_ HS_GRAD_WIFE_ ATTENDED_COLLEGE_WIFE_ HIGHEST_DEGREE_WIFE_ DISABILITY_HEAD_ DISABILITY_WIFE_ DISABLE_HOWMUCH_HEAD_ DISABLE_HOWMUCH_WIFE_ SR_HEALTH_HEAD_ SR_HEALTH_WIFE_ SR_HEALTH_INDV_ SR_HEALTH_OTHER_ YR_RETIRED_HEAD_ YR_RETIRED_WIFE_ FAMILY_AREA_WIFE_ FAMILY_AREA_HEAD_ LIVES_FAMILY_HEAD_ LIVES_FAMILY_WIFE_ FATHER_EDUC_HEAD_ MOTHER_EDUC_HEAD_ FATHER_EDUC_WIFE_ MOTHER_EDUC_WIFE_ FAMILY_STRUCTURE_WIFE_ FAMILY_STRUCTURE_HEAD_ HOUSE_STATUS_ RELIGION_HEAD_ RELIGION_WIFE_ DENOMINATION_WIFE_ DENOMINATION_HEAD_ REGION_ MOVED_LASTSPRING_HEAD_ RESPONDENT_ RESPONDENT_WHO_ MOVED_SPRING_MO_HEAD_ MOVED_SPRING_YR_HEAD_ OFUM1_ID_ OFUM2_ID_ OFUM3_ID_ OFUM4_ID_ OFUM1_REL_ OFUM2_REL_ OFUM3_REL_ OFUM4_REL_, ///
  i(unique_id partner_id rel_start_all min_dur max_dur rel_end_all last_yr_observed ended SEX) j(survey_yr)
 
 // want consecutive waves to make some things easier later
@@ -237,12 +242,12 @@ browse unique_id survey_yr FAMILY_INTERVIEW_NUM_ TAXABLE_T1_HEAD_WIFE TOTAL_INCO
 
 gen earnings_t1_wife=.
 replace earnings_t1_wife = LABOR_INCOME_T1_WIFE_ if inrange(survey_yr,1968,1993)
-replace earnings_t1_wife = WAGES_T1_WIFE_ if inrange(survey_yr,1994,2021)
+replace earnings_t1_wife = WAGES_T1_WIFE_ if inrange(survey_yr,1994,2023)
 replace earnings_t1_wife=. if earnings_t1_wife== 9999999
 
 gen earnings_t1_head=.
 replace earnings_t1_head = LABOR_INCOME_T1_HEAD if inrange(survey_yr,1968,1993)
-replace earnings_t1_head = WAGES_T1_HEAD if inrange(survey_yr,1994,2021)
+replace earnings_t1_head = WAGES_T1_HEAD if inrange(survey_yr,1994,2023)
 replace earnings_t1_head=. if earnings_t1_head== 9999999
 
 // t-1 weekly hours
@@ -300,12 +305,12 @@ tab EMPLOY_STATUS1_HEAD_ EMPLOY_STATUS2_HEAD_ if num_emp_status_head ==2
  
 gen employment_status_head = . // okay just going to call this primary employment status actaully
 replace employment_status_head = EMPLOY_STATUS_HEAD_ if inrange(survey_yr,1985,1993)
-replace employment_status_head = EMPLOY_STATUS1_HEAD_ if inrange(survey_yr,1994,2021) //  & inlist(num_emp_status_head,0,1)
+replace employment_status_head = EMPLOY_STATUS1_HEAD_ if inrange(survey_yr,1994,2023) //  & inlist(num_emp_status_head,0,1)
 recode employment_status_head (22/99=.)
 
 gen employment_status_wife = . // okay just going to call this primary employment status actaully
 replace employment_status_wife = EMPLOY_STATUS_WIFE_ if inrange(survey_yr,1985,1993)
-replace employment_status_wife = EMPLOY_STATUS1_WIFE_ if inrange(survey_yr,1994,2021) //  & inlist(num_emp_status_head,0,1)
+replace employment_status_wife = EMPLOY_STATUS1_WIFE_ if inrange(survey_yr,1994,2023) //  & inlist(num_emp_status_head,0,1)
 recode employment_status_wife (9/99=.)
 
 label define employment_status 1 "working now" 2 "temp laid off" 3 "unemployed" 4 "retired" 5 "disabled" 6 "housewife" 7 "student" 8 "other"
@@ -510,7 +515,7 @@ replace educ_head_est=4 if completed_college_head==1 & college_degree_head==2
 
 gen educ_head=.
 replace educ_head=educ_head_early if inrange(survey_yr,1968,1990)
-replace educ_head=educ_head_1975 if inrange(survey_yr,1991,2021)
+replace educ_head=educ_head_1975 if inrange(survey_yr,1991,2023)
 
 tab educ_head educ_head_est, m
 tab educ_completed educ_head_est if relationship_==1, m
@@ -529,7 +534,7 @@ replace educ_wife_est=4 if completed_college_wife==1 & college_degree_wife==2
 
 gen educ_wife=.
 replace educ_wife=educ_wife_early if inrange(survey_yr,1968,1990)
-replace educ_wife=educ_wife_1975 if inrange(survey_yr,1991,2021)
+replace educ_wife=educ_wife_1975 if inrange(survey_yr,1991,2023)
 tab survey_yr educ_wife, m 
 
 replace educ_wife_est = educ_completed if educ_wife_est==. & educ_completed!=.
@@ -651,10 +656,10 @@ replace race_3_wife_rec=6 if RACE_3_WIFE_==7 | (inrange(survey_yr,1990,2003) & R
 gen race_4_wife_rec=.
 replace race_4_wife_rec=1 if RACE_4_WIFE_==1
 replace race_4_wife_rec=2 if RACE_4_WIFE_==2
-replace race_4_wife_rec=3 if (inrange(survey_yr,1985,2021) & RACE_4_WIFE_==3)
-replace race_4_wife_rec=4 if (inrange(survey_yr,1985,2021) & RACE_4_WIFE_==4)
+replace race_4_wife_rec=3 if (inrange(survey_yr,1985,2023) & RACE_4_WIFE_==3)
+replace race_4_wife_rec=4 if (inrange(survey_yr,1985,2023) & RACE_4_WIFE_==4)
 replace race_4_wife_rec=5 if (inrange(survey_yr,1968,1984) & RACE_4_WIFE_==3) | (inrange(survey_yr,1990,2003) & RACE_4_WIFE_==5)
-replace race_4_wife_rec=6 if RACE_4_WIFE_==7 | (inrange(survey_yr,1990,2003) & RACE_4_WIFE_==6) | (inrange(survey_yr,2005,2021) & RACE_4_WIFE_==5) | (inrange(survey_yr,1985,1989) & RACE_4_WIFE_==8)
+replace race_4_wife_rec=6 if RACE_4_WIFE_==7 | (inrange(survey_yr,1990,2003) & RACE_4_WIFE_==6) | (inrange(survey_yr,2005,2023) & RACE_4_WIFE_==5) | (inrange(survey_yr,1985,1989) & RACE_4_WIFE_==8)
 
 browse unique_id race_1_head_rec race_2_head_rec race_3_head_rec race_4_head_rec
 
@@ -734,7 +739,7 @@ recode REGION_ (0=.) (9=.)
 // religion
 tabstat RELIGION_WIFE_ RELIGION_HEAD_, by(survey_yr) // just to get a sense of when asked to start.
 label values RELIGION_WIFE_ RELIGION_HEAD_ . // these values are v wrong
-/* head was 1970-1977, 1979-2021. wife was 1976, 1985-2021, but not nec every year (carried through in some cases)
+/* head was 1970-1977, 1979-2023. wife was 1976, 1985-2023, but not nec every year (carried through in some cases)
 The codes changed wildly over the years?
 1970-1984 - 0: No or Other, 1: Baptist, 2: Methodist, 3: Episcopalian, 4: Presbyterian, 5: Lutheran, 6: Unitarian, Mormon, and related, 7: Other Protestant, 8: Catholic, 9: Jewish
 1985-1987 - 0: None, 1: Roman Catholic, 2: Jewish, 3: Baptist, 4: Lutheran, 5: Methodist, 6: Presbyterian, 7: Episcopalian, 8: Protestant unspecified, 9: Other Protestant, 10: Other non-Christian, 11: LDS, 12: Jehvah's Witnesses
@@ -745,7 +750,7 @@ The codes changed wildly over the years?
 -- so, up to 20 is the same as above, just added 21-25.
 1994-2017 - 0: None, 1: Catholic, 2: Jewish, 8: Protestant unspecified, 10: Other non-Christian, 13: Greek Orthodox, 97: Other, 98: DK, 99: NA // so these large categories do match above in terms of coding (like 8 is the same, 13, etc. just way less groups)
 -- In 1994, DENOMINATION was added as a separate question, so all of the detail goes to a separate question (which I don't believe I pulled in at the moment). so, I guess decide if that is worth adding.
-2019-2021 - 0: Inapp (no partner), 1: None, 2: Atheist, 3: Agnostic, 4: Roman Catholic, 5: Greek Orthodox, 6: Baptist, 7: Episcopalian, 8: Jehovah's Witness, 9: Lutheran, 10: Methodist, 11: Pentecostal, 12: Presbyterian, 13: Protestant unspecified, 14: Christian, unspecified, 15: Christian, non-denominational, 16: Jewish, 17: Muslim, 18: Buddhist, 19: Other non-christian, 20: Other protestant, 21: LDS, 22: Unitarian, 23: Christian Science, 24: Adventist, 25: Amish, 26: Quaker, 27: Church of God, 28: United Church of Christ, 29: Reformed, 30: Disciples of Christ, 31: Churches of Christ, 97: Other, 98: DK, 99: NA
+2019-2023 - 0: Inapp (no partner), 1: None, 2: Atheist, 3: Agnostic, 4: Roman Catholic, 5: Greek Orthodox, 6: Baptist, 7: Episcopalian, 8: Jehovah's Witness, 9: Lutheran, 10: Methodist, 11: Pentecostal, 12: Presbyterian, 13: Protestant unspecified, 14: Christian, unspecified, 15: Christian, non-denominational, 16: Jewish, 17: Muslim, 18: Buddhist, 19: Other non-christian, 20: Other protestant, 21: LDS, 22: Unitarian, 23: Christian Science, 24: Adventist, 25: Amish, 26: Quaker, 27: Church of God, 28: United Church of Christ, 29: Reformed, 30: Disciples of Christ, 31: Churches of Christ, 97: Other, 98: DK, 99: NA
 -- lol so DENOMINATION ends in 2017 and is integrated BACK to this question lord and the codes change AGAIN.
 
 Denomination
@@ -759,184 +764,184 @@ browse unique_id survey_yr RELIGION_HEAD_ DENOMINATION_HEAD_ RELIGION_WIFE_ DENO
 gen religion_head=.
 replace religion_head=0 if inrange(survey_yr,1985,1993) & RELIGION_HEAD== 0 // no religion
 replace religion_head=0 if inrange(survey_yr,1994,2017) & RELIGION_HEAD== 0 // no religion
-replace religion_head=0 if inrange(survey_yr,2019,2021) & RELIGION_HEAD== 1 // no religion
-replace religion_head=1 if inrange(survey_yr,2019,2021) & RELIGION_HEAD== 2 // atheist
-replace religion_head=2 if inrange(survey_yr,2019,2021) & RELIGION_HEAD== 3 // agnostic
+replace religion_head=0 if inrange(survey_yr,2019,2023) & RELIGION_HEAD== 1 // no religion
+replace religion_head=1 if inrange(survey_yr,2019,2023) & RELIGION_HEAD== 2 // atheist
+replace religion_head=2 if inrange(survey_yr,2019,2023) & RELIGION_HEAD== 3 // agnostic
 replace religion_head=3 if inrange(survey_yr,1985,1993) & RELIGION_HEAD== 1 // catholic
 replace religion_head=3 if inrange(survey_yr,1994,2017) & RELIGION_HEAD== 1 // catholic
-replace religion_head=3 if inrange(survey_yr,2019,2021) & RELIGION_HEAD== 4 // catholic
+replace religion_head=3 if inrange(survey_yr,2019,2023) & RELIGION_HEAD== 4 // catholic
 replace religion_head=4 if inrange(survey_yr,1985,1993) & RELIGION_HEAD== 2 // jwish
 replace religion_head=4 if inrange(survey_yr,1994,2017) & RELIGION_HEAD== 2 // jwish
-replace religion_head=4 if inrange(survey_yr,2019,2021) & RELIGION_HEAD== 16 // jwish
+replace religion_head=4 if inrange(survey_yr,2019,2023) & RELIGION_HEAD== 16 // jwish
 replace religion_head=5 if inrange(survey_yr,1985,1993) & RELIGION_HEAD== 13 // greek orthodox
 replace religion_head=5 if inrange(survey_yr,1994,2017) & RELIGION_HEAD== 13 // greek orthodox
-replace religion_head=5 if inrange(survey_yr,2019,2021) & RELIGION_HEAD== 5 // greek orthodox
+replace religion_head=5 if inrange(survey_yr,2019,2023) & RELIGION_HEAD== 5 // greek orthodox
 replace religion_head=6 if inrange(survey_yr,1985,1993) & RELIGION_HEAD== 3 // baptist
 replace religion_head=6 if inrange(survey_yr,1994,2017) & RELIGION_HEAD== 8 & DENOMINATION_HEAD_== 3 // baptist
-replace religion_head=6 if inrange(survey_yr,2019,2021) & RELIGION_HEAD== 6 // baptist
+replace religion_head=6 if inrange(survey_yr,2019,2023) & RELIGION_HEAD== 6 // baptist
 replace religion_head=7 if inrange(survey_yr,1985,1993) & RELIGION_HEAD== 7  // episco
 replace religion_head=7 if inrange(survey_yr,1994,2017) & RELIGION_HEAD== 8 & DENOMINATION_HEAD_== 7 // episco
-replace religion_head=7 if inrange(survey_yr,2019,2021) & RELIGION_HEAD== 7  // episco
+replace religion_head=7 if inrange(survey_yr,2019,2023) & RELIGION_HEAD== 7  // episco
 replace religion_head=8 if inrange(survey_yr,1985,1993) & RELIGION_HEAD== 12 // jehovah
 replace religion_head=8 if inrange(survey_yr,1994,2017) & RELIGION_HEAD== 8 & DENOMINATION_HEAD_== 12 // jehovah
-replace religion_head=8 if inrange(survey_yr,2019,2021) & RELIGION_HEAD== 8 // jehovah
+replace religion_head=8 if inrange(survey_yr,2019,2023) & RELIGION_HEAD== 8 // jehovah
 replace religion_head=9 if inrange(survey_yr,1985,1993) & RELIGION_HEAD== 4  // lutheran
 replace religion_head=9 if inrange(survey_yr,1994,2017) & RELIGION_HEAD== 8 & DENOMINATION_HEAD_== 4 // lutheran
-replace religion_head=9 if inrange(survey_yr,2019,2021) & RELIGION_HEAD== 9 // lutheran
+replace religion_head=9 if inrange(survey_yr,2019,2023) & RELIGION_HEAD== 9 // lutheran
 replace religion_head=10 if inrange(survey_yr,1985,1993) & RELIGION_HEAD== 5  // methodist
 replace religion_head=10 if inrange(survey_yr,1994,2017) & RELIGION_HEAD== 8 & DENOMINATION_HEAD_== 5 // methodist
-replace religion_head=10 if inrange(survey_yr,2019,2021) & RELIGION_HEAD== 10 // methodist
+replace religion_head=10 if inrange(survey_yr,2019,2023) & RELIGION_HEAD== 10 // methodist
 replace religion_head=11 if inrange(survey_yr,1985,1993) & RELIGION_HEAD== 18 // pentecostal 
 replace religion_head=11 if inrange(survey_yr,1994,2017) & RELIGION_HEAD== 8 & DENOMINATION_HEAD_== 18 // pentecostal
-replace religion_head=11 if inrange(survey_yr,2019,2021) & RELIGION_HEAD== 11 // pentecostal 
+replace religion_head=11 if inrange(survey_yr,2019,2023) & RELIGION_HEAD== 11 // pentecostal 
 replace religion_head=12 if inrange(survey_yr,1985,1993) & RELIGION_HEAD== 6  // presby
 replace religion_head=12 if inrange(survey_yr,1994,2017) & RELIGION_HEAD== 8 & DENOMINATION_HEAD_== 6 // presby
-replace religion_head=12 if inrange(survey_yr,2019,2021) & RELIGION_HEAD== 12  // presby
+replace religion_head=12 if inrange(survey_yr,2019,2023) & RELIGION_HEAD== 12  // presby
 replace religion_head=13 if inrange(survey_yr,1985,1993) & RELIGION_HEAD== 8  // protestant un
 replace religion_head=13 if inrange(survey_yr,1994,2017) & RELIGION_HEAD== 8 & DENOMINATION_HEAD_== 8 // protestant un
-replace religion_head=13 if inrange(survey_yr,2019,2021) & RELIGION_HEAD== 13 // protestant un
+replace religion_head=13 if inrange(survey_yr,2019,2023) & RELIGION_HEAD== 13 // protestant un
 replace religion_head=14 if inrange(survey_yr,1985,1993) & RELIGION_HEAD== 9 // other prot
 replace religion_head=14 if inrange(survey_yr,1994,2017) & RELIGION_HEAD== 8 & inlist(DENOMINATION_HEAD_,9,97,98,99) // other prot
-replace religion_head=14 if inrange(survey_yr,2019,2021) & RELIGION_HEAD== 20 // other prot
+replace religion_head=14 if inrange(survey_yr,2019,2023) & RELIGION_HEAD== 20 // other prot
 replace religion_head=15 if inrange(survey_yr,1985,1993) & inlist(RELIGION_HEAD,10,14)  // other christian
 replace religion_head=15 if inrange(survey_yr,1994,2017) & RELIGION_HEAD== 10  // other christian
 replace religion_head=15 if inrange(survey_yr,1994,2017) & RELIGION_HEAD== 8 & DENOMINATION_HEAD_== 14  // other christian
-replace religion_head=15 if inrange(survey_yr,2019,2021) & inlist(RELIGION_HEAD,14,15)  // other christian
-replace religion_head=16 if inrange(survey_yr,2019,2021) & RELIGION_HEAD== 17 // muslim
-replace religion_head=17 if inrange(survey_yr,2019,2021) & RELIGION_HEAD== 18 // buddhist
-replace religion_head=18 if inrange(survey_yr,2019,2021) & RELIGION_HEAD== 19 // other non-christian
+replace religion_head=15 if inrange(survey_yr,2019,2023) & inlist(RELIGION_HEAD,14,15)  // other christian
+replace religion_head=16 if inrange(survey_yr,2019,2023) & RELIGION_HEAD== 17 // muslim
+replace religion_head=17 if inrange(survey_yr,2019,2023) & RELIGION_HEAD== 18 // buddhist
+replace religion_head=18 if inrange(survey_yr,2019,2023) & RELIGION_HEAD== 19 // other non-christian
 replace religion_head=19 if inrange(survey_yr,1985,1993) & RELIGION_HEAD== 11 // lds
 replace religion_head=19 if inrange(survey_yr,1994,2017) & RELIGION_HEAD== 8 & DENOMINATION_HEAD_== 11 // lds
-replace religion_head=19 if inrange(survey_yr,2019,2021) & RELIGION_HEAD== 21 // lds
+replace religion_head=19 if inrange(survey_yr,2019,2023) & RELIGION_HEAD== 21 // lds
 replace religion_head=20 if inrange(survey_yr,1985,1993) & RELIGION_HEAD== 15 // unitarian
 replace religion_head=20 if inrange(survey_yr,1994,2017) & RELIGION_HEAD== 8 & DENOMINATION_HEAD_== 15 // unitarian
-replace religion_head=20 if inrange(survey_yr,2019,2021) & RELIGION_HEAD== 22 // unitarian
+replace religion_head=20 if inrange(survey_yr,2019,2023) & RELIGION_HEAD== 22 // unitarian
 replace religion_head=21 if inrange(survey_yr,1985,1993) & RELIGION_HEAD== 16 // christian science
 replace religion_head=21 if inrange(survey_yr,1994,2017) & RELIGION_HEAD== 8 & DENOMINATION_HEAD_== 16 // christian science
-replace religion_head=21 if inrange(survey_yr,2019,2021) & RELIGION_HEAD== 23 // christian science
+replace religion_head=21 if inrange(survey_yr,2019,2023) & RELIGION_HEAD== 23 // christian science
 replace religion_head=22 if inrange(survey_yr,1985,1993) & RELIGION_HEAD== 17 // seventh day
 replace religion_head=22 if inrange(survey_yr,1994,2017) & RELIGION_HEAD== 8 & DENOMINATION_HEAD_== 17 // seventh day
-replace religion_head=22 if inrange(survey_yr,2019,2021) & RELIGION_HEAD== 24 // seventh day
+replace religion_head=22 if inrange(survey_yr,2019,2023) & RELIGION_HEAD== 24 // seventh day
 replace religion_head=23 if inrange(survey_yr,1985,1993) & RELIGION_HEAD== 19 // amish
 replace religion_head=23 if inrange(survey_yr,1994,2017) & RELIGION_HEAD== 8 & DENOMINATION_HEAD_== 19 // amish
-replace religion_head=23 if inrange(survey_yr,2019,2021) & RELIGION_HEAD== 25 // amish
+replace religion_head=23 if inrange(survey_yr,2019,2023) & RELIGION_HEAD== 25 // amish
 replace religion_head=24 if inrange(survey_yr,1985,1993) & RELIGION_HEAD== 20 // quaker
 replace religion_head=24 if inrange(survey_yr,1994,2017) & RELIGION_HEAD== 8 & DENOMINATION_HEAD_== 20 // quaker
-replace religion_head=24 if inrange(survey_yr,2019,2021) & RELIGION_HEAD== 26 // quaker
+replace religion_head=24 if inrange(survey_yr,2019,2023) & RELIGION_HEAD== 26 // quaker
 replace religion_head=25 if inrange(survey_yr,1985,1993) & RELIGION_HEAD== 21 // church of god
 replace religion_head=25 if inrange(survey_yr,1994,2017) & RELIGION_HEAD== 8 & DENOMINATION_HEAD_== 21 // church of god
-replace religion_head=25 if inrange(survey_yr,2019,2021) & RELIGION_HEAD== 27 // church of god
+replace religion_head=25 if inrange(survey_yr,2019,2023) & RELIGION_HEAD== 27 // church of god
 replace religion_head=26 if inrange(survey_yr,1985,1993) & RELIGION_HEAD== 22 // united church of christ
 replace religion_head=26 if inrange(survey_yr,1994,2017) & RELIGION_HEAD== 8 & DENOMINATION_HEAD_== 22 // united church of christ
-replace religion_head=26 if inrange(survey_yr,2019,2021) & RELIGION_HEAD== 28 // united church of christ
+replace religion_head=26 if inrange(survey_yr,2019,2023) & RELIGION_HEAD== 28 // united church of christ
 replace religion_head=27 if inrange(survey_yr,1985,1993) & RELIGION_HEAD== 23 // reformed
 replace religion_head=27 if inrange(survey_yr,1994,2017) & RELIGION_HEAD== 8 & DENOMINATION_HEAD_== 23 // reformed
-replace religion_head=27 if inrange(survey_yr,2019,2021) & RELIGION_HEAD== 29 // reformed
+replace religion_head=27 if inrange(survey_yr,2019,2023) & RELIGION_HEAD== 29 // reformed
 replace religion_head=28 if inrange(survey_yr,1985,1993) & RELIGION_HEAD== 24 // disciples 
 replace religion_head=28 if inrange(survey_yr,1994,2017) & RELIGION_HEAD== 8 & DENOMINATION_HEAD_== 24 // disciples 
-replace religion_head=28 if inrange(survey_yr,2019,2021) & RELIGION_HEAD== 30 // disciples 
+replace religion_head=28 if inrange(survey_yr,2019,2023) & RELIGION_HEAD== 30 // disciples 
 replace religion_head=29 if inrange(survey_yr,1985,1993) & RELIGION_HEAD== 25 // churches
 replace religion_head=29 if inrange(survey_yr,1994,2017) & RELIGION_HEAD== 8 & DENOMINATION_HEAD_== 25 // churches
-replace religion_head=29 if inrange(survey_yr,2019,2021) & RELIGION_HEAD== 31 // churches
+replace religion_head=29 if inrange(survey_yr,2019,2023) & RELIGION_HEAD== 31 // churches
 replace religion_head=30 if inrange(survey_yr,1985,1993) & RELIGION_HEAD== 97 // other other
 replace religion_head=30 if inrange(survey_yr,1994,2017) & RELIGION_HEAD== 97 // other other
-replace religion_head=30 if inrange(survey_yr,2019,2021) & RELIGION_HEAD== 97 // other other
+replace religion_head=30 if inrange(survey_yr,2019,2023) & RELIGION_HEAD== 97 // other other
 
 replace religion_head=. if inrange(survey_yr,1985,1993) & inrange(RELIGION_HEAD,98,99) // dk / na
 replace religion_head=. if inrange(survey_yr,1994,2017) & inrange(RELIGION_HEAD,98,99) // dk / na
-replace religion_head=. if inrange(survey_yr,2019,2021) & RELIGION_HEAD==0
-replace religion_head=. if inrange(survey_yr,2019,2021) & inrange(RELIGION_HEAD,98,99) // dk / na
+replace religion_head=. if inrange(survey_yr,2019,2023) & RELIGION_HEAD==0
+replace religion_head=. if inrange(survey_yr,2019,2023) & inrange(RELIGION_HEAD,98,99) // dk / na
 
 gen religion_wife=.
 replace religion_wife=0 if inrange(survey_yr,1985,1993) & RELIGION_WIFE== 0 // no religion
 replace religion_wife=0 if inrange(survey_yr,1994,2017) & RELIGION_WIFE== 0 // no religion
-replace religion_wife=0 if inrange(survey_yr,2019,2021) & RELIGION_WIFE== 1 // no religion
-replace religion_wife=1 if inrange(survey_yr,2019,2021) & RELIGION_WIFE== 2 // atheist
-replace religion_wife=2 if inrange(survey_yr,2019,2021) & RELIGION_WIFE== 3 // agnostic
+replace religion_wife=0 if inrange(survey_yr,2019,2023) & RELIGION_WIFE== 1 // no religion
+replace religion_wife=1 if inrange(survey_yr,2019,2023) & RELIGION_WIFE== 2 // atheist
+replace religion_wife=2 if inrange(survey_yr,2019,2023) & RELIGION_WIFE== 3 // agnostic
 replace religion_wife=3 if inrange(survey_yr,1985,1993) & RELIGION_WIFE== 1 // catholic
 replace religion_wife=3 if inrange(survey_yr,1994,2017) & RELIGION_WIFE== 1 // catholic
-replace religion_wife=3 if inrange(survey_yr,2019,2021) & RELIGION_WIFE== 4 // catholic
+replace religion_wife=3 if inrange(survey_yr,2019,2023) & RELIGION_WIFE== 4 // catholic
 replace religion_wife=4 if inrange(survey_yr,1985,1993) & RELIGION_WIFE== 2 // jwish
 replace religion_wife=4 if inrange(survey_yr,1994,2017) & RELIGION_WIFE== 2 // jwish
-replace religion_wife=4 if inrange(survey_yr,2019,2021) & RELIGION_WIFE== 16 // jwish
+replace religion_wife=4 if inrange(survey_yr,2019,2023) & RELIGION_WIFE== 16 // jwish
 replace religion_wife=5 if inrange(survey_yr,1985,1993) & RELIGION_WIFE== 13 // greek orthodox
 replace religion_wife=5 if inrange(survey_yr,1994,2017) & RELIGION_WIFE== 13 // greek orthodox
-replace religion_wife=5 if inrange(survey_yr,2019,2021) & RELIGION_WIFE== 5 // greek orthodox
+replace religion_wife=5 if inrange(survey_yr,2019,2023) & RELIGION_WIFE== 5 // greek orthodox
 replace religion_wife=6 if inrange(survey_yr,1985,1993) & RELIGION_WIFE== 3 // baptist
 replace religion_wife=6 if inrange(survey_yr,1994,2017) & RELIGION_WIFE== 8 & DENOMINATION_WIFE_== 3 // baptist
-replace religion_wife=6 if inrange(survey_yr,2019,2021) & RELIGION_WIFE== 6 // baptist
+replace religion_wife=6 if inrange(survey_yr,2019,2023) & RELIGION_WIFE== 6 // baptist
 replace religion_wife=7 if inrange(survey_yr,1985,1993) & RELIGION_WIFE== 7  // episco
 replace religion_wife=7 if inrange(survey_yr,1994,2017) & RELIGION_WIFE== 8 & DENOMINATION_WIFE_== 7 // episco
-replace religion_wife=7 if inrange(survey_yr,2019,2021) & RELIGION_WIFE== 7  // episco
+replace religion_wife=7 if inrange(survey_yr,2019,2023) & RELIGION_WIFE== 7  // episco
 replace religion_wife=8 if inrange(survey_yr,1985,1993) & RELIGION_WIFE== 12 // jehovah
 replace religion_wife=8 if inrange(survey_yr,1994,2017) & RELIGION_WIFE== 8 & DENOMINATION_WIFE_== 12 // jehovah
-replace religion_wife=8 if inrange(survey_yr,2019,2021) & RELIGION_WIFE== 8 // jehovah
+replace religion_wife=8 if inrange(survey_yr,2019,2023) & RELIGION_WIFE== 8 // jehovah
 replace religion_wife=9 if inrange(survey_yr,1985,1993) & RELIGION_WIFE== 4  // lutheran
 replace religion_wife=9 if inrange(survey_yr,1994,2017) & RELIGION_WIFE== 8 & DENOMINATION_WIFE_== 4 // lutheran
-replace religion_wife=9 if inrange(survey_yr,2019,2021) & RELIGION_WIFE== 9 // lutheran
+replace religion_wife=9 if inrange(survey_yr,2019,2023) & RELIGION_WIFE== 9 // lutheran
 replace religion_wife=10 if inrange(survey_yr,1985,1993) & RELIGION_WIFE== 5  // methodist
 replace religion_wife=10 if inrange(survey_yr,1994,2017) & RELIGION_WIFE== 8 & DENOMINATION_WIFE_== 5 // methodist
-replace religion_wife=10 if inrange(survey_yr,2019,2021) & RELIGION_WIFE== 10 // methodist
+replace religion_wife=10 if inrange(survey_yr,2019,2023) & RELIGION_WIFE== 10 // methodist
 replace religion_wife=11 if inrange(survey_yr,1985,1993) & RELIGION_WIFE== 18 // pentecostal 
 replace religion_wife=11 if inrange(survey_yr,1994,2017) & RELIGION_WIFE== 8 & DENOMINATION_WIFE_== 18 // pentecostal
-replace religion_wife=11 if inrange(survey_yr,2019,2021) & RELIGION_WIFE== 11 // pentecostal 
+replace religion_wife=11 if inrange(survey_yr,2019,2023) & RELIGION_WIFE== 11 // pentecostal 
 replace religion_wife=12 if inrange(survey_yr,1985,1993) & RELIGION_WIFE== 6  // presby
 replace religion_wife=12 if inrange(survey_yr,1994,2017) & RELIGION_WIFE== 8 & DENOMINATION_WIFE_== 6 // presby
-replace religion_wife=12 if inrange(survey_yr,2019,2021) & RELIGION_WIFE== 12  // presby
+replace religion_wife=12 if inrange(survey_yr,2019,2023) & RELIGION_WIFE== 12  // presby
 replace religion_wife=13 if inrange(survey_yr,1985,1993) & RELIGION_WIFE== 8  // protestant un
 replace religion_wife=13 if inrange(survey_yr,1994,2017) & RELIGION_WIFE== 8 & DENOMINATION_WIFE_== 8 // protestant un
-replace religion_wife=13 if inrange(survey_yr,2019,2021) & RELIGION_WIFE== 13 // protestant un
+replace religion_wife=13 if inrange(survey_yr,2019,2023) & RELIGION_WIFE== 13 // protestant un
 replace religion_wife=14 if inrange(survey_yr,1985,1993) & RELIGION_WIFE== 9 // other prot
 replace religion_wife=14 if inrange(survey_yr,1994,2017) & RELIGION_WIFE== 8 & inlist(DENOMINATION_WIFE_,9,97,98,99) // other prot
-replace religion_wife=14 if inrange(survey_yr,2019,2021) & RELIGION_WIFE== 20 // other prot
+replace religion_wife=14 if inrange(survey_yr,2019,2023) & RELIGION_WIFE== 20 // other prot
 replace religion_wife=15 if inrange(survey_yr,1985,1993) & inlist(RELIGION_WIFE,10,14)  // other christian
 replace religion_wife=15 if inrange(survey_yr,1994,2017) & RELIGION_WIFE== 10  // other christian
 replace religion_wife=15 if inrange(survey_yr,1994,2017) & RELIGION_WIFE== 8 & DENOMINATION_WIFE_== 14  // other christian
-replace religion_wife=15 if inrange(survey_yr,2019,2021) & inlist(RELIGION_WIFE,14,15)  // other christian
-replace religion_wife=16 if inrange(survey_yr,2019,2021) & RELIGION_WIFE== 17 // muslim
-replace religion_wife=17 if inrange(survey_yr,2019,2021) & RELIGION_WIFE== 18 // buddhist
-replace religion_wife=18 if inrange(survey_yr,2019,2021) & RELIGION_WIFE== 19 // other non-christian
+replace religion_wife=15 if inrange(survey_yr,2019,2023) & inlist(RELIGION_WIFE,14,15)  // other christian
+replace religion_wife=16 if inrange(survey_yr,2019,2023) & RELIGION_WIFE== 17 // muslim
+replace religion_wife=17 if inrange(survey_yr,2019,2023) & RELIGION_WIFE== 18 // buddhist
+replace religion_wife=18 if inrange(survey_yr,2019,2023) & RELIGION_WIFE== 19 // other non-christian
 replace religion_wife=19 if inrange(survey_yr,1985,1993) & RELIGION_WIFE== 11 // lds
 replace religion_wife=19 if inrange(survey_yr,1994,2017) & RELIGION_WIFE== 8 & DENOMINATION_WIFE_== 11 // lds
-replace religion_wife=19 if inrange(survey_yr,2019,2021) & RELIGION_WIFE== 21 // lds
+replace religion_wife=19 if inrange(survey_yr,2019,2023) & RELIGION_WIFE== 21 // lds
 replace religion_wife=20 if inrange(survey_yr,1985,1993) & RELIGION_WIFE== 15 // unitarian
 replace religion_wife=20 if inrange(survey_yr,1994,2017) & RELIGION_WIFE== 8 & DENOMINATION_WIFE_== 15 // unitarian
-replace religion_wife=20 if inrange(survey_yr,2019,2021) & RELIGION_WIFE== 22 // unitarian
+replace religion_wife=20 if inrange(survey_yr,2019,2023) & RELIGION_WIFE== 22 // unitarian
 replace religion_wife=21 if inrange(survey_yr,1985,1993) & RELIGION_WIFE== 16 // christian science
 replace religion_wife=21 if inrange(survey_yr,1994,2017) & RELIGION_WIFE== 8 & DENOMINATION_WIFE_== 16 // christian science
-replace religion_wife=21 if inrange(survey_yr,2019,2021) & RELIGION_WIFE== 23 // christian science
+replace religion_wife=21 if inrange(survey_yr,2019,2023) & RELIGION_WIFE== 23 // christian science
 replace religion_wife=22 if inrange(survey_yr,1985,1993) & RELIGION_WIFE== 17 // seventh day
 replace religion_wife=22 if inrange(survey_yr,1994,2017) & RELIGION_WIFE== 8 & DENOMINATION_WIFE_== 17 // seventh day
-replace religion_wife=22 if inrange(survey_yr,2019,2021) & RELIGION_WIFE== 24 // seventh day
+replace religion_wife=22 if inrange(survey_yr,2019,2023) & RELIGION_WIFE== 24 // seventh day
 replace religion_wife=23 if inrange(survey_yr,1985,1993) & RELIGION_WIFE== 19 // amish
 replace religion_wife=23 if inrange(survey_yr,1994,2017) & RELIGION_WIFE== 8 & DENOMINATION_WIFE_== 19 // amish
-replace religion_wife=23 if inrange(survey_yr,2019,2021) & RELIGION_WIFE== 25 // amish
+replace religion_wife=23 if inrange(survey_yr,2019,2023) & RELIGION_WIFE== 25 // amish
 replace religion_wife=24 if inrange(survey_yr,1985,1993) & RELIGION_WIFE== 20 // quaker
 replace religion_wife=24 if inrange(survey_yr,1994,2017) & RELIGION_WIFE== 8 & DENOMINATION_WIFE_== 20 // quaker
-replace religion_wife=24 if inrange(survey_yr,2019,2021) & RELIGION_WIFE== 26 // quaker
+replace religion_wife=24 if inrange(survey_yr,2019,2023) & RELIGION_WIFE== 26 // quaker
 replace religion_wife=25 if inrange(survey_yr,1985,1993) & RELIGION_WIFE== 21 // church of god
 replace religion_wife=25 if inrange(survey_yr,1994,2017) & RELIGION_WIFE== 8 & DENOMINATION_WIFE_== 21 // church of god
-replace religion_wife=25 if inrange(survey_yr,2019,2021) & RELIGION_WIFE== 27 // church of god
+replace religion_wife=25 if inrange(survey_yr,2019,2023) & RELIGION_WIFE== 27 // church of god
 replace religion_wife=26 if inrange(survey_yr,1985,1993) & RELIGION_WIFE== 22 // united church of christ
 replace religion_wife=26 if inrange(survey_yr,1994,2017) & RELIGION_WIFE== 8 & DENOMINATION_WIFE_== 22 // united church of christ
-replace religion_wife=26 if inrange(survey_yr,2019,2021) & RELIGION_WIFE== 28 // united church of christ
+replace religion_wife=26 if inrange(survey_yr,2019,2023) & RELIGION_WIFE== 28 // united church of christ
 replace religion_wife=27 if inrange(survey_yr,1985,1993) & RELIGION_WIFE== 23 // reformed
 replace religion_wife=27 if inrange(survey_yr,1994,2017) & RELIGION_WIFE== 8 & DENOMINATION_WIFE_== 23 // reformed
-replace religion_wife=27 if inrange(survey_yr,2019,2021) & RELIGION_WIFE== 29 // reformed
+replace religion_wife=27 if inrange(survey_yr,2019,2023) & RELIGION_WIFE== 29 // reformed
 replace religion_wife=28 if inrange(survey_yr,1985,1993) & RELIGION_WIFE== 24 // disciples 
 replace religion_wife=28 if inrange(survey_yr,1994,2017) & RELIGION_WIFE== 8 & DENOMINATION_WIFE_== 24 // disciples 
-replace religion_wife=28 if inrange(survey_yr,2019,2021) & RELIGION_WIFE== 30 // disciples 
+replace religion_wife=28 if inrange(survey_yr,2019,2023) & RELIGION_WIFE== 30 // disciples 
 replace religion_wife=29 if inrange(survey_yr,1985,1993) & RELIGION_WIFE== 25 // churches
 replace religion_wife=29 if inrange(survey_yr,1994,2017) & RELIGION_WIFE== 8 & DENOMINATION_WIFE_== 25 // churches
-replace religion_wife=29 if inrange(survey_yr,2019,2021) & RELIGION_WIFE== 31 // churches
+replace religion_wife=29 if inrange(survey_yr,2019,2023) & RELIGION_WIFE== 31 // churches
 replace religion_wife=30 if inrange(survey_yr,1985,1993) & RELIGION_WIFE== 97 // other other
 replace religion_wife=30 if inrange(survey_yr,1994,2017) & RELIGION_WIFE== 97 // other other
-replace religion_wife=30 if inrange(survey_yr,2019,2021) & RELIGION_WIFE== 97 // other other
+replace religion_wife=30 if inrange(survey_yr,2019,2023) & RELIGION_WIFE== 97 // other other
 
 replace religion_wife=. if inrange(survey_yr,1985,1993) & inrange(RELIGION_WIFE,98,99) // dk / na
 replace religion_wife=. if inrange(survey_yr,1994,2017) & inrange(RELIGION_WIFE,98,99) // dk / na
-replace religion_wife=. if inrange(survey_yr,2019,2021) & RELIGION_WIFE==0
-replace religion_wife=. if inrange(survey_yr,2019,2021) & inrange(RELIGION_WIFE,98,99) // dk / na
+replace religion_wife=. if inrange(survey_yr,2019,2023) & RELIGION_WIFE==0
+replace religion_wife=. if inrange(survey_yr,2019,2023) & inrange(RELIGION_WIFE,98,99) // dk / na
 
 label define religion 0 "No religion" 1 "Atheist" 2 "Agnostic" 3 "Catholic" 4 "Jewish"  5 "Greek Orthodox" 6 "Baptist" 7 "Episcopalian" ///
 8 "Jehovah's Witness" 9 "Lutheran"  10 "Methodist" 11 "Pentecostal" 12 "Presbyterian" 13 "Protestant unspecified" 14 "Other Protestant" ///
@@ -1025,8 +1030,8 @@ tab SR_HEALTH_OTHER SR_HEALTH_INDV, m  // what is diff?
 browse unique_id survey_yr SR_HEALTH_OTHER SR_HEALTH_INDV
 
 gen health_indv = .
-replace health_indv = 5 if SR_HEALTH_INDV==1 & inrange(survey_yr,1988,2021) // will become poor
-replace health_indv = 3 if SR_HEALTH_INDV==5 & inrange(survey_yr,1988,2021) // will become "good"
+replace health_indv = 5 if SR_HEALTH_INDV==1 & inrange(survey_yr,1988,2023) // will become poor
+replace health_indv = 3 if SR_HEALTH_INDV==5 & inrange(survey_yr,1988,2023) // will become "good"
 replace health_indv = SR_HEALTH_INDV if survey_yr==1986
 replace health_indv = . if inlist(health_indv,0,8,9)
 
@@ -1122,7 +1127,7 @@ forvalues y=1999/2001{
 	capture replace moved_yr_lastyr = `y' if survey_yr==`y' & MOVED_SPRING_YR_HEAD==3
 }
 
-replace moved_yr_lastyr = MOVED_SPRING_YR_HEAD if inrange(survey_yr,2003,2021) & moved_in_lastyr==1 & inrange(MOVED_SPRING_YR_HEAD,2000,2025)
+replace moved_yr_lastyr = MOVED_SPRING_YR_HEAD if inrange(survey_yr,2003,2023) & moved_in_lastyr==1 & inrange(MOVED_SPRING_YR_HEAD,2000,2025)
 tab moved_yr_lastyr moved_in_lastyr, m
 
 browse unique_id survey_yr moved_in_lastyr moved_yr_lastyr moved_mo_lastyr
@@ -1204,15 +1209,27 @@ replace employed_t1_earn_focal=employed_t1_wife if relationship_==2
 replace employed_t1_earn_focal=employed_t1_indv if relationship_==3
 
 // births - based on PSID variables NOT birth history. can add that later
-gen any_births_focal=.
-replace any_births_focal = 0 if relationship_==1 & BIRTHS_T1_HEAD_==0 & BIRTHS_T1_BOTH_==0
-replace any_births_focal = 1 if relationship_==1 & (inrange(BIRTHS_T1_HEAD_,1,3) |  inrange(BIRTHS_T1_BOTH_,1,3))
-replace any_births_focal = 0 if relationship_==2 & BIRTHS_T1_WIFE_==0 & BIRTHS_T1_BOTH_==0
-replace any_births_focal = 1 if relationship_==2 & (inrange(BIRTHS_T1_WIFE_,1,3) | inrange(BIRTHS_T1_BOTH_,1,3))
+browse unique_id survey_yr BIRTHS_T1_HEAD_ BIRTHS_T1_WIFE_ BIRTHS_T1_BOTH_ BIRTHS_T1_OFUMS_ BIRTHS_T2_HEAD_ BIRTHS_T2_WIFE_ BIRTHS_T2_BOTH_ BIRTHS_T2_OFUMS_
 
-gen any_births_hh=. // because, even if not head/  wife - if head / wife HAD a birth, that is technically a new kid in HH, even if that person didn't have the kid
-replace any_births_hh=0 if BIRTHS_T1_HEAD_==0 & BIRTHS_T1_WIFE_ & BIRTHS_T1_BOTH_==0
-replace any_births_hh = 1 if inrange(BIRTHS_T1_WIFE_,1,3) | inrange(BIRTHS_T1_BOTH_,1,3) | inrange(BIRTHS_T1_WIFE_,1,3)
+gen any_births_t1_focal=.
+replace any_births_t1_focal = 0 if relationship_==1 & BIRTHS_T1_HEAD_==0 & BIRTHS_T1_BOTH_==0
+replace any_births_t1_focal = 1 if relationship_==1 & (inrange(BIRTHS_T1_HEAD_,1,3) |  inrange(BIRTHS_T1_BOTH_,1,3))
+replace any_births_t1_focal = 0 if relationship_==2 & BIRTHS_T1_WIFE_==0 & BIRTHS_T1_BOTH_==0
+replace any_births_t1_focal = 1 if relationship_==2 & (inrange(BIRTHS_T1_WIFE_,1,3) | inrange(BIRTHS_T1_BOTH_,1,3))
+
+gen any_births_t1_hh=. // because, even if not head/  wife - if head / wife HAD a birth, that is technically a new kid in HH, even if that person didn't have the kid
+replace any_births_t1_hh=0 if inlist(BIRTHS_T1_HEAD_,0,9) & inlist(BIRTHS_T1_WIFE_,0,9) & inlist(BIRTHS_T1_BOTH_,0,9) & inlist(BIRTHS_T1_OFUMS_,0,9)
+replace any_births_t1_hh = 1 if inrange(BIRTHS_T1_WIFE_,1,3) | inrange(BIRTHS_T1_BOTH_,1,3) | inrange(BIRTHS_T1_WIFE_,1,3) | inrange(BIRTHS_T1_OFUMS_,1,3)
+
+gen any_births_t2_focal=.
+replace any_births_t2_focal = 0 if relationship_==1 & BIRTHS_T2_HEAD_==0 & BIRTHS_T2_BOTH_==0
+replace any_births_t2_focal = 1 if relationship_==1 & (inrange(BIRTHS_T2_HEAD_,1,3) |  inrange(BIRTHS_T2_BOTH_,1,3))
+replace any_births_t2_focal = 0 if relationship_==2 & BIRTHS_T2_WIFE_==0 & BIRTHS_T2_BOTH_==0
+replace any_births_t2_focal = 1 if relationship_==2 & (inrange(BIRTHS_T2_WIFE_,1,3) | inrange(BIRTHS_T2_BOTH_,1,3))
+
+gen any_births_t2_hh=. // because, even if not head/  wife - if head / wife HAD a birth, that is technically a new kid in HH, even if that person didn't have the kid
+replace any_births_t2_hh=0 if inlist(BIRTHS_T2_HEAD_,0,9) & inlist(BIRTHS_T2_WIFE_,0,9) & inlist(BIRTHS_T2_BOTH_,0,9) & inlist(BIRTHS_T2_OFUMS_,0,9)
+replace any_births_t2_hh = 1 if inrange(BIRTHS_T2_WIFE_,1,3) | inrange(BIRTHS_T2_BOTH_,1,3) | inrange(BIRTHS_T2_WIFE_,1,3) | inrange(BIRTHS_T2_OFUMS_,1,3)
 
 // ever parent status
 tab NUM_BIRTHS, m
@@ -1410,9 +1427,80 @@ tab mpf_focal, m
 // coresidence with parents
 merge m:1 unique_id survey_yr using "$temp/parent_coresidence_lookup.dta"
 drop if _merge==2
-tab in_sample_ _merge, m
+tab in_sample_ _merge, m // non-matches are those not in sample
 drop _merge
 
+rename moved moved_focal // need to rename so I can do the below
+
+merge m:1 father_unique_id survey_yr using "$temp/parent_details_tomatch.dta", keepusing(fam_id in_sample moved change_yr)
+drop if _merge==2
+inspect father_unique_id if _merge==1 // why is the match rate so bad? if this is truly coming frm the main file?
+tab father_in_hh _merge // okay, so it does match when he is in HH
+drop _merge
+
+foreach var in fam_id in_sample moved change_yr{
+	rename `var' father_`var'
+}
+
+merge m:1 mother_unique_id survey_yr using "$temp/parent_details_tomatch.dta", keepusing(fam_id in_sample moved change_yr)
+drop if _merge==2
+inspect mother_unique_id if _merge==1
+tab mother_in_hh _merge
+drop _merge
+
+foreach var in fam_id in_sample moved change_yr{
+	rename `var' mother_`var'
+}
+
+label values mother_moved father_moved moved
+
+tab father_in_hh, m // do these feel too high? oh, it's because, even though I restrict to couples, right now, I am pulling in extra years, so they might be under age.
+tab under18 father_in_hh, m row
+tab mother_in_hh, m
+tab father_in_hh mother_in_hh, m
+
+gen num_parent_in_hh = .
+replace num_parent_in_hh = 0 if father_in_hh==0 & mother_in_hh==0
+replace num_parent_in_hh = 1 if father_in_hh==1 & mother_in_hh==0
+replace num_parent_in_hh = 1 if father_in_hh==0 & mother_in_hh==1
+replace num_parent_in_hh = 2 if father_in_hh==1 & mother_in_hh==1
+
+tab OFUM1_REL_ num_parent_in_hh if under18==0, m
+
+label define ofum_rel 0 "no other fam" 1 "ref's parents" 2 "ref's child" 3 "ref's grandparents" 4 "ref's grandchild" 5 "ref's sib" 7 "other"
+label values OFUM*_REL_ ofum_rel
+
+browse unique_id survey_yr under18 AGE_INDV num_parent_in_hh father_in_hh mother_in_hh OFUM*_REL_
+
+	// going to see if these are best or if I should use these OFUMS descriptions
+	gen parent_in_ofum = .
+	replace parent_in_ofum = 0 if OFUM1_REL_==0 & OFUM2_REL_==0 & OFUM3_REL_==0 & OFUM4_REL_==0
+	replace parent_in_ofum = 1 if OFUM1_REL_==1 | OFUM2_REL_==1 | OFUM3_REL_==1 | OFUM4_REL_==1
+	
+	tab parent_in_ofum num_parent_in_hh, m // this correspondence is terrible, but not sure they would consider parents a distinct family unit
+	
+	label values NUM_IN_HH_ .
+	tab NUM_IN_HH partnered, m // do these counts make sense?
+	tab NUM_IN_HH num_parent_in_hh if partnered==1, m row
+	tab NUM_IN_HH parent_in_ofum if partnered==1, m row
+	
+	tab in_sample_ num_parent_in_hh, m row
+	tab in_sample_ parent_in_ofum, m row // possible they are in HH but the individual is non-response? (which is why the above lookup won't match?) OR is it possible I have a flag for parent in HH but parent is non-sample?
+	
+gen father_check = 0
+replace father_check = 1 if FAMILY_INTERVIEW_NUM_ == father_fam_id & FAMILY_INTERVIEW_NUM_!=.
+tab father_check father_in_hh, m
+
+gen mother_check = 0
+replace mother_check = 1 if FAMILY_INTERVIEW_NUM_ == mother_fam_id & FAMILY_INTERVIEW_NUM_!=.
+tab mother_check mother_in_hh, m
+
+sort unique_id survey_yr
+browse unique_id survey_yr FAMILY_INTERVIEW_NUM_ under18 father_in_hh father_check father_in_sample father_fam_id mother_in_hh mother_check mother_in_sample mother_fam_id parent_in_ofum
+
+	// also see if I can identify off years with move in / out / changes in family comp
+	browse unique_id partner_id survey_yr father_in_hh father_in_sample father_moved father_change_yr mother_in_hh mother_in_sample mother_moved mother_change_yr COMPOSITION_CHANGE_
+	
 // hh composition
 merge m:1 FAMILY_INTERVIEW_NUM_ survey_yr using "$temp/hh_comp_lookup.dta"
 drop if _merge==2
@@ -1425,9 +1513,9 @@ browse unique_id survey_yr relationship_ WEEKLY_HRS_T2_HEAD WEEKLY_HRS_T2_WIFE W
 
 gen weekly_hrs_t2_focal=.
 replace weekly_hrs_t2_focal=WEEKLY_HRS_T2_INDV if inrange(survey_yr,1999,2001)
-replace weekly_hrs_t2_focal=WEEKLY_HRS_T2_HEAD if relationship_==1 & inrange(survey_yr,2003,2021)
-replace weekly_hrs_t2_focal=WEEKLY_HRS_T2_WIFE if relationship_==2 & inrange(survey_yr,2003,2021)
-replace weekly_hrs_t2_focal=WEEKLY_HRS_T2_INDV if relationship_==3 & inrange(survey_yr,2003,2021)
+replace weekly_hrs_t2_focal=WEEKLY_HRS_T2_HEAD if relationship_==1 & inrange(survey_yr,2003,2023)
+replace weekly_hrs_t2_focal=WEEKLY_HRS_T2_WIFE if relationship_==2 & inrange(survey_yr,2003,2023)
+replace weekly_hrs_t2_focal=WEEKLY_HRS_T2_INDV if relationship_==3 & inrange(survey_yr,2003,2023)
 browse unique_id survey_yr relationship_ weekly_hrs_t2_focal WEEKLY_HRS_T2_HEAD WEEKLY_HRS_T2_WIFE WEEKLY_HRS_T2_INDV
 
 // annual earnings
@@ -1435,9 +1523,9 @@ browse unique_id survey_yr relationship_ LABOR_INCOME_T2_HEAD_ LABOR_INCOME_T2_W
 
 gen long earnings_t2_focal=.
 replace earnings_t2_focal=LABOR_INCOME_T2_INDV_ if inrange(survey_yr,1999,2001)
-replace earnings_t2_focal=LABOR_INCOME_T2_HEAD_ if relationship_==1 & inrange(survey_yr,2003,2021)
-replace earnings_t2_focal=LABOR_INCOME_T2_WIFE_ if relationship_==2 & inrange(survey_yr,2003,2021)
-replace earnings_t2_focal=LABOR_INCOME_T2_INDV_ if relationship_==3 & inrange(survey_yr,2003,2021)
+replace earnings_t2_focal=LABOR_INCOME_T2_HEAD_ if relationship_==1 & inrange(survey_yr,2003,2023)
+replace earnings_t2_focal=LABOR_INCOME_T2_WIFE_ if relationship_==2 & inrange(survey_yr,2003,2023)
+replace earnings_t2_focal=LABOR_INCOME_T2_INDV_ if relationship_==3 & inrange(survey_yr,2003,2023)
 replace earnings_t2_focal=. if earnings_t2_focal==9999999 | earnings_t2_focal==99999999
 browse unique_id survey_yr relationship_ earnings_t2_focal LABOR_INCOME_T2_HEAD_ LABOR_INCOME_T2_WIFE_ LABOR_INCOME_T2_INDV_
 
@@ -1458,9 +1546,9 @@ browse unique_id survey_yr relationship_  employed_t2*
 
 gen employed_t2_focal=.
 replace employed_t2_focal = employed_t2_indv if inlist(survey_yr,1999,2001)
-replace employed_t2_focal=employed_t2_head if relationship_==1 & inrange(survey_yr,2003,2021)
-replace employed_t2_focal=employed_t2_wife if relationship_==2 & inrange(survey_yr,2003,2021)
-replace employed_t2_focal=employed_t2_indv if relationship_==3 & inrange(survey_yr,2003,2021)
+replace employed_t2_focal=employed_t2_head if relationship_==1 & inrange(survey_yr,2003,2023)
+replace employed_t2_focal=employed_t2_wife if relationship_==2 & inrange(survey_yr,2003,2023)
+replace employed_t2_focal=employed_t2_indv if relationship_==3 & inrange(survey_yr,2003,2023)
 replace employed_t2_focal=1 if inrange(survey_yr,1999,2001) & WEEKLY_HRS_T2_INDV>0 & WEEKLY_HRS_T2_INDV<900
 replace employed_t2_focal=0 if inrange(survey_yr,1999,2001) & WEEKLY_HRS_T2_INDV==0
 
@@ -1486,7 +1574,7 @@ replace START_YR_EMPLOYER_HEAD=. if START_YR_EMPLOYER_HEAD==0
 gen start_yr_employer_head=.
 replace start_yr_employer_head = START_YR_CURRENT_HEAD if inrange(survey_yr,1988,2001) & START_YR_CURRENT_HEAD!=.
 replace start_yr_employer_head = START_YR_PREV_HEAD if inrange(survey_yr,1988,2001) & START_YR_PREV_HEAD!=.
-replace start_yr_employer_head = START_YR_EMPLOYER_HEAD if inrange(survey_yr,2003,2021)
+replace start_yr_employer_head = START_YR_EMPLOYER_HEAD if inrange(survey_yr,2003,2023)
 
 browse unique_id survey_yr relationship_ start_yr_employer_head START_YR_EMPLOYER_HEAD START_YR_CURRENT_HEAD START_YR_PREV_HEAD YRS_CURRENT_EMPLOY_HEAD
 
@@ -1509,7 +1597,7 @@ replace START_YR_EMPLOYER_WIFE=. if START_YR_EMPLOYER_WIFE==0
 gen start_yr_employer_wife=.
 replace start_yr_employer_wife = START_YR_CURRENT_WIFE if inrange(survey_yr,1988,2001) & START_YR_CURRENT_WIFE!=.
 replace start_yr_employer_wife = START_YR_PREV_WIFE if inrange(survey_yr,1988,2001) & START_YR_PREV_WIFE!=.
-replace start_yr_employer_wife = START_YR_EMPLOYER_WIFE if inrange(survey_yr,2003,2021)
+replace start_yr_employer_wife = START_YR_EMPLOYER_WIFE if inrange(survey_yr,2003,2023)
 
 gen start_yr_employer_focal = .
 replace start_yr_employer_focal = start_yr_employer_head if relationship_==1 
@@ -1557,7 +1645,7 @@ replace new_in_hh = NEW_WIFE_YEAR if relationship_==2
 browse unique_id survey_yr relationship_ new_in_hh NEW_HEAD_YEAR NEW_WIFE_YEAR
 
 // drop variables that aren't core (aka were used to create main variables)
-drop LABOR_INCOME_T1_WIFE_ WAGES_T1_WIFE_ LABOR_INCOME_T1_HEAD WAGES_T1_HEAD WEEKLY_HRS1_T1_WIFE_ WEEKLY_HRS_T1_WIFE_ WEEKLY_HRS1_T1_HEAD_ WEEKLY_HRS_T1_HEAD_  ANNUAL_HOURS_T1_INDV EMPLOY_STATUS_HEAD_ EMPLOY_STATUS1_HEAD_ EMPLOY_STATUS2_HEAD_ EMPLOY_STATUS3_HEAD_ EMPLOY_STATUS_WIFE_ EMPLOY_STATUS1_WIFE_ EMPLOY_STATUS2_WIFE_ EMPLOY_STATUS3_WIFE_ employ_head employ1_head employ2_head employ3_head employ_wife employ1_wife employ2_wife employ3_wife HOUSEWORK_HEAD_ HOUSEWORK_WIFE_ TOTAL_HOUSEWORK_T1_HW MOST_HOUSEWORK_T1 EDUC1_HEAD_ EDUC_HEAD_ EDUC1_WIFE_ EDUC_WIFE_  educ_wife_early educ_head_early educ_wife_1975 educ_head_1975 START_YR_EMPLOYER_HEAD START_YR_CURRENT_HEAD START_YR_PREV_HEAD YRS_CURRENT_EMPLOY_HEAD START_YR_EMPLOYER_WIFE START_YR_CURRENT_WIFE START_YR_PREV_WIFE YRS_CURRENT_EMPLOY_WIFE total_housework_weekly RACE_1_WIFE_ RACE_2_WIFE_ RACE_3_WIFE_ RACE_1_HEAD_ RACE_2_HEAD_ RACE_3_HEAD_ RACE_4_HEAD_ race_1_head_rec race_2_head_rec race_3_head_rec race_4_head_rec race_1_wife_rec race_2_wife_rec race_3_wife_rec race_4_wife_rec BIRTHS_T1_HEAD_ BIRTHS_T1_WIFE_ BIRTHS_T1_BOTH_ DISABILITY_HEAD DISABILITY_WIFE DISABLE_HOWMUCH_HEAD DISABLE_HOWMUCH_WIFE SR_HEALTH_HEAD SR_HEALTH_WIFE SR_HEALTH_INDV SR_HEALTH_OTHER YR_RETIRED_HEAD YR_RETIRED_WIFE HOUSE_STATUS_  RESPONDENT_
+drop LABOR_INCOME_T1_WIFE_ WAGES_T1_WIFE_ LABOR_INCOME_T1_HEAD WAGES_T1_HEAD WEEKLY_HRS1_T1_WIFE_ WEEKLY_HRS_T1_WIFE_ WEEKLY_HRS1_T1_HEAD_ WEEKLY_HRS_T1_HEAD_  ANNUAL_HOURS_T1_INDV EMPLOY_STATUS_HEAD_ EMPLOY_STATUS1_HEAD_ EMPLOY_STATUS2_HEAD_ EMPLOY_STATUS3_HEAD_ EMPLOY_STATUS_WIFE_ EMPLOY_STATUS1_WIFE_ EMPLOY_STATUS2_WIFE_ EMPLOY_STATUS3_WIFE_ employ_head employ1_head employ2_head employ3_head employ_wife employ1_wife employ2_wife employ3_wife HOUSEWORK_HEAD_ HOUSEWORK_WIFE_ TOTAL_HOUSEWORK_T1_HW MOST_HOUSEWORK_T1 EDUC1_HEAD_ EDUC_HEAD_ EDUC1_WIFE_ EDUC_WIFE_  educ_wife_early educ_head_early educ_wife_1975 educ_head_1975 START_YR_EMPLOYER_HEAD START_YR_CURRENT_HEAD START_YR_PREV_HEAD YRS_CURRENT_EMPLOY_HEAD START_YR_EMPLOYER_WIFE START_YR_CURRENT_WIFE START_YR_PREV_WIFE YRS_CURRENT_EMPLOY_WIFE total_housework_weekly RACE_1_WIFE_ RACE_2_WIFE_ RACE_3_WIFE_ RACE_1_HEAD_ RACE_2_HEAD_ RACE_3_HEAD_ RACE_4_HEAD_ race_1_head_rec race_2_head_rec race_3_head_rec race_4_head_rec race_1_wife_rec race_2_wife_rec race_3_wife_rec race_4_wife_rec BIRTHS_T1_HEAD_ BIRTHS_T1_WIFE_ BIRTHS_T1_BOTH_  BIRTHS_T1_OFUMS_ BIRTHS_T2_HEAD_ BIRTHS_T2_WIFE_ BIRTHS_T2_BOTH_  BIRTHS_T2_OFUMS_ DISABILITY_HEAD DISABILITY_WIFE DISABLE_HOWMUCH_HEAD DISABLE_HOWMUCH_WIFE SR_HEALTH_HEAD SR_HEALTH_WIFE SR_HEALTH_INDV SR_HEALTH_OTHER YR_RETIRED_HEAD YR_RETIRED_WIFE HOUSE_STATUS_  RESPONDENT_
 
 save "$temp/inidividual_vars_imputation_long.dta", replace
 
@@ -1566,13 +1654,13 @@ save "$temp/inidividual_vars_imputation_long.dta", replace
 ********************************************************************************
 use "$temp/inidividual_vars_imputation_long.dta", clear
 
-drop *_head* *_HEAD* *_wife* *_WIFE* *_INDV* *_indv* educ_completed wave MOVED_ MOVED_MONTH_  SPLITOFF_MONTH_ FAMILY_ID_SO_ MOVED_sp_ edulevelrp_match edulevelmaxrp_match edulevelsp_match edulevelmaxsp_match father_educ_focal mother_educ_focal family_structure_focal
+drop *_head* *_HEAD* *_wife* *_WIFE* *_INDV* *_indv* educ_completed wave MOVED_ MOVED_MONTH_  SPLITOFF_MONTH_ FAMILY_ID_SO_ MOVED_sp_ edulevelrp_match edulevelmaxrp_match edulevelsp_match edulevelmaxsp_match father_educ_focal mother_educ_focal family_structure_focal OFUM*_ID_ OFUM*_REL_ father_check mother_check
 
 bysort unique_id: egen birth_yr_all = min(birth_yr)
 drop birth_yr
 
-reshape wide in_sample_ relationship_ MARITAL_PAIRS_ weekly_hrs_t1_focal earnings_t1_focal housework_focal employed_focal educ_focal college_focal max_educ_focal age_focal weekly_hrs_t2_focal earnings_t2_focal employed_t2_focal start_yr_employer_focal yrs_employer_focal children FAMILY_INTERVIEW_NUM_ NUM_CHILDREN_ AGE_YOUNG_CHILD_ TOTAL_INCOME_T1_FAMILY_ TOTAL_INCOME_T2_FAMILY_ raceth_fixed_focal raceth_focal childcare_focal adultcare_focal has_hours_t1 has_earnings_t1 has_hours_t2 has_earnings_t2 employed_t1_hrs_focal employed_t1_earn_focal SPLITOFF_ COMPOSITION_CHANGE_ NUM_IN_HH_ MOVED_YEAR_ SPLITOFF_YEAR_ DATA_RECORD_TYPE_ hh_status_ in_sample_sp_ relationship_sp_ MARITAL_PAIRS_sp_  MOVED_YEAR_sp_  SPLITOFF_sp_  SPLITOFF_YEAR_sp_ hh_status_sp_ moved moved_sp partnered partnered_sp any_births_focal any_births_hh under18 edulevel_match edulevelmax_match new_in_hh employment_status_focal disabled_focal empstat_disabled_focal disabled_scale_focal sr_health_focal yr_retired_focal empstat_retired_focal lives_with_parent lives_with_grandparent num_65up_hh age65up house_status_all moved_in_lastyr moved_mo_lastyr moved_yr_lastyr religion_focal lives_family_focal RESPONDENT_WHO REGION_ ///
-, i(unique_id partner_id rel_start_all min_dur max_dur rel_end_all last_yr_observed ended SEX) j(survey_yr)  // birth_yr FIRST_BIRTH_YR ever_parent_focal num_births_focal 
+reshape wide in_sample_ relationship_ MARITAL_PAIRS_ weekly_hrs_t1_focal earnings_t1_focal housework_focal employed_focal educ_focal college_focal max_educ_focal age_focal weekly_hrs_t2_focal earnings_t2_focal employed_t2_focal start_yr_employer_focal yrs_employer_focal children FAMILY_INTERVIEW_NUM_ NUM_CHILDREN_ AGE_YOUNG_CHILD_ TOTAL_INCOME_T1_FAMILY_ TOTAL_INCOME_T2_FAMILY_ raceth_fixed_focal raceth_focal childcare_focal adultcare_focal has_hours_t1 has_earnings_t1 has_hours_t2 has_earnings_t2 employed_t1_hrs_focal employed_t1_earn_focal SPLITOFF_ COMPOSITION_CHANGE_ NUM_IN_HH_ MOVED_YEAR_ SPLITOFF_YEAR_ DATA_RECORD_TYPE_ hh_status_ in_sample_sp_ relationship_sp_ MARITAL_PAIRS_sp_  MOVED_YEAR_sp_  SPLITOFF_sp_  SPLITOFF_YEAR_sp_ hh_status_sp_ moved_focal moved_sp partnered partnered_sp any_births_t1_focal any_births_t1_hh any_births_t2_focal any_births_t2_hh under18 edulevel_match edulevelmax_match new_in_hh employment_status_focal disabled_focal empstat_disabled_focal disabled_scale_focal sr_health_focal yr_retired_focal empstat_retired_focal num_65up_hh age65up house_status_all moved_in_lastyr moved_mo_lastyr moved_yr_lastyr religion_focal lives_family_focal RESPONDENT_WHO REGION_ parent_in_ofum num_parent_in_hh father_in_hh mother_in_hh father_fam_id father_in_sample father_moved father_change_yr mother_fam_id mother_in_sample mother_moved mother_change_yr ///
+, i(unique_id partner_id rel_start_all min_dur max_dur rel_end_all last_yr_observed ended SEX) j(survey_yr)  // birth_yr FIRST_BIRTH_YR ever_parent_focal num_births_focal lives_with_parent lives_with_grandparent 
 
 // misstable summarize weekly_hrs_t1_focal*, all
 // misstable summarize weekly_hrs_t2_focal*, all
@@ -1584,7 +1672,7 @@ misstable summarize *focal*, all
 browse unique_id weekly_hrs_t1_focal* weekly_hrs_t2_focal*
 // gen weekly_hrs_t1_focal1998=weekly_hrs_t2_focal1999 // so, t-2 for 1999 becomes t-1 for 1998
 
-forvalues y=1998(2)2020{
+forvalues y=1998(2)2022{
 	local z=`y'+1
 	gen weekly_hrs_t1_focal`y'=weekly_hrs_t2_focal`z'
 }
@@ -1592,7 +1680,7 @@ forvalues y=1998(2)2020{
 browse weekly_hrs_t1_focal1998 weekly_hrs_t1_focal1999 weekly_hrs_t1_focal2000 weekly_hrs_t2_focal1999 weekly_hrs_t2_focal2001
 
 // earnings
-forvalues y=1998(2)2020{
+forvalues y=1998(2)2022{
 	local z=`y'+1
 	gen earnings_t1_focal`y'=earnings_t2_focal`z'
 }
@@ -1600,7 +1688,7 @@ forvalues y=1998(2)2020{
 browse weekly_hrs_t1_focal1998 earnings_t1_focal1998 weekly_hrs_t2_focal1999 earnings_t2_focal1999
 
 // family income
-forvalues y=1998(2)2020{
+forvalues y=1998(2)2022{
 	local z=`y'+1
 	gen long TOTAL_INCOME_T1_FAMILY_`y'=TOTAL_INCOME_T2_FAMILY_`z'
 }
@@ -1614,7 +1702,7 @@ tab employed_focal1996 employed_t1_hrs_focal1997 // thsee should match -- also d
 tab employed_focal1996 employed_t1_earn_focal1997 // thsee should match -- also don't. also think it could be based on point in time? v. annual status
 // should I update employment below to be based on hours / earnings? and not even use the status variables?
 
-forvalues y=1998(2)2020{
+forvalues y=1998(2)2022{
 	local z=`y'+1
 	gen employed_focal`y'=employed_t1_hrs_focal`z'
 }
@@ -1622,17 +1710,52 @@ forvalues y=1998(2)2020{
 // age of youngest child
 browse unique_id AGE_YOUNG_CHILD_*
 
-forvalues y=1998(2)2020{
+forvalues y=1998(2)2022{
 	local z=`y'+1
 	local x=`y'-1
 	gen AGE_YOUNG_CHILD_`y'=.
 	replace AGE_YOUNG_CHILD_`y' = AGE_YOUNG_CHILD_`x' + 1 if AGE_YOUNG_CHILD_`x' == AGE_YOUNG_CHILD_`z' - 2
 }
 
+// can I use births to fill in number of children?
+label values NUM_CHILDREN_* .
+browse unique_id NUM_CHILDREN_* any_births_t1_focal* any_births_t1_hh* any_births_t2_focal* any_births_t2_hh*
+// browse unique_id NUM_CHILDREN_1985 NUM_CHILDREN_1986 NUM_CHILDREN_1987 NUM_CHILDREN_1988 any_births_t1_focal1985 any_births_t1_focal1986 any_births_t1_focal1987 any_births_t1_focal1988 any_births_t1_hh1985 any_births_t1_hh1986 any_births_t1_hh1987 any_births_t1_hh1988 any_births_t2_focal1985 any_births_t2_focal1986 any_births_t2_focal1987 any_births_t2_focal1988 any_births_t2_hh1985 any_births_t2_hh1986 any_births_t2_hh1987 any_births_t2_hh1988 // there isn't really good correspondence here between number of children and births - many time the # of kids increments with no recorded births - possibly bc not nec. in sample?
+
+	// try merging on my other file
+	merge m:1 unique_id using "$created_data/hh_birth_history_file_byUNIQUE.dta", keepusing(hh_births_1985 hh_births_1986 hh_births_1987 hh_births_1988 hh_births_1989 hh_births_199* hh_births_2* individ_birth_1985 ///
+	individ_birth_1986 individ_birth_1987 individ_birth_1988 individ_birth_1989 individ_birth_199* individ_birth_2*)
+
+	drop if _merge==2
+	drop _merge
+	
+	// browse unique_id NUM_CHILDREN_1989 NUM_CHILDREN_1990 NUM_CHILDREN_1991 NUM_CHILDREN_1992 any_births_t1_hh1989 any_births_t1_hh1990 any_births_t1_hh1991 any_births_t1_hh1992 hh_births_1989 hh_births_1990 hh_births_1991 hh_births_1992 ///
+	// AGE_YOUNG_CHILD_1989 AGE_YOUNG_CHILD_1990 AGE_YOUNG_CHILD_1991 AGE_YOUNG_CHILD_1992 any_births_t1_focal1989 any_births_t1_focal1990 any_births_t1_focal1991 any_births_t1_focal1992 individ_birth_1989 individ_birth_1990 individ_birth_1991  ///
+	// individ_birth_1992 any_births_t2_focal1989 any_births_t2_focal1990 any_births_t2_focal1991 any_births_t2_focal1992 any_births_t2_hh1989 any_births_t2_hh1990 any_births_t2_hh1991 any_births_t2_hh1992
+	
+	// browse unique_id NUM_CHILDREN_1999 NUM_CHILDREN_2001 NUM_CHILDREN_2003 NUM_CHILDREN_2005 any_births_t1_hh1999 any_births_t1_hh2001 any_births_t1_hh2003 any_births_t1_hh2005 any_births_t2_hh1999 any_births_t2_hh2001 any_births_t2_hh2003 ///
+	// any_births_t2_hh2005 hh_births_1999 hh_births_2000 hh_births_2001 hh_births_2002 hh_births_2003 hh_births_2004
+	
+	tab any_births_t1_hh1996 hh_births_1995 // in theory, these should match
+
+// just doing to attempt to fill in off years where there is a CHANGE in between
+// otherwise, I will not because this doesn't make a lot of sense.
+
+forvalues y=1998(2)2022{
+	local z=`y'+1
+	local x=`y'-1
+	gen NUM_CHILDREN_`y'=.
+	replace NUM_CHILDREN_`y' = NUM_CHILDREN_`x' if NUM_CHILDREN_`z' == NUM_CHILDREN_`x' // if num of children is same between the waves, record same
+	replace NUM_CHILDREN_`y' = NUM_CHILDREN_`z' if NUM_CHILDREN_`z' == NUM_CHILDREN_`x' + 1 & (any_births_t1_hh`z'==1 | any_births_t2_hh`z'==1 | hh_births_`y' !=0) // so if seems to have occurred in off year, record it there
+	replace NUM_CHILDREN_`y' = NUM_CHILDREN_`x' if NUM_CHILDREN_`z' == NUM_CHILDREN_`x' + 1 & (hh_births_`y'==0 & hh_births_`z'!=0) // if the birth occurs in time z specifically (this is confusing because there is not t birth measure from the survey)
+}
+
+browse unique_id NUM_CHILDREN_1999 NUM_CHILDREN_2000 NUM_CHILDREN_2001 NUM_CHILDREN_2002 NUM_CHILDREN_2003 any_births_t1_hh1999 any_births_t1_hh2001 any_births_t1_hh2003 any_births_t1_hh2005 any_births_t2_hh1999 any_births_t2_hh2001 any_births_t2_hh2003 any_births_t2_hh2005 hh_births_1999 hh_births_2000 hh_births_2001 hh_births_2002 hh_births_2003 hh_births_2004
+
 // let's try to fill in education for the years where the surrounding years are the same
 browse unique_id educ_focal*
 
-forvalues y=1998(2)2020{
+forvalues y=1998(2)2022{
 	local z=`y'+1
 	local x=`y'-1
 	gen educ_focal`y'=.
@@ -1643,7 +1766,7 @@ forvalues y=1998(2)2020{
 // do the same for disability status
 browse unique_id disabled_focal* disabled_scale_focal* sr_health_focal* // think really can only do this for main disabled; others change quite a bit
 
-forvalues y=1998(2)2020{
+forvalues y=1998(2)2022{
 	local z=`y'+1
 	local x=`y'-1
 	gen disabled_focal`y'=.
@@ -1653,7 +1776,7 @@ forvalues y=1998(2)2020{
 
 // and religion
 browse unique_id religion_focal*
-forvalues y=1998(2)2020{
+forvalues y=1998(2)2022{
 	local z=`y'+1
 	local x=`y'-1
 	capture gen religion_focal`y'=.
@@ -1666,7 +1789,7 @@ forvalues y=1998(2)2020{
 browse unique_id REGION_* moved_in_lastyr* moved_yr_lastyr*
 label define region 1 "Northeast" 2 "North Central" 3 "South" 4 "West" 5 "Alaska, Hawaii" 6 "Foreign"
 
-forvalues y=1998(2)2020{
+forvalues y=1998(2)2022{
 	local z=`y'+1
 	capture gen REGION_`y'=.
 	replace REGION_`y' = REGION_`z' if moved_in_lastyr`z' == 0
@@ -1677,7 +1800,7 @@ forvalues y=1998(2)2020{
 // Other residence things
 browse unique_id house_status_all*
 
-forvalues y=1998(2)2020{
+forvalues y=1998(2)2022{
 	local z=`y'+1
 	local x=`y'-1
 	capture gen house_status_all`y'=.
@@ -1687,7 +1810,7 @@ forvalues y=1998(2)2020{
 
 browse unique_id lives_family_focal*
 
-forvalues y=1998(2)2020{
+forvalues y=1998(2)2022{
 	local z=`y'+1
 	capture gen lives_family_focal`y'=.
 	replace lives_family_focal`y' = lives_family_focal`z' if moved_in_lastyr`z' == 0
@@ -1695,8 +1818,42 @@ forvalues y=1998(2)2020{
 	label values lives_family_focal`y' lives_family
 }
 
+browse unique_id father_in_hh1995 father_in_hh1996 father_in_hh1997 father_in_hh1999 father_in_hh2001 father_in_hh2003 father_moved1995 father_moved1996 father_moved1997 father_moved1999 father_moved2001 father_moved2003 father_change_yr1995 father_change_yr1996 father_change_yr1997 father_change_yr1999 father_change_yr2001 father_change_yr2003
+
+forvalues y=1998(2)2022{
+	local z=`y'+1
+	local x=`y'-1
+	local w=`y'-2
+	gen father_in_hh`y'=.
+	// stayed same
+	replace father_in_hh`y' = father_in_hh`x' if father_in_hh`z' == father_in_hh`x' & father_moved`z'==0
+	// moved in
+	replace father_in_hh`y' = father_in_hh`z' if father_in_hh`z' == father_in_hh`x' + 1 & (father_moved`z'==1 & father_change_yr`z'==`y')
+	replace father_in_hh`y' = father_in_hh`x' if father_in_hh`z' == father_in_hh`x' + 1 & (father_moved`z'==1 & father_change_yr`z'==`z')
+	// moved out
+	replace father_in_hh`y' = father_in_hh`z' if father_in_hh`z' == father_in_hh`x' - 1 & (inlist(father_moved`z',2,3,5) & (father_change_yr`z'==`y' | father_change_yr`z'==`w'))
+	replace father_in_hh`y' = father_in_hh`x' if father_in_hh`z' == father_in_hh`x' - 1 & (inlist(father_moved`z',2,3,5) & father_change_yr`z'==`z')
+}
+
+browse unique_id father_in_hh1995 father_in_hh1996 father_in_hh1997 father_in_hh1998 father_in_hh1999 father_in_hh2000 father_in_hh2001 father_in_hh2002 father_in_hh2003 father_moved1995 father_moved1996 father_moved1997 father_moved1999 father_moved2001 father_moved2003 father_change_yr1995 father_change_yr1996 father_change_yr1997 father_change_yr1999 father_change_yr2001 father_change_yr2003
+
+forvalues y=1998(2)2022{
+	local z=`y'+1
+	local x=`y'-1
+	local w=`y'-2
+	gen mother_in_hh`y'=.
+	// stayed same
+	replace mother_in_hh`y' = mother_in_hh`x' if mother_in_hh`z' == mother_in_hh`x' & mother_moved`z'==0
+	// moved in
+	replace mother_in_hh`y' = mother_in_hh`z' if mother_in_hh`z' == mother_in_hh`x' + 1 & (mother_moved`z'==1 & mother_change_yr`z'==`y')
+	replace mother_in_hh`y' = mother_in_hh`x' if mother_in_hh`z' == mother_in_hh`x' + 1 & (mother_moved`z'==1 & mother_change_yr`z'==`z')
+	// moved out
+	replace mother_in_hh`y' = mother_in_hh`z' if mother_in_hh`z' == mother_in_hh`x' - 1 & (inlist(mother_moved`z',2,3,5) & (mother_change_yr`z'==`y' | mother_change_yr`z'==`w'))
+	replace mother_in_hh`y' = mother_in_hh`x' if mother_in_hh`z' == mother_in_hh`x' - 1 & (inlist(mother_moved`z',2,3,5) & mother_change_yr`z'==`z')
+}
+
 // update respondent info with non-survey year as category
-forvalues y=1998(2)2020{
+forvalues y=1998(2)2022{
 	capture gen RESPONDENT_WHO_`y'=9
 	label values RESPONDENT_WHO_`y' resp
 }
@@ -1711,7 +1868,7 @@ replace min_yr_retired_focal = 0 if min_yr_retired_focal==9999
 // browse unique_id min_yr_retired_focal max_yr_retired_focal yr_retired_focal* empstat_retired_focal*
 
 // also need to realign the t-1 variables
-forvalues y=1985/2021{
+forvalues y=1985/2023{
 	local x=`y'-1
 	gen long TOTAL_INCOME_T_FAMILY`x' = TOTAL_INCOME_T1_FAMILY_`y'
 	gen weekly_hrs_t_focal`x' = weekly_hrs_t1_focal`y'
@@ -1734,21 +1891,21 @@ forvalues y=1986/1997{
 	replace yrs_non_sample`y' = yrs_non_sample`x' if in_sample_`y'==1 // add 1 to prev yr if not in sample this year
 }
 
-forvalues y=1999(2)2021{
+forvalues y=1999(2)2023{
 	local x=`y'-2
 	gen yrs_non_sample`y'=.
 	replace yrs_non_sample`y' = yrs_non_sample`x' + 1 if in_sample_`y'==0 // add 1 to prev yr if not in sample this year
 	replace yrs_non_sample`y' = yrs_non_sample`x' if in_sample_`y'==1 // add 1 to prev yr if not in sample this year
 }
 
-forvalues y=1998(2)2020{
+forvalues y=1998(2)2022{
 	local z=`y'+1
 	gen yrs_non_sample`y'=.
 	replace yrs_non_sample`y' = yrs_non_sample`z' 
 	replace yrs_non_sample`y' = yrs_non_sample`z' 
 }
 
-forvalues y=1998(2)2020{
+forvalues y=1998(2)2022{
 	local z=`y'+1
 	gen in_sample_`y'=.
 	replace in_sample_`y' = in_sample_`z' 
@@ -1767,21 +1924,17 @@ egen first_educ_focal=rowfirst(educ_focal*)
 browse first_educ_focal educ_focal*
 label values first_educ_focal educ
 
-// and add in children info and see if I can get this to work
-merge m:1 unique_id using "$created_data/hh_birth_history_file_byUNIQUE.dta", keepusing(hh_births_1985 hh_births_1986 hh_births_1987 hh_births_1988 hh_births_1989 hh_births_199* hh_births_2* individ_birth_1985 individ_birth_1986 individ_birth_1987 individ_birth_1989 individ_birth_1989 individ_birth_199* individ_birth_2*)
-
-drop if _merge==2
-drop _merge
 
 ********************************************************************************
 * BACK to long so can recenter on duration and fill in some missings
 ********************************************************************************
-reshape long in_sample_ relationship_ MARITAL_PAIRS_ weekly_hrs_t1_focal earnings_t1_focal housework_focal employed_focal educ_focal college_focal max_educ_focal age_focal weekly_hrs_t2_focal earnings_t2_focal employed_t2_focal start_yr_employer_focal yrs_employer_focal children FAMILY_INTERVIEW_NUM_ NUM_CHILDREN_ AGE_YOUNG_CHILD_ TOTAL_INCOME_T1_FAMILY_ TOTAL_INCOME_T2_FAMILY_ raceth_fixed_focal raceth_focal childcare_focal adultcare_focal weekly_hrs_t_focal earnings_t_focal TOTAL_INCOME_T_FAMILY has_hours_t1 has_earnings_t1 has_hours_t2 has_earnings_t2 employed_t1_hrs_focal employed_t1_earn_focal SPLITOFF_ COMPOSITION_CHANGE_ NUM_IN_HH_ MOVED_YEAR_ SPLITOFF_YEAR_ DATA_RECORD_TYPE_ hh_status_ in_sample_sp_ relationship_sp_ MARITAL_PAIRS_sp_  MOVED_YEAR_sp_  SPLITOFF_sp_  SPLITOFF_YEAR_sp_ hh_status_sp_ moved moved_sp partnered partnered_sp yrs_non_sample any_births_focal any_births_hh under18 edulevel_match edulevelmax_match new_in_hh individ_birth_ hh_births_ employment_status_focal disabled_focal empstat_disabled_focal disabled_scale_focal sr_health_focal yr_retired_focal empstat_retired_focal lives_with_parent lives_with_grandparent num_65up_hh age65up house_status_all moved_in_lastyr moved_mo_lastyr moved_yr_lastyr religion_focal lives_family_focal RESPONDENT_WHO_ REGION_  ///
-, i(unique_id partner_id rel_start_all min_dur max_dur rel_end_all last_yr_observed ended SEX) j(survey_yr)
+reshape long in_sample_ relationship_ MARITAL_PAIRS_ weekly_hrs_t1_focal earnings_t1_focal housework_focal employed_focal educ_focal college_focal max_educ_focal age_focal weekly_hrs_t2_focal earnings_t2_focal employed_t2_focal start_yr_employer_focal yrs_employer_focal children FAMILY_INTERVIEW_NUM_ NUM_CHILDREN_ AGE_YOUNG_CHILD_ TOTAL_INCOME_T1_FAMILY_ TOTAL_INCOME_T2_FAMILY_ raceth_fixed_focal raceth_focal childcare_focal adultcare_focal weekly_hrs_t_focal earnings_t_focal TOTAL_INCOME_T_FAMILY has_hours_t1 has_earnings_t1 has_hours_t2 has_earnings_t2 employed_t1_hrs_focal employed_t1_earn_focal SPLITOFF_ COMPOSITION_CHANGE_ NUM_IN_HH_ MOVED_YEAR_ SPLITOFF_YEAR_ DATA_RECORD_TYPE_ hh_status_ in_sample_sp_ relationship_sp_ MARITAL_PAIRS_sp_  MOVED_YEAR_sp_  SPLITOFF_sp_  SPLITOFF_YEAR_sp_ hh_status_sp_ moved_focal moved_sp partnered partnered_sp yrs_non_sample any_births_t1_focal any_births_t1_hh any_births_t2_focal any_births_t2_hh under18 edulevel_match edulevelmax_match new_in_hh individ_birth_ hh_births_ employment_status_focal disabled_focal empstat_disabled_focal disabled_scale_focal sr_health_focal yr_retired_focal empstat_retired_focal num_65up_hh age65up house_status_all moved_in_lastyr moved_mo_lastyr moved_yr_lastyr religion_focal lives_family_focal RESPONDENT_WHO_ REGION_ parent_in_ofum num_parent_in_hh father_in_hh mother_in_hh father_fam_id father_in_sample father_moved father_change_yr mother_fam_id mother_in_sample mother_moved mother_change_yr ///
+, i(unique_id partner_id rel_start_all min_dur max_dur rel_end_all last_yr_observed ended SEX) j(survey_yr) // lives_with_parent lives_with_grandparent 
 
 browse unique_id survey_yr rel_start_all rel_end_all min_dur max_dur relationship_ in_sample_ weekly_hrs_t_focal weekly_hrs_t1_focal weekly_hrs_t2_focal housework_focal
+browse unique_id survey_yr in_sample_ TOTAL_INCOME_T_FAMILY TOTAL_INCOME_T1_FAMILY house_status_all REGION_ // because family income is at HH level, when not in sample, it is actually filled in, same with house status and region
 
-foreach var in weekly_hrs_t1_focal weekly_hrs_t_focal earnings_t1_focal earnings_t_focal housework_focal employed_focal age_focal weekly_hrs_t2_focal earnings_t2_focal employed_t2_focal start_yr_employer_focal yrs_employer_focal TOTAL_INCOME_T_FAMILY TOTAL_INCOME_T1_FAMILY_ adultcare_focal childcare_focal raceth_focal employed_t1_hrs_focal employed_t1_earn_focal disabled_focal empstat_disabled_focal disabled_scale_focal sr_health_focal empstat_retired_focal lives_with_parent lives_with_grandparent employment_status_focal religion_focal{
+foreach var in weekly_hrs_t1_focal weekly_hrs_t_focal earnings_t1_focal earnings_t_focal housework_focal employed_focal age_focal weekly_hrs_t2_focal earnings_t2_focal employed_t2_focal start_yr_employer_focal yrs_employer_focal adultcare_focal childcare_focal raceth_focal employed_t1_hrs_focal employed_t1_earn_focal disabled_focal empstat_disabled_focal disabled_scale_focal sr_health_focal empstat_retired_focal employment_status_focal religion_focal{
 	replace `var'=. if in_sample_==0 // oh lol, I also did this here...
 }
 
@@ -1879,7 +2032,7 @@ tab in_rel_est in_sample_, m
 browse unique_id partner_id survey_yr last_survey_yr partnered_imp in_sample_ in_rel_est in_mar_est in_coh_est
 replace partnered_imp = 0 if in_sample_==1 & in_rel_est==0
 
-browse unique_id partner_id survey_yr last_survey_yr partnered_imp in_sample_ in_rel_est rel_start_all rel_end_all mh_yr_married1 mh_yr_end1 mh_yr_married2 mh_yr_end2 hh1_start hh2_start hh1_end hh2_end rel1_start rel1_end rel2_start rel2_end permanent_attrit lt_attrit yrs_non_sample last_survey_yr YR_NONRESPONSE_RECENT YR_NONRESPONSE_FIRST  moved change_yr
+browse unique_id partner_id survey_yr last_survey_yr partnered_imp in_sample_ in_rel_est rel_start_all rel_end_all mh_yr_married1 mh_yr_end1 mh_yr_married2 mh_yr_end2 hh1_start hh2_start hh1_end hh2_end rel1_start rel1_end rel2_start rel2_end permanent_attrit lt_attrit yrs_non_sample last_survey_yr YR_NONRESPONSE_RECENT YR_NONRESPONSE_FIRST  moved_focal change_yr
 
 tab partnered_imp in_sample_, m // so all the missing are now those not in sample. so, those are actually missing, because while I know not married, bc should be in history, it''s possible they were cohabiting?
 tab partnered_imp, m
@@ -2014,14 +2167,14 @@ drop _merge
 label values  NUM_CHILDREN_ NUM_IN_HH_ NUM_BIRTHS .
 
 gen rolling_births=0
-forvalues y=1968/2021{
+forvalues y=1968/2023{
 	forvalues c=1/20{
 		replace rolling_births = rolling_births + 1 if survey_yr==`y' & inrange(cah_child_birth_yr`c',1900,`y') 
 	}	
 }
 
 gen had_birth=0
-forvalues y=1968/2021{
+forvalues y=1968/2023{
 	forvalues c=1/20{
 		replace had_birth = 1 if survey_yr==`y' & cah_child_birth_yr`c'==`y'
 	}	
@@ -2061,7 +2214,7 @@ tab num_children_imp_hh, m
 tab num_children_imp_hh num_children_imp_focal, m // good alignment, just sometimes the HH has more, which makes sense
 replace num_children_imp_hh = num_children_imp_focal if num_children_imp_hh==.
 
-browse unique_id survey_yr in_sample_ num_children_imp_focal num_children_imp_hh NUM_CHILDREN_ NUM_IN_HH_ increment_birth had_birth rolling_births hh_births_est FIRST_BIRTH_YR any_births_focal any_births_hh cah_child_birth_yr* COMPOSITION_CHANGE
+browse unique_id survey_yr in_sample_ num_children_imp_focal num_children_imp_hh NUM_CHILDREN_ NUM_IN_HH_ increment_birth had_birth rolling_births hh_births_est FIRST_BIRTH_YR any_births_t1_focal any_births_t1_hh cah_child_birth_yr* COMPOSITION_CHANGE
 
 inspect NUM_CHILDREN_
 inspect num_children_imp_focal
@@ -2094,6 +2247,13 @@ tab educ_focal_imp if dur>=-2, m
 sort unique_id partner_id survey_yr
 browse unique_id survey_yr relationship_ under18 duration educ_focal_imp educ_focal first_educ_focal max_educ_focal new_in_hh
 
+// need to fix my calculated parent variable now that i filled in off years
+capture gen num_parent_in_hh = .
+replace num_parent_in_hh = 0 if father_in_hh==0 & mother_in_hh==0
+replace num_parent_in_hh = 1 if father_in_hh==1 & mother_in_hh==0
+replace num_parent_in_hh = 1 if father_in_hh==0 & mother_in_hh==1
+replace num_parent_in_hh = 2 if father_in_hh==1 & mother_in_hh==1
+
 **# Here the data is now long, by duration - only the durations I want.
 tab duration, m
 keep if duration >=-2 // only keeping up to 2 years prior, bc there are so many missing pre duration 0, it's not very stable.
@@ -2120,11 +2280,11 @@ bysort couple_id (SEX): replace SEX=SEX[1] if SEX==.
 bysort couple_id (unique_id): replace unique_id=unique_id[1] if unique_id==.
 bysort couple_id (partner_id): replace partner_id=partner_id[1] if partner_id==.
 
-foreach var in rel_start_all min_dur max_dur rel_end_all last_yr_observed ended birth_yr_all raceth_fixed_focal FIRST_BIRTH_YR LAST_BIRTH_YR sample_type last_race_focal rel_type_constant  main_fam_id SAMPLE has_psid_gene first_survey_yr_focal  last_survey_yr_focal first_educ_focal max_educ_focal transition_yr_est rel_status current_rel_number_main current_rel_number current_coh_number current_marr_number mpf_focal ever_parent_focal num_births_focal min_yr_retired_focal max_yr_retired_focal father_max_educ_focal mother_max_educ_focal family_structure_cons_focal{
+foreach var in rel_start_all min_dur max_dur rel_end_all last_yr_observed ended birth_yr_all raceth_fixed_focal FIRST_BIRTH_YR LAST_BIRTH_YR PSID_COHORT sample_type last_race_focal rel_type_constant  main_fam_id SAMPLE has_psid_gene first_survey_yr_focal  last_survey_yr_focal first_educ_focal max_educ_focal transition_yr_est rel_status current_rel_number_main current_rel_number current_coh_number current_marr_number mpf_focal ever_parent_focal num_births_focal min_yr_retired_focal max_yr_retired_focal father_max_educ_focal mother_max_educ_focal family_structure_cons_focal father_unique_id FATHER_YR_BORN mother_unique_id MOTHER_YR_BORN{
 	bysort couple_id (`var'): replace `var'=`var'[1] if `var'==.
 }
 
-/* incorporate all of these above, these are people who going past 10 years is past 2021
+/* incorporate all of these above, these are people who going past 10 years is past 2023
 browse unique_id duration birth_yr_all if inlist(unique_id,4039,4180,4201,4202,5004,5004,5183,5183,6032,6177,7032)
 bysort unique_id (birth_yr_all): replace birth_yr_all = birth_yr_all[1]
 
@@ -2178,7 +2338,18 @@ tab retired_est_focal empstat_retired_focal, m
 browse unique_id partner_id survey_yr ever_retired min_yr_retired_focal max_yr_retired_focal retired_est_focal empstat_retired_focal if ever_retired==1
 
 // recode respondent_who for non-survey years
-replace RESPONDENT_WHO_ = 9 if RESPONDENT_WHO_==. & survey_yr>2021
+replace RESPONDENT_WHO_ = 9 if RESPONDENT_WHO_==. & survey_yr>2023
+
+// let's recode housing_status so I can attempt to use ologit
+rename house_status_all house_status_all_v0
+
+gen house_status_all = .
+replace house_status_all = 0 if house_status_all_v0==3 // neither
+replace house_status_all = 1 if house_status_all_v0==2 // rents
+replace house_status_all = 2 if house_status_all_v0==1 // owns
+
+label define house_status 0 "Neither" 1 "Rents" 2 "Owns"
+label values house_status_all house_status
 
 // get ready to reshape back
 gen duration_rec=duration+2 // negatives won't work in reshape or with sq commands - so make -2 0
@@ -2229,16 +2400,16 @@ replace partnered=0 if MARITAL_PAIRS_==0
 replace partnered=1 if inrange(MARITAL_PAIRS_,1,3)
 */
 
-tabstat weekly_hrs_t_focal housework_focal childcare_focal adultcare_focal employed_focal earnings_t_focal age_focal birth_yr_all educ_focal college_focal raceth_focal raceth_fixed_focal ever_parent_focal children num_children_imp_focal num_children_imp_hh num_births_focal rolling_births FIRST_BIRTH_YR AGE_YOUNG_CHILD_ birth_timing_rel relationship_ partnered_imp current_rel_number_main mpf_focal TOTAL_INCOME_T_FAMILY sample_type lives_with_parent lives_with_grandparent num_65up_hh disabled_focal sr_health_focal retired_est_focal, stats(mean sd p50) columns(statistics)
+tabstat weekly_hrs_t_focal housework_focal childcare_focal adultcare_focal employed_focal earnings_t_focal age_focal birth_yr_all educ_focal college_focal raceth_focal raceth_fixed_focal ever_parent_focal children num_children_imp_focal num_children_imp_hh num_births_focal rolling_births FIRST_BIRTH_YR AGE_YOUNG_CHILD_ birth_timing_rel relationship_ partnered_imp current_rel_number_main mpf_focal TOTAL_INCOME_T_FAMILY sample_type num_parent_in_hh num_65up_hh disabled_focal sr_health_focal retired_est_focal, stats(mean sd p50) columns(statistics)
 
 ********************************************************************************
 * reshaping wide for imputation purposes
 ********************************************************************************
 rename transition_yr_est transition_yr
 
-drop survey_yr duration _fillin MARITAL_PAIRS_ *_sp *_sp* cah_* mh_* rel*_start rel*_end marr*_start marr*_end coh*_start coh*_end hh*_start hh*_end MOVED_YEAR_ MOVED_YEAR_sp_ moved moved_sp any_births_focal any_births_hh *_est SPLITOFF* COMPOSITION_CHANGE_ NUM_IN_HH_ DATA_RECORD_TYPE_  SAMPLE_STATUS_TYPE PERMANENT_ATTRITION ANY_ATTRITION permanent_attrit lt_attrit YR_NONRESPONSE_RECENT YR_NONRESPONSE_FIRST yrs_non_sample change_yr in_marital_history int_number per_num INTERVIEW_NUM_1968 individ_birth_ current_rel_number_v0  rel_counter marr_counter coh_counter NUM_BIRTHS first_birth_yr_calc first_birth_yr_calc_dedup  first_birth_yr_alt  // hh_births_pre1968
+drop survey_yr duration _fillin MARITAL_PAIRS_ *_sp *_sp* cah_* mh_* rel*_start rel*_end marr*_start marr*_end coh*_start coh*_end hh*_start hh*_end MOVED_YEAR_ MOVED_YEAR_sp_ moved_focal moved_sp any_births_t1_focal any_births_t1_hh any_births_t2_focal any_births_t2_hh *_est SPLITOFF* COMPOSITION_CHANGE_ NUM_IN_HH_ DATA_RECORD_TYPE_  SAMPLE_STATUS_TYPE PERMANENT_ATTRITION ANY_ATTRITION permanent_attrit lt_attrit YR_NONRESPONSE_RECENT YR_NONRESPONSE_FIRST yrs_non_sample change_yr in_marital_history int_number per_num INTERVIEW_NUM_1968 individ_birth_ current_rel_number_v0  rel_counter marr_counter coh_counter NUM_BIRTHS first_birth_yr_calc first_birth_yr_calc_dedup  first_birth_yr_alt father_fam_id father_in_sample father_moved father_change_yr mother_fam_id mother_in_sample mother_moved mother_change_yr parent_in_ofum house_status_all_v0 // hh_births_pre1968
 
-reshape wide in_sample_ hh_status_ relationship_  partnered weekly_hrs_t1_focal earnings_t1_focal housework_focal employed_focal max_educ_focal educ_focal educ_focal_imp college_focal age_focal weekly_hrs_t2_focal earnings_t2_focal employed_t2_focal start_yr_employer_focal yrs_employer_focal children FAMILY_INTERVIEW_NUM_ NUM_CHILDREN_ AGE_YOUNG_CHILD_ TOTAL_INCOME_T1_FAMILY_ hours_type_t1_focal hw_hours_gp raceth_focal weekly_hrs_t_focal earnings_t_focal TOTAL_INCOME_T_FAMILY childcare_focal adultcare_focal TOTAL_INCOME_T2_FAMILY_ has_hours_t1 has_earnings_t1 has_hours_t2 has_earnings_t2 employed_t1_hrs_focal employed_t1_earn_focal partnered_imp num_children_imp_focal num_children_imp_hh rolling_births had_birth hh_births* increment_birth under18 edulevel_match edulevelmax_match new_in_hh disabled_focal empstat_disabled_focal disabled_scale_focal sr_health_focal yr_retired_focal empstat_retired_focal retired_est_focal lives_with_parent lives_with_grandparent num_65up_hh age65up house_status_all moved_in_lastyr moved_mo_lastyr moved_yr_lastyr religion_focal lives_family_focal RESPONDENT_WHO_ REGION_ employment_status_focal current_parent_status ///
+reshape wide in_sample_ hh_status_ relationship_  partnered weekly_hrs_t1_focal earnings_t1_focal housework_focal employed_focal max_educ_focal educ_focal educ_focal_imp college_focal age_focal weekly_hrs_t2_focal earnings_t2_focal employed_t2_focal start_yr_employer_focal yrs_employer_focal children FAMILY_INTERVIEW_NUM_ NUM_CHILDREN_ AGE_YOUNG_CHILD_ TOTAL_INCOME_T1_FAMILY_ hours_type_t1_focal hw_hours_gp raceth_focal weekly_hrs_t_focal earnings_t_focal TOTAL_INCOME_T_FAMILY childcare_focal adultcare_focal TOTAL_INCOME_T2_FAMILY_ has_hours_t1 has_earnings_t1 has_hours_t2 has_earnings_t2 employed_t1_hrs_focal employed_t1_earn_focal partnered_imp num_children_imp_focal num_children_imp_hh rolling_births had_birth hh_births* increment_birth under18 edulevel_match edulevelmax_match new_in_hh disabled_focal empstat_disabled_focal disabled_scale_focal sr_health_focal yr_retired_focal empstat_retired_focal retired_est_focal num_65up_hh age65up house_status_all moved_in_lastyr moved_mo_lastyr moved_yr_lastyr religion_focal lives_family_focal RESPONDENT_WHO_ REGION_ employment_status_focal current_parent_status num_parent_in_hh father_in_hh mother_in_hh ///
 , i(couple_id unique_id partner_id rel_start_all min_dur max_dur rel_end_all last_yr_observed ended SEX) j(duration_rec)
 
 forvalues d=0/14{
@@ -2313,11 +2484,9 @@ browse unique_id partner_id couple_id weekly_hrs_t1_focal*
 browse unique_id housework_focal*
 
 misstable summarize *focal*, all // they all have missing, but some feel low?? oh I am dumb, I was reading wrong - the right column is where we HAVE data, so the ones that seem low are mostly the t2 variables, which makes sense,bc didn't exist until 1999 okay I actually feel okay about this
-misstable summarize *focal0, all // -4? (first time point)
-misstable summarize *focal4, all // -1
-misstable summarize *focal5, all // this is actually time 0?
-misstable summarize *focal6, all // t1
-misstable summarize *focal7, all // t2
+misstable summarize *focal0, all // -2? (first time point)
+misstable summarize *focal2, all // 0
+misstable summarize *focal3, all // t1
 misstable summarize *focal14, all // last time point
 mdesc *focal*
 
@@ -2364,7 +2533,7 @@ return matrix table = `matrix'
 end
 
 putexcel set "$root/imputation/psid_missingtable.xlsx", replace
-mmdesc FAMILY_INTERVIEW_NUM_0-fixed_education
+mmdesc FAMILY_INTERVIEW_NUM_0-disabled_imp_focal14
 putexcel A1 = matrix(r(table))
 
 // sdchronogram hours_type_t1_focal0-hours_type_t1_focal16 // this is not working; I am not sure why

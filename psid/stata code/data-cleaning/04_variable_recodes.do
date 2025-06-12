@@ -170,8 +170,10 @@ replace rel_start_yr = hh_start_yr_est if rel_start_yr_est==hh_start_yr_est & re
 replace rel_start_yr = hh_start_yr_est if (abs(rel_start_yr_est-hh_start_yr_est)==1 | abs(rel_start_yr_est-hh_start_yr_est)==2) & rel_start_yr_est!=. & hh_start_yr_est!=. & rel_start_yr==. // fill in if they are just a year or two off in either direction (bc of biennial surveys)
 replace rel_start_yr = max_start_yr_est if rel_start_yr_est!=. & hh_start_yr_est!=. & rel_start_yr==. // I think the later date makes sense in these instances
 replace rel_start_yr = survey_yr if rel_start==1 & rel_start_yr==. 
-tab hh_start_yr_est if rel_start_yr==. , m
+tab hh_start_yr_est if rel_start_yr==. , m // there are some here, but a quick browse suggests these aren't really the right dates to fill in
 tab rel_start_yr_est if rel_start_yr==. , m
+// browse unique_id survey_yr rel_start_yr max_start_yr_est max_end_yr_est hh_start_yr_est rel_start_yr_est hh_end_yr_est rel_end_yr_est
+// browse unique_id survey_yr marital_status_updated relno_est rel_start_yr max_start_yr_est max_end_yr_est hh_start_yr_est rel_start_yr_est hh_end_yr_est rel_end_yr_est mh_yr_married1 mh_yr_end1 mh_yr_married2 mh_yr_end2 rel1_start rel1_end rel2_start rel2_end if rel_start_yr == .
 
 replace rel_end_yr = hh_end_yr_est if rel_end_yr_est==hh_end_yr_est & rel_end_yr_est!=. & hh_end_yr_est!=. & rel_end_yr==. // fill in if they match
 replace rel_end_yr = hh_end_yr_est if (abs(rel_end_yr_est-hh_end_yr_est)==1 | abs(rel_end_yr_est-hh_end_yr_est)==2) & rel_end_yr_est!=. & hh_end_yr_est!=. & rel_end_yr==. // fill in if they are just a year off in either direction
@@ -280,12 +282,12 @@ label values educ_wife_early educ_head_early educ_wife_1975 educ_head_1975 educ_
 
 gen educ_wife=.
 replace educ_wife=educ_wife_early if inrange(survey_yr,1968,1990)
-replace educ_wife=educ_wife_1975 if inrange(survey_yr,1991,2021)
+replace educ_wife=educ_wife_1975 if inrange(survey_yr,1991,2023)
 tab survey_yr educ_wife, m // so 69, 70, 71
 
 gen educ_head=.
 replace educ_head=educ_head_early if inrange(survey_yr,1968,1990)
-replace educ_head=educ_head_1975 if inrange(survey_yr,1991,2021)
+replace educ_head=educ_head_1975 if inrange(survey_yr,1991,2023)
 
 label values educ_wife educ_head educ
 
@@ -323,12 +325,12 @@ browse unique_id survey_yr FAMILY_INTERVIEW_NUM_ TAXABLE_T1_HEAD_WIFE TOTAL_INCO
 
 gen earnings_wife=.
 replace earnings_wife = LABOR_INCOME_T1_WIFE_ if inrange(survey_yr,1968,1993)
-replace earnings_wife = WAGES_T1_WIFE_ if inrange(survey_yr,1994,2021)
+replace earnings_wife = WAGES_T1_WIFE_ if inrange(survey_yr,1994,2023)
 replace earnings_wife=. if earnings_wife== 9999999
 
 gen earnings_head=.
 replace earnings_head = LABOR_INCOME_T1_HEAD if inrange(survey_yr,1968,1993)
-replace earnings_head = WAGES_T1_HEAD if inrange(survey_yr,1994,2021)
+replace earnings_head = WAGES_T1_HEAD if inrange(survey_yr,1994,2023)
 replace earnings_head=. if earnings_head== 9999999
 
 egen couple_earnings = rowtotal(earnings_wife earnings_head)
@@ -535,7 +537,7 @@ browse unique_id survey_yr RACE_1_WIFE_ RACE_2_WIFE_ RACE_3_WIFE_ RACE_1_HEAD_ R
 1968-1984: 1=White; 2=Negro; 3=PR or Mexican; 7=Other
 1985-1989: 1=White; 2=Black; 3=Am Indian 4=Asian 7=Other; 8 =more than 2
 1990-2003: 1=White; 2=Black; 3=Am India; 4=Asian; 5=Latino; 6=Other; 7=Other
-2005-2021: 1=White; 2=Black; 3=Am India; 4=Asian; 5=Native Hawaiian/Pac Is; 7=Other
+2005-2023: 1=White; 2=Black; 3=Am India; 4=Asian; 5=Native Hawaiian/Pac Is; 7=Other
 
 From SHELF:
 Both summary measures were based on majority response across all available waves (with a small number of ties being broken by most recent report). 
@@ -546,66 +548,66 @@ so maybe rely on when asked and more recent, when measures more robust and self-
 gen race_1_head_rec=.
 replace race_1_head_rec=1 if RACE_1_HEAD_==1
 replace race_1_head_rec=2 if RACE_1_HEAD_==2
-replace race_1_head_rec=3 if (inrange(survey_yr,1985,2021) & RACE_1_HEAD_==3)
-replace race_1_head_rec=4 if (inrange(survey_yr,1985,2021) & RACE_1_HEAD_==4)
+replace race_1_head_rec=3 if (inrange(survey_yr,1985,2023) & RACE_1_HEAD_==3)
+replace race_1_head_rec=4 if (inrange(survey_yr,1985,2023) & RACE_1_HEAD_==4)
 replace race_1_head_rec=5 if (inrange(survey_yr,1968,1984) & RACE_1_HEAD_==3) | (inrange(survey_yr,1990,2003) & RACE_1_HEAD_==5)
-replace race_1_head_rec=6 if RACE_1_HEAD_==7 | (inrange(survey_yr,1990,2003) & RACE_1_HEAD_==6) | (inrange(survey_yr,2005,2021) & RACE_1_HEAD_==5) | (inrange(survey_yr,1985,1989) & RACE_1_HEAD_==8)
+replace race_1_head_rec=6 if RACE_1_HEAD_==7 | (inrange(survey_yr,1990,2003) & RACE_1_HEAD_==6) | (inrange(survey_yr,2005,2023) & RACE_1_HEAD_==5) | (inrange(survey_yr,1985,1989) & RACE_1_HEAD_==8)
 
 gen race_2_head_rec=.
 replace race_2_head_rec=1 if RACE_2_HEAD_==1
 replace race_2_head_rec=2 if RACE_2_HEAD_==2
-replace race_2_head_rec=3 if (inrange(survey_yr,1985,2021) & RACE_2_HEAD_==3)
-replace race_2_head_rec=4 if (inrange(survey_yr,1985,2021) & RACE_2_HEAD_==4)
+replace race_2_head_rec=3 if (inrange(survey_yr,1985,2023) & RACE_2_HEAD_==3)
+replace race_2_head_rec=4 if (inrange(survey_yr,1985,2023) & RACE_2_HEAD_==4)
 replace race_2_head_rec=5 if (inrange(survey_yr,1968,1984) & RACE_2_HEAD_==3) | (inrange(survey_yr,1990,2003) & RACE_2_HEAD_==5)
-replace race_2_head_rec=6 if RACE_2_HEAD_==7 | (inrange(survey_yr,1990,2003) & RACE_2_HEAD_==6) | (inrange(survey_yr,2005,2021) & RACE_2_HEAD_==5) | (inrange(survey_yr,1985,1989) & RACE_2_HEAD_==8)
+replace race_2_head_rec=6 if RACE_2_HEAD_==7 | (inrange(survey_yr,1990,2003) & RACE_2_HEAD_==6) | (inrange(survey_yr,2005,2023) & RACE_2_HEAD_==5) | (inrange(survey_yr,1985,1989) & RACE_2_HEAD_==8)
 
 gen race_3_head_rec=.
 replace race_3_head_rec=1 if RACE_3_HEAD_==1
 replace race_3_head_rec=2 if RACE_3_HEAD_==2
-replace race_3_head_rec=3 if (inrange(survey_yr,1985,2021) & RACE_3_HEAD_==3)
-replace race_3_head_rec=4 if (inrange(survey_yr,1985,2021) & RACE_3_HEAD_==4)
+replace race_3_head_rec=3 if (inrange(survey_yr,1985,2023) & RACE_3_HEAD_==3)
+replace race_3_head_rec=4 if (inrange(survey_yr,1985,2023) & RACE_3_HEAD_==4)
 replace race_3_head_rec=5 if (inrange(survey_yr,1968,1984) & RACE_3_HEAD_==3) | (inrange(survey_yr,1990,2003) & RACE_3_HEAD_==5)
-replace race_3_head_rec=6 if RACE_3_HEAD_==7 | (inrange(survey_yr,1990,2003) & RACE_3_HEAD_==6) | (inrange(survey_yr,2005,2021) & RACE_3_HEAD_==5) | (inrange(survey_yr,1985,1989) & RACE_3_HEAD_==8)
+replace race_3_head_rec=6 if RACE_3_HEAD_==7 | (inrange(survey_yr,1990,2003) & RACE_3_HEAD_==6) | (inrange(survey_yr,2005,2023) & RACE_3_HEAD_==5) | (inrange(survey_yr,1985,1989) & RACE_3_HEAD_==8)
 
 gen race_4_head_rec=.
 replace race_4_head_rec=1 if RACE_4_HEAD_==1
 replace race_4_head_rec=2 if RACE_4_HEAD_==2
-replace race_4_head_rec=3 if (inrange(survey_yr,1985,2021) & RACE_4_HEAD_==3)
-replace race_4_head_rec=4 if (inrange(survey_yr,1985,2021) & RACE_4_HEAD_==4)
+replace race_4_head_rec=3 if (inrange(survey_yr,1985,2023) & RACE_4_HEAD_==3)
+replace race_4_head_rec=4 if (inrange(survey_yr,1985,2023) & RACE_4_HEAD_==4)
 replace race_4_head_rec=5 if (inrange(survey_yr,1968,1984) & RACE_4_HEAD_==3) | (inrange(survey_yr,1990,2003) & RACE_4_HEAD_==5)
-replace race_4_head_rec=6 if RACE_4_HEAD_==7 | (inrange(survey_yr,1990,2003) & RACE_4_HEAD_==6) | (inrange(survey_yr,2005,2021) & RACE_4_HEAD_==5) | (inrange(survey_yr,1985,1989) & RACE_4_HEAD_==8)
+replace race_4_head_rec=6 if RACE_4_HEAD_==7 | (inrange(survey_yr,1990,2003) & RACE_4_HEAD_==6) | (inrange(survey_yr,2005,2023) & RACE_4_HEAD_==5) | (inrange(survey_yr,1985,1989) & RACE_4_HEAD_==8)
 
 gen race_1_wife_rec=.
 replace race_1_wife_rec=1 if RACE_1_WIFE_==1
 replace race_1_wife_rec=2 if RACE_1_WIFE_==2
-replace race_1_wife_rec=3 if (inrange(survey_yr,1985,2021) & RACE_1_WIFE_==3)
-replace race_1_wife_rec=4 if (inrange(survey_yr,1985,2021) & RACE_1_WIFE_==4)
+replace race_1_wife_rec=3 if (inrange(survey_yr,1985,2023) & RACE_1_WIFE_==3)
+replace race_1_wife_rec=4 if (inrange(survey_yr,1985,2023) & RACE_1_WIFE_==4)
 replace race_1_wife_rec=5 if (inrange(survey_yr,1968,1984) & RACE_1_WIFE_==3) | (inrange(survey_yr,1990,2003) & RACE_1_WIFE_==5)
-replace race_1_wife_rec=6 if RACE_1_WIFE_==7 | (inrange(survey_yr,1990,2003) & RACE_1_WIFE_==6) | (inrange(survey_yr,2005,2021) & RACE_1_WIFE_==5) | (inrange(survey_yr,1985,1989) & RACE_1_WIFE_==8)
+replace race_1_wife_rec=6 if RACE_1_WIFE_==7 | (inrange(survey_yr,1990,2003) & RACE_1_WIFE_==6) | (inrange(survey_yr,2005,2023) & RACE_1_WIFE_==5) | (inrange(survey_yr,1985,1989) & RACE_1_WIFE_==8)
 
 gen race_2_wife_rec=.
 replace race_2_wife_rec=1 if RACE_2_WIFE_==1
 replace race_2_wife_rec=2 if RACE_2_WIFE_==2
-replace race_2_wife_rec=3 if (inrange(survey_yr,1985,2021) & RACE_2_WIFE_==3)
-replace race_2_wife_rec=4 if (inrange(survey_yr,1985,2021) & RACE_2_WIFE_==4)
+replace race_2_wife_rec=3 if (inrange(survey_yr,1985,2023) & RACE_2_WIFE_==3)
+replace race_2_wife_rec=4 if (inrange(survey_yr,1985,2023) & RACE_2_WIFE_==4)
 replace race_2_wife_rec=5 if (inrange(survey_yr,1968,1984) & RACE_2_WIFE_==3) | (inrange(survey_yr,1990,2003) & RACE_2_WIFE_==5)
-replace race_2_wife_rec=6 if RACE_2_WIFE_==7 | (inrange(survey_yr,1990,2003) & RACE_2_WIFE_==6) | (inrange(survey_yr,2005,2021) & RACE_2_WIFE_==5) | (inrange(survey_yr,1985,1989) & RACE_2_WIFE_==8)
+replace race_2_wife_rec=6 if RACE_2_WIFE_==7 | (inrange(survey_yr,1990,2003) & RACE_2_WIFE_==6) | (inrange(survey_yr,2005,2023) & RACE_2_WIFE_==5) | (inrange(survey_yr,1985,1989) & RACE_2_WIFE_==8)
 
 gen race_3_wife_rec=.
 replace race_3_wife_rec=1 if RACE_3_WIFE_==1
 replace race_3_wife_rec=2 if RACE_3_WIFE_==2
-replace race_3_wife_rec=3 if (inrange(survey_yr,1985,2021) & RACE_3_WIFE_==3)
-replace race_3_wife_rec=4 if (inrange(survey_yr,1985,2021) & RACE_3_WIFE_==4)
+replace race_3_wife_rec=3 if (inrange(survey_yr,1985,2023) & RACE_3_WIFE_==3)
+replace race_3_wife_rec=4 if (inrange(survey_yr,1985,2023) & RACE_3_WIFE_==4)
 replace race_3_wife_rec=5 if (inrange(survey_yr,1968,1984) & RACE_3_WIFE_==3) | (inrange(survey_yr,1990,2003) & RACE_3_WIFE_==5)
-replace race_3_wife_rec=6 if RACE_3_WIFE_==7 | (inrange(survey_yr,1990,2003) & RACE_3_WIFE_==6) | (inrange(survey_yr,2005,2021) & RACE_3_WIFE_==5) | (inrange(survey_yr,1985,1989) & RACE_3_WIFE_==8)
+replace race_3_wife_rec=6 if RACE_3_WIFE_==7 | (inrange(survey_yr,1990,2003) & RACE_3_WIFE_==6) | (inrange(survey_yr,2005,2023) & RACE_3_WIFE_==5) | (inrange(survey_yr,1985,1989) & RACE_3_WIFE_==8)
 
 gen race_4_wife_rec=.
 replace race_4_wife_rec=1 if RACE_4_WIFE_==1
 replace race_4_wife_rec=2 if RACE_4_WIFE_==2
-replace race_4_wife_rec=3 if (inrange(survey_yr,1985,2021) & RACE_4_WIFE_==3)
-replace race_4_wife_rec=4 if (inrange(survey_yr,1985,2021) & RACE_4_WIFE_==4)
+replace race_4_wife_rec=3 if (inrange(survey_yr,1985,2023) & RACE_4_WIFE_==3)
+replace race_4_wife_rec=4 if (inrange(survey_yr,1985,2023) & RACE_4_WIFE_==4)
 replace race_4_wife_rec=5 if (inrange(survey_yr,1968,1984) & RACE_4_WIFE_==3) | (inrange(survey_yr,1990,2003) & RACE_4_WIFE_==5)
-replace race_4_wife_rec=6 if RACE_4_WIFE_==7 | (inrange(survey_yr,1990,2003) & RACE_4_WIFE_==6) | (inrange(survey_yr,2005,2021) & RACE_4_WIFE_==5) | (inrange(survey_yr,1985,1989) & RACE_4_WIFE_==8)
+replace race_4_wife_rec=6 if RACE_4_WIFE_==7 | (inrange(survey_yr,1990,2003) & RACE_4_WIFE_==6) | (inrange(survey_yr,2005,2023) & RACE_4_WIFE_==5) | (inrange(survey_yr,1985,1989) & RACE_4_WIFE_==8)
 
 // based on first mention (that is one option they use in SHELF)
 gen race_wife=race_1_wife_rec

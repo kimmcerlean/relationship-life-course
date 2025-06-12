@@ -79,13 +79,17 @@ replace id_check=1 if partner_id_v1==partner_id_v2 & partner_id_v1!=. & partner_
 gen partner_id=partner_id_v2
 replace partner_id=partner_id_v1 if partner_id==.
 
+// browse unique_id FAMILY_INTERVIEW_NUM_ survey_yr MARITAL_PAIRS_  partner_id_v1 partner_id_v2  id_ref id_wife id_mp1_m id_mp1_w id_mp2_m id_mp2_w id_mp3_m id_mp3_w rel_start_yr SEQ_NUMBER_ RELATION_  if partner_id==.
+// tab RELATION_ if partner_id==., m
+
 egen couple_id = group(unique_id partner_id)
 
 // start to get data ready to deduplicate
 tab SEX marital_status_updated if SEX_HEAD_==1
-// tab SEX marital_status_updated if SEX_HEAD_==1 & survey_yr < 2021 // validate it matches
+// tab SEX marital_status_updated if SEX_HEAD_==1 & survey_yr < 2023 // validate it matches
 
 /* need to end up with this amount of respondents after the below
+2021:
 
 INDIVIDUAL | Married (  Partnered |     Total
 -----------+----------------------+----------
@@ -93,6 +97,18 @@ INDIVIDUAL | Married (  Partnered |     Total
     Female |   163,429     11,499 |   174,928 
 -----------+----------------------+----------
      Total |   326,878     23,042 |   349,920 
+	 
+
+2023:
+           | marital_status_update
+    SEX OF |           d
+INDIVIDUAL | Married (  Partnered |     Total
+-----------+----------------------+----------
+      Male |   167,341     12,208 |   179,549 
+    Female |   167,296     12,134 |   179,430 
+-----------+----------------------+----------
+     Total |   334,637     24,342 |   358,979 
+	 
 
 */
 
@@ -135,16 +151,16 @@ gen rel_status_orig = rel_status
 inspect rel_end_all if rel_start_all >=1990
 inspect rel_status if rel_start_all >=1990
 tab rel_end_all rel_status if rel_start_all >=1990, m col
-tab rel_end_all marital_status_updated if rel_start_all >=1990, m col // is this largely cohab?
-tab rel_status marital_status_updated if rel_start_all >=1990, m col
+tab rel_end_all marital_status_updated if rel_start_all >=1990, m col // is this largely cohab? yes
+tab rel_status marital_status_updated if rel_start_all >=1990, m col // this is like all cohab
 
-	*if observed as partnered in 2021, will put end date as 9999 and consider intact
-	gen observed_2021 = .
-	replace observed_2021 = 1 if survey_yr==2021
-	bysort unique_id partner_id (observed_2021): replace observed_2021 = observed_2021[1]
-	// browse unique_id partner_id survey_yr observed_2021 rel_start_all rel_end_all rel_status
-	replace rel_end_all=9999 if observed_2021 == 1 & rel_end_all==.
-	replace rel_status=1 if observed_2021 == 1 & rel_status==.
+	*if observed as partnered in 2023, will put end date as 9999 and consider intact
+	gen observed_2023 = .
+	replace observed_2023 = 1 if survey_yr==2023
+	bysort unique_id partner_id (observed_2023): replace observed_2023 = observed_2023[1]
+	// browse unique_id partner_id survey_yr observed_2023 rel_start_all rel_end_all rel_status
+	replace rel_end_all=9999 if observed_2023 == 1 & rel_end_all==.
+	replace rel_status=1 if observed_2023 == 1 & rel_status==.
 	* their years of nonresponse are not accurate if died, so will update with mine for that
 	replace rel_end_all=last_survey_yr if permanent_attrit == 2 & rel_end_all==.
 	replace rel_status=3 if permanent_attrit == 2 & rel_status==.
@@ -152,7 +168,7 @@ tab rel_status marital_status_updated if rel_start_all >=1990, m col
 	replace rel_status=6 if permanent_attrit == 1 & rel_status==.
 	* so, want to update rel_end_all with attrition year if they attrited and we don't know what happened (even though pernament attrit not labeled)
 	replace rel_end_all=last_survey_yr if rel_end_all==.
-	replace rel_status=6 if rel_status==. // these people left over are definitely attrition ftm
+	replace rel_status=6 if rel_status==. // these people left over are definitely attrition ftm. BUT there's a lot of cohab here. so is this perhaps flawed? I guess, we don't actually distinguish anymore so it's fine
 
 sort unique_id partner_id survey_yr
 browse unique_id partner_id survey_yr dur marital_status_updated rel_start_all rel_end_all rel_status rel_start_yr_couple rel_end_yr_couple dur relationship_duration mh_yr_married1 mh_yr_end1 mh_yr_married2 mh_yr_end2 mh_yr_married3 mh_yr_end3 YR_NONRESPONSE_RECENT YR_NONRESPONSE_FIRST last_survey_yr permanent_attrit ANY_ATTRITION MOVED_ MOVED_YEAR_ SEQ_NUMBER_ if rel_start_all >=1990 & rel_end_all==.
@@ -174,7 +190,7 @@ tab rel_type_constant,m
 quietly unique rel_type_constant, by(couple_id)
 bysort couple_id (_Unique): replace _Unique = _Unique[1]
 tab _Unique, m
-replace rel_type_constant=3 if _Unique==2
+replace rel_type_constant=3 if inlist(_Unique,2,3)
 
 // and an indicator of year transitioned from cohab to marriage for later
 browse unique_id partner_id survey_yr rel_start_all marital_status_updated marr_trans
@@ -193,7 +209,8 @@ tab transition_yr_est rel_type_constant if rel_start_all > 1990, m col
 
 replace transition_yr_est = transition_yr if rel_type_constant==3 & transition_yr_est==. // this is more accurate if it occurs in non-survey year
 
-browse unique_id partner_id survey_yr rel_start_all marital_status_updated marr_trans transition_yr transition_yr_est mh_yr_married1 mh_yr_end1 mh_yr_married2 mh_yr_end2 mh_yr_married3 if rel_type_constant==3 & transition_yr_est==. & rel_start_all > 1990 // these seem to be people actually partnered the whole time?
+browse unique_id partner_id survey_yr rel_start_all marital_status_updated MARST_LEGAL_HEAD_ MARST_DEFACTO_HEAD_ marr_trans transition_yr transition_yr_est mh_yr_married1 mh_yr_end1 mh_yr_married2 mh_yr_end2 mh_yr_married3 if rel_type_constant==3 & transition_yr_est==. & rel_start_all > 1990 // these seem to be people actually partnered the whole time? or switch from marriage to partnered which doesn't make sense... okay the legal marriage and defacto are quite diff...
+// okay marst defacto head is always partnered which doesn't make sense...
 
 // unique unique_id partner_id
 // unique unique_id partner_id rel_type_constant
@@ -218,7 +235,8 @@ browse unique_id partner_id survey_yr rel_start_all rel_end_all last_yr_observed
 
 keep if rel_start_all >= 1990 & inlist(min_dur,0,1) // keeping up to two, because if got married in 2001, say, might not appear in survey until 2003, which is a problem. 
 // keep if rel_start_all <= 2011 // had 2011 when we had 10 year cutoff.
-keep if rel_start_all <=2018 // now will be 2018 because 3 year cutoff (and assume 1st year of full data is 2019, so that's three years)
+// keep if rel_start_all <=2018 // now will be 2018 because 3 year cutoff (and assume 1st year of full data is 2019, so that's three years)
+keep if rel_start_all <=2020 // now will be 2020 because updated to 2023 (and assume 1st year of full data is 2021, so that's three years)
 
 // restrict to working age?
 // tab AGE_HEAD_ employed_t1_head, row
