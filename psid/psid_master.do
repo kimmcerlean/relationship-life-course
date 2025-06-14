@@ -82,6 +82,7 @@ global created_data "$root/created data" /*created data*/
 global results  "$root/results/PSID"
 global tables  "$root/results/PSID/tables"
 global models "$root/results/PSID/models"
+global logs "$root/results/logs"	
 // global graphs  "$root/graphs"
 
 cd "$code"
