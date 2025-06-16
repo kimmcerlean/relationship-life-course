@@ -833,15 +833,16 @@ mi update
 save "$created_data/psid_individs_imputed_long_bysex", replace
 
 ********************************************************************************
-*  Let's look at some descriptives
 ********************************************************************************
+**# * Imputation descriptives
+********************************************************************************
+********************************************************************************
+
 tabstat weekly_hrs_t_focal housework_focal, by(imputed) stats(mean sd p50)
 tabstat weekly_hrs_t_focal housework_focal if SEX==1, by(imputed) stats(mean sd p50)
 tabstat weekly_hrs_t_focal housework_focal if SEX==2, by(imputed) stats(mean sd p50)
 
-tabstat weekly_hrs_t_focal housework_focal childcare_focal adultcare_focal employed_focal earnings_t_focal age_focal birth_yr_all fixed_education raceth_focal raceth_fixed_focal children num_children_imp_hh FIRST_BIRTH_YR age_young_child relationship partnered_imp family_income_t sample_type if imputed==0, stats(mean sd p50) columns(statistics)
-
-tabstat weekly_hrs_t_focal housework_focal childcare_focal adultcare_focal employed_focal earnings_t_focal age_focal birth_yr_all fixed_education raceth_focal raceth_fixed_focal children num_children_imp_hh FIRST_BIRTH_YR age_young_child relationship partnered_imp family_income_t sample_type if imputed==1, stats(mean sd p50) columns(statistics)
+tabstat weekly_hrs_t_focal housework_focal employment_status_focal earnings_t_focal num_children_imp_hh age_young_child partnered_imp num_65up_hh num_parent_in_hh family_income_t REGION_ lives_family_focal house_status_all religion_focal disabled_focal sr_health_focal father_max_educ_focal mother_max_educ_focal family_structure_cons_focal, by(imputed) stats(mean sd p50) columns(statistics)
 
 histogram weekly_hrs_t_focal, width(1)
 twoway (histogram weekly_hrs_t_focal if imputed==0, width(2) color(blue%30)) (histogram weekly_hrs_t_focal if imputed==1, width(2) color(red%30)), legend(order(1 "Observed" 2 "Imputed") rows(1) position(6)) xtitle("Weekly Employment Hours")
@@ -850,14 +851,14 @@ twoway (histogram weekly_hrs_t_focal if imputed==0 & SEX==2, width(2) color(blue
 
 histogram weekly_hrs_t_focal if weekly_hrs_t1_focal>0, width(1)
 histogram housework_focal, width(1)
-twoway (histogram housework_focal if imputed==0, width(2) color(blue%30)) (histogram housework_focal if imputed==1, width(2) color(red%30)), legend(order(1 "Observed" 2 "Imputed") rows(1) position(6)) xtitle("Weekly Housework Hours")
+twoway (histogram housework_focal if imputed==0 & housework_focal <=50, width(2) color(blue%30)) (histogram housework_focal if imputed==1 & housework_focal <=50, width(2) color(red%30)), legend(order(1 "Observed" 2 "Imputed") rows(1) position(6)) xtitle("Weekly Housework Hours")
 
 preserve
 
 collapse (mean) weekly_hrs_t_focal housework_focal, by(duration_rec imputed)
 
-twoway (line weekly_hrs_t_focal duration_rec if imputed==0) (line weekly_hrs_t_focal duration_rec if imputed==1), legend(order(1 "Observed" 2 "Imputed") rows(1) position(6)) ytitle("Weekly Employment Hours") title("Avg Employment Hours by Duration") xtitle("Marital Duration") //  yscale(range(30 40))
-twoway (line housework_focal duration_rec if imputed==0) (line housework_focal duration_rec if imputed==1), legend(order(1 "Observed" 2 "Imputed") rows(1) position(6)) ytitle("Weekly Housework Hours") title("Avg Housework Hours by Duration") xtitle("Marital Duration")
+twoway (line weekly_hrs_t_focal duration_rec if imputed==0 & duration_rec >=2 & duration_rec<=12) (line weekly_hrs_t_focal duration_rec if imputed==1 & duration_rec >=2 & duration_rec<=12), legend(order(1 "Observed" 2 "Imputed") rows(1) position(6)) ytitle("Weekly Employment Hours") title("Avg Employment Hours by Duration") xtitle("Marital Duration") yscale(range(32 38))
+twoway (line housework_focal duration_rec if imputed==0 & duration_rec >=2 & duration_rec<=12) (line housework_focal duration_rec if imputed==1 & duration_rec >=2 & duration_rec<=12), legend(order(1 "Observed" 2 "Imputed") rows(1) position(6)) ytitle("Weekly Housework Hours") title("Avg Housework Hours by Duration") xtitle("Marital Duration") yscale(range(10 15))
 
 restore
 
@@ -877,286 +878,202 @@ twoway (line housework_focal duration_rec if imputed==0 & SEX==2) (line housewor
 restore
 
 ********************************************************************************
-**# * ICE
+**# Going to make a table so I can compare the categorical variables
 ********************************************************************************
-/* Not using this - was for robustness
+use "$created_data/psid_individs_imputed_long_bysex", clear
 
-// ice
-* https://www.stata.com/support/faqs/statistics/mi-versus-ice-and-mim/
-* https://www.statalist.org/forums/forum/general-stata-discussion/general/1371095-multiple-imputation
-net from http://www.stata-journal.com/software/sj9-3
-net install st0067_4.pkg, replace
-net from http://www.stata-journal.com/software/sj9-2
-net install st0139_1.pkg, replace
-net from http://www.homepages.ucl.ac.uk/~ucakjpr/stata
-net install mi_ice, replace
+keep if duration_rec >=2 & duration_rec <=12
 
-use "$created_data\individs_by_duration_wide.dta", clear
+tab employment_status_focal, gen(emp_status) // 9
+tab REGION_, gen(region) // 6
+tab lives_family_focal, gen(lives_fam) // 3
+tab house_status_all, gen(own) // 3
+tab religion_focal, gen(religion) // 31
+tab sr_health_focal, gen(health) // 5 
+tab father_max_educ_focal, gen(dad_educ) // 9
+tab mother_max_educ_focal, gen(mom_educ) // 9
 
-egen nmis_age = rmiss(age_focal*)
-tab nmis_age, m
+putexcel set "$results/PSID_imputation_descriptives", replace
+putexcel B1:C1 = "Duration: All", merge
+putexcel D1:E1 = "Duration: 0", merge
+putexcel F1:G1 = "Duration: 5", merge
+putexcel H1:I1 = "Duration: 10", merge
+putexcel A2 = "Variable"
+putexcel B2 = ("Not Imputed") D2 = ("Not Imputed") F2 = ("Not Imputed") H2 = ("Not Imputed") 
+putexcel C2 = ("Imputed") E2 = ("Imputed") G2 = ("Imputed") I2 = ("Imputed")
 
-drop if nmis_age==17 // for now, just so this is actually complete
-drop if birth_yr_all==. // for now, just so this is actually complete
-drop if raceth_fixed_focal==. // for now, just so this is actually complete
+// Means
+putexcel A3 = "Paid Work Hours (Weekly)"
+putexcel A4 = "Unpaid Work Hours (Weekly)"
+putexcel A5 = "0 Under 18"
+putexcel A6 = "1 Working"
+putexcel A7 = "2 Temp laid off"
+putexcel A8 = "3 Unemployed"
+putexcel A9 = "4 Retired"
+putexcel A10 = "5 Disabled"
+putexcel A11 = "6 Housewife"
+putexcel A12 = "7 Student"
+putexcel A13 = "8 Other"
+putexcel A14 = "Earnings (Annual)"
+putexcel A15 = "Number of children"
+putexcel A16 = "Age of youngest child"
+putexcel A17 = "Partnered"
+putexcel A18 = "Number of people aged 65+ in HH"
+putexcel A19 = "Coresidence with elder parents (N, 1, or both))"
+putexcel A20 = "Family income"
+putexcel A21 = "1 Northeast"
+putexcel A22 = "2 North Central"
+putexcel A23 = "3 South"
+putexcel A24 = "4 West"
+putexcel A25 = "5 AK / HI"
+putexcel A26 = "6 Foreign"
+putexcel A27 = "1 Same state"
+putexcel A28 = "2 Same region"
+putexcel A29 = "3 Diff region"
+putexcel A30 = "0 Neither"
+putexcel A31 = "1 Rents"
+putexcel A32 = "2 Owns"
+putexcel A33 = "0 No religion"
+putexcel A34 = "1 Atheist"
+putexcel A35 = "2 Agnostic"
+putexcel A36 = "3 Catholic"
+putexcel A37 = "4 Jewish"
+putexcel A38 = "5 Greek Orthodox"
+putexcel A39 = "6 Baptist"
+putexcel A40 = "7 Episcopalian"
+putexcel A41 = "8 Jehovah's Witness"
+putexcel A42 = "9 Lutheran"
+putexcel A43 = "10 Methodist"
+putexcel A44 = "11 Pentecostal"
+putexcel A45 = "12 Presbyterian"
+putexcel A46 = "13 Protestant unspecified"
+putexcel A47 = "14 Other Protestant"
+putexcel A48 = "15 Other Christian"
+putexcel A49 = "16 Muslim"
+putexcel A50 = "17 Buddhist"
+putexcel A51 = "18 Other non-Christian"
+putexcel A52 = "19 LDS"
+putexcel A53 = "20 Unitarian"
+putexcel A54 = "21 Christian Science"
+putexcel A55 = "22 Seventh Day Adventist"
+putexcel A56 = "23 Amish"
+putexcel A57 = "24 Quaker"
+putexcel A58 = "25 Church of God"
+putexcel A59 = "26 United Church or Christ"
+putexcel A60 = "27 Reformed"
+putexcel A61 = "28 Disciples of Christ"
+putexcel A62 = "29 Churches of Christ"
+putexcel A63 = "30 Other Other"
+putexcel A64 = "Disability status (Y/N)"
+putexcel A65 = "1 Excellent"
+putexcel A66 = "2 Very Good"
+putexcel A67 = "3 Good"
+putexcel A68 = "4 Fair"
+putexcel A69 = "5 Poor"
+putexcel A70 = "Father's educ: 0 none"
+putexcel A71 = "Father's educ: 1 0-5th grade"
+putexcel A72 = "Father's educ: 2 6-8th grade"
+putexcel A73 = "Father's educ: 3 9-11th grade"
+putexcel A74 = "Father's educ: 4 high school"
+putexcel A75 = "Father's educ: 5 12+"
+putexcel A76 = "Father's educ: 6 some college"
+putexcel A77 = "Father's educ: 7 BA"
+putexcel A78 = "Father's educ: 8 advanced degree"
+putexcel A79 = "Mother's educ: 0 none"
+putexcel A80 = "Mother's educ: 1 0-5th grade"
+putexcel A81 = "Mother's educ: 2 6-8th grade"
+putexcel A82 = "Mother's educ: 3 9-11th grade"
+putexcel A83 = "Mother's educ: 4 high school"
+putexcel A84 = "Mother's educ: 5 12+"
+putexcel A85 = "Mother's educ: 6 some college"
+putexcel A86 = "Mother's educ: 7 BA"
+putexcel A87 = "Mother's educ: 8 advanced degree"
+putexcel A88 = "binary indicator of living with both parents at age 16"
 
-//  passive(_Ieduc_foca_2:educ_focal0==2 \ _Ieduc_foca_3:educ_focal0==3 \ _Ieduc_foca_4:educ_focal0==4)
+local desc_vars "weekly_hrs_t_focal housework_focal emp_status1 emp_status2 emp_status3 emp_status4 emp_status5 emp_status6 emp_status7 emp_status8 emp_status9 earnings_t_focal num_children_imp_hh age_young_child partnered_imp num_65up_hh num_parent_in_hh family_income_t region1 region2 region3 region4 region5 region6 lives_fam1 lives_fam2 lives_fam3 own1 own2 own3 religion1 religion2 religion3 religion4 religion5 religion6 religion7 religion8 religion9 religion10 religion11 religion12 religion13 religion14 religion15 religion16 religion17 religion18 religion19 religion20 religion21 religion22 religion23 religion24 religion25 religion26 religion27 religion28 religion29 religion30 religion31 disabled_focal health1 health2 health3 health4 health5 dad_educ1 dad_educ2 dad_educ3 dad_educ4 dad_educ5 dad_educ6 dad_educ7 dad_educ8 dad_educ9 mom_educ1 mom_educ2 mom_educ3 mom_educ4 mom_educ5 mom_educ6 mom_educ7 mom_educ8 mom_educ9 family_structure_cons_focal" // 86
 
-#delimit ;
+** All durations
+// Not imputed
+forvalues w=1/86{
+	local row=`w'+2
+	local var: word `w' of `desc_vars'
+	mean `var' if imputed==0
+	matrix t`var'= e(b)
+	putexcel B`row' = matrix(t`var'), nformat(#.#%)
+}
 
-ice weekly_hrs_t_focal* housework_focal* employed_focal* earnings_t_focal* educ_focal* NUM_CHILDREN_* AGE_YOUNG_CHILD_* partnered* TOTAL_INCOME_T_FAMILY* birth_yr_all i.raceth_fixed_focal i.sample_type,
-saving(ice_test_bysex, replace) m(10) cycles(10) match(weekly_hrs_t_focal* housework_focal* earnings_t_focal* NUM_CHILDREN_* AGE_YOUNG_CHILD_* TOTAL_INCOME_T_FAMILY*) by(SEX) cmd(educ*:ologit) // dryrun 
+// Imputed
+forvalues w=1/86{
+	local row=`w'+2
+	local var: word `w' of `desc_vars'
+	mean `var' if imputed==1
+	matrix t`var'= e(b)
+	putexcel C`row' = matrix(t`var'), nformat(#.#%)
+}
 
-/* Employment hours */
-eq(weekly_hrs_t_focal0:                 weekly_hrs_t_focal1 weekly_hrs_t_focal2 weekly_hrs_t_focal3 weekly_hrs_t_focal4 weekly_hrs_t_focal5 weekly_hrs_t_focal6 weekly_hrs_t_focal7 weekly_hrs_t_focal8 weekly_hrs_t_focal9 weekly_hrs_t_focal10 weekly_hrs_t_focal11 weekly_hrs_t_focal12 weekly_hrs_t_focal13 weekly_hrs_t_focal14 weekly_hrs_t_focal15 weekly_hrs_t_focal16 housework_focal0 employed_focal0 earnings_t_focal0 educ_focal0 NUM_CHILDREN_0 AGE_YOUNG_CHILD_0 partnered0 TOTAL_INCOME_T_FAMILY0 i.raceth_fixed_focal birth_yr_all i.sample_type,
-weekly_hrs_t_focal1:                weekly_hrs_t_focal0 weekly_hrs_t_focal2 weekly_hrs_t_focal3 weekly_hrs_t_focal4 weekly_hrs_t_focal5 weekly_hrs_t_focal6 weekly_hrs_t_focal7 weekly_hrs_t_focal8 weekly_hrs_t_focal9 weekly_hrs_t_focal10 weekly_hrs_t_focal11 weekly_hrs_t_focal12 weekly_hrs_t_focal13 weekly_hrs_t_focal14 weekly_hrs_t_focal15 weekly_hrs_t_focal16  housework_focal1 employed_focal1 earnings_t_focal1 educ_focal1 NUM_CHILDREN_1 AGE_YOUNG_CHILD_1 partnered1 TOTAL_INCOME_T_FAMILY1 i.raceth_fixed_focal birth_yr_all i.sample_type,
-weekly_hrs_t_focal2:               weekly_hrs_t_focal0 weekly_hrs_t_focal1 weekly_hrs_t_focal3 weekly_hrs_t_focal4 weekly_hrs_t_focal5 weekly_hrs_t_focal6 weekly_hrs_t_focal7 weekly_hrs_t_focal8 weekly_hrs_t_focal9 weekly_hrs_t_focal10 weekly_hrs_t_focal11 weekly_hrs_t_focal12 weekly_hrs_t_focal13 weekly_hrs_t_focal14 weekly_hrs_t_focal15 weekly_hrs_t_focal16   housework_focal2 employed_focal2 earnings_t_focal2 educ_focal2 NUM_CHILDREN_2 AGE_YOUNG_CHILD_2 partnered2 TOTAL_INCOME_T_FAMILY2 i.raceth_fixed_focal birth_yr_all i.sample_type,
-weekly_hrs_t_focal3:              weekly_hrs_t_focal0 weekly_hrs_t_focal1 weekly_hrs_t_focal2 weekly_hrs_t_focal4 weekly_hrs_t_focal5 weekly_hrs_t_focal6 weekly_hrs_t_focal7 weekly_hrs_t_focal8 weekly_hrs_t_focal9 weekly_hrs_t_focal10 weekly_hrs_t_focal11 weekly_hrs_t_focal12 weekly_hrs_t_focal13 weekly_hrs_t_focal14 weekly_hrs_t_focal15 weekly_hrs_t_focal16    housework_focal3 employed_focal3 earnings_t_focal3 educ_focal3 NUM_CHILDREN_3 AGE_YOUNG_CHILD_3 partnered3 TOTAL_INCOME_T_FAMILY3 i.raceth_fixed_focal birth_yr_all i.sample_type,
-weekly_hrs_t_focal4:             weekly_hrs_t_focal0 weekly_hrs_t_focal1 weekly_hrs_t_focal2 weekly_hrs_t_focal3 weekly_hrs_t_focal5 weekly_hrs_t_focal6 weekly_hrs_t_focal7 weekly_hrs_t_focal8 weekly_hrs_t_focal9 weekly_hrs_t_focal10 weekly_hrs_t_focal11 weekly_hrs_t_focal12 weekly_hrs_t_focal13 weekly_hrs_t_focal14 weekly_hrs_t_focal15 weekly_hrs_t_focal16     housework_focal4 employed_focal4 earnings_t_focal4 educ_focal4 NUM_CHILDREN_4 AGE_YOUNG_CHILD_4 partnered4 TOTAL_INCOME_T_FAMILY4 i.raceth_fixed_focal birth_yr_all i.sample_type,
-weekly_hrs_t_focal5:            weekly_hrs_t_focal0 weekly_hrs_t_focal1 weekly_hrs_t_focal2 weekly_hrs_t_focal3 weekly_hrs_t_focal4 weekly_hrs_t_focal6 weekly_hrs_t_focal7 weekly_hrs_t_focal8 weekly_hrs_t_focal9 weekly_hrs_t_focal10 weekly_hrs_t_focal11 weekly_hrs_t_focal12 weekly_hrs_t_focal13 weekly_hrs_t_focal14 weekly_hrs_t_focal15 weekly_hrs_t_focal16      housework_focal5 employed_focal5 earnings_t_focal5 educ_focal5 NUM_CHILDREN_5 AGE_YOUNG_CHILD_5 partnered5 TOTAL_INCOME_T_FAMILY5 i.raceth_fixed_focal birth_yr_all i.sample_type,
-weekly_hrs_t_focal6:           weekly_hrs_t_focal0 weekly_hrs_t_focal1 weekly_hrs_t_focal2 weekly_hrs_t_focal3 weekly_hrs_t_focal4 weekly_hrs_t_focal5 weekly_hrs_t_focal7 weekly_hrs_t_focal8 weekly_hrs_t_focal9 weekly_hrs_t_focal10 weekly_hrs_t_focal11 weekly_hrs_t_focal12 weekly_hrs_t_focal13 weekly_hrs_t_focal14 weekly_hrs_t_focal15 weekly_hrs_t_focal16       housework_focal6 employed_focal6 earnings_t_focal6 educ_focal6 NUM_CHILDREN_6 AGE_YOUNG_CHILD_6 partnered6 TOTAL_INCOME_T_FAMILY6 i.raceth_fixed_focal birth_yr_all i.sample_type,
-weekly_hrs_t_focal7:          weekly_hrs_t_focal0 weekly_hrs_t_focal1 weekly_hrs_t_focal2 weekly_hrs_t_focal3 weekly_hrs_t_focal4 weekly_hrs_t_focal5 weekly_hrs_t_focal6 weekly_hrs_t_focal8 weekly_hrs_t_focal9 weekly_hrs_t_focal10 weekly_hrs_t_focal11 weekly_hrs_t_focal12 weekly_hrs_t_focal13 weekly_hrs_t_focal14 weekly_hrs_t_focal15 weekly_hrs_t_focal16        housework_focal7 employed_focal7 earnings_t_focal7 educ_focal7 NUM_CHILDREN_7 AGE_YOUNG_CHILD_7 partnered7 TOTAL_INCOME_T_FAMILY7 i.raceth_fixed_focal birth_yr_all i.sample_type,
-weekly_hrs_t_focal8:         weekly_hrs_t_focal0 weekly_hrs_t_focal1 weekly_hrs_t_focal2 weekly_hrs_t_focal3 weekly_hrs_t_focal4 weekly_hrs_t_focal5 weekly_hrs_t_focal6 weekly_hrs_t_focal7 weekly_hrs_t_focal9 weekly_hrs_t_focal10 weekly_hrs_t_focal11 weekly_hrs_t_focal12 weekly_hrs_t_focal13 weekly_hrs_t_focal14 weekly_hrs_t_focal15 weekly_hrs_t_focal16         housework_focal8 employed_focal8 earnings_t_focal8 educ_focal8 NUM_CHILDREN_8 AGE_YOUNG_CHILD_8 partnered8 TOTAL_INCOME_T_FAMILY8 i.raceth_fixed_focal birth_yr_all i.sample_type,
-weekly_hrs_t_focal9:        weekly_hrs_t_focal0 weekly_hrs_t_focal1 weekly_hrs_t_focal2 weekly_hrs_t_focal3 weekly_hrs_t_focal4 weekly_hrs_t_focal5 weekly_hrs_t_focal6 weekly_hrs_t_focal7 weekly_hrs_t_focal8 weekly_hrs_t_focal10 weekly_hrs_t_focal11 weekly_hrs_t_focal12 weekly_hrs_t_focal13 weekly_hrs_t_focal14 weekly_hrs_t_focal15 weekly_hrs_t_focal16          housework_focal9 employed_focal9 earnings_t_focal9 educ_focal9 NUM_CHILDREN_9 AGE_YOUNG_CHILD_9 partnered9 TOTAL_INCOME_T_FAMILY9 i.raceth_fixed_focal birth_yr_all i.sample_type,
-weekly_hrs_t_focal10:       weekly_hrs_t_focal0 weekly_hrs_t_focal1 weekly_hrs_t_focal2 weekly_hrs_t_focal3 weekly_hrs_t_focal4 weekly_hrs_t_focal5 weekly_hrs_t_focal6 weekly_hrs_t_focal7 weekly_hrs_t_focal8 weekly_hrs_t_focal9 weekly_hrs_t_focal11 weekly_hrs_t_focal12 weekly_hrs_t_focal13 weekly_hrs_t_focal14 weekly_hrs_t_focal15 weekly_hrs_t_focal16           housework_focal10 employed_focal10 earnings_t_focal10 educ_focal10 NUM_CHILDREN_10 AGE_YOUNG_CHILD_10 partnered10 TOTAL_INCOME_T_FAMILY10 i.raceth_fixed_focal birth_yr_all i.sample_type,
-weekly_hrs_t_focal11:      weekly_hrs_t_focal0 weekly_hrs_t_focal1 weekly_hrs_t_focal2 weekly_hrs_t_focal3 weekly_hrs_t_focal4 weekly_hrs_t_focal5 weekly_hrs_t_focal6 weekly_hrs_t_focal7 weekly_hrs_t_focal8 weekly_hrs_t_focal9 weekly_hrs_t_focal10 weekly_hrs_t_focal12 weekly_hrs_t_focal13 weekly_hrs_t_focal14 weekly_hrs_t_focal15 weekly_hrs_t_focal16            housework_focal11 employed_focal11 earnings_t_focal11 educ_focal11 NUM_CHILDREN_11 AGE_YOUNG_CHILD_11 partnered11 TOTAL_INCOME_T_FAMILY11 i.raceth_fixed_focal birth_yr_all i.sample_type,
-weekly_hrs_t_focal12:     weekly_hrs_t_focal0 weekly_hrs_t_focal1 weekly_hrs_t_focal2 weekly_hrs_t_focal3 weekly_hrs_t_focal4 weekly_hrs_t_focal5 weekly_hrs_t_focal6 weekly_hrs_t_focal7 weekly_hrs_t_focal8 weekly_hrs_t_focal9 weekly_hrs_t_focal10 weekly_hrs_t_focal11 weekly_hrs_t_focal13 weekly_hrs_t_focal14 weekly_hrs_t_focal15 weekly_hrs_t_focal16             housework_focal12 employed_focal12 earnings_t_focal12 educ_focal12 NUM_CHILDREN_12 AGE_YOUNG_CHILD_12 partnered12 TOTAL_INCOME_T_FAMILY12 i.raceth_fixed_focal birth_yr_all i.sample_type,
-weekly_hrs_t_focal13:    weekly_hrs_t_focal0 weekly_hrs_t_focal1 weekly_hrs_t_focal2 weekly_hrs_t_focal3 weekly_hrs_t_focal4 weekly_hrs_t_focal5 weekly_hrs_t_focal6 weekly_hrs_t_focal7 weekly_hrs_t_focal8 weekly_hrs_t_focal9 weekly_hrs_t_focal10 weekly_hrs_t_focal11 weekly_hrs_t_focal12 weekly_hrs_t_focal14 weekly_hrs_t_focal15 weekly_hrs_t_focal16              housework_focal13 employed_focal13 earnings_t_focal13 educ_focal13 NUM_CHILDREN_13 AGE_YOUNG_CHILD_13 partnered13 TOTAL_INCOME_T_FAMILY13 i.raceth_fixed_focal birth_yr_all i.sample_type,
-weekly_hrs_t_focal14:   weekly_hrs_t_focal0 weekly_hrs_t_focal1 weekly_hrs_t_focal2 weekly_hrs_t_focal3 weekly_hrs_t_focal4 weekly_hrs_t_focal5 weekly_hrs_t_focal6 weekly_hrs_t_focal7 weekly_hrs_t_focal8 weekly_hrs_t_focal9 weekly_hrs_t_focal10 weekly_hrs_t_focal11 weekly_hrs_t_focal12 weekly_hrs_t_focal13 weekly_hrs_t_focal15 weekly_hrs_t_focal16               housework_focal14 employed_focal14 earnings_t_focal14 educ_focal14 NUM_CHILDREN_14 AGE_YOUNG_CHILD_14 partnered14 TOTAL_INCOME_T_FAMILY14 i.raceth_fixed_focal birth_yr_all i.sample_type,
-weekly_hrs_t_focal15:  weekly_hrs_t_focal0 weekly_hrs_t_focal1 weekly_hrs_t_focal2 weekly_hrs_t_focal3 weekly_hrs_t_focal4 weekly_hrs_t_focal5 weekly_hrs_t_focal6 weekly_hrs_t_focal7 weekly_hrs_t_focal8 weekly_hrs_t_focal9 weekly_hrs_t_focal10 weekly_hrs_t_focal11 weekly_hrs_t_focal12 weekly_hrs_t_focal13 weekly_hrs_t_focal14 weekly_hrs_t_focal16                housework_focal15 employed_focal15 earnings_t_focal15 educ_focal15 NUM_CHILDREN_15 AGE_YOUNG_CHILD_15 partnered15 TOTAL_INCOME_T_FAMILY15 i.raceth_fixed_focal birth_yr_all i.sample_type,
-weekly_hrs_t_focal16: weekly_hrs_t_focal0 weekly_hrs_t_focal1 weekly_hrs_t_focal2 weekly_hrs_t_focal3 weekly_hrs_t_focal4 weekly_hrs_t_focal5 weekly_hrs_t_focal6 weekly_hrs_t_focal7 weekly_hrs_t_focal8 weekly_hrs_t_focal9 weekly_hrs_t_focal10 weekly_hrs_t_focal11 weekly_hrs_t_focal12 weekly_hrs_t_focal13 weekly_hrs_t_focal14 weekly_hrs_t_focal15                 housework_focal16 employed_focal16 earnings_t_focal16 educ_focal16 NUM_CHILDREN_16 AGE_YOUNG_CHILD_16 partnered16 TOTAL_INCOME_T_FAMILY16 i.raceth_fixed_focal birth_yr_all i.sample_type,
+** Duration 0
+// Not imputed
+forvalues w=1/86{
+	local row=`w'+2
+	local var: word `w' of `desc_vars'
+	mean `var' if imputed==0 & duration_rec==2
+	matrix t`var'= e(b)
+	putexcel D`row' = matrix(t`var'), nformat(#.#%)
+}
 
+// Imputed
+forvalues w=1/86{
+	local row=`w'+2
+	local var: word `w' of `desc_vars'
+	mean `var' if imputed==1  & duration_rec==2
+	matrix t`var'= e(b)
+	putexcel E`row' = matrix(t`var'), nformat(#.#%)
+}
 
-/* Housework Hours */
-housework_focal0:                 housework_focal1 housework_focal2 housework_focal3 housework_focal4 housework_focal5 housework_focal6 housework_focal7 housework_focal8 housework_focal9 housework_focal10 housework_focal11 housework_focal12 housework_focal13 housework_focal14 housework_focal15 housework_focal16 weekly_hrs_t_focal0 employed_focal0 earnings_t_focal0 educ_focal0 i.raceth_fixed_focal birth_yr_all i.sample_type,
-housework_focal1:                housework_focal0 housework_focal2 housework_focal3 housework_focal4 housework_focal5 housework_focal6 housework_focal7 housework_focal8 housework_focal9 housework_focal10 housework_focal11 housework_focal12 housework_focal13 housework_focal14 housework_focal15 housework_focal16  weekly_hrs_t_focal1 employed_focal1 earnings_t_focal1 educ_focal1 NUM_CHILDREN_1 AGE_YOUNG_CHILD_1 partnered1 TOTAL_INCOME_T_FAMILY1 i.raceth_fixed_focal birth_yr_all i.sample_type,
-housework_focal2:               housework_focal0 housework_focal1 housework_focal3 housework_focal4 housework_focal5 housework_focal6 housework_focal7 housework_focal8 housework_focal9 housework_focal10 housework_focal11 housework_focal12 housework_focal13 housework_focal14 housework_focal15 housework_focal16   weekly_hrs_t_focal2 employed_focal2 earnings_t_focal2 educ_focal2 NUM_CHILDREN_2 AGE_YOUNG_CHILD_2 partnered2 TOTAL_INCOME_T_FAMILY2 i.raceth_fixed_focal birth_yr_all i.sample_type,
-housework_focal3:              housework_focal0 housework_focal1 housework_focal2 housework_focal4 housework_focal5 housework_focal6 housework_focal7 housework_focal8 housework_focal9 housework_focal10 housework_focal11 housework_focal12 housework_focal13 housework_focal14 housework_focal15 housework_focal16    weekly_hrs_t_focal3 employed_focal3 earnings_t_focal3 educ_focal3 NUM_CHILDREN_3 AGE_YOUNG_CHILD_3 partnered3 TOTAL_INCOME_T_FAMILY3 i.raceth_fixed_focal birth_yr_all i.sample_type,
-housework_focal4:             housework_focal0 housework_focal1 housework_focal2 housework_focal3 housework_focal5 housework_focal6 housework_focal7 housework_focal8 housework_focal9 housework_focal10 housework_focal11 housework_focal12 housework_focal13 housework_focal14 housework_focal15 housework_focal16     weekly_hrs_t_focal4 employed_focal4 earnings_t_focal4 educ_focal4 NUM_CHILDREN_4 AGE_YOUNG_CHILD_4 partnered4 TOTAL_INCOME_T_FAMILY4 i.raceth_fixed_focal birth_yr_all i.sample_type,
-housework_focal5:            housework_focal0 housework_focal1 housework_focal2 housework_focal3 housework_focal4 housework_focal6 housework_focal7 housework_focal8 housework_focal9 housework_focal10 housework_focal11 housework_focal12 housework_focal13 housework_focal14 housework_focal15 housework_focal16      weekly_hrs_t_focal5 employed_focal5 earnings_t_focal5 educ_focal5 NUM_CHILDREN_5 AGE_YOUNG_CHILD_5 partnered5 TOTAL_INCOME_T_FAMILY5 i.raceth_fixed_focal birth_yr_all i.sample_type,
-housework_focal6:           housework_focal0 housework_focal1 housework_focal2 housework_focal3 housework_focal4 housework_focal5 housework_focal7 housework_focal8 housework_focal9 housework_focal10 housework_focal11 housework_focal12 housework_focal13 housework_focal14 housework_focal15 housework_focal16       weekly_hrs_t_focal6 employed_focal6 earnings_t_focal6 educ_focal6 NUM_CHILDREN_6 AGE_YOUNG_CHILD_6 partnered6 TOTAL_INCOME_T_FAMILY6 i.raceth_fixed_focal birth_yr_all i.sample_type,
-housework_focal7:          housework_focal0 housework_focal1 housework_focal2 housework_focal3 housework_focal4 housework_focal5 housework_focal6 housework_focal8 housework_focal9 housework_focal10 housework_focal11 housework_focal12 housework_focal13 housework_focal14 housework_focal15 housework_focal16        weekly_hrs_t_focal7 employed_focal7 earnings_t_focal7 educ_focal7 NUM_CHILDREN_7 AGE_YOUNG_CHILD_7 partnered7 TOTAL_INCOME_T_FAMILY7 i.raceth_fixed_focal birth_yr_all i.sample_type,
-housework_focal8:         housework_focal0 housework_focal1 housework_focal2 housework_focal3 housework_focal4 housework_focal5 housework_focal6 housework_focal7 housework_focal9 housework_focal10 housework_focal11 housework_focal12 housework_focal13 housework_focal14 housework_focal15 housework_focal16         weekly_hrs_t_focal8 employed_focal8 earnings_t_focal8 educ_focal8 NUM_CHILDREN_8 AGE_YOUNG_CHILD_8 partnered8 TOTAL_INCOME_T_FAMILY8 i.raceth_fixed_focal birth_yr_all i.sample_type,
-housework_focal9:        housework_focal0 housework_focal1 housework_focal2 housework_focal3 housework_focal4 housework_focal5 housework_focal6 housework_focal7 housework_focal8 housework_focal10 housework_focal11 housework_focal12 housework_focal13 housework_focal14 housework_focal15 housework_focal16          weekly_hrs_t_focal9 employed_focal9 earnings_t_focal9 educ_focal9 NUM_CHILDREN_9 AGE_YOUNG_CHILD_9 partnered9 TOTAL_INCOME_T_FAMILY9 i.raceth_fixed_focal birth_yr_all i.sample_type,
-housework_focal10:       housework_focal0 housework_focal1 housework_focal2 housework_focal3 housework_focal4 housework_focal5 housework_focal6 housework_focal7 housework_focal8 housework_focal9 housework_focal11 housework_focal12 housework_focal13 housework_focal14 housework_focal15 housework_focal16           weekly_hrs_t_focal10 employed_focal10 earnings_t_focal10 educ_focal10 NUM_CHILDREN_10 AGE_YOUNG_CHILD_10 partnered10 TOTAL_INCOME_T_FAMILY10 i.raceth_fixed_focal birth_yr_all i.sample_type,
-housework_focal11:      housework_focal0 housework_focal1 housework_focal2 housework_focal3 housework_focal4 housework_focal5 housework_focal6 housework_focal7 housework_focal8 housework_focal9 housework_focal10 housework_focal12 housework_focal13 housework_focal14 housework_focal15 housework_focal16            weekly_hrs_t_focal11 employed_focal11 earnings_t_focal11 educ_focal11 NUM_CHILDREN_11 AGE_YOUNG_CHILD_11 partnered11 TOTAL_INCOME_T_FAMILY11 i.raceth_fixed_focal birth_yr_all i.sample_type,
-housework_focal12:     housework_focal0 housework_focal1 housework_focal2 housework_focal3 housework_focal4 housework_focal5 housework_focal6 housework_focal7 housework_focal8 housework_focal9 housework_focal10 housework_focal11 housework_focal13 housework_focal14 housework_focal15 housework_focal16             weekly_hrs_t_focal12 employed_focal12 earnings_t_focal12 educ_focal12 NUM_CHILDREN_12 AGE_YOUNG_CHILD_12 partnered12 TOTAL_INCOME_T_FAMILY12 i.raceth_fixed_focal birth_yr_all i.sample_type,
-housework_focal13:    housework_focal0 housework_focal1 housework_focal2 housework_focal3 housework_focal4 housework_focal5 housework_focal6 housework_focal7 housework_focal8 housework_focal9 housework_focal10 housework_focal11 housework_focal12 housework_focal14 housework_focal15 housework_focal16              weekly_hrs_t_focal13 employed_focal13 earnings_t_focal13 educ_focal13 NUM_CHILDREN_13 AGE_YOUNG_CHILD_13 partnered13 TOTAL_INCOME_T_FAMILY13 i.raceth_fixed_focal birth_yr_all i.sample_type,
-housework_focal14:   housework_focal0 housework_focal1 housework_focal2 housework_focal3 housework_focal4 housework_focal5 housework_focal6 housework_focal7 housework_focal8 housework_focal9 housework_focal10 housework_focal11 housework_focal12 housework_focal13 housework_focal15 housework_focal16               weekly_hrs_t_focal14 employed_focal14 earnings_t_focal14 educ_focal14 NUM_CHILDREN_14 AGE_YOUNG_CHILD_14 partnered14 TOTAL_INCOME_T_FAMILY14 i.raceth_fixed_focal birth_yr_all i.sample_type,
-housework_focal15:  housework_focal0 housework_focal1 housework_focal2 housework_focal3 housework_focal4 housework_focal5 housework_focal6 housework_focal7 housework_focal8 housework_focal9 housework_focal10 housework_focal11 housework_focal12 housework_focal13 housework_focal14 housework_focal16                weekly_hrs_t_focal15 employed_focal15 earnings_t_focal15 educ_focal15 NUM_CHILDREN_15 AGE_YOUNG_CHILD_15 partnered15 TOTAL_INCOME_T_FAMILY15 i.raceth_fixed_focal birth_yr_all i.sample_type,
-housework_focal16: housework_focal0 housework_focal1 housework_focal2 housework_focal3 housework_focal4 housework_focal5 housework_focal6 housework_focal7 housework_focal8 housework_focal9 housework_focal10 housework_focal11 housework_focal12 housework_focal13 housework_focal14 housework_focal15                 weekly_hrs_t_focal16 employed_focal16 earnings_t_focal16 educ_focal16 NUM_CHILDREN_16 AGE_YOUNG_CHILD_16 partnered16 TOTAL_INCOME_T_FAMILY16 i.raceth_fixed_focal birth_yr_all i.sample_type,
+** Duration 5
+// Not imputed
+forvalues w=1/86{
+	local row=`w'+2
+	local var: word `w' of `desc_vars'
+	mean `var' if imputed==0 & duration_rec==7
+	matrix t`var'= e(b)
+	putexcel F`row' = matrix(t`var'), nformat(#.#%)
+}
 
+// Imputed
+forvalues w=1/86{
+	local row=`w'+2
+	local var: word `w' of `desc_vars'
+	mean `var' if imputed==1  & duration_rec==7
+	matrix t`var'= e(b)
+	putexcel G`row' = matrix(t`var'), nformat(#.#%)
+}
 
-/* Employment Status*/
-employed_focal0:                 employed_focal1 employed_focal2 employed_focal3 employed_focal4 employed_focal5 employed_focal6 employed_focal7 employed_focal8 employed_focal9 employed_focal10 employed_focal11 employed_focal12 employed_focal13 employed_focal14 employed_focal15 employed_focal16  housework_focal0  educ_focal0 NUM_CHILDREN_0 AGE_YOUNG_CHILD_0 partnered0 TOTAL_INCOME_T_FAMILY0 i.raceth_fixed_focal birth_yr_all i.sample_type,
-employed_focal1:                employed_focal0 employed_focal2 employed_focal3 employed_focal4 employed_focal5 employed_focal6 employed_focal7 employed_focal8 employed_focal9 employed_focal10 employed_focal11 employed_focal12 employed_focal13 employed_focal14 employed_focal15 employed_focal16  weekly_hrs_t_focal0 housework_focal1 earnings_t_focal0 educ_focal1 NUM_CHILDREN_1 AGE_YOUNG_CHILD_1 partnered1 TOTAL_INCOME_T_FAMILY1 i.raceth_fixed_focal birth_yr_all i.sample_type,
-employed_focal2:               employed_focal0 employed_focal1 employed_focal3 employed_focal4 employed_focal5 employed_focal6 employed_focal7 employed_focal8 employed_focal9 employed_focal10 employed_focal11 employed_focal12 employed_focal13 employed_focal14 employed_focal15 employed_focal16   weekly_hrs_t_focal1 housework_focal2 earnings_t_focal1 educ_focal2 NUM_CHILDREN_2 AGE_YOUNG_CHILD_2 partnered2 TOTAL_INCOME_T_FAMILY2 i.raceth_fixed_focal birth_yr_all i.sample_type,
-employed_focal3:              employed_focal0 employed_focal1 employed_focal2 employed_focal4 employed_focal5 employed_focal6 employed_focal7 employed_focal8 employed_focal9 employed_focal10 employed_focal11 employed_focal12 employed_focal13 employed_focal14 employed_focal15 employed_focal16    weekly_hrs_t_focal2 housework_focal3 earnings_t_focal2 educ_focal3 NUM_CHILDREN_3 AGE_YOUNG_CHILD_3 partnered3 TOTAL_INCOME_T_FAMILY3 i.raceth_fixed_focal birth_yr_all i.sample_type,
-employed_focal4:             employed_focal0 employed_focal1 employed_focal2 employed_focal3 employed_focal5 employed_focal6 employed_focal7 employed_focal8 employed_focal9 employed_focal10 employed_focal11 employed_focal12 employed_focal13 employed_focal14 employed_focal15 employed_focal16     weekly_hrs_t_focal3 housework_focal4 earnings_t_focal3 educ_focal4 NUM_CHILDREN_4 AGE_YOUNG_CHILD_4 partnered4 TOTAL_INCOME_T_FAMILY4 i.raceth_fixed_focal birth_yr_all i.sample_type,
-employed_focal5:            employed_focal0 employed_focal1 employed_focal2 employed_focal3 employed_focal4 employed_focal6 employed_focal7 employed_focal8 employed_focal9 employed_focal10 employed_focal11 employed_focal12 employed_focal13 employed_focal14 employed_focal15 employed_focal16      weekly_hrs_t_focal4 housework_focal5 earnings_t_focal4 educ_focal5 NUM_CHILDREN_5 AGE_YOUNG_CHILD_5 partnered5 TOTAL_INCOME_T_FAMILY5 i.raceth_fixed_focal birth_yr_all i.sample_type,
-employed_focal6:           employed_focal0 employed_focal1 employed_focal2 employed_focal3 employed_focal4 employed_focal5 employed_focal7 employed_focal8 employed_focal9 employed_focal10 employed_focal11 employed_focal12 employed_focal13 employed_focal14 employed_focal15 employed_focal16       weekly_hrs_t_focal5 housework_focal6 earnings_t_focal5 educ_focal6 NUM_CHILDREN_6 AGE_YOUNG_CHILD_6 partnered6 TOTAL_INCOME_T_FAMILY6 i.raceth_fixed_focal birth_yr_all i.sample_type,
-employed_focal7:          employed_focal0 employed_focal1 employed_focal2 employed_focal3 employed_focal4 employed_focal5 employed_focal6 employed_focal8 employed_focal9 employed_focal10 employed_focal11 employed_focal12 employed_focal13 employed_focal14 employed_focal15 employed_focal16        weekly_hrs_t_focal6 housework_focal7 earnings_t_focal6 educ_focal7 NUM_CHILDREN_7 AGE_YOUNG_CHILD_7 partnered7 TOTAL_INCOME_T_FAMILY7 i.raceth_fixed_focal birth_yr_all i.sample_type,
-employed_focal8:         employed_focal0 employed_focal1 employed_focal2 employed_focal3 employed_focal4 employed_focal5 employed_focal6 employed_focal7 employed_focal9 employed_focal10 employed_focal11 employed_focal12 employed_focal13 employed_focal14 employed_focal15 employed_focal16         weekly_hrs_t_focal7 housework_focal8 earnings_t_focal7 educ_focal8 NUM_CHILDREN_8 AGE_YOUNG_CHILD_8 partnered8 TOTAL_INCOME_T_FAMILY8 i.raceth_fixed_focal birth_yr_all i.sample_type,
-employed_focal9:        employed_focal0 employed_focal1 employed_focal2 employed_focal3 employed_focal4 employed_focal5 employed_focal6 employed_focal7 employed_focal8 employed_focal10 employed_focal11 employed_focal12 employed_focal13 employed_focal14 employed_focal15 employed_focal16          weekly_hrs_t_focal8 housework_focal9 earnings_t_focal8 educ_focal9 NUM_CHILDREN_9 AGE_YOUNG_CHILD_9 partnered9 TOTAL_INCOME_T_FAMILY9 i.raceth_fixed_focal birth_yr_all i.sample_type,
-employed_focal10:       employed_focal0 employed_focal1 employed_focal2 employed_focal3 employed_focal4 employed_focal5 employed_focal6 employed_focal7 employed_focal8 employed_focal9 employed_focal11 employed_focal12 employed_focal13 employed_focal14 employed_focal15 employed_focal16           weekly_hrs_t_focal9 housework_focal10 earnings_t_focal9 educ_focal10 NUM_CHILDREN_10 AGE_YOUNG_CHILD_10 partnered10 TOTAL_INCOME_T_FAMILY10 i.raceth_fixed_focal birth_yr_all i.sample_type,
-employed_focal11:      employed_focal0 employed_focal1 employed_focal2 employed_focal3 employed_focal4 employed_focal5 employed_focal6 employed_focal7 employed_focal8 employed_focal9 employed_focal10 employed_focal12 employed_focal13 employed_focal14 employed_focal15 employed_focal16            weekly_hrs_t_focal10 housework_focal11 earnings_t_focal10 educ_focal11 NUM_CHILDREN_11 AGE_YOUNG_CHILD_11 partnered11 TOTAL_INCOME_T_FAMILY11 i.raceth_fixed_focal birth_yr_all i.sample_type,
-employed_focal12:     employed_focal0 employed_focal1 employed_focal2 employed_focal3 employed_focal4 employed_focal5 employed_focal6 employed_focal7 employed_focal8 employed_focal9 employed_focal10 employed_focal11 employed_focal13 employed_focal14 employed_focal15 employed_focal16             weekly_hrs_t_focal11 housework_focal12 earnings_t_focal11 educ_focal12 NUM_CHILDREN_12 AGE_YOUNG_CHILD_12 partnered12 TOTAL_INCOME_T_FAMILY12 i.raceth_fixed_focal birth_yr_all i.sample_type,
-employed_focal13:    employed_focal0 employed_focal1 employed_focal2 employed_focal3 employed_focal4 employed_focal5 employed_focal6 employed_focal7 employed_focal8 employed_focal9 employed_focal10 employed_focal11 employed_focal12 employed_focal14 employed_focal15 employed_focal16              weekly_hrs_t_focal12 housework_focal13 earnings_t_focal12 educ_focal13 NUM_CHILDREN_13 AGE_YOUNG_CHILD_13 partnered13 TOTAL_INCOME_T_FAMILY13 i.raceth_fixed_focal birth_yr_all i.sample_type,
-employed_focal14:   employed_focal0 employed_focal1 employed_focal2 employed_focal3 employed_focal4 employed_focal5 employed_focal6 employed_focal7 employed_focal8 employed_focal9 employed_focal10 employed_focal11 employed_focal12 employed_focal13 employed_focal15 employed_focal16               weekly_hrs_t_focal13 housework_focal14 earnings_t_focal13 educ_focal14 NUM_CHILDREN_14 AGE_YOUNG_CHILD_14 partnered14 TOTAL_INCOME_T_FAMILY14 i.raceth_fixed_focal birth_yr_all i.sample_type,
-employed_focal15:  employed_focal0 employed_focal1 employed_focal2 employed_focal3 employed_focal4 employed_focal5 employed_focal6 employed_focal7 employed_focal8 employed_focal9 employed_focal10 employed_focal11 employed_focal12 employed_focal13 employed_focal14 employed_focal16                weekly_hrs_t_focal14 housework_focal15 earnings_t_focal14 educ_focal15 NUM_CHILDREN_15 AGE_YOUNG_CHILD_15 partnered15 TOTAL_INCOME_T_FAMILY15 i.raceth_fixed_focal birth_yr_all i.sample_type,
-employed_focal16: employed_focal0 employed_focal1 employed_focal2 employed_focal3 employed_focal4 employed_focal5 employed_focal6 employed_focal7 employed_focal8 employed_focal9 employed_focal10 employed_focal11 employed_focal12 employed_focal13 employed_focal14 employed_focal15                 weekly_hrs_t_focal15 housework_focal16 earnings_t_focal15 educ_focal16 NUM_CHILDREN_16 AGE_YOUNG_CHILD_16 partnered16 TOTAL_INCOME_T_FAMILY16 i.raceth_fixed_focal birth_yr_all i.sample_type,
+** Duration 10
+// Not imputed
+forvalues w=1/86{
+	local row=`w'+2
+	local var: word `w' of `desc_vars'
+	mean `var' if imputed==0 & duration_rec==12
+	matrix t`var'= e(b)
+	putexcel H`row' = matrix(t`var'), nformat(#.#%)
+}
 
-/* Earnings */
-earnings_t_focal0:                 earnings_t_focal1 earnings_t_focal2 earnings_t_focal3 earnings_t_focal4 earnings_t_focal5 earnings_t_focal6 earnings_t_focal7 earnings_t_focal8 earnings_t_focal9 earnings_t_focal10 earnings_t_focal11 earnings_t_focal12 earnings_t_focal13 earnings_t_focal14 earnings_t_focal15 earnings_t_focal16 weekly_hrs_t_focal0 employed_focal0 housework_focal0 educ_focal0 NUM_CHILDREN_0 AGE_YOUNG_CHILD_0 partnered0 TOTAL_INCOME_T_FAMILY0 i.raceth_fixed_focal birth_yr_all i.sample_type,
-earnings_t_focal1:                earnings_t_focal0 earnings_t_focal2 earnings_t_focal3 earnings_t_focal4 earnings_t_focal5 earnings_t_focal6 earnings_t_focal7 earnings_t_focal8 earnings_t_focal9 earnings_t_focal10 earnings_t_focal11 earnings_t_focal12 earnings_t_focal13 earnings_t_focal14 earnings_t_focal15 earnings_t_focal16  weekly_hrs_t_focal1 employed_focal1 housework_focal1 educ_focal1 NUM_CHILDREN_1 AGE_YOUNG_CHILD_1 partnered1 TOTAL_INCOME_T_FAMILY1 i.raceth_fixed_focal birth_yr_all i.sample_type,
-earnings_t_focal2:               earnings_t_focal0 earnings_t_focal1 earnings_t_focal3 earnings_t_focal4 earnings_t_focal5 earnings_t_focal6 earnings_t_focal7 earnings_t_focal8 earnings_t_focal9 earnings_t_focal10 earnings_t_focal11 earnings_t_focal12 earnings_t_focal13 earnings_t_focal14 earnings_t_focal15 earnings_t_focal16   weekly_hrs_t_focal2 employed_focal2 housework_focal2 educ_focal2 NUM_CHILDREN_2 AGE_YOUNG_CHILD_2 partnered2 TOTAL_INCOME_T_FAMILY2 i.raceth_fixed_focal birth_yr_all i.sample_type,
-earnings_t_focal3:              earnings_t_focal0 earnings_t_focal1 earnings_t_focal2 earnings_t_focal4 earnings_t_focal5 earnings_t_focal6 earnings_t_focal7 earnings_t_focal8 earnings_t_focal9 earnings_t_focal10 earnings_t_focal11 earnings_t_focal12 earnings_t_focal13 earnings_t_focal14 earnings_t_focal15 earnings_t_focal16    weekly_hrs_t_focal3 employed_focal3 housework_focal3 educ_focal3 NUM_CHILDREN_3 AGE_YOUNG_CHILD_3 partnered3 TOTAL_INCOME_T_FAMILY3 i.raceth_fixed_focal birth_yr_all i.sample_type,
-earnings_t_focal4:             earnings_t_focal0 earnings_t_focal1 earnings_t_focal2 earnings_t_focal3 earnings_t_focal5 earnings_t_focal6 earnings_t_focal7 earnings_t_focal8 earnings_t_focal9 earnings_t_focal10 earnings_t_focal11 earnings_t_focal12 earnings_t_focal13 earnings_t_focal14 earnings_t_focal15 earnings_t_focal16     weekly_hrs_t_focal4 employed_focal4 housework_focal4 educ_focal4 NUM_CHILDREN_4 AGE_YOUNG_CHILD_4 partnered4 TOTAL_INCOME_T_FAMILY4 i.raceth_fixed_focal birth_yr_all i.sample_type,
-earnings_t_focal5:            earnings_t_focal0 earnings_t_focal1 earnings_t_focal2 earnings_t_focal3 earnings_t_focal4 earnings_t_focal6 earnings_t_focal7 earnings_t_focal8 earnings_t_focal9 earnings_t_focal10 earnings_t_focal11 earnings_t_focal12 earnings_t_focal13 earnings_t_focal14 earnings_t_focal15 earnings_t_focal16      weekly_hrs_t_focal5 employed_focal5 housework_focal5 educ_focal5 NUM_CHILDREN_5 AGE_YOUNG_CHILD_5 partnered5 TOTAL_INCOME_T_FAMILY5 i.raceth_fixed_focal birth_yr_all i.sample_type,
-earnings_t_focal6:           earnings_t_focal0 earnings_t_focal1 earnings_t_focal2 earnings_t_focal3 earnings_t_focal4 earnings_t_focal5 earnings_t_focal7 earnings_t_focal8 earnings_t_focal9 earnings_t_focal10 earnings_t_focal11 earnings_t_focal12 earnings_t_focal13 earnings_t_focal14 earnings_t_focal15 earnings_t_focal16       weekly_hrs_t_focal6 employed_focal6 housework_focal6 educ_focal6 NUM_CHILDREN_6 AGE_YOUNG_CHILD_6 partnered6 TOTAL_INCOME_T_FAMILY6 i.raceth_fixed_focal birth_yr_all i.sample_type,
-earnings_t_focal7:          earnings_t_focal0 earnings_t_focal1 earnings_t_focal2 earnings_t_focal3 earnings_t_focal4 earnings_t_focal5 earnings_t_focal6 earnings_t_focal8 earnings_t_focal9 earnings_t_focal10 earnings_t_focal11 earnings_t_focal12 earnings_t_focal13 earnings_t_focal14 earnings_t_focal15 earnings_t_focal16        weekly_hrs_t_focal7 employed_focal7 housework_focal7 educ_focal7 NUM_CHILDREN_7 AGE_YOUNG_CHILD_7 partnered7 TOTAL_INCOME_T_FAMILY7 i.raceth_fixed_focal birth_yr_all i.sample_type,
-earnings_t_focal8:         earnings_t_focal0 earnings_t_focal1 earnings_t_focal2 earnings_t_focal3 earnings_t_focal4 earnings_t_focal5 earnings_t_focal6 earnings_t_focal7 earnings_t_focal9 earnings_t_focal10 earnings_t_focal11 earnings_t_focal12 earnings_t_focal13 earnings_t_focal14 earnings_t_focal15 earnings_t_focal16         weekly_hrs_t_focal8 employed_focal8 housework_focal8 educ_focal8 NUM_CHILDREN_8 AGE_YOUNG_CHILD_8 partnered8 TOTAL_INCOME_T_FAMILY8 i.raceth_fixed_focal birth_yr_all i.sample_type,
-earnings_t_focal9:        earnings_t_focal0 earnings_t_focal1 earnings_t_focal2 earnings_t_focal3 earnings_t_focal4 earnings_t_focal5 earnings_t_focal6 earnings_t_focal7 earnings_t_focal8 earnings_t_focal10 earnings_t_focal11 earnings_t_focal12 earnings_t_focal13 earnings_t_focal14 earnings_t_focal15 earnings_t_focal16          weekly_hrs_t_focal9 employed_focal9 housework_focal9 educ_focal9 NUM_CHILDREN_9 AGE_YOUNG_CHILD_9 partnered9 TOTAL_INCOME_T_FAMILY9 i.raceth_fixed_focal birth_yr_all i.sample_type,
-earnings_t_focal10:       earnings_t_focal0 earnings_t_focal1 earnings_t_focal2 earnings_t_focal3 earnings_t_focal4 earnings_t_focal5 earnings_t_focal6 earnings_t_focal7 earnings_t_focal8 earnings_t_focal9 earnings_t_focal11 earnings_t_focal12 earnings_t_focal13 earnings_t_focal14 earnings_t_focal15 earnings_t_focal16           weekly_hrs_t_focal10 employed_focal10 housework_focal10 educ_focal10 NUM_CHILDREN_10 AGE_YOUNG_CHILD_10 partnered10 TOTAL_INCOME_T_FAMILY10 i.raceth_fixed_focal birth_yr_all i.sample_type,
-earnings_t_focal11:      earnings_t_focal0 earnings_t_focal1 earnings_t_focal2 earnings_t_focal3 earnings_t_focal4 earnings_t_focal5 earnings_t_focal6 earnings_t_focal7 earnings_t_focal8 earnings_t_focal9 earnings_t_focal10 earnings_t_focal12 earnings_t_focal13 earnings_t_focal14 earnings_t_focal15 earnings_t_focal16            weekly_hrs_t_focal11 employed_focal11 housework_focal11 educ_focal11 NUM_CHILDREN_11 AGE_YOUNG_CHILD_11 partnered11 TOTAL_INCOME_T_FAMILY11 i.raceth_fixed_focal birth_yr_all i.sample_type,
-earnings_t_focal12:     earnings_t_focal0 earnings_t_focal1 earnings_t_focal2 earnings_t_focal3 earnings_t_focal4 earnings_t_focal5 earnings_t_focal6 earnings_t_focal7 earnings_t_focal8 earnings_t_focal9 earnings_t_focal10 earnings_t_focal11 earnings_t_focal13 earnings_t_focal14 earnings_t_focal15 earnings_t_focal16             weekly_hrs_t_focal12 employed_focal12 housework_focal12 educ_focal12 NUM_CHILDREN_12 AGE_YOUNG_CHILD_12 partnered12 TOTAL_INCOME_T_FAMILY12 i.raceth_fixed_focal birth_yr_all i.sample_type,
-earnings_t_focal13:    earnings_t_focal0 earnings_t_focal1 earnings_t_focal2 earnings_t_focal3 earnings_t_focal4 earnings_t_focal5 earnings_t_focal6 earnings_t_focal7 earnings_t_focal8 earnings_t_focal9 earnings_t_focal10 earnings_t_focal11 earnings_t_focal12 earnings_t_focal14 earnings_t_focal15 earnings_t_focal16              weekly_hrs_t_focal13 employed_focal13 housework_focal13 educ_focal13 NUM_CHILDREN_13 AGE_YOUNG_CHILD_13 partnered13 TOTAL_INCOME_T_FAMILY13 i.raceth_fixed_focal birth_yr_all i.sample_type,
-earnings_t_focal14:   earnings_t_focal0 earnings_t_focal1 earnings_t_focal2 earnings_t_focal3 earnings_t_focal4 earnings_t_focal5 earnings_t_focal6 earnings_t_focal7 earnings_t_focal8 earnings_t_focal9 earnings_t_focal10 earnings_t_focal11 earnings_t_focal12 earnings_t_focal13 earnings_t_focal15 earnings_t_focal16               weekly_hrs_t_focal14 employed_focal14 housework_focal14 educ_focal14 NUM_CHILDREN_14 AGE_YOUNG_CHILD_14 partnered14 TOTAL_INCOME_T_FAMILY14 i.raceth_fixed_focal birth_yr_all i.sample_type,
-earnings_t_focal15:  earnings_t_focal0 earnings_t_focal1 earnings_t_focal2 earnings_t_focal3 earnings_t_focal4 earnings_t_focal5 earnings_t_focal6 earnings_t_focal7 earnings_t_focal8 earnings_t_focal9 earnings_t_focal10 earnings_t_focal11 earnings_t_focal12 earnings_t_focal13 earnings_t_focal14 earnings_t_focal16                weekly_hrs_t_focal15 employed_focal15 housework_focal15 educ_focal15 NUM_CHILDREN_15 AGE_YOUNG_CHILD_15 partnered15 TOTAL_INCOME_T_FAMILY15 i.raceth_fixed_focal birth_yr_all i.sample_type,
-earnings_t_focal16: earnings_t_focal0 earnings_t_focal1 earnings_t_focal2 earnings_t_focal3 earnings_t_focal4 earnings_t_focal5 earnings_t_focal6 earnings_t_focal7 earnings_t_focal8 earnings_t_focal9 earnings_t_focal10 earnings_t_focal11 earnings_t_focal12 earnings_t_focal13 earnings_t_focal14 earnings_t_focal15                 weekly_hrs_t_focal16 employed_focal16 housework_focal16 educ_focal16 NUM_CHILDREN_16 AGE_YOUNG_CHILD_16 partnered16 TOTAL_INCOME_T_FAMILY16 i.raceth_fixed_focal birth_yr_all i.sample_type,
-
-/* Education */
-educ_focal0:                 educ_focal1 educ_focal2 educ_focal3 educ_focal4 educ_focal5 educ_focal6 educ_focal7 educ_focal8 educ_focal9 educ_focal10 educ_focal11 educ_focal12 educ_focal13 educ_focal14 educ_focal15 educ_focal16 weekly_hrs_t_focal0 employed_focal0 housework_focal0 earnings_t_focal0 NUM_CHILDREN_0 AGE_YOUNG_CHILD_0 partnered0 TOTAL_INCOME_T_FAMILY0 i.raceth_fixed_focal birth_yr_all i.sample_type,
-educ_focal1:                educ_focal0 educ_focal2 educ_focal3 educ_focal4 educ_focal5 educ_focal6 educ_focal7 educ_focal8 educ_focal9 educ_focal10 educ_focal11 educ_focal12 educ_focal13 educ_focal14 educ_focal15 educ_focal16  weekly_hrs_t_focal1 employed_focal1 housework_focal1 earnings_t_focal1 NUM_CHILDREN_1 AGE_YOUNG_CHILD_1 partnered1 TOTAL_INCOME_T_FAMILY1 i.raceth_fixed_focal birth_yr_all i.sample_type,
-educ_focal2:               educ_focal0 educ_focal1 educ_focal3 educ_focal4 educ_focal5 educ_focal6 educ_focal7 educ_focal8 educ_focal9 educ_focal10 educ_focal11 educ_focal12 educ_focal13 educ_focal14 educ_focal15 educ_focal16   weekly_hrs_t_focal2 employed_focal2 housework_focal2 earnings_t_focal2 NUM_CHILDREN_2 AGE_YOUNG_CHILD_2 partnered2 TOTAL_INCOME_T_FAMILY2 i.raceth_fixed_focal birth_yr_all i.sample_type,
-educ_focal3:              educ_focal0 educ_focal1 educ_focal2 educ_focal4 educ_focal5 educ_focal6 educ_focal7 educ_focal8 educ_focal9 educ_focal10 educ_focal11 educ_focal12 educ_focal13 educ_focal14 educ_focal15 educ_focal16    weekly_hrs_t_focal3 employed_focal3 housework_focal3 earnings_t_focal3 NUM_CHILDREN_3 AGE_YOUNG_CHILD_3 partnered3 TOTAL_INCOME_T_FAMILY3 i.raceth_fixed_focal birth_yr_all i.sample_type,
-educ_focal4:             educ_focal0 educ_focal1 educ_focal2 educ_focal3 educ_focal5 educ_focal6 educ_focal7 educ_focal8 educ_focal9 educ_focal10 educ_focal11 educ_focal12 educ_focal13 educ_focal14 educ_focal15 educ_focal16     weekly_hrs_t_focal4 employed_focal4 housework_focal4 earnings_t_focal4 NUM_CHILDREN_4 AGE_YOUNG_CHILD_4 partnered4 TOTAL_INCOME_T_FAMILY4 i.raceth_fixed_focal birth_yr_all i.sample_type,
-educ_focal5:            educ_focal0 educ_focal1 educ_focal2 educ_focal3 educ_focal4 educ_focal6 educ_focal7 educ_focal8 educ_focal9 educ_focal10 educ_focal11 educ_focal12 educ_focal13 educ_focal14 educ_focal15 educ_focal16      weekly_hrs_t_focal5 employed_focal5 housework_focal5 earnings_t_focal5 NUM_CHILDREN_5 AGE_YOUNG_CHILD_5 partnered5 TOTAL_INCOME_T_FAMILY5 i.raceth_fixed_focal birth_yr_all i.sample_type,
-educ_focal6:           educ_focal0 educ_focal1 educ_focal2 educ_focal3 educ_focal4 educ_focal5 educ_focal7 educ_focal8 educ_focal9 educ_focal10 educ_focal11 educ_focal12 educ_focal13 educ_focal14 educ_focal15 educ_focal16       weekly_hrs_t_focal6 employed_focal6 housework_focal6 earnings_t_focal6 NUM_CHILDREN_6 AGE_YOUNG_CHILD_6 partnered6 TOTAL_INCOME_T_FAMILY6 i.raceth_fixed_focal birth_yr_all i.sample_type,
-educ_focal7:          educ_focal0 educ_focal1 educ_focal2 educ_focal3 educ_focal4 educ_focal5 educ_focal6 educ_focal8 educ_focal9 educ_focal10 educ_focal11 educ_focal12 educ_focal13 educ_focal14 educ_focal15 educ_focal16        weekly_hrs_t_focal7 employed_focal7 housework_focal7 earnings_t_focal7 NUM_CHILDREN_7 AGE_YOUNG_CHILD_7 partnered7 TOTAL_INCOME_T_FAMILY7 i.raceth_fixed_focal birth_yr_all i.sample_type,
-educ_focal8:         educ_focal0 educ_focal1 educ_focal2 educ_focal3 educ_focal4 educ_focal5 educ_focal6 educ_focal7 educ_focal9 educ_focal10 educ_focal11 educ_focal12 educ_focal13 educ_focal14 educ_focal15 educ_focal16         weekly_hrs_t_focal8 employed_focal8 housework_focal8 earnings_t_focal8 NUM_CHILDREN_8 AGE_YOUNG_CHILD_8 partnered8 TOTAL_INCOME_T_FAMILY8 i.raceth_fixed_focal birth_yr_all i.sample_type,
-educ_focal9:        educ_focal0 educ_focal1 educ_focal2 educ_focal3 educ_focal4 educ_focal5 educ_focal6 educ_focal7 educ_focal8 educ_focal10 educ_focal11 educ_focal12 educ_focal13 educ_focal14 educ_focal15 educ_focal16          weekly_hrs_t_focal9 employed_focal9 housework_focal9 earnings_t_focal9 NUM_CHILDREN_9 AGE_YOUNG_CHILD_9 partnered9 TOTAL_INCOME_T_FAMILY9 i.raceth_fixed_focal birth_yr_all i.sample_type,
-educ_focal10:       educ_focal0 educ_focal1 educ_focal2 educ_focal3 educ_focal4 educ_focal5 educ_focal6 educ_focal7 educ_focal8 educ_focal9 educ_focal11 educ_focal12 educ_focal13 educ_focal14 educ_focal15 educ_focal16           weekly_hrs_t_focal10 employed_focal10 housework_focal10 earnings_t_focal10 NUM_CHILDREN_10 AGE_YOUNG_CHILD_10 partnered10 TOTAL_INCOME_T_FAMILY10 i.raceth_fixed_focal birth_yr_all i.sample_type,
-educ_focal11:      educ_focal0 educ_focal1 educ_focal2 educ_focal3 educ_focal4 educ_focal5 educ_focal6 educ_focal7 educ_focal8 educ_focal9 educ_focal10 educ_focal12 educ_focal13 educ_focal14 educ_focal15 educ_focal16            weekly_hrs_t_focal11 employed_focal11 housework_focal11 earnings_t_focal11 NUM_CHILDREN_11 AGE_YOUNG_CHILD_11 partnered11 TOTAL_INCOME_T_FAMILY11 i.raceth_fixed_focal birth_yr_all i.sample_type,
-educ_focal12:     educ_focal0 educ_focal1 educ_focal2 educ_focal3 educ_focal4 educ_focal5 educ_focal6 educ_focal7 educ_focal8 educ_focal9 educ_focal10 educ_focal11 educ_focal13 educ_focal14 educ_focal15 educ_focal16             weekly_hrs_t_focal12 employed_focal12 housework_focal12 earnings_t_focal12 NUM_CHILDREN_12 AGE_YOUNG_CHILD_12 partnered12 TOTAL_INCOME_T_FAMILY12 i.raceth_fixed_focal birth_yr_all i.sample_type,
-educ_focal13:    educ_focal0 educ_focal1 educ_focal2 educ_focal3 educ_focal4 educ_focal5 educ_focal6 educ_focal7 educ_focal8 educ_focal9 educ_focal10 educ_focal11 educ_focal12 educ_focal14 educ_focal15 educ_focal16              weekly_hrs_t_focal13 employed_focal13 housework_focal13 earnings_t_focal13 NUM_CHILDREN_13 AGE_YOUNG_CHILD_13 partnered13 TOTAL_INCOME_T_FAMILY13 i.raceth_fixed_focal birth_yr_all i.sample_type,
-educ_focal14:   educ_focal0 educ_focal1 educ_focal2 educ_focal3 educ_focal4 educ_focal5 educ_focal6 educ_focal7 educ_focal8 educ_focal9 educ_focal10 educ_focal11 educ_focal12 educ_focal13 educ_focal15 educ_focal16               weekly_hrs_t_focal14 employed_focal14 housework_focal14 earnings_t_focal14 NUM_CHILDREN_14 AGE_YOUNG_CHILD_14 partnered14 TOTAL_INCOME_T_FAMILY14 i.raceth_fixed_focal birth_yr_all i.sample_type,
-educ_focal15:  educ_focal0 educ_focal1 educ_focal2 educ_focal3 educ_focal4 educ_focal5 educ_focal6 educ_focal7 educ_focal8 educ_focal9 educ_focal10 educ_focal11 educ_focal12 educ_focal13 educ_focal14 educ_focal16                weekly_hrs_t_focal15 employed_focal15 housework_focal15 earnings_t_focal15 NUM_CHILDREN_15 AGE_YOUNG_CHILD_15 partnered15 TOTAL_INCOME_T_FAMILY15 i.raceth_fixed_focal birth_yr_all i.sample_type,
-educ_focal16: educ_focal0 educ_focal1 educ_focal2 educ_focal3 educ_focal4 educ_focal5 educ_focal6 educ_focal7 educ_focal8 educ_focal9 educ_focal10 educ_focal11 educ_focal12 educ_focal13 educ_focal14 educ_focal15                 weekly_hrs_t_focal16 employed_focal16 housework_focal16 earnings_t_focal16 NUM_CHILDREN_16 AGE_YOUNG_CHILD_16 partnered16 TOTAL_INCOME_T_FAMILY16 i.raceth_fixed_focal birth_yr_all i.sample_type,
-
-/* Number of Children */
-NUM_CHILDREN_0:                 NUM_CHILDREN_1 NUM_CHILDREN_2 NUM_CHILDREN_3 NUM_CHILDREN_4 NUM_CHILDREN_5 NUM_CHILDREN_6 NUM_CHILDREN_7 NUM_CHILDREN_8 NUM_CHILDREN_9 NUM_CHILDREN_10 NUM_CHILDREN_11 NUM_CHILDREN_12 NUM_CHILDREN_13 NUM_CHILDREN_14 NUM_CHILDREN_15 NUM_CHILDREN_16 weekly_hrs_t_focal0 employed_focal0 housework_focal0 educ_focal0 earnings_t_focal0 AGE_YOUNG_CHILD_0 partnered0 TOTAL_INCOME_T_FAMILY0 i.raceth_fixed_focal birth_yr_all i.sample_type,
-NUM_CHILDREN_1:                NUM_CHILDREN_0 NUM_CHILDREN_2 NUM_CHILDREN_3 NUM_CHILDREN_4 NUM_CHILDREN_5 NUM_CHILDREN_6 NUM_CHILDREN_7 NUM_CHILDREN_8 NUM_CHILDREN_9 NUM_CHILDREN_10 NUM_CHILDREN_11 NUM_CHILDREN_12 NUM_CHILDREN_13 NUM_CHILDREN_14 NUM_CHILDREN_15 NUM_CHILDREN_16  weekly_hrs_t_focal1 employed_focal1 housework_focal1 educ_focal1 earnings_t_focal1 AGE_YOUNG_CHILD_1 partnered1 TOTAL_INCOME_T_FAMILY1 i.raceth_fixed_focal birth_yr_all i.sample_type,
-NUM_CHILDREN_2:               NUM_CHILDREN_0 NUM_CHILDREN_1 NUM_CHILDREN_3 NUM_CHILDREN_4 NUM_CHILDREN_5 NUM_CHILDREN_6 NUM_CHILDREN_7 NUM_CHILDREN_8 NUM_CHILDREN_9 NUM_CHILDREN_10 NUM_CHILDREN_11 NUM_CHILDREN_12 NUM_CHILDREN_13 NUM_CHILDREN_14 NUM_CHILDREN_15 NUM_CHILDREN_16   weekly_hrs_t_focal2 employed_focal2 housework_focal2 educ_focal2 earnings_t_focal2 AGE_YOUNG_CHILD_2 partnered2 TOTAL_INCOME_T_FAMILY2 i.raceth_fixed_focal birth_yr_all i.sample_type,
-NUM_CHILDREN_3:              NUM_CHILDREN_0 NUM_CHILDREN_1 NUM_CHILDREN_2 NUM_CHILDREN_4 NUM_CHILDREN_5 NUM_CHILDREN_6 NUM_CHILDREN_7 NUM_CHILDREN_8 NUM_CHILDREN_9 NUM_CHILDREN_10 NUM_CHILDREN_11 NUM_CHILDREN_12 NUM_CHILDREN_13 NUM_CHILDREN_14 NUM_CHILDREN_15 NUM_CHILDREN_16    weekly_hrs_t_focal3 employed_focal3 housework_focal3 educ_focal3 earnings_t_focal3 AGE_YOUNG_CHILD_3 partnered3 TOTAL_INCOME_T_FAMILY3 i.raceth_fixed_focal birth_yr_all i.sample_type,
-NUM_CHILDREN_4:             NUM_CHILDREN_0 NUM_CHILDREN_1 NUM_CHILDREN_2 NUM_CHILDREN_3 NUM_CHILDREN_5 NUM_CHILDREN_6 NUM_CHILDREN_7 NUM_CHILDREN_8 NUM_CHILDREN_9 NUM_CHILDREN_10 NUM_CHILDREN_11 NUM_CHILDREN_12 NUM_CHILDREN_13 NUM_CHILDREN_14 NUM_CHILDREN_15 NUM_CHILDREN_16     weekly_hrs_t_focal4 employed_focal4 housework_focal4 educ_focal4 earnings_t_focal4 AGE_YOUNG_CHILD_4 partnered4 TOTAL_INCOME_T_FAMILY4 i.raceth_fixed_focal birth_yr_all i.sample_type,
-NUM_CHILDREN_5:            NUM_CHILDREN_0 NUM_CHILDREN_1 NUM_CHILDREN_2 NUM_CHILDREN_3 NUM_CHILDREN_4 NUM_CHILDREN_6 NUM_CHILDREN_7 NUM_CHILDREN_8 NUM_CHILDREN_9 NUM_CHILDREN_10 NUM_CHILDREN_11 NUM_CHILDREN_12 NUM_CHILDREN_13 NUM_CHILDREN_14 NUM_CHILDREN_15 NUM_CHILDREN_16      weekly_hrs_t_focal5 employed_focal5 housework_focal5 educ_focal5 earnings_t_focal5 AGE_YOUNG_CHILD_5 partnered5 TOTAL_INCOME_T_FAMILY5 i.raceth_fixed_focal birth_yr_all i.sample_type,
-NUM_CHILDREN_6:           NUM_CHILDREN_0 NUM_CHILDREN_1 NUM_CHILDREN_2 NUM_CHILDREN_3 NUM_CHILDREN_4 NUM_CHILDREN_5 NUM_CHILDREN_7 NUM_CHILDREN_8 NUM_CHILDREN_9 NUM_CHILDREN_10 NUM_CHILDREN_11 NUM_CHILDREN_12 NUM_CHILDREN_13 NUM_CHILDREN_14 NUM_CHILDREN_15 NUM_CHILDREN_16       weekly_hrs_t_focal6 employed_focal6 housework_focal6 educ_focal6 earnings_t_focal6 AGE_YOUNG_CHILD_6 partnered6 TOTAL_INCOME_T_FAMILY6 i.raceth_fixed_focal birth_yr_all i.sample_type,
-NUM_CHILDREN_7:          NUM_CHILDREN_0 NUM_CHILDREN_1 NUM_CHILDREN_2 NUM_CHILDREN_3 NUM_CHILDREN_4 NUM_CHILDREN_5 NUM_CHILDREN_6 NUM_CHILDREN_8 NUM_CHILDREN_9 NUM_CHILDREN_10 NUM_CHILDREN_11 NUM_CHILDREN_12 NUM_CHILDREN_13 NUM_CHILDREN_14 NUM_CHILDREN_15 NUM_CHILDREN_16        weekly_hrs_t_focal7 employed_focal7 housework_focal7 educ_focal7 earnings_t_focal7 AGE_YOUNG_CHILD_7 partnered7 TOTAL_INCOME_T_FAMILY7 i.raceth_fixed_focal birth_yr_all i.sample_type,
-NUM_CHILDREN_8:         NUM_CHILDREN_0 NUM_CHILDREN_1 NUM_CHILDREN_2 NUM_CHILDREN_3 NUM_CHILDREN_4 NUM_CHILDREN_5 NUM_CHILDREN_6 NUM_CHILDREN_7 NUM_CHILDREN_9 NUM_CHILDREN_10 NUM_CHILDREN_11 NUM_CHILDREN_12 NUM_CHILDREN_13 NUM_CHILDREN_14 NUM_CHILDREN_15 NUM_CHILDREN_16         weekly_hrs_t_focal8 employed_focal8 housework_focal8 educ_focal8 earnings_t_focal8 AGE_YOUNG_CHILD_8 partnered8 TOTAL_INCOME_T_FAMILY8 i.raceth_fixed_focal birth_yr_all i.sample_type,
-NUM_CHILDREN_9:        NUM_CHILDREN_0 NUM_CHILDREN_1 NUM_CHILDREN_2 NUM_CHILDREN_3 NUM_CHILDREN_4 NUM_CHILDREN_5 NUM_CHILDREN_6 NUM_CHILDREN_7 NUM_CHILDREN_8 NUM_CHILDREN_10 NUM_CHILDREN_11 NUM_CHILDREN_12 NUM_CHILDREN_13 NUM_CHILDREN_14 NUM_CHILDREN_15 NUM_CHILDREN_16          weekly_hrs_t_focal9 employed_focal9 housework_focal9 educ_focal9 earnings_t_focal9 AGE_YOUNG_CHILD_9 partnered9 TOTAL_INCOME_T_FAMILY9 i.raceth_fixed_focal birth_yr_all i.sample_type,
-NUM_CHILDREN_10:       NUM_CHILDREN_0 NUM_CHILDREN_1 NUM_CHILDREN_2 NUM_CHILDREN_3 NUM_CHILDREN_4 NUM_CHILDREN_5 NUM_CHILDREN_6 NUM_CHILDREN_7 NUM_CHILDREN_8 NUM_CHILDREN_9 NUM_CHILDREN_11 NUM_CHILDREN_12 NUM_CHILDREN_13 NUM_CHILDREN_14 NUM_CHILDREN_15 NUM_CHILDREN_16           weekly_hrs_t_focal10 employed_focal10 housework_focal10 educ_focal10 earnings_t_focal10 AGE_YOUNG_CHILD_10 partnered10 TOTAL_INCOME_T_FAMILY10 i.raceth_fixed_focal birth_yr_all i.sample_type,
-NUM_CHILDREN_11:      NUM_CHILDREN_0 NUM_CHILDREN_1 NUM_CHILDREN_2 NUM_CHILDREN_3 NUM_CHILDREN_4 NUM_CHILDREN_5 NUM_CHILDREN_6 NUM_CHILDREN_7 NUM_CHILDREN_8 NUM_CHILDREN_9 NUM_CHILDREN_10 NUM_CHILDREN_12 NUM_CHILDREN_13 NUM_CHILDREN_14 NUM_CHILDREN_15 NUM_CHILDREN_16            weekly_hrs_t_focal11 employed_focal11 housework_focal11 educ_focal11 earnings_t_focal11 AGE_YOUNG_CHILD_11 partnered11 TOTAL_INCOME_T_FAMILY11 i.raceth_fixed_focal birth_yr_all i.sample_type,
-NUM_CHILDREN_12:     NUM_CHILDREN_0 NUM_CHILDREN_1 NUM_CHILDREN_2 NUM_CHILDREN_3 NUM_CHILDREN_4 NUM_CHILDREN_5 NUM_CHILDREN_6 NUM_CHILDREN_7 NUM_CHILDREN_8 NUM_CHILDREN_9 NUM_CHILDREN_10 NUM_CHILDREN_11 NUM_CHILDREN_13 NUM_CHILDREN_14 NUM_CHILDREN_15 NUM_CHILDREN_16             weekly_hrs_t_focal12 employed_focal12 housework_focal12 educ_focal12 earnings_t_focal12 AGE_YOUNG_CHILD_12 partnered12 TOTAL_INCOME_T_FAMILY12 i.raceth_fixed_focal birth_yr_all i.sample_type,
-NUM_CHILDREN_13:    NUM_CHILDREN_0 NUM_CHILDREN_1 NUM_CHILDREN_2 NUM_CHILDREN_3 NUM_CHILDREN_4 NUM_CHILDREN_5 NUM_CHILDREN_6 NUM_CHILDREN_7 NUM_CHILDREN_8 NUM_CHILDREN_9 NUM_CHILDREN_10 NUM_CHILDREN_11 NUM_CHILDREN_12 NUM_CHILDREN_14 NUM_CHILDREN_15 NUM_CHILDREN_16              weekly_hrs_t_focal13 employed_focal13 housework_focal13 educ_focal13 earnings_t_focal13 AGE_YOUNG_CHILD_13 partnered13 TOTAL_INCOME_T_FAMILY13 i.raceth_fixed_focal birth_yr_all i.sample_type,
-NUM_CHILDREN_14:   NUM_CHILDREN_0 NUM_CHILDREN_1 NUM_CHILDREN_2 NUM_CHILDREN_3 NUM_CHILDREN_4 NUM_CHILDREN_5 NUM_CHILDREN_6 NUM_CHILDREN_7 NUM_CHILDREN_8 NUM_CHILDREN_9 NUM_CHILDREN_10 NUM_CHILDREN_11 NUM_CHILDREN_12 NUM_CHILDREN_13 NUM_CHILDREN_15 NUM_CHILDREN_16               weekly_hrs_t_focal14 employed_focal14 housework_focal14 educ_focal14 earnings_t_focal14 AGE_YOUNG_CHILD_14 partnered14 TOTAL_INCOME_T_FAMILY14 i.raceth_fixed_focal birth_yr_all i.sample_type,
-NUM_CHILDREN_15:  NUM_CHILDREN_0 NUM_CHILDREN_1 NUM_CHILDREN_2 NUM_CHILDREN_3 NUM_CHILDREN_4 NUM_CHILDREN_5 NUM_CHILDREN_6 NUM_CHILDREN_7 NUM_CHILDREN_8 NUM_CHILDREN_9 NUM_CHILDREN_10 NUM_CHILDREN_11 NUM_CHILDREN_12 NUM_CHILDREN_13 NUM_CHILDREN_14 NUM_CHILDREN_16                weekly_hrs_t_focal15 employed_focal15 housework_focal15 educ_focal15 earnings_t_focal15 AGE_YOUNG_CHILD_15 partnered15 TOTAL_INCOME_T_FAMILY15 i.raceth_fixed_focal birth_yr_all i.sample_type,
-NUM_CHILDREN_16: NUM_CHILDREN_0 NUM_CHILDREN_1 NUM_CHILDREN_2 NUM_CHILDREN_3 NUM_CHILDREN_4 NUM_CHILDREN_5 NUM_CHILDREN_6 NUM_CHILDREN_7 NUM_CHILDREN_8 NUM_CHILDREN_9 NUM_CHILDREN_10 NUM_CHILDREN_11 NUM_CHILDREN_12 NUM_CHILDREN_13 NUM_CHILDREN_14 NUM_CHILDREN_15                 weekly_hrs_t_focal16 employed_focal16 housework_focal16 educ_focal16 earnings_t_focal16 AGE_YOUNG_CHILD_16 partnered16 TOTAL_INCOME_T_FAMILY16 i.raceth_fixed_focal birth_yr_all i.sample_type,
-
-/* Age of Youngest Child */
-AGE_YOUNG_CHILD_0:                 AGE_YOUNG_CHILD_1 AGE_YOUNG_CHILD_2 AGE_YOUNG_CHILD_3 AGE_YOUNG_CHILD_4 AGE_YOUNG_CHILD_5 AGE_YOUNG_CHILD_6 AGE_YOUNG_CHILD_7 AGE_YOUNG_CHILD_8 AGE_YOUNG_CHILD_9 AGE_YOUNG_CHILD_10 AGE_YOUNG_CHILD_11 AGE_YOUNG_CHILD_12 AGE_YOUNG_CHILD_13 AGE_YOUNG_CHILD_14 AGE_YOUNG_CHILD_15 AGE_YOUNG_CHILD_16 weekly_hrs_t_focal0 employed_focal0 housework_focal0 educ_focal0 earnings_t_focal0 NUM_CHILDREN_0 partnered0 TOTAL_INCOME_T_FAMILY0 i.raceth_fixed_focal birth_yr_all i.sample_type,
-AGE_YOUNG_CHILD_1:                AGE_YOUNG_CHILD_0 AGE_YOUNG_CHILD_2 AGE_YOUNG_CHILD_3 AGE_YOUNG_CHILD_4 AGE_YOUNG_CHILD_5 AGE_YOUNG_CHILD_6 AGE_YOUNG_CHILD_7 AGE_YOUNG_CHILD_8 AGE_YOUNG_CHILD_9 AGE_YOUNG_CHILD_10 AGE_YOUNG_CHILD_11 AGE_YOUNG_CHILD_12 AGE_YOUNG_CHILD_13 AGE_YOUNG_CHILD_14 AGE_YOUNG_CHILD_15 AGE_YOUNG_CHILD_16  weekly_hrs_t_focal1 employed_focal1 housework_focal1 educ_focal1 earnings_t_focal1 NUM_CHILDREN_1 partnered1 TOTAL_INCOME_T_FAMILY1 i.raceth_fixed_focal birth_yr_all i.sample_type,
-AGE_YOUNG_CHILD_2:               AGE_YOUNG_CHILD_0 AGE_YOUNG_CHILD_1 AGE_YOUNG_CHILD_3 AGE_YOUNG_CHILD_4 AGE_YOUNG_CHILD_5 AGE_YOUNG_CHILD_6 AGE_YOUNG_CHILD_7 AGE_YOUNG_CHILD_8 AGE_YOUNG_CHILD_9 AGE_YOUNG_CHILD_10 AGE_YOUNG_CHILD_11 AGE_YOUNG_CHILD_12 AGE_YOUNG_CHILD_13 AGE_YOUNG_CHILD_14 AGE_YOUNG_CHILD_15 AGE_YOUNG_CHILD_16   weekly_hrs_t_focal2 employed_focal2 housework_focal2 educ_focal2 earnings_t_focal2 NUM_CHILDREN_2 partnered2 TOTAL_INCOME_T_FAMILY2 i.raceth_fixed_focal birth_yr_all i.sample_type,
-AGE_YOUNG_CHILD_3:              AGE_YOUNG_CHILD_0 AGE_YOUNG_CHILD_1 AGE_YOUNG_CHILD_2 AGE_YOUNG_CHILD_4 AGE_YOUNG_CHILD_5 AGE_YOUNG_CHILD_6 AGE_YOUNG_CHILD_7 AGE_YOUNG_CHILD_8 AGE_YOUNG_CHILD_9 AGE_YOUNG_CHILD_10 AGE_YOUNG_CHILD_11 AGE_YOUNG_CHILD_12 AGE_YOUNG_CHILD_13 AGE_YOUNG_CHILD_14 AGE_YOUNG_CHILD_15 AGE_YOUNG_CHILD_16    weekly_hrs_t_focal3 employed_focal3 housework_focal3 educ_focal3 earnings_t_focal3 NUM_CHILDREN_3 partnered3 TOTAL_INCOME_T_FAMILY3 i.raceth_fixed_focal birth_yr_all i.sample_type,
-AGE_YOUNG_CHILD_4:             AGE_YOUNG_CHILD_0 AGE_YOUNG_CHILD_1 AGE_YOUNG_CHILD_2 AGE_YOUNG_CHILD_3 AGE_YOUNG_CHILD_5 AGE_YOUNG_CHILD_6 AGE_YOUNG_CHILD_7 AGE_YOUNG_CHILD_8 AGE_YOUNG_CHILD_9 AGE_YOUNG_CHILD_10 AGE_YOUNG_CHILD_11 AGE_YOUNG_CHILD_12 AGE_YOUNG_CHILD_13 AGE_YOUNG_CHILD_14 AGE_YOUNG_CHILD_15 AGE_YOUNG_CHILD_16     weekly_hrs_t_focal4 employed_focal4 housework_focal4 educ_focal4 earnings_t_focal4 NUM_CHILDREN_4 partnered4 TOTAL_INCOME_T_FAMILY4 i.raceth_fixed_focal birth_yr_all i.sample_type,
-AGE_YOUNG_CHILD_5:            AGE_YOUNG_CHILD_0 AGE_YOUNG_CHILD_1 AGE_YOUNG_CHILD_2 AGE_YOUNG_CHILD_3 AGE_YOUNG_CHILD_4 AGE_YOUNG_CHILD_6 AGE_YOUNG_CHILD_7 AGE_YOUNG_CHILD_8 AGE_YOUNG_CHILD_9 AGE_YOUNG_CHILD_10 AGE_YOUNG_CHILD_11 AGE_YOUNG_CHILD_12 AGE_YOUNG_CHILD_13 AGE_YOUNG_CHILD_14 AGE_YOUNG_CHILD_15 AGE_YOUNG_CHILD_16      weekly_hrs_t_focal5 employed_focal5 housework_focal5 educ_focal5 earnings_t_focal5 NUM_CHILDREN_5 partnered5 TOTAL_INCOME_T_FAMILY5 i.raceth_fixed_focal birth_yr_all i.sample_type,
-AGE_YOUNG_CHILD_6:           AGE_YOUNG_CHILD_0 AGE_YOUNG_CHILD_1 AGE_YOUNG_CHILD_2 AGE_YOUNG_CHILD_3 AGE_YOUNG_CHILD_4 AGE_YOUNG_CHILD_5 AGE_YOUNG_CHILD_7 AGE_YOUNG_CHILD_8 AGE_YOUNG_CHILD_9 AGE_YOUNG_CHILD_10 AGE_YOUNG_CHILD_11 AGE_YOUNG_CHILD_12 AGE_YOUNG_CHILD_13 AGE_YOUNG_CHILD_14 AGE_YOUNG_CHILD_15 AGE_YOUNG_CHILD_16       weekly_hrs_t_focal6 employed_focal6 housework_focal6 educ_focal6 earnings_t_focal6 NUM_CHILDREN_6 partnered6 TOTAL_INCOME_T_FAMILY6 i.raceth_fixed_focal birth_yr_all i.sample_type,
-AGE_YOUNG_CHILD_7:          AGE_YOUNG_CHILD_0 AGE_YOUNG_CHILD_1 AGE_YOUNG_CHILD_2 AGE_YOUNG_CHILD_3 AGE_YOUNG_CHILD_4 AGE_YOUNG_CHILD_5 AGE_YOUNG_CHILD_6 AGE_YOUNG_CHILD_8 AGE_YOUNG_CHILD_9 AGE_YOUNG_CHILD_10 AGE_YOUNG_CHILD_11 AGE_YOUNG_CHILD_12 AGE_YOUNG_CHILD_13 AGE_YOUNG_CHILD_14 AGE_YOUNG_CHILD_15 AGE_YOUNG_CHILD_16        weekly_hrs_t_focal7 employed_focal7 housework_focal7 educ_focal7 earnings_t_focal7 NUM_CHILDREN_7 partnered7 TOTAL_INCOME_T_FAMILY7 i.raceth_fixed_focal birth_yr_all i.sample_type,
-AGE_YOUNG_CHILD_8:         AGE_YOUNG_CHILD_0 AGE_YOUNG_CHILD_1 AGE_YOUNG_CHILD_2 AGE_YOUNG_CHILD_3 AGE_YOUNG_CHILD_4 AGE_YOUNG_CHILD_5 AGE_YOUNG_CHILD_6 AGE_YOUNG_CHILD_7 AGE_YOUNG_CHILD_9 AGE_YOUNG_CHILD_10 AGE_YOUNG_CHILD_11 AGE_YOUNG_CHILD_12 AGE_YOUNG_CHILD_13 AGE_YOUNG_CHILD_14 AGE_YOUNG_CHILD_15 AGE_YOUNG_CHILD_16         weekly_hrs_t_focal8 employed_focal8 housework_focal8 educ_focal8 earnings_t_focal8 NUM_CHILDREN_8 partnered8 TOTAL_INCOME_T_FAMILY8 i.raceth_fixed_focal birth_yr_all i.sample_type,
-AGE_YOUNG_CHILD_9:        AGE_YOUNG_CHILD_0 AGE_YOUNG_CHILD_1 AGE_YOUNG_CHILD_2 AGE_YOUNG_CHILD_3 AGE_YOUNG_CHILD_4 AGE_YOUNG_CHILD_5 AGE_YOUNG_CHILD_6 AGE_YOUNG_CHILD_7 AGE_YOUNG_CHILD_8 AGE_YOUNG_CHILD_10 AGE_YOUNG_CHILD_11 AGE_YOUNG_CHILD_12 AGE_YOUNG_CHILD_13 AGE_YOUNG_CHILD_14 AGE_YOUNG_CHILD_15 AGE_YOUNG_CHILD_16          weekly_hrs_t_focal9 employed_focal9 housework_focal9 educ_focal9 earnings_t_focal9 NUM_CHILDREN_9 partnered9 TOTAL_INCOME_T_FAMILY9 i.raceth_fixed_focal birth_yr_all i.sample_type,
-AGE_YOUNG_CHILD_10:       AGE_YOUNG_CHILD_0 AGE_YOUNG_CHILD_1 AGE_YOUNG_CHILD_2 AGE_YOUNG_CHILD_3 AGE_YOUNG_CHILD_4 AGE_YOUNG_CHILD_5 AGE_YOUNG_CHILD_6 AGE_YOUNG_CHILD_7 AGE_YOUNG_CHILD_8 AGE_YOUNG_CHILD_9 AGE_YOUNG_CHILD_11 AGE_YOUNG_CHILD_12 AGE_YOUNG_CHILD_13 AGE_YOUNG_CHILD_14 AGE_YOUNG_CHILD_15 AGE_YOUNG_CHILD_16           weekly_hrs_t_focal10 employed_focal10 housework_focal10 educ_focal10 earnings_t_focal10 NUM_CHILDREN_10 partnered10 TOTAL_INCOME_T_FAMILY10 i.raceth_fixed_focal birth_yr_all i.sample_type,
-AGE_YOUNG_CHILD_11:      AGE_YOUNG_CHILD_0 AGE_YOUNG_CHILD_1 AGE_YOUNG_CHILD_2 AGE_YOUNG_CHILD_3 AGE_YOUNG_CHILD_4 AGE_YOUNG_CHILD_5 AGE_YOUNG_CHILD_6 AGE_YOUNG_CHILD_7 AGE_YOUNG_CHILD_8 AGE_YOUNG_CHILD_9 AGE_YOUNG_CHILD_10 AGE_YOUNG_CHILD_12 AGE_YOUNG_CHILD_13 AGE_YOUNG_CHILD_14 AGE_YOUNG_CHILD_15 AGE_YOUNG_CHILD_16            weekly_hrs_t_focal11 employed_focal11 housework_focal11 educ_focal11 earnings_t_focal11 NUM_CHILDREN_11 partnered11 TOTAL_INCOME_T_FAMILY11 i.raceth_fixed_focal birth_yr_all i.sample_type,
-AGE_YOUNG_CHILD_12:     AGE_YOUNG_CHILD_0 AGE_YOUNG_CHILD_1 AGE_YOUNG_CHILD_2 AGE_YOUNG_CHILD_3 AGE_YOUNG_CHILD_4 AGE_YOUNG_CHILD_5 AGE_YOUNG_CHILD_6 AGE_YOUNG_CHILD_7 AGE_YOUNG_CHILD_8 AGE_YOUNG_CHILD_9 AGE_YOUNG_CHILD_10 AGE_YOUNG_CHILD_11 AGE_YOUNG_CHILD_13 AGE_YOUNG_CHILD_14 AGE_YOUNG_CHILD_15 AGE_YOUNG_CHILD_16             weekly_hrs_t_focal12 employed_focal12 housework_focal12 educ_focal12 earnings_t_focal12 NUM_CHILDREN_12 partnered12 TOTAL_INCOME_T_FAMILY12 i.raceth_fixed_focal birth_yr_all i.sample_type,
-AGE_YOUNG_CHILD_13:    AGE_YOUNG_CHILD_0 AGE_YOUNG_CHILD_1 AGE_YOUNG_CHILD_2 AGE_YOUNG_CHILD_3 AGE_YOUNG_CHILD_4 AGE_YOUNG_CHILD_5 AGE_YOUNG_CHILD_6 AGE_YOUNG_CHILD_7 AGE_YOUNG_CHILD_8 AGE_YOUNG_CHILD_9 AGE_YOUNG_CHILD_10 AGE_YOUNG_CHILD_11 AGE_YOUNG_CHILD_12 AGE_YOUNG_CHILD_14 AGE_YOUNG_CHILD_15 AGE_YOUNG_CHILD_16              weekly_hrs_t_focal13 employed_focal13 housework_focal13 educ_focal13 earnings_t_focal13 NUM_CHILDREN_13 partnered13 TOTAL_INCOME_T_FAMILY13 i.raceth_fixed_focal birth_yr_all i.sample_type,
-AGE_YOUNG_CHILD_14:   AGE_YOUNG_CHILD_0 AGE_YOUNG_CHILD_1 AGE_YOUNG_CHILD_2 AGE_YOUNG_CHILD_3 AGE_YOUNG_CHILD_4 AGE_YOUNG_CHILD_5 AGE_YOUNG_CHILD_6 AGE_YOUNG_CHILD_7 AGE_YOUNG_CHILD_8 AGE_YOUNG_CHILD_9 AGE_YOUNG_CHILD_10 AGE_YOUNG_CHILD_11 AGE_YOUNG_CHILD_12 AGE_YOUNG_CHILD_13 AGE_YOUNG_CHILD_15 AGE_YOUNG_CHILD_16               weekly_hrs_t_focal14 employed_focal14 housework_focal14 educ_focal14 earnings_t_focal14 NUM_CHILDREN_14 partnered14 TOTAL_INCOME_T_FAMILY14 i.raceth_fixed_focal birth_yr_all i.sample_type,
-AGE_YOUNG_CHILD_15:  AGE_YOUNG_CHILD_0 AGE_YOUNG_CHILD_1 AGE_YOUNG_CHILD_2 AGE_YOUNG_CHILD_3 AGE_YOUNG_CHILD_4 AGE_YOUNG_CHILD_5 AGE_YOUNG_CHILD_6 AGE_YOUNG_CHILD_7 AGE_YOUNG_CHILD_8 AGE_YOUNG_CHILD_9 AGE_YOUNG_CHILD_10 AGE_YOUNG_CHILD_11 AGE_YOUNG_CHILD_12 AGE_YOUNG_CHILD_13 AGE_YOUNG_CHILD_14 AGE_YOUNG_CHILD_16                weekly_hrs_t_focal15 employed_focal15 housework_focal15 educ_focal15 earnings_t_focal15 NUM_CHILDREN_15 partnered15 TOTAL_INCOME_T_FAMILY15 i.raceth_fixed_focal birth_yr_all i.sample_type,
-AGE_YOUNG_CHILD_16: AGE_YOUNG_CHILD_0 AGE_YOUNG_CHILD_1 AGE_YOUNG_CHILD_2 AGE_YOUNG_CHILD_3 AGE_YOUNG_CHILD_4 AGE_YOUNG_CHILD_5 AGE_YOUNG_CHILD_6 AGE_YOUNG_CHILD_7 AGE_YOUNG_CHILD_8 AGE_YOUNG_CHILD_9 AGE_YOUNG_CHILD_10 AGE_YOUNG_CHILD_11 AGE_YOUNG_CHILD_12 AGE_YOUNG_CHILD_13 AGE_YOUNG_CHILD_14 AGE_YOUNG_CHILD_15                 weekly_hrs_t_focal16 employed_focal16 housework_focal16 educ_focal16 earnings_t_focal16 NUM_CHILDREN_16 partnered16 TOTAL_INCOME_T_FAMILY16 i.raceth_fixed_focal birth_yr_all i.sample_type,
-
-/* Partnership Status */
-partnered0:                 partnered1 partnered2 partnered3 partnered4 partnered5 partnered6 partnered7 partnered8 partnered9 partnered10 partnered11 partnered12 partnered13 partnered14 partnered15 partnered16 weekly_hrs_t_focal0 employed_focal0 housework_focal0 earnings_t_focal0 NUM_CHILDREN_0 AGE_YOUNG_CHILD_0 educ_focal0 TOTAL_INCOME_T_FAMILY0 i.raceth_fixed_focal birth_yr_all i.sample_type,
-partnered1:                partnered0 partnered2 partnered3 partnered4 partnered5 partnered6 partnered7 partnered8 partnered9 partnered10 partnered11 partnered12 partnered13 partnered14 partnered15 partnered16  weekly_hrs_t_focal1 employed_focal1 housework_focal1 earnings_t_focal1 NUM_CHILDREN_1 AGE_YOUNG_CHILD_1 educ_focal1 TOTAL_INCOME_T_FAMILY1 i.raceth_fixed_focal birth_yr_all i.sample_type,
-partnered2:               partnered0 partnered1 partnered3 partnered4 partnered5 partnered6 partnered7 partnered8 partnered9 partnered10 partnered11 partnered12 partnered13 partnered14 partnered15 partnered16   weekly_hrs_t_focal2 employed_focal2 housework_focal2 earnings_t_focal2 NUM_CHILDREN_2 AGE_YOUNG_CHILD_2 educ_focal2 TOTAL_INCOME_T_FAMILY2 i.raceth_fixed_focal birth_yr_all i.sample_type,
-partnered3:              partnered0 partnered1 partnered2 partnered4 partnered5 partnered6 partnered7 partnered8 partnered9 partnered10 partnered11 partnered12 partnered13 partnered14 partnered15 partnered16    weekly_hrs_t_focal3 employed_focal3 housework_focal3 earnings_t_focal3 NUM_CHILDREN_3 AGE_YOUNG_CHILD_3 educ_focal3 TOTAL_INCOME_T_FAMILY3 i.raceth_fixed_focal birth_yr_all i.sample_type,
-partnered4:             partnered0 partnered1 partnered2 partnered3 partnered5 partnered6 partnered7 partnered8 partnered9 partnered10 partnered11 partnered12 partnered13 partnered14 partnered15 partnered16     weekly_hrs_t_focal4 employed_focal4 housework_focal4 earnings_t_focal4 NUM_CHILDREN_4 AGE_YOUNG_CHILD_4 educ_focal4 TOTAL_INCOME_T_FAMILY4 i.raceth_fixed_focal birth_yr_all i.sample_type,
-partnered5:            partnered0 partnered1 partnered2 partnered3 partnered4 partnered6 partnered7 partnered8 partnered9 partnered10 partnered11 partnered12 partnered13 partnered14 partnered15 partnered16      weekly_hrs_t_focal5 employed_focal5 housework_focal5 earnings_t_focal5 NUM_CHILDREN_5 AGE_YOUNG_CHILD_5 educ_focal5 TOTAL_INCOME_T_FAMILY5 i.raceth_fixed_focal birth_yr_all i.sample_type,
-partnered6:           partnered0 partnered1 partnered2 partnered3 partnered4 partnered5 partnered7 partnered8 partnered9 partnered10 partnered11 partnered12 partnered13 partnered14 partnered15 partnered16       weekly_hrs_t_focal6 employed_focal6 housework_focal6 earnings_t_focal6 NUM_CHILDREN_6 AGE_YOUNG_CHILD_6 educ_focal6 TOTAL_INCOME_T_FAMILY6 i.raceth_fixed_focal birth_yr_all i.sample_type,
-partnered7:          partnered0 partnered1 partnered2 partnered3 partnered4 partnered5 partnered6 partnered8 partnered9 partnered10 partnered11 partnered12 partnered13 partnered14 partnered15 partnered16        weekly_hrs_t_focal7 employed_focal7 housework_focal7 earnings_t_focal7 NUM_CHILDREN_7 AGE_YOUNG_CHILD_7 educ_focal7 TOTAL_INCOME_T_FAMILY7 i.raceth_fixed_focal birth_yr_all i.sample_type,
-partnered8:         partnered0 partnered1 partnered2 partnered3 partnered4 partnered5 partnered6 partnered7 partnered9 partnered10 partnered11 partnered12 partnered13 partnered14 partnered15 partnered16         weekly_hrs_t_focal8 employed_focal8 housework_focal8 earnings_t_focal8 NUM_CHILDREN_8 AGE_YOUNG_CHILD_8 educ_focal8 TOTAL_INCOME_T_FAMILY8 i.raceth_fixed_focal birth_yr_all i.sample_type,
-partnered9:        partnered0 partnered1 partnered2 partnered3 partnered4 partnered5 partnered6 partnered7 partnered8 partnered10 partnered11 partnered12 partnered13 partnered14 partnered15 partnered16          weekly_hrs_t_focal9 employed_focal9 housework_focal9 earnings_t_focal9 NUM_CHILDREN_9 AGE_YOUNG_CHILD_9 educ_focal9 TOTAL_INCOME_T_FAMILY9 i.raceth_fixed_focal birth_yr_all i.sample_type,
-partnered10:       partnered0 partnered1 partnered2 partnered3 partnered4 partnered5 partnered6 partnered7 partnered8 partnered9 partnered11 partnered12 partnered13 partnered14 partnered15 partnered16           weekly_hrs_t_focal10 employed_focal10 housework_focal10 earnings_t_focal10 NUM_CHILDREN_10 AGE_YOUNG_CHILD_10 educ_focal10 TOTAL_INCOME_T_FAMILY10 i.raceth_fixed_focal birth_yr_all i.sample_type,
-partnered11:      partnered0 partnered1 partnered2 partnered3 partnered4 partnered5 partnered6 partnered7 partnered8 partnered9 partnered10 partnered12 partnered13 partnered14 partnered15 partnered16            weekly_hrs_t_focal11 employed_focal11 housework_focal11 earnings_t_focal11 NUM_CHILDREN_11 AGE_YOUNG_CHILD_11 educ_focal11 TOTAL_INCOME_T_FAMILY11 i.raceth_fixed_focal birth_yr_all i.sample_type,
-partnered12:     partnered0 partnered1 partnered2 partnered3 partnered4 partnered5 partnered6 partnered7 partnered8 partnered9 partnered10 partnered11 partnered13 partnered14 partnered15 partnered16             weekly_hrs_t_focal12 employed_focal12 housework_focal12 earnings_t_focal12 NUM_CHILDREN_12 AGE_YOUNG_CHILD_12 educ_focal12 TOTAL_INCOME_T_FAMILY12 i.raceth_fixed_focal birth_yr_all i.sample_type,
-partnered13:    partnered0 partnered1 partnered2 partnered3 partnered4 partnered5 partnered6 partnered7 partnered8 partnered9 partnered10 partnered11 partnered12 partnered14 partnered15 partnered16              weekly_hrs_t_focal13 employed_focal13 housework_focal13 earnings_t_focal13 NUM_CHILDREN_13 AGE_YOUNG_CHILD_13 educ_focal13 TOTAL_INCOME_T_FAMILY13 i.raceth_fixed_focal birth_yr_all i.sample_type,
-partnered14:   partnered0 partnered1 partnered2 partnered3 partnered4 partnered5 partnered6 partnered7 partnered8 partnered9 partnered10 partnered11 partnered12 partnered13 partnered15 partnered16               weekly_hrs_t_focal14 employed_focal14 housework_focal14 earnings_t_focal14 NUM_CHILDREN_14 AGE_YOUNG_CHILD_14 educ_focal14 TOTAL_INCOME_T_FAMILY14 i.raceth_fixed_focal birth_yr_all i.sample_type,
-partnered15:  partnered0 partnered1 partnered2 partnered3 partnered4 partnered5 partnered6 partnered7 partnered8 partnered9 partnered10 partnered11 partnered12 partnered13 partnered14 partnered16                weekly_hrs_t_focal15 employed_focal15 housework_focal15 earnings_t_focal15 NUM_CHILDREN_15 AGE_YOUNG_CHILD_15 educ_focal15 TOTAL_INCOME_T_FAMILY15 i.raceth_fixed_focal birth_yr_all i.sample_type,
-partnered16: partnered0 partnered1 partnered2 partnered3 partnered4 partnered5 partnered6 partnered7 partnered8 partnered9 partnered10 partnered11 partnered12 partnered13 partnered14 partnered15                 weekly_hrs_t_focal16 employed_focal16 housework_focal16 earnings_t_focal16 NUM_CHILDREN_16 AGE_YOUNG_CHILD_16 educ_focal16 TOTAL_INCOME_T_FAMILY16 i.raceth_fixed_focal birth_yr_all i.sample_type,
-
-/* Total family income */
-TOTAL_INCOME_T_FAMILY0:                 TOTAL_INCOME_T_FAMILY1 TOTAL_INCOME_T_FAMILY2 TOTAL_INCOME_T_FAMILY3 TOTAL_INCOME_T_FAMILY4 TOTAL_INCOME_T_FAMILY5 TOTAL_INCOME_T_FAMILY6 TOTAL_INCOME_T_FAMILY7 TOTAL_INCOME_T_FAMILY8 TOTAL_INCOME_T_FAMILY9 TOTAL_INCOME_T_FAMILY10 TOTAL_INCOME_T_FAMILY11 TOTAL_INCOME_T_FAMILY12 TOTAL_INCOME_T_FAMILY13 TOTAL_INCOME_T_FAMILY14 TOTAL_INCOME_T_FAMILY15 TOTAL_INCOME_T_FAMILY16 weekly_hrs_t_focal0 employed_focal0 housework_focal0 educ_focal0 earnings_t_focal0 NUM_CHILDREN_0 partnered0 AGE_YOUNG_CHILD_0 i.raceth_fixed_focal birth_yr_all i.sample_type,
-TOTAL_INCOME_T_FAMILY1:                TOTAL_INCOME_T_FAMILY0 TOTAL_INCOME_T_FAMILY2 TOTAL_INCOME_T_FAMILY3 TOTAL_INCOME_T_FAMILY4 TOTAL_INCOME_T_FAMILY5 TOTAL_INCOME_T_FAMILY6 TOTAL_INCOME_T_FAMILY7 TOTAL_INCOME_T_FAMILY8 TOTAL_INCOME_T_FAMILY9 TOTAL_INCOME_T_FAMILY10 TOTAL_INCOME_T_FAMILY11 TOTAL_INCOME_T_FAMILY12 TOTAL_INCOME_T_FAMILY13 TOTAL_INCOME_T_FAMILY14 TOTAL_INCOME_T_FAMILY15 TOTAL_INCOME_T_FAMILY16  weekly_hrs_t_focal1 employed_focal1 housework_focal1 educ_focal1 earnings_t_focal1 NUM_CHILDREN_1 partnered1 AGE_YOUNG_CHILD_1 i.raceth_fixed_focal birth_yr_all i.sample_type,
-TOTAL_INCOME_T_FAMILY2:               TOTAL_INCOME_T_FAMILY0 TOTAL_INCOME_T_FAMILY1 TOTAL_INCOME_T_FAMILY3 TOTAL_INCOME_T_FAMILY4 TOTAL_INCOME_T_FAMILY5 TOTAL_INCOME_T_FAMILY6 TOTAL_INCOME_T_FAMILY7 TOTAL_INCOME_T_FAMILY8 TOTAL_INCOME_T_FAMILY9 TOTAL_INCOME_T_FAMILY10 TOTAL_INCOME_T_FAMILY11 TOTAL_INCOME_T_FAMILY12 TOTAL_INCOME_T_FAMILY13 TOTAL_INCOME_T_FAMILY14 TOTAL_INCOME_T_FAMILY15 TOTAL_INCOME_T_FAMILY16   weekly_hrs_t_focal2 employed_focal2 housework_focal2 educ_focal2 earnings_t_focal2 NUM_CHILDREN_2 partnered2 AGE_YOUNG_CHILD_2 i.raceth_fixed_focal birth_yr_all i.sample_type,
-TOTAL_INCOME_T_FAMILY3:              TOTAL_INCOME_T_FAMILY0 TOTAL_INCOME_T_FAMILY1 TOTAL_INCOME_T_FAMILY2 TOTAL_INCOME_T_FAMILY4 TOTAL_INCOME_T_FAMILY5 TOTAL_INCOME_T_FAMILY6 TOTAL_INCOME_T_FAMILY7 TOTAL_INCOME_T_FAMILY8 TOTAL_INCOME_T_FAMILY9 TOTAL_INCOME_T_FAMILY10 TOTAL_INCOME_T_FAMILY11 TOTAL_INCOME_T_FAMILY12 TOTAL_INCOME_T_FAMILY13 TOTAL_INCOME_T_FAMILY14 TOTAL_INCOME_T_FAMILY15 TOTAL_INCOME_T_FAMILY16    weekly_hrs_t_focal3 employed_focal3 housework_focal3 educ_focal3 earnings_t_focal3 NUM_CHILDREN_3 partnered3 AGE_YOUNG_CHILD_3 i.raceth_fixed_focal birth_yr_all i.sample_type,
-TOTAL_INCOME_T_FAMILY4:             TOTAL_INCOME_T_FAMILY0 TOTAL_INCOME_T_FAMILY1 TOTAL_INCOME_T_FAMILY2 TOTAL_INCOME_T_FAMILY3 TOTAL_INCOME_T_FAMILY5 TOTAL_INCOME_T_FAMILY6 TOTAL_INCOME_T_FAMILY7 TOTAL_INCOME_T_FAMILY8 TOTAL_INCOME_T_FAMILY9 TOTAL_INCOME_T_FAMILY10 TOTAL_INCOME_T_FAMILY11 TOTAL_INCOME_T_FAMILY12 TOTAL_INCOME_T_FAMILY13 TOTAL_INCOME_T_FAMILY14 TOTAL_INCOME_T_FAMILY15 TOTAL_INCOME_T_FAMILY16     weekly_hrs_t_focal4 employed_focal4 housework_focal4 educ_focal4 earnings_t_focal4 NUM_CHILDREN_4 partnered4 AGE_YOUNG_CHILD_4 i.raceth_fixed_focal birth_yr_all i.sample_type,
-TOTAL_INCOME_T_FAMILY5:            TOTAL_INCOME_T_FAMILY0 TOTAL_INCOME_T_FAMILY1 TOTAL_INCOME_T_FAMILY2 TOTAL_INCOME_T_FAMILY3 TOTAL_INCOME_T_FAMILY4 TOTAL_INCOME_T_FAMILY6 TOTAL_INCOME_T_FAMILY7 TOTAL_INCOME_T_FAMILY8 TOTAL_INCOME_T_FAMILY9 TOTAL_INCOME_T_FAMILY10 TOTAL_INCOME_T_FAMILY11 TOTAL_INCOME_T_FAMILY12 TOTAL_INCOME_T_FAMILY13 TOTAL_INCOME_T_FAMILY14 TOTAL_INCOME_T_FAMILY15 TOTAL_INCOME_T_FAMILY16      weekly_hrs_t_focal5 employed_focal5 housework_focal5 educ_focal5 earnings_t_focal5 NUM_CHILDREN_5 partnered5 AGE_YOUNG_CHILD_5 i.raceth_fixed_focal birth_yr_all i.sample_type,
-TOTAL_INCOME_T_FAMILY6:           TOTAL_INCOME_T_FAMILY0 TOTAL_INCOME_T_FAMILY1 TOTAL_INCOME_T_FAMILY2 TOTAL_INCOME_T_FAMILY3 TOTAL_INCOME_T_FAMILY4 TOTAL_INCOME_T_FAMILY5 TOTAL_INCOME_T_FAMILY7 TOTAL_INCOME_T_FAMILY8 TOTAL_INCOME_T_FAMILY9 TOTAL_INCOME_T_FAMILY10 TOTAL_INCOME_T_FAMILY11 TOTAL_INCOME_T_FAMILY12 TOTAL_INCOME_T_FAMILY13 TOTAL_INCOME_T_FAMILY14 TOTAL_INCOME_T_FAMILY15 TOTAL_INCOME_T_FAMILY16       weekly_hrs_t_focal6 employed_focal6 housework_focal6 educ_focal6 earnings_t_focal6 NUM_CHILDREN_6 partnered6 AGE_YOUNG_CHILD_6 i.raceth_fixed_focal birth_yr_all i.sample_type,
-TOTAL_INCOME_T_FAMILY7:          TOTAL_INCOME_T_FAMILY0 TOTAL_INCOME_T_FAMILY1 TOTAL_INCOME_T_FAMILY2 TOTAL_INCOME_T_FAMILY3 TOTAL_INCOME_T_FAMILY4 TOTAL_INCOME_T_FAMILY5 TOTAL_INCOME_T_FAMILY6 TOTAL_INCOME_T_FAMILY8 TOTAL_INCOME_T_FAMILY9 TOTAL_INCOME_T_FAMILY10 TOTAL_INCOME_T_FAMILY11 TOTAL_INCOME_T_FAMILY12 TOTAL_INCOME_T_FAMILY13 TOTAL_INCOME_T_FAMILY14 TOTAL_INCOME_T_FAMILY15 TOTAL_INCOME_T_FAMILY16        weekly_hrs_t_focal7 employed_focal7 housework_focal7 educ_focal7 earnings_t_focal7 NUM_CHILDREN_7 partnered7 AGE_YOUNG_CHILD_7 i.raceth_fixed_focal birth_yr_all i.sample_type,
-TOTAL_INCOME_T_FAMILY8:         TOTAL_INCOME_T_FAMILY0 TOTAL_INCOME_T_FAMILY1 TOTAL_INCOME_T_FAMILY2 TOTAL_INCOME_T_FAMILY3 TOTAL_INCOME_T_FAMILY4 TOTAL_INCOME_T_FAMILY5 TOTAL_INCOME_T_FAMILY6 TOTAL_INCOME_T_FAMILY7 TOTAL_INCOME_T_FAMILY9 TOTAL_INCOME_T_FAMILY10 TOTAL_INCOME_T_FAMILY11 TOTAL_INCOME_T_FAMILY12 TOTAL_INCOME_T_FAMILY13 TOTAL_INCOME_T_FAMILY14 TOTAL_INCOME_T_FAMILY15 TOTAL_INCOME_T_FAMILY16         weekly_hrs_t_focal8 employed_focal8 housework_focal8 educ_focal8 earnings_t_focal8 NUM_CHILDREN_8 partnered8 AGE_YOUNG_CHILD_8 i.raceth_fixed_focal birth_yr_all i.sample_type,
-TOTAL_INCOME_T_FAMILY9:        TOTAL_INCOME_T_FAMILY0 TOTAL_INCOME_T_FAMILY1 TOTAL_INCOME_T_FAMILY2 TOTAL_INCOME_T_FAMILY3 TOTAL_INCOME_T_FAMILY4 TOTAL_INCOME_T_FAMILY5 TOTAL_INCOME_T_FAMILY6 TOTAL_INCOME_T_FAMILY7 TOTAL_INCOME_T_FAMILY8 TOTAL_INCOME_T_FAMILY10 TOTAL_INCOME_T_FAMILY11 TOTAL_INCOME_T_FAMILY12 TOTAL_INCOME_T_FAMILY13 TOTAL_INCOME_T_FAMILY14 TOTAL_INCOME_T_FAMILY15 TOTAL_INCOME_T_FAMILY16          weekly_hrs_t_focal9 employed_focal9 housework_focal9 educ_focal9 earnings_t_focal9 NUM_CHILDREN_9 partnered9 AGE_YOUNG_CHILD_9 i.raceth_fixed_focal birth_yr_all i.sample_type,
-TOTAL_INCOME_T_FAMILY10:       TOTAL_INCOME_T_FAMILY0 TOTAL_INCOME_T_FAMILY1 TOTAL_INCOME_T_FAMILY2 TOTAL_INCOME_T_FAMILY3 TOTAL_INCOME_T_FAMILY4 TOTAL_INCOME_T_FAMILY5 TOTAL_INCOME_T_FAMILY6 TOTAL_INCOME_T_FAMILY7 TOTAL_INCOME_T_FAMILY8 TOTAL_INCOME_T_FAMILY9 TOTAL_INCOME_T_FAMILY11 TOTAL_INCOME_T_FAMILY12 TOTAL_INCOME_T_FAMILY13 TOTAL_INCOME_T_FAMILY14 TOTAL_INCOME_T_FAMILY15 TOTAL_INCOME_T_FAMILY16           weekly_hrs_t_focal10 employed_focal10 housework_focal10 educ_focal10 earnings_t_focal10 NUM_CHILDREN_10 partnered10 AGE_YOUNG_CHILD_10 i.raceth_fixed_focal birth_yr_all i.sample_type,
-TOTAL_INCOME_T_FAMILY11:      TOTAL_INCOME_T_FAMILY0 TOTAL_INCOME_T_FAMILY1 TOTAL_INCOME_T_FAMILY2 TOTAL_INCOME_T_FAMILY3 TOTAL_INCOME_T_FAMILY4 TOTAL_INCOME_T_FAMILY5 TOTAL_INCOME_T_FAMILY6 TOTAL_INCOME_T_FAMILY7 TOTAL_INCOME_T_FAMILY8 TOTAL_INCOME_T_FAMILY9 TOTAL_INCOME_T_FAMILY10 TOTAL_INCOME_T_FAMILY12 TOTAL_INCOME_T_FAMILY13 TOTAL_INCOME_T_FAMILY14 TOTAL_INCOME_T_FAMILY15 TOTAL_INCOME_T_FAMILY16            weekly_hrs_t_focal11 employed_focal11 housework_focal11 educ_focal11 earnings_t_focal11 NUM_CHILDREN_11 partnered11 AGE_YOUNG_CHILD_11 i.raceth_fixed_focal birth_yr_all i.sample_type,
-TOTAL_INCOME_T_FAMILY12:     TOTAL_INCOME_T_FAMILY0 TOTAL_INCOME_T_FAMILY1 TOTAL_INCOME_T_FAMILY2 TOTAL_INCOME_T_FAMILY3 TOTAL_INCOME_T_FAMILY4 TOTAL_INCOME_T_FAMILY5 TOTAL_INCOME_T_FAMILY6 TOTAL_INCOME_T_FAMILY7 TOTAL_INCOME_T_FAMILY8 TOTAL_INCOME_T_FAMILY9 TOTAL_INCOME_T_FAMILY10 TOTAL_INCOME_T_FAMILY11 TOTAL_INCOME_T_FAMILY13 TOTAL_INCOME_T_FAMILY14 TOTAL_INCOME_T_FAMILY15 TOTAL_INCOME_T_FAMILY16             weekly_hrs_t_focal12 employed_focal12 housework_focal12 educ_focal12 earnings_t_focal12 NUM_CHILDREN_12 partnered12 AGE_YOUNG_CHILD_12 i.raceth_fixed_focal birth_yr_all i.sample_type,
-TOTAL_INCOME_T_FAMILY13:    TOTAL_INCOME_T_FAMILY0 TOTAL_INCOME_T_FAMILY1 TOTAL_INCOME_T_FAMILY2 TOTAL_INCOME_T_FAMILY3 TOTAL_INCOME_T_FAMILY4 TOTAL_INCOME_T_FAMILY5 TOTAL_INCOME_T_FAMILY6 TOTAL_INCOME_T_FAMILY7 TOTAL_INCOME_T_FAMILY8 TOTAL_INCOME_T_FAMILY9 TOTAL_INCOME_T_FAMILY10 TOTAL_INCOME_T_FAMILY11 TOTAL_INCOME_T_FAMILY12 TOTAL_INCOME_T_FAMILY14 TOTAL_INCOME_T_FAMILY15 TOTAL_INCOME_T_FAMILY16              weekly_hrs_t_focal13 employed_focal13 housework_focal13 educ_focal13 earnings_t_focal13 NUM_CHILDREN_13 partnered13 AGE_YOUNG_CHILD_13 i.raceth_fixed_focal birth_yr_all i.sample_type,
-TOTAL_INCOME_T_FAMILY14:   TOTAL_INCOME_T_FAMILY0 TOTAL_INCOME_T_FAMILY1 TOTAL_INCOME_T_FAMILY2 TOTAL_INCOME_T_FAMILY3 TOTAL_INCOME_T_FAMILY4 TOTAL_INCOME_T_FAMILY5 TOTAL_INCOME_T_FAMILY6 TOTAL_INCOME_T_FAMILY7 TOTAL_INCOME_T_FAMILY8 TOTAL_INCOME_T_FAMILY9 TOTAL_INCOME_T_FAMILY10 TOTAL_INCOME_T_FAMILY11 TOTAL_INCOME_T_FAMILY12 TOTAL_INCOME_T_FAMILY13 TOTAL_INCOME_T_FAMILY15 TOTAL_INCOME_T_FAMILY16               weekly_hrs_t_focal14 employed_focal14 housework_focal14 educ_focal14 earnings_t_focal14 NUM_CHILDREN_14 partnered14 AGE_YOUNG_CHILD_14 i.raceth_fixed_focal birth_yr_all i.sample_type,
-TOTAL_INCOME_T_FAMILY15:  TOTAL_INCOME_T_FAMILY0 TOTAL_INCOME_T_FAMILY1 TOTAL_INCOME_T_FAMILY2 TOTAL_INCOME_T_FAMILY3 TOTAL_INCOME_T_FAMILY4 TOTAL_INCOME_T_FAMILY5 TOTAL_INCOME_T_FAMILY6 TOTAL_INCOME_T_FAMILY7 TOTAL_INCOME_T_FAMILY8 TOTAL_INCOME_T_FAMILY9 TOTAL_INCOME_T_FAMILY10 TOTAL_INCOME_T_FAMILY11 TOTAL_INCOME_T_FAMILY12 TOTAL_INCOME_T_FAMILY13 TOTAL_INCOME_T_FAMILY14 TOTAL_INCOME_T_FAMILY16                weekly_hrs_t_focal15 employed_focal15 housework_focal15 educ_focal15 earnings_t_focal15 NUM_CHILDREN_15 partnered15 AGE_YOUNG_CHILD_15 i.raceth_fixed_focal birth_yr_all i.sample_type,
-TOTAL_INCOME_T_FAMILY16: TOTAL_INCOME_T_FAMILY0 TOTAL_INCOME_T_FAMILY1 TOTAL_INCOME_T_FAMILY2 TOTAL_INCOME_T_FAMILY3 TOTAL_INCOME_T_FAMILY4 TOTAL_INCOME_T_FAMILY5 TOTAL_INCOME_T_FAMILY6 TOTAL_INCOME_T_FAMILY7 TOTAL_INCOME_T_FAMILY8 TOTAL_INCOME_T_FAMILY9 TOTAL_INCOME_T_FAMILY10 TOTAL_INCOME_T_FAMILY11 TOTAL_INCOME_T_FAMILY12 TOTAL_INCOME_T_FAMILY13 TOTAL_INCOME_T_FAMILY14 TOTAL_INCOME_T_FAMILY15                 weekly_hrs_t_focal16 employed_focal16 housework_focal16 educ_focal16 earnings_t_focal16 NUM_CHILDREN_16 partnered16 AGE_YOUNG_CHILD_16 i.raceth_fixed_focal birth_yr_all i.sample_type)
-
-;
-#delimit cr
-
-use ice_test_bysex.dta, clear
-
-mi import ice
-
-mi reshape long in_sample_ relationship_  partnered weekly_hrs_t1_focal earnings_t1_focal housework_focal employed_focal educ_focal college_focal age_focal weekly_hrs_t2_focal earnings_t2_focal employed_t2_focal start_yr_employer_focal yrs_employer_focal children FAMILY_INTERVIEW_NUM_ NUM_CHILDREN_ AGE_YOUNG_CHILD_ TOTAL_INCOME_T1_FAMILY_ hours_type_t1_focal hw_hours_gp raceth_focal weekly_hrs_t_focal earnings_t_focal TOTAL_INCOME_T_FAMILY childcare_focal adultcare_focal TOTAL_INCOME_T2_FAMILY_ ///
-, i(couple_id unique_id partner_id rel_start_all ) j(duration_rec) // _mi _mj
-
-mi convert flong
-
-browse couple_id unique_id partner_id SEX duration_rec weekly_hrs_t_focal housework_focal _mi_miss _mi_m _mi_id
-gen imputed=0
-replace imputed=1 if inrange(_mi_m,1,10)
-
-inspect weekly_hrs_t_focal if imputed==0
-inspect weekly_hrs_t_focal if imputed==1
-
-inspect housework_focal if imputed==0
-inspect housework_focal if imputed==1
-
-// mi register regular n
-
-save "$created_data/psid_individs_imputed_long_ice", replace
-
-*******************************************************************************
-*  Let's look at some descriptives
-********************************************************************************
-tabstat weekly_hrs_t_focal housework_focal, by(imputed) stats(mean sd p50)
-tabstat weekly_hrs_t_focal housework_focal if SEX==1, by(imputed) stats(mean sd p50)
-tabstat weekly_hrs_t_focal housework_focal if SEX==2, by(imputed) stats(mean sd p50)
-
-tabstat weekly_hrs_t_focal housework_focal childcare_focal adultcare_focal employed_focal earnings_t_focal age_focal birth_yr_all educ_focal college_focal raceth_focal raceth_fixed_focal children NUM_CHILDREN_ FIRST_BIRTH_YR AGE_YOUNG_CHILD_ relationship_ partnered TOTAL_INCOME_T_FAMILY sample_type if imputed==0, stats(mean sd p50) columns(statistics)
-
-tabstat weekly_hrs_t_focal housework_focal childcare_focal adultcare_focal employed_focal earnings_t_focal age_focal birth_yr_all educ_focal college_focal raceth_focal raceth_fixed_focal children NUM_CHILDREN_ FIRST_BIRTH_YR AGE_YOUNG_CHILD_ relationship_ partnered TOTAL_INCOME_T_FAMILY sample_type if imputed==1, stats(mean sd p50) columns(statistics)
-
-histogram weekly_hrs_t_focal, width(1)
-twoway (histogram weekly_hrs_t_focal if imputed==0, width(2) color(blue%30)) (histogram weekly_hrs_t_focal if imputed==1, width(2) color(red%30)), legend(order(1 "Observed" 2 "Imputed") rows(1) position(6)) xtitle("Weekly Employment Hours")
-twoway (histogram weekly_hrs_t_focal if imputed==0 & SEX==1, width(2) color(blue%30)) (histogram weekly_hrs_t_focal if imputed==1 & SEX==1, width(2) color(red%30)), legend(order(1 "Observed" 2 "Imputed") rows(1) position(6))
-twoway (histogram weekly_hrs_t_focal if imputed==0 & SEX==2, width(2) color(blue%30)) (histogram weekly_hrs_t_focal if imputed==1 & SEX==2, width(2) color(red%30)), legend(order(1 "Observed" 2 "Imputed") rows(1) position(6))
-
-histogram weekly_hrs_t_focal if weekly_hrs_t1_focal>0, width(1)
-histogram housework_focal, width(1)
-twoway (histogram housework_focal if imputed==0, width(2) color(blue%30)) (histogram housework_focal if imputed==1, width(2) color(red%30)), legend(order(1 "Observed" 2 "Imputed") rows(1) position(6)) xtitle("Weekly Housework Hours")
-
-preserve
-
-collapse (mean) weekly_hrs_t_focal housework_focal, by(duration_rec imputed)
-
-twoway (line weekly_hrs_t_focal duration_rec if imputed==0) (line weekly_hrs_t_focal duration_rec if imputed==1), legend(order(1 "Observed" 2 "Imputed") rows(1) position(6)) ytitle("Weekly Employment Hours") title("Avg Employment Hours by Duration") xtitle("Marital Duration")
-twoway (line housework_focal duration_rec if imputed==0) (line housework_focal duration_rec if imputed==1), legend(order(1 "Observed" 2 "Imputed") rows(1) position(6)) ytitle("Weekly Housework Hours") title("Avg Housework Hours by Duration") xtitle("Marital Duration")
-
-restore
-
-//
-preserve
-
-collapse (mean) weekly_hrs_t_focal housework_focal, by(SEX duration_rec imputed)
-
-// men
-twoway (line weekly_hrs_t_focal duration_rec if imputed==0 & SEX==1) (line weekly_hrs_t_focal duration_rec if imputed==1 & SEX==1), legend(order(1 "Observed" 2 "Imputed") rows(1) position(6))
-twoway (line housework_focal duration_rec if imputed==0 & SEX==1) (line housework_focal duration_rec if imputed==1 & SEX==1), legend(order(1 "Observed" 2 "Imputed") rows(1) position(6))
-
-// women - okay so it is women where the disparities are primarily. is it bc of EMPLOYMENT STATUS?! need to do conditional on that? let's see if it improves with other predictors, bc employment status not currently included
-twoway (line weekly_hrs_t_focal duration_rec if imputed==0 & SEX==2) (line weekly_hrs_t_focal duration_rec if imputed==1 & SEX==2), legend(order(1 "Observed" 2 "Imputed") rows(1) position(6))
-twoway (line housework_focal duration_rec if imputed==0 & SEX==2) (line housework_focal duration_rec if imputed==1 & SEX==2), legend(order(1 "Observed" 2 "Imputed") rows(1) position(6))
-
-restore
-*/
+// Imputed
+forvalues w=1/86{
+	local row=`w'+2
+	local var: word `w' of `desc_vars'
+	mean `var' if imputed==1  & duration_rec==12
+	matrix t`var'= e(b)
+	putexcel I`row' = matrix(t`var'), nformat(#.#%)
+}
 
 ********************************************************************************
 ********************************************************************************
 **# * Troubleshooting area
 ********************************************************************************
 ********************************************************************************
-
+/*
 // https://www.statalist.org/forums/forum/general-stata-discussion/general/1618081-multiple-imputation-convergence-not-achieved
 // https://www.statalist.org/forums/forum/general-stata-discussion/general/1595900-mi-impute-mlogit-and-convergence-not-achieved
 
@@ -1348,3 +1265,4 @@ forvalues e=0/14{
 	tab educ_focal_imp`e', m
 }
 
+*/
