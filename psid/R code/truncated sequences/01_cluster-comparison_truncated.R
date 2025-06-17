@@ -2,8 +2,8 @@
 #    Program: cluster-comparison
 #    Author: Kim McErlean & Lea Pessin 
 #    Date: January 2025
-#    Modified: May 15 2025
-#    Goal: compare clusters for SC v. MC solution - just complete sequences
+#    Modified: June 16 2025
+#    Goal: compare clusters for SC v. MC solution - all sequences, including truncated
 # --------------------------------------------------------------------
 # --------------------------------------------------------------------
 
@@ -89,7 +89,6 @@ if (Sys.getenv(c("USERNAME")) == "lpessin") {
 
 load("created data/setupsequence-truncated.RData")
 
-
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Preparatory work required for rendering the plot ---- 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -104,74 +103,137 @@ xtlab<-seq(1,10, by = 1) ## Think this is for number of states
 x <- 2:15 ## this is number of clusters
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+mcsa<-seqMD(channels=list(seq.work.ow, seq.hw.hrs, seq.fam),
+            with.missing=TRUE,
+            what="MDseq") ##, right=NA)
 
 # Extract r2 and silhouette for the combined clustering
 
 ## More detailed sequence alphabets
-mcdist.det.om <- seqdistmc(channels=list(seq.work.ow, seq.hw.hrs.alt, seq.fam), ## Seq states NOT om matrix
+mcdist.det.om <- seqdistmc(channels=list(seq.work.ow, seq.hw.hrs, seq.fam), ## Seq states NOT om matrix
                            method="OM", 
                            indel=list(work.miss.indel,hw.miss.indel, fam.miss.indel),
                            sm=list(work.miss.cost$sm, hw.miss.cost$sm, fam.miss.cost$sm),
                            with.missing=TRUE) 
 
+## Create length matrix - happens in step 0
+#fam.min.len <- matrix(NA,ncol=length(seq.len.fam),nrow=length(seq.len.fam))
+#for (i in 1:length(seq.len.fam)){
+#  for (j in 1:length(seq.len.fam)){
+#    fam.min.len[i,j] <- min(c(seq.len.fam[i],seq.len.fam[j]))
+#  }
+#}
+
+## Divide by length matrix
+mcdist.det.min <- mcdist.det.om / fam.min.len
+
+## Now, go through next steps - but use the normalized matrix instead
+mcdist.det.min.pam <- wcKMedRange(mcdist.det.min, 
+                                  kvals = 2:15)
+
+mc.min.val<-mcdist.det.min.pam[[4]]
+
+mc.min.asw <- mc.min.val[,4]
+
+mc.min.r2 <- mc.min.val[,7]
+
+## Compare to original
+
 mcdist.det.om.pam <- wcKMedRange(mcdist.det.om, 
                                  kvals = 2:15)
 
-mc.det.val<-mcdist.det.om.pam[[4]]
+mc.om.val<-mcdist.det.om.pam[[4]]
 
-mc.det.asw <- mc.det.val[,4]
+mc.om.asw <- mc.om.val[,4]
 
-mc.det.r2 <- mc.det.val[,7]
-
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-# Extract r2 and silhouette for the clustering of family trajectories
-
-fam.pam.test <- wcKMedRange(dist.fam.om, 
-                            kvals = 2:15)
-
-fam.val<-fam.pam.test[[4]]
-
-fam.asw <- fam.val[,4]
-
-fam.r2 <- fam.val[,7]
+mc.om.r2 <- mc.om.val[,7]
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## Now, get the truncated sequence information by channel to compare
+# Paid work
+work.ow.pam <- wcKMedRange(dist.work.min, 
+                           kvals = 2:15)
 
-# Extract r2 and silhouette for the clustering of paid labor trajectories
-## With Overwork
-work.ow.pam.test <- wcKMedRange(dist.work.ow.om, 
-                             kvals = 2:15)
-
-work.ow.val<-work.ow.pam.test[[4]]
+work.ow.val<-work.ow.pam[[4]]
 
 work.ow.asw <- work.ow.val[,4]
 
 work.ow.r2 <- work.ow.val[,7]
 
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Family
+fam.pam <- wcKMedRange(dist.fam.min, 
+                       kvals = 2:15)
 
-# Extract r2 and silhouette for the clustering of housework trajectories
-## V2
-hw.hrs.alt.pam.test <- wcKMedRange(dist.hw.hrs.alt.om, 
-                               kvals = 2:15)
+fam.val<-fam.pam[[4]]
 
-hw.hrs.alt.val<-hw.hrs.alt.pam.test[[4]]
+fam.asw <- fam.val[,4]
 
-hw.hrs.alt.asw <- hw.hrs.alt.val[,4]
+fam.r2 <- fam.val[,7]
 
-hw.hrs.alt.r2 <- hw.hrs.alt.val[,7]
 
-save.image("created data/cluster-comparison-complete.RData")
+# Housework
+hw.hrs.pam <- wcKMedRange(dist.hw.min, 
+                          kvals = 2:15)
+
+hw.hrs.val<-hw.hrs.pam[[4]]
+
+hw.hrs.asw <- hw.hrs.val[,4]
+
+hw.hrs.r2 <- hw.hrs.val[,7]
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Save for later ----
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+save.image("created data/psid_cluster-comparison-truncated.RData")
 # in case it fails here
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Create figure comparing normalized v. not (for MC)  ---- 
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+pdf("results/PSID/psid_truncated_sequences_cluster_mcsa.pdf")
+
+# MCSA: Normalized
+p1<-plot(x, mc.min.asw, type = "b", frame = FALSE, pch = 19, main="MCSA: Normalized", 
+         col = "blue", xlab = "N. clusters", ylab = "", ylim = c(0,0.8), xlim=c(2,16),
+         cex.main=2,
+         cex.lab=1.6,
+         cex.axis=1.2)
+grid(nx = NULL,
+     ny = NA,
+     lty = 1, col = "gray85", lwd = 1)
+# Add a second line
+lines(x, mc.min.r2, pch = 19, col = "black", type = "b", lty = 2)
+# Add a legend to the plot
+legend("topright", legend=c("ASW", "R2"),
+       col=c("blue", "black"), lty = 1:2, cex=1.2)
+
+# MCSA: Not Normalized (for length)
+p2<-plot(x, mc.om.asw, type = "b", frame = FALSE, pch = 19, main="MCSA: Not Normalized", 
+         col = "blue", xlab = "N. clusters", ylab = "", ylim = c(0,0.8), xlim=c(2,16),
+         cex.main=2,
+         cex.lab=1.6,
+         cex.axis=1.2)
+grid(nx = NULL,
+     ny = NA,
+     lty = 1, col = "gray85", lwd = 1)
+# Add a second line
+lines(x, mc.om.r2, pch = 19, col = "black", type = "b", lty = 2)
+# Add a legend to the plot
+legend("topright", legend=c("ASW", "R2"),
+       col=c("blue", "black"), lty = 1:2, cex=1.2)
+
+# grid.arrange(p1, p2, ncol=2, nrow=1)
+dev.off()
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Create figure comparing separate channels and MCSA ---- 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-pdf("results/cluster_comparison_complete_sequences.pdf", # doesn't need to be cairo so removed for now (might not work)
-          width=20,
-          height=10)
+pdf("results/PSID/PSID_truncated_sequences_cluster.pdf",
+    width=20,
+    height=10)
 
 layout.fig1 <- layout(matrix(c(1,2,3,4), nrow=1, ncol=4, byrow = TRUE),
                       heights = c(1,1,1,1,1))
@@ -179,9 +241,9 @@ layout.show(layout.fig1)
 
 par(mar = c(5, 5, 3, 3))
 
-# MCSA: Detailed
-plot(x, mc.det.asw, type = "b", frame = FALSE, pch = 19, main="(1a) MCSA: Detailed Sequences", 
-     col = "blue", xlab = "N. clusters", ylab = "", ylim = c(0,0.8), xlim=c(2,16),
+# MCSA
+plot(x, mc.min.asw, type = "b", frame = FALSE, pch = 19, main="MCSA", 
+     col = "blue", xlab = "N. clusters", ylab = "", ylim = c(0,0.8),
      cex.main=2,
      cex.lab=1.6,
      cex.axis=1.2)
@@ -189,13 +251,13 @@ grid(nx = NULL,
      ny = NA,
      lty = 1, col = "gray85", lwd = 1)
 # Add a second line
-lines(x, mc.det.r2, pch = 19, col = "black", type = "b", lty = 2)
+lines(x, mc.min.r2, pch = 19, col = "black", type = "b", lty = 2)
 # Add a legend to the plot
-legend("topright", legend=c("ASW", "R2"),
+legend("bottomright", legend=c("ASW", "R2"),
        col=c("blue", "black"), lty = 1:2, cex=1.2)
 
 # Paid Work Channel: With Overwork
-plot(x, work.ow.asw, type = "b", frame = FALSE, pch = 19, main="(2a) Paid Work (with Overwork)", 
+plot(x, work.ow.asw, type = "b", frame = FALSE, pch = 19, main="Paid Work (with Overwork)", 
      col = "blue", xlab = "N. clusters", ylab = "", ylim = c(0,0.8),
      cex.main=2,
      cex.lab=1.6,
@@ -210,7 +272,7 @@ legend("bottomright", legend=c("ASW", "R2"),
        col=c("blue", "black"), lty = 1:2, cex=1.2)
 
 # Housework Channel: Hours with Group-specific thresholds
-plot(x, hw.hrs.alt.asw, type = "b", frame = FALSE, pch = 19, main="(3a) Housework (with Hours)", 
+plot(x, hw.hrs.asw, type = "b", frame = FALSE, pch = 19, main="Housework (with Hours)", 
      col = "blue", xlab = "N. clusters", ylab = "", ylim = c(0,0.8),
      cex.main=2,
      cex.lab=1.6,
@@ -219,13 +281,13 @@ grid(nx = NULL,
      ny = NA,
      lty = 1, col = "gray85", lwd = 1)
 # Add a second line
-lines(x, hw.hrs.alt.r2, pch = 19, col = "black", type = "b", lty = 2)
+lines(x, hw.hrs.r2, pch = 19, col = "black", type = "b", lty = 2)
 # Add a legend to the plot
 legend("bottomright", legend=c("ASW", "R2"),
        col=c("blue", "black"), lty = 1:2, cex=1.2)
 
 # Family channel
-plot(x, fam.asw, type = "b", frame = FALSE, pch = 19, main="(4) Family formation",
+plot(x, fam.asw, type = "b", frame = FALSE, pch = 19, main="Family formation",
      col = "blue", xlab = "N. clusters", ylab = "ASW and R2 value", ylim = c(0,0.8),
      cex.main=2,
      cex.lab=1.6,
@@ -237,39 +299,6 @@ grid(nx = NULL,
 lines(x, fam.r2, pch = 19, col = "black", type = "b", lty = 2)
 # Add a legend to the plot
 legend("bottomright", legend=c("ASW", "R2"),
-       col=c("blue", "black"), lty = 1:2, cex=1.2)
-
-dev.off()
-
-# pdf convert doesn't work, so just will export pdf
-# pdf_convert("results/Fig5-1_PSID.pdf",
-#            format = "png", dpi = 300, pages = 2,
-#            "results/Fig5-1_PSID.png")
-
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Save objects for further usage in other scripts ----
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-# save.image("created data/cluster-comparison-complete.RData")
-
-
-pdf("results/PSID/PSID_MCSA_comparison_complete.pdf", # doesn't need to be cairo so removed for now (might not work)
-    width=10,
-    height=8)
-
-# MCSA: Detailed
-plot(x, mc.det.asw, type = "b", frame = FALSE, pch = 19, main="United States", 
-     col = "blue", xlab = "N. clusters", ylab = "", ylim = c(0,0.4), xlim=c(2,16),
-     cex.main=2,
-     cex.lab=1.6,
-     cex.axis=1.2)
-grid(nx = NULL,
-     ny = NA,
-     lty = 1, col = "gray85", lwd = 1)
-# Add a second line
-lines(x, mc.det.r2, pch = 19, col = "black", type = "b", lty = 2)
-# Add a legend to the plot
-legend("topright", legend=c("ASW", "R2"),
        col=c("blue", "black"), lty = 1:2, cex=1.2)
 
 dev.off()

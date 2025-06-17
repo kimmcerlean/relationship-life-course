@@ -2,8 +2,9 @@
 #    Program: 00_setupsequence.R
 #    Author: Kim McErlean & Lea Pessin 
 #    Date: January 2025
-#    Modified: March 4 2025
-#    Goal: setup PSID for multichannel sequence analysis of couples' life courses
+#    Modified: June 16 2025
+#    Goal: setup PSID for multichannel sequence analysis of couples' life courses;
+#   This file focuses on all sequences, including incomplete ones  
 # --------------------------------------------------------------------
 # --------------------------------------------------------------------
 
@@ -90,6 +91,16 @@ if (Sys.getenv(c("USERNAME")) == "lpessin") {
 data <- read_dta("created data/psid_couples_wide_truncated.dta")
 data <- data%>%filter(`_mi_m`!=0)
 
+# Also need to keep people with a minimum sequence length of 3
+table(data$sequence_length)
+data <- data%>%filter(sequence_length>=3)
+
+## testing with 5 imputations for now to avoid using unique sequences
+## it's 2^31-1, so currently too many couples (5828, but 4685 with min seq length)
+## so close, we could have 46340 max
+data <- data%>%filter(`_mi_m`==1 | `_mi_m`==2 | `_mi_m`==3 | `_mi_m`==4 | `_mi_m`==5)
+table(data$`_mi_m`)
+
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Setting up the data ----------------------------------------------------------
 ## Identifying the columns with the sequence states
@@ -105,11 +116,12 @@ data <- data%>%filter(`_mi_m`!=0)
 # Identifying the columns in which we have sequence variables
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-## couple_work_ow_end: Couple-level work indicator (overwork split out)
-## couple_hw_hrs_alt_end:	Couple-level housework indicator, split by time spent 
-##on HW, percentiles created within a specific subgroup (e.g. she does most)
-## family_type_end:	Type of family based on relationship type + number of 
+## couple_work_ow_trunc: Couple-level work indicator (overwork split out, but not detailed)
+## couple_hw_hrs_combo_trunc:	Couple-level housework indicator, split by time spent 
+##on HW for some categories (consolidated)
+## family_type_trunc:	Type of family based on relationship type + number of 
 ##children
+
 
 # ------------------------------------------------------------------------------
 ### We identify columns that contain our sequence analysis input variables
@@ -118,6 +130,7 @@ t = 1:10 #Number of time units (10 years - don't want to use year 11)
 
 # ------------------------------------------------------------------------------
 #Couple Paid Work - WITH OW: columns
+
 
 lab_t=c()
 for (i in 1:10){
@@ -130,9 +143,9 @@ col_work.ow=which(colnames(data)%in%lab_t)
 
 lab_t=c()
 for (i in 1:10){
-  lab_t[i]=paste("couple_hw_hrs_alt_trunc",i, sep="")
+  lab_t[i]=paste("couple_hw_hrs_combo_trunc",i, sep="")
 }
-col_hw.hrs.alt =which(colnames(data)%in%lab_t) 
+col_hw.hrs =which(colnames(data)%in%lab_t) 
 
 # ------------------------------------------------------------------------------
 #Family type: columns
@@ -154,28 +167,23 @@ col_fam =which(colnames(data)%in%lab_t)
 #Couple Paid Work - WITH OW: labels
 
 shortlab.work.ow <- c("MBW", "1.5MBW", 
-                      "dualFT", "dualFT-hisOW", 
-                      "dualFT-herOW", "dualOW",
+                      "dualFT", "dualFT-anyOW", 
                       "FBW", "underWK")
 
 longlab.work.ow <- c("male breadwinner", "1.5 male breadwinner", 
-                     "dual full-time", "dual full-time & his overwork", 
-                     "dual full-time & her overwork", "dual overwork",
+                     "dual full-time", "dual full-time & any overwork", 
                      "female breadwinner", "under work")
 
-
 # ------------------------------------------------------------------------------
-#Couple HW - amounts v2 (group-specific ptiles): labels 
+#Couple HW - with amounts (group-specific ptiles): labels 
 
-shortlab.hw.hrs.alt <- c("W-all:high", "W-all:low",
-                         "W-most:high", "W-most:med", "W-most:low",
-                         "equal:high", "equal:low", 
-                         "M-most:high","M-most:low")
+shortlab.hw.hrs.combo <- c("W-most:high", "W-most:low",
+                           "equal:high", "equal:low", 
+                           "M-most:all")
 
-longlab.hw.hrs.alt <- c("woman does all: high", "woman does all: low",
-                        "woman does most: high", "woman does most: med", "woman does most: low", 
-                        "equal:high", "equal:low", 
-                        "man does most: high", "man does most: low")
+longlab.hw.hrs.combo <- c("woman does most/all: high", "woman does most/all: low",
+                          "equal:high", "equal:low", 
+                          "man does most: all")
 
 # ------------------------------------------------------------------------------
 #Family type: labels
@@ -206,10 +214,9 @@ longlab.fam <- c("married, 0 Ch",
 
 # Work colors
 col1 <- sequential_hcl(5, palette = "BuGn") [1:2] #Male BW
-col2 <- sequential_hcl(5, palette = "Purples")[1:4] #Dual FT
+col2 <- sequential_hcl(5, palette = "Purples")[1:2] #Dual FT
 col3 <- sequential_hcl(5, palette = "PuRd")[c(2)] #Female BW
 col4 <- sequential_hcl(5, palette = "PuRd")[c(1)]  #UnderWork
-# col5 <- sequential_hcl(5, palette = "Grays")[c(3)] # Right-censored states
 
 # Combine to full color palette
 colspace.work.ow <- c(col1, col2, col3, col4)
@@ -218,20 +225,20 @@ colspace.work.ow <- c(col1, col2, col3, col4)
 #Couple HW - amounts v2 (group-specific ptiles): labels 
 
 #Housework colors
-col1 <- sequential_hcl(5, palette = "Reds") [1:2] #W-all
-col2 <- sequential_hcl(5, palette = "PurpOr")[1:3] #W-most
+# col1 <- sequential_hcl(5, palette = "Reds") [1:2] #W-all
+col1 <- sequential_hcl(5, palette = "PurpOr")[c(1)] #W-most
+col2 <- sequential_hcl(5, palette = "PurpOr")[c(3)] #W-most
 col3 <- sequential_hcl(5, palette = "OrYel")[2:3] #Equal
-col4 <- sequential_hcl(5, palette = "Teal")[1:2] #M-most
-# col5 <- sequential_hcl(5, palette = "Grays")[c(3)] # Right-censored states
+col4 <- sequential_hcl(5, palette = "Teal")[c(2)] #M-most
 
 # Combine to full color palette
-colspace.hw.hrs.alt <- c(col1, col2, col3, col4)
+colspace.hw.hrs.combo <- c(col1, col2, col3, col4)
 
 # ------------------------------------------------------------------------------
 # Family colors
 col1 <- sequential_hcl(5, palette = "Blues")[4:1]   # Married states
 col2 <- sequential_hcl(15, palette = "Inferno")[15:12]   # Cohabitation states
-# col3 <- sequential_hcl(5, palette = "Grays")[c(3)] # Right-censored states
+#col3 <- sequential_hcl(5, palette = "Grays")[c(2,4)] # Right-censored states
 
 # Combine to full color palette
 colspace.fam <- c(col1, col2)
@@ -250,18 +257,19 @@ ggseqdplot(seq.work.ow) +
   scale_x_discrete(labels = 1:10) +
   labs(x = "Year")
 
-# So default is atually already missing=false
-#ggseqdplot(seq.work.ow, with.missing=TRUE) +
-#  scale_x_discrete(labels = 1:10) +
-#  labs(x = "Year")
+# So default is actually already missing=false
+# for reference (confirm I understand what is happening):
+ggseqdplot(seq.work.ow, with.missing=TRUE) +
+  scale_x_discrete(labels = 1:10) +
+  labs(x = "Year")
 
 # Couple HW - amounts v2
-seq.hw.hrs.alt <- seqdef(data[,col_hw.hrs.alt], cpal = colspace.hw.hrs.alt, labels=longlab.hw.hrs.alt, 
-                         states= shortlab.hw.hrs.alt,right=NA)
+seq.hw.hrs <- seqdef(data[,col_hw.hrs], cpal = colspace.hw.hrs.combo, labels=longlab.hw.hrs.combo, 
+                     states= shortlab.hw.hrs.combo,right=NA)
 
-seq.len.hw<-seqlength(seq.hw.hrs.alt, with.missing = FALSE)
+seq.len.hw<-seqlength(seq.hw.hrs, with.missing = FALSE)
 
-ggseqdplot(seq.hw.hrs.alt) +
+ggseqdplot(seq.hw.hrs) +
   scale_x_discrete(labels = 1:10) +
   labs(x = "Year")
 
@@ -280,13 +288,13 @@ ggseqdplot(seq.fam) +
 
 # First set costs of sm to 0 for missing
 fam.miss.cost <- seqcost(seq.fam, method="CONSTANT", 
-                              miss.cost=0, with.missing=TRUE, miss.cost.fixed=TRUE)
+                         miss.cost=0, with.missing=TRUE, miss.cost.fixed=TRUE)
 
 work.miss.cost <- seqcost(seq.work.ow, method="CONSTANT", 
-                         miss.cost=0, with.missing=TRUE, miss.cost.fixed=TRUE)
+                          miss.cost=0, with.missing=TRUE, miss.cost.fixed=TRUE)
 
-hw.miss.cost <- seqcost(seq.hw.hrs.alt, method="CONSTANT", 
-                         miss.cost=0, with.missing=TRUE, miss.cost.fixed=TRUE)
+hw.miss.cost <- seqcost(seq.hw.hrs, method="CONSTANT", 
+                        miss.cost=0, with.missing=TRUE, miss.cost.fixed=TRUE)
 
 # Then make indel costs very high
 fam.miss.indel<- rep(1,ncol(fam.miss.cost$sm))
@@ -303,13 +311,13 @@ hw.miss.indel
 
 # Now use these costs to create NON-normalized matrices
 dist.work.om <- seqdist(seq.work.ow, method="OM", indel=work.miss.indel, 
-                           sm= work.miss.cost$sm, with.missing=TRUE)
+                        sm= work.miss.cost$sm, with.missing=TRUE)
 
-dist.hw.om <- seqdist(seq.hw.hrs.alt, method="OM", indel=hw.miss.indel, 
-                              sm= hw.miss.cost$sm, with.missing=TRUE)
+dist.hw.om <- seqdist(seq.hw.hrs, method="OM", indel=hw.miss.indel, 
+                      sm= hw.miss.cost$sm, with.missing=TRUE)
 
 dist.fam.om <- seqdist(seq.fam, method="OM", indel=fam.miss.indel, 
-                           sm= fam.miss.cost$sm, with.missing=TRUE)
+                       sm= fam.miss.cost$sm, with.missing=TRUE)
 
 # Then create matrices of shortest length 
 fam.min.len <- matrix(NA,ncol=length(seq.len.fam),nrow=length(seq.len.fam))
@@ -357,7 +365,7 @@ s1<-ggseqdplot(seq.work.ow) +
   ggtitle("Paid Work") + 
   theme(plot.title=element_text(hjust=0.5))
 
-s2<-ggseqdplot(seq.hw.hrs.alt) +
+s2<-ggseqdplot(seq.hw.hrs) +
   scale_x_discrete(labels = 1:10) +
   labs(x = "Relationship Duration", y=NULL) + 
   theme(legend.position="none") +
@@ -391,7 +399,7 @@ dev.off()
 #            "results/PSID/PSID_Base_Index_truncated.png")
 
 
-pdf("results/PSID/PSID_Base_RF_truncated.pdf",
+pdf("results/PSID/PSID_Base_RF_truncated_start.pdf",
     width=12,
     height=5)
 
@@ -401,12 +409,28 @@ rf1<-ggseqrfplot(seq.fam, diss=dist.fam.min, k=500, sortv="from.start",
 rf2<-ggseqrfplot(seq.work.ow, diss=dist.work.min, k=500, sortv="from.start",
                  which.plot="medoids") + theme(legend.position="none")
 
-rf3<-ggseqrfplot(seq.hw.hrs.alt, diss=dist.hw.min, k=500, sortv="from.start",
+rf3<-ggseqrfplot(seq.hw.hrs, diss=dist.hw.min, k=500, sortv="from.start",
                  which.plot="medoids") + theme(legend.position="none")
 
 grid.arrange(rf1,rf2,rf3, ncol=3, nrow=1)
 dev.off()
 
+
+pdf("results/PSID/PSID_Base_RF_truncated_end.pdf",
+    width=12,
+    height=5)
+
+rf1<-ggseqrfplot(seq.fam, diss=dist.fam.min, k=500, sortv="from.end",
+                 which.plot="medoids") + theme(legend.position="none")
+
+rf2<-ggseqrfplot(seq.work.ow, diss=dist.work.min, k=500, sortv="from.end",
+                 which.plot="medoids") + theme(legend.position="none")
+
+rf3<-ggseqrfplot(seq.hw.hrs, diss=dist.hw.min, k=500, sortv="from.end",
+                 which.plot="medoids") + theme(legend.position="none")
+
+grid.arrange(rf1,rf2,rf3, ncol=3, nrow=1)
+dev.off()
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Save objects for further usage in other scripts ----
