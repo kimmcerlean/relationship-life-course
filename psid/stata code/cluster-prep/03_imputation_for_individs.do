@@ -549,7 +549,7 @@ mi register imputed weekly_hrs_t_focal* housework_focal* employment_status_focal
 mi register regular FIRST_BIRTH_YR birth_yr_all rel_start_all SEX raceth_fixed_focal sample_type rel_type_constant fixed_education birth_timing_rel current_rel_number_main current_parent_status* RESPONDENT_WHO_* retired_est_focal*
 // swap rel_status for rel_type_constant?
 
-// log using "$logdir\mi_help.log", replace
+// log using "$logs\mi_help_$date.log", replace
 
 // start imputation
 // mimpt chained
@@ -1114,7 +1114,7 @@ mi impute chained
 
 /*
 do I need less predictors? NO you just needed to include ALL of the weekly hours variables 0 - 16
-log using "$logdir/mi_troubleshoot.log", replace
+log using "$logs/mi_troubleshoot.log", replace
 
 mi set wide
 mi register imputed weekly_hrs_t1_focal*

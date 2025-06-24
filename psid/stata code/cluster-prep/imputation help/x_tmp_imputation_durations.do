@@ -1,3 +1,29 @@
+use "$created_data/individs_by_duration_wide.dta", clear
+
+log using "$logs\mi_help_$date.log", replace
+
+// prep work - data
+egen nmis_age = rmiss(age_focal*)
+tab nmis_age, m
+
+drop if nmis_age==15 // for now, just so this is actually complete
+drop if birth_yr_all==. // for now, just so this is actually complete
+drop if raceth_fixed_focal==. // for now, just so this is actually complete
+drop if fixed_education==.
+
+forvalues d=0/14{
+	inspect RESPONDENT_WHO_`d'
+	drop if RESPONDENT_WHO_`d'==.
+}
+
+misstable summarize FIRST_BIRTH_YR age_focal* birth_yr_all SEX raceth_fixed_focal fixed_education sample_type rel_start_all birth_timing_rel rel_type_constant current_rel_number_main current_parent_status* RESPONDENT_WHO_* retired_est_focal*, all
+
+// prep work - imputation
+mi set wide
+mi register imputed weekly_hrs_t_focal* housework_focal* employment_status_focal* earnings_t_focal* AGE_YOUNG_CHILD_* partnered* TOTAL_INCOME_T_FAMILY* num_children_imp_hh* house_status_all* REGION_* religion_focal* sr_health_focal* num_65up_hh* num_parent_in_hh* lives_family_focal* father_max_educ_focal mother_max_educ_focal family_structure_cons_focal // disabled_focal* disabled_imp_focal* children* NUM_CHILDREN_* relationship_* - maybe I can't register them?
+mi register regular FIRST_BIRTH_YR birth_yr_all rel_start_all SEX raceth_fixed_focal sample_type rel_type_constant fixed_education birth_timing_rel current_rel_number_main current_parent_status* RESPONDENT_WHO_* retired_est_focal*
+// swap rel_status for rel_type_constant?
+
 // start imputation
 #delimit ;
 
@@ -243,6 +269,8 @@ mi impute chained
 
 ;
 #delimit cr
+
+log close
 
 //
 
