@@ -703,7 +703,7 @@ tab status_pl partnered_pl, m row // so, I think they do try to fill in partner 
 // so maybe *they* try to fill this in using rel history as well? which takes a lot of the work out for me. I just want the START / END date measures here if possible...
 // okay, and also, there is only record of a dropout - none of the years after that have rows, so would need to add those and all would missing because not sure
 // also not clear if ppathl has PRE survey years. okay it does not
-// the codebook says " In unclear cases, due to temporal non-response for instance, we also consider longitudinal information from previous and prospective waves." -- but so this is really only if temp
+// the codebook says " In unclear cases, due to temporal non-response for instance, we also consider longitudinal information from previous and prospective waves." -- but so this is really only if temp missing
 // okay so should I do FILL IN so I have all years for everyone? and then it can be like pre-survey, post-survey
 // but then I can use the rel history to possibly at least fill in relationship status / info for those years?
 
@@ -712,15 +712,100 @@ browse pid syear status_pl survey_status_pl partnered_pl partner_id_pl firstyr_s
 
 // first do a fill-in so I get years for everyone
 gen orig_row = 1 // create a flag so I know which rows I've added
+fillin pid syear
+replace orig_row = 0 if orig_row==.
 
-// add biocouply
+foreach var in cid sex_pl birthyr_pl firstyr_contact_pl firstyr_survey_pl lastyr_contact_pl psample_pl lastyr_survey_pl born_germany_pl country_born_pl{
+	bysort pid (`var'): replace `var' = `var'[1]
+}
 
-// add biocoupm (only to those missing biocoupy?)
-// well the utility of biocoupm for EVERYONE is that it has partner id....
+sort pid syear
+browse pid syear status_pl survey_status_pl partnered_pl partner_id_pl firstyr_contact_pl lastyr_contact_pl
+tab status_pl if lastyr_contact_pl == syear, m
 
-// add marry (only to those missing biocouply?)
-// alternatively, get a list of unique pids and add biocoupm / biomarry and make LONG again and use the two together to attempt to fill in history?
+gen full_status_pl = status_pl
+replace full_status_pl = 0 if syear > lastyr_contact_pl & full_status_pl==.
+replace full_status_pl = 0 if syear > lastyr_survey_pl & full_status_pl==.
+replace full_status_pl = -1 if syear < firstyr_contact_pl & full_status_pl==.
 
+label define full_status -1 "pre-survey" 0 "dropout" 1 "sample" 2 "youth" 3 "no int"
+label values full_status_pl full_status
+tab full_status_pl, m
+
+browse pid syear status_pl full_status_pl survey_status_pl partnered_pl partner_id_pl firstyr_contact_pl lastyr_contact_pl
+// browse pid syear status_pl full_status_pl survey_status_pl partnered_pl partner_id_pl firstyr_contact_pl lastyr_contact_pl firstyr_survey_pl lastyr_survey_pl if full_status_pl==.
+// browse pid syear status_pl full_status_pl survey_status_pl partnered_pl partner_id_pl firstyr_contact_pl lastyr_contact_pl firstyr_survey_pl lastyr_survey_pl if inlist(pid,236704,314002,5603202)
+
+// now merge on full relationship history so I can start to fill in the information
+merge m:1 pid using "$created_data/consolidated_rel_history.dta"
+drop _merge
+drop if ever_int == 0 // if never interviewed, we a. don't care about them and b. don't have any of this info
+
+tab master_start_yr1 master_rel_type1, m col // okay so there is info missing, especially cohab (about 11%)
+tab master_end_yr1 master_rel_type1, m col // okay so there is info missing. end date is much more reliable. should I *just* use end date?
+
+browse pid syear master_rel_type1 master_start_yr1 master_end_yr1 master_start_yr2 master_end_yr2
+browse pid syear master_rel_type1 master_start_yr1 master_end_yr1 master_start_yr2 master_end_yr2 if master_rel_type1!=.
+
+gen current_rel_number=.
+forvalues r=1/10{
+	capture replace current_rel_number = `r' if current_rel_number==. & syear >= master_start_yr`r' & syear<= master_end_yr`r' // prio previous relationship if they overlap
+}
+
+tab current_rel_number, m
+tab current_rel_number partnered_pl, m
+tab current_rel_number master_rel_type1, m
+
+browse pid syear current_rel_number partnered_pl master_rel_type1 master_start_yr1 master_end_yr1 master_start_yr2 master_end_yr2
+// browse pid syear current_rel_number partnered_pl master_rel_type1 master_start_yr1 master_end_yr1 master_start_yr2 master_end_yr2 if inlist(partnered_pl,1,2) & current_rel_number==. 
+
+gen current_rel_type=.
+gen current_rel_how_end=.
+gen current_rel_start_yr=.
+gen current_rel_end_yr=.
+
+forvalues r=1/10{
+	replace current_rel_type = master_rel_type`r' if current_rel_number==`r'
+	replace current_rel_how_end = master_how_end`r' if current_rel_number==`r'
+	replace current_rel_start_yr = master_start_yr`r' if current_rel_number==`r'
+	replace current_rel_end_yr = master_end_yr`r' if current_rel_number==`r'
+}
+
+label values current_rel_type rel_type
+label values current_rel_how_end how_end
+
+browse pid syear current_rel_number partnered_pl partner_id_pl current_rel_type current_rel_how_end current_rel_start_yr current_rel_end_yr // master_rel_type1 master_start_yr1 master_end_yr1 master_start_yr2 master_end_yr2
+inspect partner_id_pl if inlist(partnered_pl,1,2)
+
+// merge on biocoupm as well and attempt to fill in partner_id? (especially where me and ppathl diverge in terms of being in a relationship)
+merge m:1 pid using "$temp/biocouplm_wide.dta", keepusing(rhm_partnr* rhm_beginy* rhm_endy* rhm_rel_type*)
+drop if _merge==2
+drop _merge
+
+browse pid syear current_rel_number partnered_pl partner_id_pl current_rel_type current_rel_how_end current_rel_start_yr current_rel_end_yr couplem_rel1_start_real rhm_partnr1 rhm_beginy1 rhm_endy1 rhm_partnr2 rhm_beginy2 rhm_endy2
+
+gen long partner_id_rhm = .
+replace partner_id_rhm = rhm_partnr1 if syear >=couplem_rel1_start_real & syear <=rhm_endy1
+
+forvalues r=2/9{
+	replace partner_id_rhm = rhm_partnr`r' if partner_id_rhm==. & syear >=rhm_beginy`r' & syear <=rhm_endy`r'
+}
+
+browse pid syear current_rel_number partnered_pl partner_id_pl partner_id_rhm current_rel_type current_rel_how_end current_rel_start_yr current_rel_end_yr couplem_rel1_start_real rhm_partnr1 rhm_beginy1 rhm_endy1 rhm_partnr2 rhm_beginy2 rhm_endy2
+
+gen id_check = .
+replace id_check=0 if partner_id_pl!=. & partner_id_rhm!=. & partner_id_pl!=partner_id_rhm
+replace id_check=1 if partner_id_pl!=. & partner_id_rhm!=. & partner_id_pl==partner_id_rhm
+
+tab id_check, m
+tab partner_id_pl if id_check==0, m // this is mostly because of .n
+
+// clean up file to make it smaller
+drop rhm_partnr* rhm_beginy* rhm_endy* rhm_rel_type* master_rel_type* master_how_end* master_start_yr* master_end_yr* couplm_rel1_start couplem_rel1_start_real first_chm_lc
+
+save "$created_data/ppathl_partnership_history.dta", replace
+
+// i still think relationship info needs to be adjusted if couples transition from cohab to marriage, but we will return to this later (note as of 6/26/25)
 
 ********************************************************************************
 ********************************************************************************
@@ -729,6 +814,10 @@ gen orig_row = 1 // create a flag so I know which rows I've added
 ********************************************************************************
 ********************************************************************************
 ********************************************************************************
+/*
+Haven't yet done this (note as of 6/26/25)
+Need to see if I can also use this to figure out mpf and other related created fertility measures I plan to make
+
 // for births AFTER marriage (or - births relative to marriage)
 use "$GSOEP/biobirth.dta", clear
 label language EN
@@ -749,4 +838,4 @@ tab first_birth_year any_births, m
 keep pid sumkids kidgeb01 kidmon01 any_births first_birth_year
 
 save "$temp/biobirth_cleaned.dta", replace
-
+*/
