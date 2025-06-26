@@ -444,9 +444,256 @@ unique pid, by(spelltyp) // 69621 married in HH,  coupled in HH - duh doesn't tr
 ********************************************************************************
 * Merge all partner histories together
 ********************************************************************************
+// can I start with ppathl to get a unique list of PIDs and their first and last survey yr? Use that as base to add on the files (bc that will be my analysis base)
+
+use "$temp/ppathl_cleaned.dta", clear
+label language EN
+
+unique pid
+unique pid firstyr_survey_pl lastyr_survey_pl firstyr_contact_pl lastyr_contact_pl // are these unique? yes okay
+browse pid firstyr_survey_pl lastyr_survey_pl firstyr_contact_pl lastyr_contact_pl status_pl // some people have missing for survey yr (not contact yr) - those people never gave a full pl interview
+gen ever_int = 0
+replace ever_int = 1 if inrange(firstyr_survey_pl,1984,2022)
+
+tab ever_int, m 
+tab firstyr_survey_pl ever_int, m 
+
+// collapse to get just a list of pids
+collapse (lastnm) ever_int firstyr_survey_pl lastyr_survey_pl firstyr_contact_pl lastyr_contact_pl, by(pid)
+
+save "$temp/all_pids.dta", replace
+
+// first let's merge on the couple year file because that is my ideal file. then from there we can start to see how many people missing
+merge 1:1 pid using "$temp/biocouply_wide.dta"
+drop if _merge==2
+gen in_couply = .
+replace in_couply = 0 if _merge==1
+replace in_couply = 1 if _merge==3
+drop _merge
+
+// okay coverage is QUITE BAD
+tab ever_int in_couply, m row // about half when I restrict to those who ever had a pl interview (because we will obviously need those people)
+
+// now merge on couple month - next in order of hierarchy bc at least contains COHAB (but not HISTORY)
+merge 1:1 pid using "$temp/biocouplm_wide.dta" // shocking amount of not matched? is it bc of never interviews??
+drop if _merge==2
+gen in_couplm = .
+replace in_couplm = 0 if _merge==1
+replace in_couplm = 1 if _merge==3
+drop _merge
+
+tab ever_int in_couplm, m row // okay yes, of those with at least one interview, 98%+ coverage
+tab in_couplm in_couply if ever_int==1, m row
+tab in_couply in_couplm if ever_int==1, m row
+
+// and finally, the marriage year data
+merge 1:1 pid using "$temp/biomarsy_wide.dta" // shocking amount of not matched? is it bc of never interviews??
+drop if _merge==2
+gen in_marsy = .
+replace in_marsy = 0 if _merge==1
+replace in_marsy = 1 if _merge==3
+drop _merge
+
+tab ever_int in_marsy, m row // okay yes, it's the never interviewed
+tab in_marsy in_couplm // so more in couplm than in marital history
+tab in_marsy in_couply // only 7 people in cohab history but not marital
+
+// get a sense of the data for now
+browse pid in_couply in_couplm in_marsy rhy_rel_type1 rhy_how_end1 rhy_start_yr1 rhy_end_yr1 rhm_rel_type1 rhm_how_end1 rhm_beginy1 rhm_endy1 rhm_left_censored1 mhy_married1 mhy_how_end1 mhy_start_yr1 mhy_end_yr1 if ever_int==1
+
+save "$temp/all_rel_history.dta", replace
+** Stopped here 6/24/25 because got overwhelmed at the thought of figuring this out
+** BUT-  i feel like I had t do something similar-ish with fertility history for that paper for PSID, so look at that code for ideas (basically rerank across multiple sources and recompile a history file - which is what I need to do here)
 
 ********************************************************************************
-* Let's see what i can get from ppathl (bc has status + partner id)
+* Attempt to compile into one master history
+********************************************************************************
+use "$temp/all_rel_history.dta", clear
+
+// so this is currently wide. do I want to make long? to compare aCROSS numbers. bc if the relationships in rhy and rhm match (aka they didn't have any relationships PRE survey), then I can just use rhm? BUT if rhm rel#1 is left-censored, I need to use information to fill it in
+// max rels in rhy: 10 | rhm: 9 | mhy: 6
+
+reshape long rhy_begin_age rhy_end_age rhy_censor rhy_rel_type rhy_how_end rhy_start_yr rhy_end_yr rhm_coupid rhm_partnr rhm_beginy rhm_endy rhm_censor rhm_events rhm_rel_type rhm_left_censored rhm_intact rhm_ended rhm_how_end mhy_begin_age mhy_end_age mhy_censor mhy_married mhy_how_end mhy_start_yr mhy_end_yr, i(pid) j(rel_no)
+
+capture label define rel_type 0 "single" 1 "cohab" 2 "married" 3 "non-elig rel"
+label values rhy_rel_type rhm_rel_type rel_type
+
+browse pid in_couply rel_no rhy_rel_type rhy_start_yr rhy_end_yr rhm_rel_type rhm_beginy rhm_endy rhm_partnr mhy_married mhy_start_yr mhy_end_yr if ever_int==1
+
+// so for the people in couply, I literally just take their whole history from there.
+// so I really am just needing to sort out how to stack across these two other datasets. Do I actually keep wide - rename so they are fully in order, then rehape RERANK - and if ties, keep just 1 record?
+// okay no, trying some other hacks. because really couplm is also fine, we just need two other pieces of supplemental info from marital history (if not in cohab history)
+	*-- true relationship start date
+	*-- any relationships prior to the one first observed in SOEP
+browse pid in_couply rel_no rhm_rel_type rhm_beginy rhm_endy rhm_partnr mhy_married mhy_start_yr mhy_end_yr if ever_int==1 & in_couply==0
+
+// one way to get the true relationship start date of the union they entered soep in (aka first rel in couplm)
+gen couplm_rel1_type = rhm_rel_type if rel_no==1
+gen couplm_rel1_start = rhm_beginy if rel_no==1
+gen couplm_rel1_end = rhm_endy if rel_no==1
+label values couplm_rel1_type rel_type
+
+foreach var in couplm_rel1_type couplm_rel1_start couplm_rel1_end{
+	bysort pid (`var'): replace `var' = `var'[1]
+}
+
+sort pid rel_no
+browse pid in_couply rel_no couplm_rel1_type couplm_rel1_start couplm_rel1_end rhy_rel_type rhy_start_yr rhy_end_yr rhm_rel_type rhm_beginy rhm_endy rhm_partnr mhy_married mhy_start_yr mhy_end_yr if ever_int==1
+
+gen couplem_rel1_start_real = .
+replace couplem_rel1_start_real = rhy_start_yr if in_couply==1 & rhy_end_yr == couplm_rel1_end
+replace couplem_rel1_start_real = mhy_start_yr if in_couply==0 & mhy_end_yr == couplm_rel1_end & couplm_rel1_type==2
+bysort pid (couplem_rel1_start_real): replace couplem_rel1_start_real = couplem_rel1_start_real[1]
+
+browse pid in_couply rel_no couplm_rel1_type couplem_rel1_start_real couplm_rel1_start couplm_rel1_end rhy_rel_type rhy_start_yr rhy_end_yr rhm_rel_type rhm_beginy rhm_endy rhm_partnr mhy_married mhy_start_yr mhy_end_yr if ever_int==1
+
+tab couplm_rel1_type if in_couply==0 // so how many of these are cohab and therefore we will not know? okay like just under 20%
+inspect couplem_rel1_start_real if couplm_rel1_type!=.
+tab couplem_rel1_start_real couplm_rel1_type, m col // okay so about 7% of marriages missing real start date, but about 50% of cohab are
+
+// now, flag if other marriages prior to this relationship
+gen add_to_history = .
+replace add_to_history = 1 if mhy_end_yr < couplem_rel1_start_real & couplem_rel1_start_real!=. // so use the real date if it exists
+replace add_to_history = 1 if mhy_end_yr < couplm_rel1_start & couplem_rel1_start_real==. & couplm_rel1_type!=. // if it doesn't use the estimated start date (but restrict to at least those with a first relationship)
+replace add_to_history = 1 if rel_no==1 & mhy_married==1 & couplm_rel1_type==. // some people have no relationships in SOEP and ONLY have prior rels, so need to keep those as well
+// tab couplm_rel1_type mhy_married if rel_no==1, m
+
+browse pid in_couply rel_no couplm_rel1_type couplem_rel1_start_real couplm_rel1_start couplm_rel1_end rhy_rel_type rhy_start_yr rhy_end_yr rhm_rel_type rhm_beginy rhm_endy rhm_partnr mhy_married mhy_start_yr mhy_end_yr add_to_history if ever_int==1
+
+// rank to get order of those to then use to rerank the coupm history
+by pid: egen marr_history_rank = rank(rel_no) if add_to_history==1
+browse pid in_couply rel_no marr_history_rank mhy_married mhy_start_yr mhy_end_yr add_to_history if add_to_history==1
+	// oh could I just use rel_no lol
+	tab rel_no if add_to_history==1, m
+	tab marr_history_rank rel_no if add_to_history==1, m
+by pid: egen num_history = max(marr_history_rank)
+replace num_history = 0 if num_history==.
+
+// now, trying to create a "real rank" aggregating between the monthly couple and marital history
+gen rel_no_adjusted = rel_no + num_history
+browse pid in_couply rel_no rel_no_adjusted num_history couplm_rel1_type couplem_rel1_start_real couplm_rel1_start couplm_rel1_end rhy_rel_type rhy_start_yr rhy_end_yr rhm_rel_type rhm_beginy rhm_endy rhm_partnr mhy_married mhy_start_yr mhy_end_yr marr_history_rank if ever_int==1
+
+forvalues m=1/3{
+	gen marr`m'_type = 2 if marr_history_rank==`m'
+	gen marr`m'_start = mhy_start_yr if marr_history_rank==`m'
+	gen marr`m'_end = mhy_end_yr if marr_history_rank==`m'
+	gen marr`m'_how_end = mhy_how_end if marr_history_rank==`m'
+	
+	label values marr`m'_type rel_type
+	label values marr`m'_how_end how_end
+	
+	foreach var in marr`m'_type marr`m'_start marr`m'_end marr`m'_how_end{
+		bysort pid (`var'): replace `var' = `var'[1]
+	}
+}
+
+sort pid rel_no
+browse pid rel_no rel_no_adjusted marr_history_rank marr1_type marr1_start marr1_end marr1_how_end marr2_type marr2_start marr2_end marr2_how_end mhy_married mhy_start_yr mhy_end_yr mhy_how_end
+
+// actually if no marital history, I can just the coupm data, right? just need to adjust the start date?
+* create new blank variables to fill in
+gen master_rel_type=.
+gen master_how_end=.
+gen master_start_yr=.
+gen master_end_yr=.
+
+* fill in with couply if in there
+replace master_rel_type = rhy_rel_type if in_couply==1
+replace master_how_end = rhy_how_end if in_couply==1
+replace master_start_yr = rhy_start_yr if in_couply==1
+replace master_end_yr = rhy_end_yr if in_couply==1
+
+* fill in with couplm if num_history==0
+// browse pid rel_no in_couply num_history rhm_rel_type rhm_how_end rhm_beginy rhm_left_censored couplem_rel1_start_real rhm_endy rhy_start_yr rhy_end_yr mhy_start_yr mhy_end_yr 
+
+replace master_rel_type = rhm_rel_type if in_couply==0 & num_history==0
+replace master_how_end = rhm_how_end if in_couply==0 & num_history==0
+replace master_start_yr = rhm_beginy if in_couply==0 & num_history==0 & rel_no!=1
+	* replace the first relationship with "real start date" // should I keep a copy of the old start date somewhere?
+	replace master_start_yr = rhm_beginy if in_couply==0 & num_history==0 & rel_no==1 & rhm_left_censored==0
+	replace master_start_yr = couplem_rel1_start_real if in_couply==0 & num_history==0 & rel_no==1 & rhm_left_censored==1
+replace master_end_yr = rhm_endy if in_couply==0 & num_history==0
+
+* then, need to do a piecemeal process if there are marriages to add
+replace master_rel_type = marr1_type if rel_no==1 & in_couply==0 & num_history!=0 // if you have at least one in history, then you def have a marriage 1
+replace master_how_end = marr1_how_end if rel_no==1 & in_couply==0 & num_history!=0
+replace master_start_yr = marr1_start if rel_no==1 & in_couply==0 & num_history!=0
+replace master_end_yr = marr1_end if rel_no==1 & in_couply==0 & num_history!=0
+replace master_rel_type = marr2_type if rel_no==2 & in_couply==0 & inlist(num_history,2,3) // but only have a marriage2 if more than 1 in history
+replace master_how_end = marr2_how_end if rel_no==2 & in_couply==0 & inlist(num_history,2,3)
+replace master_start_yr = marr2_start if rel_no==2 & in_couply==0 & inlist(num_history,2,3)
+replace master_end_yr = marr2_end if rel_no==2 & in_couply==0 & inlist(num_history,2,3)
+replace master_rel_type = marr3_type if rel_no==3 & in_couply==0 & num_history==3
+replace master_how_end = marr3_how_end if rel_no==3 & in_couply==0 & num_history==3
+replace master_start_yr = marr3_start if rel_no==3 & in_couply==0 & num_history==3
+replace master_end_yr = marr3_end if rel_no==3 & in_couply==0 & num_history==3
+
+// gah struggling how to now get the cohab info on. I think I just need this to be populated in all columns AGAIN (should I have just left this wide?)
+// I think I need to merge back on this history omg
+merge m:1 pid using "$temp/biocouplm_wide.dta"
+tab in_couplm _merge, m
+drop _merge
+
+tab rel_no if rhm_rel_type!=. & in_couply==0 & num_history!=0, m  // gah up to 7 relationships
+gen first_chm_lc = rhm_left_censored if rel_no==1
+bysort pid (first_chm_lc): replace first_chm_lc = first_chm_lc[1]
+sort pid rel_no
+
+browse pid rel_no rel_no_adjusted in_couply num_history master_rel_type master_how_end master_start_yr master_end_yr rhm_beginy couplem_rel1_start_real rhm_endy rhm_partnr mhy_married mhy_start_yr mhy_end_yr rhm_beginy1 rhm_endy1 if num_history!=0 & in_couply==0
+
+forvalues r=1/7{
+	local s=`r' + 1
+	
+	replace master_rel_type = rhm_rel_type`r' if rel_no==`s' & in_couply==0 & num_history==1 // if num_history == 1 then the first chm goes in 2 / will adjust the true start date later
+	replace master_how_end = rhm_how_end`r' if rel_no==`s' & in_couply==0 & num_history==1 
+	replace master_start_yr = rhm_beginy`r' if rel_no==`s' & in_couply==0 & num_history==1 
+	replace master_end_yr = rhm_endy`r' if rel_no==`s' & in_couply==0 & num_history==1 
+}
+
+forvalues r=1/7{
+	local s=`r' + 2
+	
+	replace master_rel_type = rhm_rel_type`r' if rel_no==`s' & in_couply==0 & num_history==2 // if num_history == 2 then the first chm goes in 3
+	replace master_how_end = rhm_how_end`r' if rel_no==`s' & in_couply==0 & num_history==2 
+	replace master_start_yr = rhm_beginy`r' if rel_no==`s' & in_couply==0 & num_history==2 
+	replace master_end_yr = rhm_endy`r' if rel_no==`s' & in_couply==0 & num_history==2
+}
+
+forvalues r=1/7{
+	local s=`r' + 3
+	
+	replace master_rel_type = rhm_rel_type`r' if rel_no==`s' & in_couply==0 & num_history==3 // if num_history == 3 then the first chm goes in 4
+	replace master_how_end = rhm_how_end`r' if rel_no==`s' & in_couply==0 & num_history==3
+	replace master_start_yr = rhm_beginy`r' if rel_no==`s' & in_couply==0 & num_history==3 
+	replace master_end_yr = rhm_endy`r' if rel_no==`s' & in_couply==0 & num_history==3
+}
+
+// now need to adjust all start dates gah
+replace master_start_yr = couplem_rel1_start_real if rel_no==2 & in_couply==0 & num_history==1 & first_chm_lc ==1
+replace master_start_yr = couplem_rel1_start_real if rel_no==3 & in_couply==0 & num_history==2 & first_chm_lc ==1
+replace master_start_yr = couplem_rel1_start_real if rel_no==4 & in_couply==0 & num_history==3 & first_chm_lc ==1
+
+* Oh, need to figure out how to add partner_id ESPECIALLY if not using couplm. do I need this? let's come back to this, think I can add on later based on matching information from the wide files...
+
+browse pid rel_no rel_no_adjusted first_chm_lc in_couply num_history master_rel_type master_how_end master_start_yr master_end_yr rhy_rel_type rhy_start_yr rhy_end_yr rhm_rel_type rhm_beginy couplem_rel1_start_real rhm_endy rhm_partnr mhy_married mhy_start_yr mhy_end_yr 
+
+label values master_rel_type rel_type
+label values master_how_end how_end
+
+* now create a file to save
+keep pid rel_no ever_int firstyr_survey_pl lastyr_survey_pl firstyr_contact_pl lastyr_contact_pl in_couply in_couplm mhy_ever_marr in_marsy couplm_rel1_start couplem_rel1_start_real master_rel_type master_how_end master_start_yr master_end_yr first_chm_lc
+
+reshape wide master_rel_type master_how_end master_start_yr master_end_yr, j(rel_no) i(pid)
+browse pid mhy_ever_marr master_rel_type* master_how_end* master_start_yr* master_end_yr*
+
+tab mhy_ever_marr master_rel_type1 if ever_int==1, m
+
+save "$created_data/consolidated_rel_history.dta", replace
+
+********************************************************************************
+* Then want to take this info and add to ppathl to get full file of information
+* from 1984 - 2022 for all people (with all relationship start / end dates / 
+* statuses / partner ids, etc.)
 ********************************************************************************
 use "$temp/ppathl_cleaned.dta", clear
 label language EN
