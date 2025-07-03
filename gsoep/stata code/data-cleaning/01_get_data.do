@@ -43,7 +43,7 @@ use pid syear hid cid sex parid partner psample sampreg netto germborn corigin g
 
 label language EN
 
-unique pid // 181014, 1359906
+unique pid // 198137, 1446266
 tab syear, m
 
 /*Netto-codes 10-19 (and 29) define the respondents population of PGEN,
@@ -53,7 +53,7 @@ and the codes 90-99 describe permanent (or temporary) dropouts.
 Further differentiations point to the survey instruments (questionnaires). 
 The Codes 10-39 describe the population in realized (and partially realized households).*/
 
-mvdecode _all, mv(-8=.s\-7/-6=.\-5=.s\-4/-3=.\-2=.n\-1=.) // .s = not in survey, .n is n/a, regular missing is dk, etc.
+mvdecode _all, mv(-9=.\-8=.s\-7/-6=.\-5=.s\-4/-3=.\-2=.n\-1=.) // .s = not in survey, .n is n/a, regular missing is dk, etc. -9 new as of v40
 
 recode netto (10/19=1)(20/29=2)(30/39=3)(40/99=0)(-3=0), gen(status)
 label define status 0 "dropout" 1 "sample" 2 "youth" 3 "no int"
@@ -84,8 +84,8 @@ label values partnered_pl partnered
 
 save "$temp/ppathl_cleaned.dta", replace
 
-inspect partner_id_pl if inrange(partnered_pl,1,4) // so all except 12 have valid id
-inspect partner_id_pl if inrange(partnered_pl,1,2) // all except 8
+inspect partner_id_pl if inrange(partnered_pl,1,4) // so all except 6 have valid id
+inspect partner_id_pl if inrange(partnered_pl,1,2) // all except 2 for the stricter definition
 
 // for use later to add partner sample status
 keep pid syear sex_pl status_pl
@@ -100,15 +100,15 @@ save "$temp/ppathl_partnerstatus.dta", replace
 **# PL
 *** All original individual data
 ********************************************************************************
-use pid syear hid cid intid pab0002 pab0004 pab0005 pab0006 pab0008 pab0013 plb0022_h plb0185_v1 plb0185_v2 plb0186_h plb0193* plb0193_v1 plb0193_v2 plb0196_h plb0197 plb0471_h plb0474_h plc0013_h plc0014_h plc0015_h plc0017_h pld0038 pld0039 pld0040 pld0131_h pld0132_h pld0133 pld0134 pld0135 pld0136 pld0137 pld0138 pld0139 pld0140 pld0141 pld0142 pld0143 pld0144 pld0145 pld0149 pld0150 pld0151 pld0152 pld0153 pld0154 pld0159 ple0008 ple0040 ple0041 plg0012_h plg0012_v1 plg0012_v2 plh0007 plh0012_h plh0173 plh0174 plh0175 plh0176 plh0178 plh0179 plh0180 plh0182 plh0258_h pli0011 pli0012_h pli0016_h pli0019_h pli0022_h pli0038_h pli0038_v1 pli0038_v2 pli0038_v3 pli0038_v4 pli0040 pli0043_h pli0044_h pli0046 pli0054 pli0055 pli0057 plk0001_v1 plk0001_v2 plk0001_v3 using "$GSOEP/pl.dta", clear // plb0193_h
+use pid syear hid cid intid pab0002 pab0004 pab0005 pab0006 pab0008 pab0013 plb0022_h plb0185_v1 plb0185_v2 plb0186_h plb0193* plb0193_v1 plb0193_v2 plb0196_h plb0197 plb0471_h plb0474_h plc0013_h plc0014_h plc0015_h plc0017_h pld0038 pld0039 pld0040 pld0131_h pld0132_h pld0133 pld0134 pld0135 pld0136 pld0137 pld0138 pld0139 pld0140 pld0141 pld0142 pld0143 pld0144 pld0145 pld0149 pld0150 pld0151 pld0152 pld0153 pld0154 pld0159 ple0008 ple0040 ple0041_h plg0012_h plg0012_v1 plg0012_v2 plh0007 plh0012_h plh0173 plh0174 plh0175 plh0176 plh0178 plh0179 plh0180 plh0182 plh0258_h pli0011 pli0012_h pli0016_h pli0019_h pli0022_h pli0038_h pli0038_v1 pli0038_v2 pli0038_v3 pli0038_v4 pli0040 pli0043_h pli0044_h pli0046 pli0054 pli0055 pli0057 plk0001_v1 plk0001_v2 plk0001_v3 using "$GSOEP/pl.dta", clear // plb0193_h
 
 label language EN
 
-unique pid // 116072, 791927
+unique pid // 125983, 820360
 tab syear, m
 
 // mvdecode _all, mv(-8/-1) // do I want to retain -2 in some way bc it designates does not apply (so helps figure out who is in sample in a given question?)
-mvdecode _all, mv(-8=.s\-7/-6=.\-5=.s\-4/-3=.\-2=.n\-1=.) // .s = not in survey, .n is n/a, regular missing is dk, etc.
+mvdecode _all, mv(-9=.\-8=.s\-7/-6=.\-5=.s\-4/-3=.\-2=.n\-1=.) // .s = not in survey, .n is n/a, regular missing is dk, etc. -9 new as of v40
 
 rename pab0002 py_employed_pt
 rename pab0004 py_unemployed
@@ -157,7 +157,7 @@ rename pld0154 chg_hadbirth_month_py
 rename pld0159 nochg_composition
 rename ple0008 self_reported_health
 rename ple0040 disability_yn
-rename ple0041 disability_amount
+rename ple0041_h disability_amount
 rename plg0012_h currently_enrolled
 rename plg0012_v1 currently_enrolled_v1
 rename plg0012_v2 currently_enrolled_v2
@@ -203,11 +203,11 @@ save "$temp/pl_cleaned.dta", replace
 use pid syear hid cid pgbilzeit pgcasmin pgdegree pgemplst pgfamstd pgisced11 pgisced97 pglabgro pglabnet pglfs pgnation pgpartnr pgpartz pgpbbil01 pgpbbil02 pgpsbil  pgtatzeit pguebstd pgvebzeit using "$GSOEP/pgen.dta", clear
 label language EN
 
-unique pid // 118104, 800212
+unique pid // 125983, 820360
 tab syear, m
 sort pid syear
 
-mvdecode _all, mv(-8=.s\-7/-6=.\-5=.s\-4/-3=.\-2=.n\-1=.) // .s = not in survey, .n is n/a, regular missing is dk, etc.
+mvdecode _all, mv(-9=.\-8=.s\-7/-6=.\-5=.s\-4/-3=.\-2=.n\-1=.) // .s = not in survey, .n is n/a, regular missing is dk, etc. -9 new as of v40
 
 browse pid syear hid cid pgfamstd pgpartz pgpartnr pgemplst pglfs pgtatzeit pglabgro pglabnet
 
@@ -235,7 +235,7 @@ capture label define partnered 0 "No partner" 1 "Spouse" 2 "Partner" 3 "Prob Spo
 4 "Prob Partner" 5 "Not Clear"
 label values partnered_pg partnered
 
-inspect partner_id_pg if inrange(partnered_pg,1,4) // just 4 missing
+inspect partner_id_pg if inrange(partnered_pg,1,4) // just 2 missing
 
 save "$temp/pgen_cleaned.dta", replace
 
@@ -244,14 +244,14 @@ save "$temp/pgen_cleaned.dta", replace
 *** Individual tracking file, mostly has things about survey status / interview 
 *** info but does also have some demos
 ********************************************************************************
-use pid syear hid cid befstat_h pnat_h stell_h stell_v1 stell_v2 stell_v3 using "$GSOEP/pbrutto.dta", clear
+use pid syear hid cid befstat_h pnat_h stell_h stell_v1 stell_v2 stell_v3 stell_v4 using "$GSOEP/pbrutto.dta", clear
 label language EN
 
-unique pid // 181006, 1343303
+unique pid // 198138, 1443750
 tab syear, m
 sort pid syear
 
-mvdecode _all, mv(-8=.s\-7/-6=.\-5=.s\-4/-3=.\-2=.n\-1=.) // .s = not in survey, .n is n/a, regular missing is dk, etc.
+mvdecode _all, mv(-9=.\-8=.s\-7/-6=.\-5=.s\-4/-3=.\-2=.n\-1=.) // .s = not in survey, .n is n/a, regular missing is dk, etc. -9 new as of v40
 
 rename befstat_h survey_status_pb
 rename pnat_h nationality_pb
@@ -259,6 +259,7 @@ rename stell_h relation_pb
 rename stell_v1 relation_v1_pb
 rename stell_v2 relation_v2_pb
 rename stell_v3 relation_v3_pb
+rename stell_v4 relation_v4_pb
 
 save "$temp/pbrutto_cleaned.dta", replace
 
@@ -270,11 +271,11 @@ save "$temp/pbrutto_cleaned.dta", replace
 use pid syear hid cid d11105 d11106 d11107 d11108 d11109 l11101 using "$GSOEP/pequiv.dta", clear // d11112ll
 label language EN
 
-unique pid // 179412, 1148926
+unique pid // 196531, 1196228
 tab syear, m
 sort pid syear
 
-mvdecode _all, mv(-8=.s\-7/-6=.\-5=.s\-4/-3=.\-2=.n\-1=.) // .s = not in survey, .n is n/a, regular missing is dk, etc.
+mvdecode _all, mv(-9=.\-8=.s\-7/-6=.\-5=.s\-4/-3=.\-2=.n\-1=.) // .s = not in survey, .n is n/a, regular missing is dk, etc. -9 new as of v40
 
 rename d11105 relation_cnef
 rename d11106 hh_size_cnef
@@ -297,12 +298,12 @@ use pid syear hid cid lb0059 lb0060 lb0066 lb0067 lb0068 lb0069 lb0070 lb0071 lb
 // not found: lb0312_h
 label language EN
 
-unique pid // 102630, 139662
+unique pid // 111701, 149324
 tab syear, m
 
 sort pid syear
 
-mvdecode _all, mv(-8=.s\-7/-6=.\-5=.s\-4/-3=.\-2=.n\-1=.) // .s = not in survey, .n is n/a, regular missing is dk, etc.
+mvdecode _all, mv(-9=.\-8=.s\-7/-6=.\-5=.s\-4/-3=.\-2=.n\-1=.) // .s = not in survey, .n is n/a, regular missing is dk, etc. -9 new as of v40
 
 rename lb0059 live_fam_bl
 rename lb0060 who_lived_with_bl
@@ -357,7 +358,7 @@ rename lb0320_h marr3_end_bl
 
 by pid: egen num_records_bl = count(syear)
 tab num_records_bl, m
-unique pid, by(num_records_bl) // so yes 72.7% of pids just have one record.
+unique pid, by(num_records_bl) // so yes 74.6% of pids just have one record.
 // So, I think this is really keyed on pid because many respondents only have 1 year in this file - they year they entered. which I bet corresponds to their sample
 // The average PY is like 1.36, so...I need to figure out, for respondents with multiple years, which to use, and then I *think* this essentially becomes a m:1 match on pid?
 
@@ -376,13 +377,13 @@ save "$temp/biol_cleaned.dta", replace
 use pid cid fcurrloc fprofedu fsedu locchild1 mcurrloc mprofedu msedu bioyear living* using "$GSOEP/bioparen.dta", clear // this is JUST keyed on pid - so it is 1 row per pid, NOT long
 label language EN
 
-unique pid // 96177, 96177
+unique pid // 118608, 118608
 // tab syear, m // right because year is also not a variable. so how do I know when updated?!
 // but I guess - the info that exists shouldn't change, it might just possibly not have any NEW people?
-tab bioyear, m // okay yes, biography surveys not updated past 2019, so people might just be missing
+tab bioyear, m // okay so in v39, biography surveys not updated past 2019, but now, they are updated through 2023 as well - so I think this file is actually up to date in this version! YES confirmed in the What's new
 // let's compare info listed here to info listed in biol; this feels more comprehensive (and cleaned AND already at unique pid level)
 
-mvdecode _all, mv(-8=.s\-7/-6=.\-5=.s\-4/-3=.\-2=.n\-1=.) // .s = not in survey, .n is n/a, regular missing is dk, etc.
+mvdecode _all, mv(-9=.\-8=.s\-7/-6=.\-5=.s\-4/-3=.\-2=.n\-1=.) // .s = not in survey, .n is n/a, regular missing is dk, etc. -9 new as of v40
 
 rename fcurrloc where_father_live_bp
 rename fprofedu father_vocational_bp
@@ -418,10 +419,10 @@ save "$temp/bioparen_cleaned.dta", replace
 use hid syear cid intid hlc0005_h hlf0001_h hlf0153_h hlf0261 hlf0291 hlf0315_h hlf0317_h hlf0320 hlk0044_v1 hlk0044_v2 hlk0044_v3 using "$GSOEP/hl.dta", clear
 label language EN
 
-unique hid // 66936, 449274
+unique hid // 72943, 468837
 unique hid syear // so this is the level of the file
 
-mvdecode _all, mv(-8=.s\-7/-6=.\-5=.s\-4/-3=.\-2=.n\-1=.)
+mvdecode _all, mv(-9=.\-8=.s\-7/-6=.\-5=.s\-4/-3=.\-2=.n\-1=.) // .s = not in survey, .n is n/a, regular missing is dk, etc. -9 new as of v40
 
 tab hlk0044_v1, m // children under 16 in HH - oh this is just yes / no. generally good coverage, about 3.5% missing. let's see what other HH variables I might need?
 tab hlk0044_v2, m 
@@ -448,9 +449,9 @@ save "$temp/hl_cleaned.dta", replace
 use hid syear cid hghinc hgowner hgnuts1 hgnuts1_ew hgtyp1hh hgtyp2hh using "$GSOEP/hgen.dta", clear
 label language EN
 
-unique hid // 66936, 449274 // so this matches hl (the same is NOT true for pgen and pl...)
+unique hid // 72943, 468837 // so this matches hl (the same is NOT true for pgen and pl...okay this has ALSO been corrected in v40)
 
-mvdecode _all, mv(-8=.s\-7/-6=.\-5=.s\-4/-3=.\-2=.n\-1=.)
+mvdecode _all, mv(-9=.\-8=.s\-7/-6=.\-5=.s\-4/-3=.\-2=.n\-1=.) // .s = not in survey, .n is n/a, regular missing is dk, etc. -9 new as of v40
 
 rename hghinc hh_net_income_monthly_hg
 rename hgowner housing_status_hg
@@ -468,9 +469,9 @@ save "$temp/hgen_cleaned.dta", replace
 use hid syear cid befhpmax bula_ew bula_h hhgr using "$GSOEP/hbrutto.dta", clear
 label language EN
 
-unique hid // 73671, 531642 // this has more because contains HHs EVER surveyed.
+unique hid // 79975, 565967 // this has more because contains HHs EVER surveyed.
 
-mvdecode _all, mv(-8=.s\-7/-6=.\-5=.s\-4/-3=.\-2=.n\-1=.)
+mvdecode _all, mv(-9=.\-8=.s\-7/-6=.\-5=.s\-4/-3=.\-2=.n\-1=.) // .s = not in survey, .n is n/a, regular missing is dk, etc. -9 new as of v40
 
 rename befhpmax person_surveyed_hb
 rename bula_ew where_germany_hb

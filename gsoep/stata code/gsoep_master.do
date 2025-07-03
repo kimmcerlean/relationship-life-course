@@ -62,7 +62,7 @@ set scheme cleanplots
 	}	
 
 // define globals
-global GSOEP    	"$root/GSOEP data/Stata (v39 - 2022)" /*original GSOEP data*/ 
+global GSOEP    	"$root/GSOEP data/Stata (v40 - 2023)" /*original GSOEP data*/ 
 global temp    		"$root/temp data/gsoep" /*intermediary processing files*/
 global created_data "$root/created data/gsoep" /*created data*/
 global results  	"$root/results/GSOEP"
