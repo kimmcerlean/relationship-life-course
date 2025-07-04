@@ -82,6 +82,8 @@ label define partnered 0 "No partner" 1 "Spouse" 2 "Partner" 3 "Prob Spouse" ///
 4 "Prob Partner" 5 "Not Clear"
 label values partnered_pl partnered
 
+tab birthyr_pl, m
+
 save "$temp/ppathl_cleaned.dta", replace
 
 inspect partner_id_pl if inrange(partnered_pl,1,4) // so all except 6 have valid id
@@ -244,7 +246,7 @@ save "$temp/pgen_cleaned.dta", replace
 *** Individual tracking file, mostly has things about survey status / interview 
 *** info but does also have some demos
 ********************************************************************************
-use pid syear hid cid befstat_h pnat_h stell_h stell_v1 stell_v2 stell_v3 stell_v4 using "$GSOEP/pbrutto.dta", clear
+use pid syear hid cid befstat_h pnat_h stell_h stell_v1 stell_v2 stell_v3 stell_v4 geburt_h using "$GSOEP/pbrutto.dta", clear
 label language EN
 
 unique pid // 198138, 1443750
@@ -260,6 +262,9 @@ rename stell_v1 relation_v1_pb
 rename stell_v2 relation_v2_pb
 rename stell_v3 relation_v3_pb
 rename stell_v4 relation_v4_pb
+rename geburt_h birthyr_pb
+
+tab birthyr_pb, m
 
 save "$temp/pbrutto_cleaned.dta", replace
 

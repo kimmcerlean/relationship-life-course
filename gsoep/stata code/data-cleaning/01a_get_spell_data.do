@@ -264,6 +264,8 @@ tab remark has_partnerid, m row
 tab beginy has_partnerid, m row
 tab endy has_partnerid, m row // worst for those ending 2022 / 2023
 tab spelltyp has_partnerid // oh duh some is bc married not in HH, but that doesn't explain all of it...
+// okay I also compared to the v39 version and the coverage for married couples in v39 was like 90% but now it's only about 60%...
+// I think I can just recover this info from ppathl but I am confused...
 
 browse pid spellnr rel_no rel_type how_end beginy endy coupid partnr
 
@@ -850,7 +852,14 @@ replace id_check=0 if partner_id_pl!=. & partner_id_rhm!=. & partner_id_pl!=part
 replace id_check=1 if partner_id_pl!=. & partner_id_rhm!=. & partner_id_pl==partner_id_rhm
 
 tab id_check, m
-tab partner_id_pl if id_check==0, m // this is mostly because of .n -- come back to this (7/3/25 - I don't think this is true anymore) THey said they fixed something with partner Ids here, so it may be more accurate.
+tab partner_id_pl if id_check==0, m // this is mostly because of .n -- since v40, there are now too many options 
+inspect partner_id_pl if id_check==0 // only 12% are missing
+tab partner_id_rhm if id_check==0, m 
+inspect partner_id_rhm if id_check==0 /// okay close to 97% are bc partner_id_rhm is -2 - they said they made some changes to the partner ids in ppathl so maybe this why
+// is this also because they only have partner id if current. it's seem as though it has gotten worse between v39 and v40 but I can't figure out why from the "what's new" - I think I can just use the info from ppathl anyway.
+
+// it's possible this is also bc of the dropout years that a partner is recorded - that is why pl partner id will be filled in but the rhm will be -2
+tab full_status_pl if id_check==0, m // okay that does not explain it at all 
 
 // clean up file to make it smaller
 drop rhm_partnr* rhm_beginy* rhm_endy* rhm_rel_type* master_rel_type* master_how_end* master_start_yr* master_end_yr* couplm_rel1_start couplem_rel1_start_real first_chm_lc
@@ -867,28 +876,202 @@ save "$created_data/ppathl_partnership_history.dta", replace
 ********************************************************************************
 ********************************************************************************
 ********************************************************************************
-/*
-Haven't yet done this (note as of 6/26/25)
-Need to see if I can also use this to figure out mpf and other related created fertility measures I plan to make
+
+********************************************************************************
+* Basic first / last birth info
+********************************************************************************
 
 // for births AFTER marriage (or - births relative to marriage)
+// Also need to see if I can also use this to figure out mpf and other related created fertility measures I plan to make
+// but this does not have other parent id. so, like with other datasets, I need to use the child id and then somehow link both parents to get mom and dad??
+// does bioagel? that *might* just be moms? and this is more about like childrearing experiences as the child ages
+
 use "$GSOEP/biobirth.dta", clear
 label language EN
 
-unique pid // 158946, 158946 -- so this is one record per PID so more of 1:1 lookup
+mvdecode _all, mv(-9/-1) // here want regular missing for all that will be easier
 
-gen any_births=0
+unique pid // 198140, 198140 -- so this is one record per PID so more of 1:1 lookup - basically matches number in ppathl
+tab biovalid, m // there are not a lot of people with valid info - is this an age thing? (like close to 64% have no bio info)
+tab bioyear, m
+tab gebjahr biovalid, row // so no one born in 2000 or later has info, so some of this is age but coverage still not great
+// so according to the codebook, the universe is only people who ever successfully completed a biographical interview BUT i think they try to infer info from people without a valid interview
+// also, men's fertility was only collected starting in 2001
+tab sumkids, m // like here, only 20% are does not apply
+tab biokids, m // so the diff between sumkids and biokids is that this is DIRECTLY reported. the above is inferred
+
+gen any_births=.
+replace any_births = 0 if sumkids==0
 replace any_births = 1 if sumkids > 0 & sumkids<100
-tab sumkids any_births, m 
+tab sumkids any_births, m
+tab  gebjahr any_births, m row // so inferred coverage is somewhat correlated with age but not entirely
 
-tab kidgeb01 any_births, m
+browse pid sex kidgeb* // wait are these in REVERSE order? like year of birth first child seems LATER than year of birth second + child (when more than 1...)
+// lol yes WTF: The order ranks from the oldest child specified under KIDPNR01 to the youngest child.
 
-gen first_birth_year = kidgeb01
-replace first_birth_year=9999 if kidgeb01 < 0
+tab kidgeb01 any_births, m // there is a non-neglible amount of does not apply for those with births. need to see if coverage here is the same as biol (bc that also records year of first birth)
 
-tab first_birth_year any_births, m
+egen first_birth_year = rowmin(kidgeb*)
+replace first_birth_year=9999 if first_birth_year == . & any_births==0
 
-keep pid sumkids kidgeb01 kidmon01 any_births first_birth_year
+browse pid first_birth_year kidgeb*
+
+tab first_birth_year any_births, m // can we also assume that people with a first birth year but missing on any births have a birth actually?
+
+egen last_birth_year = rowmax(kidgeb*)
+replace last_birth_year=9999 if last_birth_year == . & any_births==0
+tab last_birth_year any_births, m
+browse  pid first_birth_year last_birth_year kidgeb*
+
+keep pid biovalid bioinfo sumkids biokids any_births first_birth_year last_birth_year
+
+foreach var in biovalid bioinfo sumkids biokids any_births first_birth_year last_birth_year{
+	rename `var' `var'_bh // bh for birth history (bb feels unclear)
+}
 
 save "$temp/biobirth_cleaned.dta", replace
-*/
+
+********************************************************************************
+* Trying to get fertility history re: mpf
+********************************************************************************
+// following UKHLS as the structure is very similar
+// AH jk the US is a little different because they have bioparent IDs. that is not true here. so..actually need to adapt
+
+use "$GSOEP/biobirth.dta", clear
+label language EN
+
+mvdecode _all, mv(-9/-1) // here want regular missing for all that will be easier
+
+// need to figure out how to get a version where KID is the focal and I can match on both of their parents
+browse pid sex sumkids biokids kidpnr01 kidpnr02 kidpnr03
+
+keep pid sex sumkids kidpnr*
+
+forvalues k=1/9{
+	rename kidpnr0`k' kidpnr`k' // reshape isn't working with leading 0s
+}
+
+reshape long kidpnr, i(pid sex) j(child_no)
+drop if kidpnr == . & inrange(child_no,2,19) // so keep one record for all, even if not parent
+
+unique kidpnr if kidpnr!=. // there is average 1.8 rows per kid. So, ideally this means no more than 1 parent per kid?
+bysort kidpnr: egen num_parents = count(pid) if kidpnr !=.
+tab num_parents, m
+tab sex if kidpnr != . & num_parents==2 // okay, generally, I think there is just one parent of each gender basically
+
+gen long mom_id = pid if sex==2 & kidpnr!=.
+gen long dad_id = pid if sex==1 & kidpnr!=.
+bysort kidpnr (mom_id): replace mom_id = mom_id[1]
+bysort kidpnr (dad_id): replace dad_id = dad_id[1]
+
+sort kidpnr
+browse kidpnr num_parents pid sex mom_id dad_id
+
+// so now we have both parent iDs, but need to figure out which they are
+gen is_mom=0
+replace is_mom=1 if pid == mom_id & mom_id!=.
+
+gen is_dad=0
+replace is_dad=1 if pid == dad_id & dad_id!=.
+
+tab sex is_mom, m // validate
+tab sex is_dad, m
+tab is_mom is_dad, m
+
+gen which_parent=.
+replace which_parent = 1 if is_mom==1
+replace which_parent = 2 if is_dad==1
+
+label define which_parent 1 "Mom" 2 "Dad"
+label values which_parent which_parent
+
+gen long other_parent_id=.
+replace other_parent_id = dad_id if which_parent==1
+replace other_parent_id = mom_id if which_parent==2
+
+inspect other_parent_id if which_parent!=.
+inspect other_parent_id if which_parent!=. & num_parents==2 // so some are 0s because just 1 parent listed
+
+sort pid child_no
+browse pid sex child_no kidpnr which_parent other_parent_id
+
+unique other_parent_id if other_parent_id!=0 & other_parent_id!=., by(pid) gen(num_birth_partners)
+bysort pid (num_birth_partners): replace num_birth_partners = num_birth_partners[1]
+tab num_birth_partners, m
+
+browse pid sex child_no kidpnr which_parent other_parent_id num_birth_partners
+
+gen any_mpf = .
+replace any_mpf = 0 if num_birth_partners==0 | num_birth_partners==1
+replace any_mpf = 1 if num_birth_partners>1 & num_birth_partners<1000
+
+save "$temp/biobirth_parent_child_ids.dta", replace 
+
+tab sumkids any_mpf, m 
+
+preserve
+collapse (max) any_mpf, by(pid sumkids)
+tab sumkids any_mpf, m
+
+save "$temp/mpf_lookup.dta", replace 
+restore
+
+********************************************************************************
+* Trying to get age of youngest / oldest child in HH
+* OH and I could also possibly use this to get number of people over 65?
+* (do I need this since I have actual care hours? Feel like I did this for US
+* as proxy for caretaking responsibilities)
+********************************************************************************
+use "$temp/ppathl_cleaned.dta", clear
+
+// first need to create an age variable
+browse pid syear birthyr_pl
+gen age = syear - birthyr_pl if birthyr_pl!=.
+replace age = 0 if age==-1
+
+browse hid pid syear age
+
+// composition variables
+gen kidsu18=0
+replace kidsu18 =1 if age < 18
+
+gen kidsu6=0
+replace kidsu6 =1 if age < 6
+
+gen age65up=0
+replace age65up =1 if  age >=65 & age<200
+
+bysort syear hid: egen kidsu18_hh = total(kidsu18)
+tab kidsu18_hh, m
+
+bysort syear hid: egen kidsu6_hh = total(kidsu6)
+tab kidsu6_hh, m
+
+bysort syear hid: egen num_65up_hh = total(age65up)
+tab num_65up_hh, m
+
+sort hid syear
+browse hid pid syear age kidsu18_hh kidsu6_hh num_65up_hh kidsu18 kidsu6 age65up
+
+// can I get age of youngest / oldest?
+bysort syear hid: egen age_youngest_child = min(age) if kidsu18==1
+bysort syear hid: egen age_oldest_child = max(age) if kidsu18==1
+bysort syear hid (age_youngest_child): replace age_youngest_child=age_youngest_child[1]
+bysort syear hid (age_oldest_child): replace age_oldest_child=age_oldest_child[1]
+
+tab age_youngest_child kidsu18_hh
+tab age_oldest_child kidsu18_hh
+
+sort hid syear
+browse hid pid syear age age_youngest_child age_oldest_child kidsu18_hh kidsu6_hh kidsu18 kidsu6
+
+// create lookup files
+preserve
+drop if hid == . | hid==.n | hid==.s
+
+collapse (max) kidsu18_hh kidsu6_hh num_65up_hh age_oldest_child ///
+		(min) age_youngest_child (sum) kidsu18 kidsu6 age65up, by(hid syear) // this at HH level
+
+save "$temp/hh_comp_lookup.dta", replace
+
+restore
