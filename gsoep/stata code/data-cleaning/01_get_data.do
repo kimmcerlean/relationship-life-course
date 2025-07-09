@@ -39,7 +39,7 @@ use pid hid cid syear plh0149-plh0151 using "$data/pl.dta" // so just use the va
 
 // use "$GSOEP/ppathl.dta", clear
 // let's try this way
-use pid syear hid cid sex parid partner psample sampreg netto germborn corigin gebjahr eintritt erstbefr austritt letztbef  using "$GSOEP/ppathl.dta", clear
+use pid syear hid cid sex parid partner psample sampreg netto germborn corigin gebjahr eintritt erstbefr austritt letztbef birthregion_ew using "$GSOEP/ppathl.dta", clear
 
 label language EN
 
@@ -75,6 +75,7 @@ rename netto survey_status_pl
 rename status status_pl
 rename psample psample_pl
 rename sampreg where_germany_pl
+rename birthregion_ew where_born_germany_pl
 
 browse
 
@@ -83,6 +84,10 @@ label define partnered 0 "No partner" 1 "Spouse" 2 "Partner" 3 "Prob Spouse" ///
 label values partnered_pl partnered
 
 tab birthyr_pl, m
+
+tab birthyr_pl where_born_germany_pl, m // okay the year of reunification doesn't quite explain this. I guess it could be if not born in Germany?
+tab born_germany_pl where_born_germany_pl, m
+tab birthyr_pl where_born_germany_pl if born_germany_pl==1, m
 
 save "$temp/ppathl_cleaned.dta", replace
 
@@ -102,7 +107,7 @@ save "$temp/ppathl_partnerstatus.dta", replace
 **# PL
 *** All original individual data
 ********************************************************************************
-use pid syear hid cid intid pab0002 pab0004 pab0005 pab0006 pab0008 pab0013 plb0022_h plb0185_v1 plb0185_v2 plb0186_h plb0193* plb0193_v1 plb0193_v2 plb0196_h plb0197 plb0471_h plb0474_h plc0013_h plc0014_h plc0015_h plc0017_h pld0038 pld0039 pld0040 pld0131_h pld0132_h pld0133 pld0134 pld0135 pld0136 pld0137 pld0138 pld0139 pld0140 pld0141 pld0142 pld0143 pld0144 pld0145 pld0149 pld0150 pld0151 pld0152 pld0153 pld0154 pld0159 ple0008 ple0040 ple0041_h plg0012_h plg0012_v1 plg0012_v2 plh0007 plh0012_h plh0173 plh0174 plh0175 plh0176 plh0178 plh0179 plh0180 plh0182 plh0258_h pli0011 pli0012_h pli0016_h pli0019_h pli0022_h pli0038_h pli0038_v1 pli0038_v2 pli0038_v3 pli0038_v4 pli0040 pli0043_h pli0044_h pli0046 pli0054 pli0055 pli0057 plk0001_v1 plk0001_v2 plk0001_v3 using "$GSOEP/pl.dta", clear // plb0193_h
+use pid syear hid cid intid pab0002 pab0004 pab0005 pab0006 pab0008 pab0013 plb0022_h plb0185_v1 plb0185_v2 plb0186_h plb0193* plb0193_v1 plb0193_v2 plb0196_h plb0197 plb0471_h plb0474_h plc0013_h plc0014_h plc0015_h plc0017_h pld0038 pld0039 pld0040 pld0131_h pld0132_h pld0133 pld0134 pld0135 pld0136 pld0137 pld0138 pld0139 pld0140 pld0141 pld0142 pld0143 pld0144 pld0145 pld0149 pld0150 pld0151 pld0152 pld0153 pld0154 pld0159 ple0008 ple0040 ple0041_h plg0012_h plg0012_v1 plg0012_v2 plh0007 plh0012_h plh0173 plh0174 plh0175 plh0176 plh0178 plh0179 plh0180 plh0182 plh0258_h pli0011 pli0012_h pli0016_h pli0019_h pli0022_h pli0038_h pli0038_v1 pli0038_v2 pli0038_v3 pli0038_v4 pli0040 pli0043_h pli0044_h pli0046 pli0054 pli0055 pli0057 plk0001_v1 plk0001_v2 plk0001_v3 pli0034* pli0049_h pli0031_h using "$GSOEP/pl.dta", clear // plb0193_h
 
 label language EN
 
@@ -191,18 +196,30 @@ rename pli0046 support_weekdays
 rename pli0054 errands_saturdays
 rename pli0055 support_saturdays
 rename pli0057 support_sundays
+rename pli0049_h repair_weekdays
+rename pli0031_h repair_saturdays
+rename pli0034_v1 repair_sundays_v1
+rename pli0034_v2 repair_sundays_v2
+rename pli0034_v3 repair_sundays_v3
+rename pli0034_v4 repair_sundays_v4
 rename plk0001_v1 partnerid_v1
 rename plk0001_v2 partnerid_v2
 rename plk0001_v3 partnerid_v3
 
 save "$temp/pl_cleaned.dta", replace
 
+// tabstat childcare_weekdays housework_weekdays, by(syear) stats(mean N)
+// tabstat childcare_saturdays childcare_sundays housework_saturdays housework_sundays, by(syear) stats(mean N)
+// tabstat errands_weekdays errands_sundays errands_saturdays, by(syear) stats(mean N)
+// tabstat support_weekdays support_saturdays support_sundays, by(syear) stats(mean N)
+// tabstat repair_weekdays repair_saturdays repair_sundays_v1 repair_sundays_v2 repair_sundays_v3 repair_sundays_v4, by(syear) stats(mean N)
+
 ********************************************************************************
 **# PGEN
 *** Generated variables (built from pl and other files by SOEP team to facilitate
 *** analysis); these are recommended over pl variables if both exist
 ********************************************************************************
-use pid syear hid cid pgbilzeit pgcasmin pgdegree pgemplst pgfamstd pgisced11 pgisced97 pglabgro pglabnet pglfs pgnation pgpartnr pgpartz pgpbbil01 pgpbbil02 pgpsbil  pgtatzeit pguebstd pgvebzeit using "$GSOEP/pgen.dta", clear
+use pid syear hid cid pgbilzeit pgcasmin pgdegree pgemplst pgfamstd pgisced11 pgisced97 pglabgro pglabnet pglfs pgnation pgpartnr pgpartz pgpbbil01 pgpbbil02 pgpsbil  pgtatzeit pguebstd pgvebzeit pgstib using "$GSOEP/pgen.dta", clear
 label language EN
 
 unique pid // 125983, 820360
@@ -232,6 +249,7 @@ rename pgtatzeit work_hours_pg
 rename pgvebzeit work_hours_agreed_pg
 rename pguebstd overtime_pg
 rename pgnation nationality_pg
+rename pgstib occupation_position_pg
 
 capture label define partnered 0 "No partner" 1 "Spouse" 2 "Partner" 3 "Prob Spouse" ///
 4 "Prob Partner" 5 "Not Clear"
@@ -273,7 +291,7 @@ save "$temp/pbrutto_cleaned.dta", replace
 *** This is the file created for CNEF (to be comparable to other countries)
 *** Because of that, some of the variables are nicely coded in a way i am used to
 ********************************************************************************
-use pid syear hid cid d11105 d11106 d11107 d11108 d11109 l11101 using "$GSOEP/pequiv.dta", clear // d11112ll
+use pid syear hid cid d11105 d11106 d11107 d11108 d11109 l11101 h11103 h11104 h11105 h11106 h11107 h11108 h11109 m11126 m11124 using "$GSOEP/pequiv.dta", clear // d11112ll
 label language EN
 
 unique pid // 196531, 1196228
@@ -288,6 +306,15 @@ rename d11107 num_children_cnef
 rename d11108 educ_hs_cnef
 rename d11109 yrs_educ_cnef
 rename l11101 federal_state_cnef
+rename h11103 num_hh_0_1_cnef
+rename h11104 num_hh_2_4_cnef
+rename h11105 num_hh_5_7_cnef
+rename h11106 num_hh_8_10_cnef
+rename h11107 num_hh_11_12_cnef
+rename h11108 num_hh_13_15_cnef
+rename h11109 num_hh_16_18_cnef
+rename m11126 self_reported_health_cnef
+rename m11124 disability_yn_cnef
 
 save "$temp/pequiv_cleaned.dta", replace
 

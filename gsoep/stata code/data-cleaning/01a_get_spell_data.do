@@ -782,7 +782,20 @@ tab master_end_yr1 master_rel_type1, m col // end date is much more reliable. sh
 browse pid syear master_rel_type1 master_start_yr1 master_end_yr1 master_start_yr2 master_end_yr2 first_chm_lc couplm_rel1_start couplm_rel1_end couplem_rel1_start_real
 browse pid syear master_rel_type1 master_start_yr1 master_end_yr1 master_start_yr2 master_end_yr2 first_chm_lc couplm_rel1_start couplm_rel1_end couplem_rel1_start_real if master_rel_type1!=.
 
+// inspect master_start_yr1 if master_rel_type1!=.
+// inspect couplm_rel1_start if master_rel_type1!=.
+// inspect couplem_rel1_start_real if master_rel_type1!=.
+// inspect couplem_rel1_start_real if couplm_rel1_start!=.
+
+gen couplm_rel1_miss = .
+replace couplm_rel1_miss = 0 if couplm_rel1_start!=. & couplem_rel1_start_real!=.
+replace couplm_rel1_miss = 1 if couplm_rel1_start!=. & couplem_rel1_start_real==.
+tab  first_chm_lc couplm_rel1_miss, m
+
 forvalues m=1/10{
+	gen master_start_yr`m'_miss = 0
+	replace master_start_yr`m'_miss = 1 if master_start_yr`m'==. & master_rel_type`m'!=.
+	
 	gen master_start_yr`m'_lc = master_start_yr`m' // first make a copy of existing variable
 	
 	replace master_start_yr`m' = couplm_rel1_start if first_chm_lc==1 & master_start_yr`m'==. & master_end_yr`m' == couplm_rel1_end & master_end_yr`m'!=.
@@ -811,12 +824,14 @@ gen current_rel_type=.
 gen current_rel_how_end=.
 gen current_rel_start_yr=.
 gen current_rel_end_yr=.
+gen current_rel_start_miss=.
 
 forvalues r=1/10{
 	replace current_rel_type = master_rel_type`r' if current_rel_number==`r'
 	replace current_rel_how_end = master_how_end`r' if current_rel_number==`r'
 	replace current_rel_start_yr = master_start_yr`r' if current_rel_number==`r'
 	replace current_rel_end_yr = master_end_yr`r' if current_rel_number==`r'
+	replace current_rel_start_miss = master_start_yr`r'_miss if current_rel_number==`r'
 }
 
 label values current_rel_type rel_type
@@ -852,17 +867,17 @@ replace id_check=0 if partner_id_pl!=. & partner_id_rhm!=. & partner_id_pl!=part
 replace id_check=1 if partner_id_pl!=. & partner_id_rhm!=. & partner_id_pl==partner_id_rhm
 
 tab id_check, m
-tab partner_id_pl if id_check==0, m // this is mostly because of .n -- since v40, there are now too many options 
+// tab partner_id_pl if id_check==0, m // this is mostly because of .n -- since v40, there are now too many options 
 inspect partner_id_pl if id_check==0 // only 12% are missing
 tab partner_id_rhm if id_check==0, m 
-inspect partner_id_rhm if id_check==0 /// okay close to 97% are bc partner_id_rhm is -2 - they said they made some changes to the partner ids in ppathl so maybe this why
+inspect partner_id_rhm if id_check==0 // okay close to 97% are bc partner_id_rhm is -2 - they said they made some changes to the partner ids in ppathl so maybe this why
 // is this also because they only have partner id if current. it's seem as though it has gotten worse between v39 and v40 but I can't figure out why from the "what's new" - I think I can just use the info from ppathl anyway.
 
 // it's possible this is also bc of the dropout years that a partner is recorded - that is why pl partner id will be filled in but the rhm will be -2
 tab full_status_pl if id_check==0, m // okay that does not explain it at all 
 
 // clean up file to make it smaller
-drop rhm_partnr* rhm_beginy* rhm_endy* rhm_rel_type* master_rel_type* master_how_end* master_start_yr* master_end_yr* couplm_rel1_start couplem_rel1_start_real first_chm_lc
+drop rhm_partnr* rhm_beginy* rhm_endy* rhm_rel_type* master_rel_type* master_how_end* master_start_yr* master_end_yr* // couplm_rel1_start couplem_rel1_start_real first_chm_lc
 
 save "$created_data/ppathl_partnership_history.dta", replace
 
