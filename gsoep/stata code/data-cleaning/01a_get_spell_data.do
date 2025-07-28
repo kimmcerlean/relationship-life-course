@@ -876,6 +876,76 @@ inspect partner_id_rhm if id_check==0 // okay close to 97% are bc partner_id_rhm
 // it's possible this is also bc of the dropout years that a partner is recorded - that is why pl partner id will be filled in but the rhm will be -2
 tab full_status_pl if id_check==0, m // okay that does not explain it at all 
 
+********************************************************************************
+* Attempting to fill in missing info (this was previously in step 2 but moving)
+********************************************************************************
+
+// there are definitely people listed as partnered in this file that I don't have recorded as partnered. So, should I use my normal relationship start / end indicators as a backup? need to do this before I drop non-partnered people (So have the non-partnered year to observe a transition)
+
+inspect current_rel_start_yr if partner_id_pl!=. & partner_id_pl!=.n & full_status_pl!=0 // about 5% (the dropout years I still need to sort out...bc with those, it's more like 13%
+browse pid syear partnered_pl current_rel_number current_rel_type current_rel_start_yr current_rel_end_yr partner_id_pl partner_id_rhm full_status_pl
+
+sort pid syear
+
+*enter
+gen rel_start=0
+replace rel_start=1 if (inrange(partnered_pl,1,4) & partnered_pl[_n-1]==0) & pid==pid[_n-1] & syear==syear[_n-1]+1
+
+*exit
+gen rel_end=0
+replace rel_end=1 if (partnered_pl==0 & inrange(partnered_pl[_n-1],1,4)) & pid==pid[_n-1] & syear==syear[_n-1]+1
+
+gen rel_end_pre=0
+replace rel_end_pre=1 if (inrange(partnered_pl,1,4) & partnered_pl[_n+1]==0) & pid==pid[_n+1] & syear==syear[_n+1]-1
+
+*cohab to marr
+gen marr_trans=0
+replace marr_trans=1 if (inlist(partnered_pl,1,3) & inlist(partnered_pl[_n-1],2,4)) & pid==pid[_n-1] & partner_id_pl==partner_id_pl[_n-1] & syear==syear[_n-1]+1
+
+* then create indicator of start date
+gen current_rel_start_est = syear if rel_start==1
+bysort pid partner_id_pl (current_rel_start_est): replace current_rel_start_est=current_rel_start_est[1] if partner_id_pl!=.
+
+gen current_rel_end_est = syear if rel_end_pre==1
+bysort pid partner_id_pl (current_rel_end_est): replace current_rel_end_est=current_rel_end_est[1]  if partner_id_pl!=. 
+
+gen transition_year = syear if marr_trans==1
+bysort pid partner_id_pl (transition_year): replace transition_year=transition_year[1]  if partner_id_pl!=. 
+
+bysort pid partner_id_pl: egen ever_transition = max(marr_trans) if inrange(partnered_pl,1,4)
+
+sort pid syear
+
+gen current_rel_start_yr_v0 = current_rel_start_yr // I like to retain original copies
+gen current_rel_end_yr_v0 = current_rel_end_yr // I like to retain original copies
+
+replace current_rel_start_yr = current_rel_start_est if current_rel_start_yr==. & current_rel_start_est!=. & partner_id_pl!=. & syear>=current_rel_start_est
+replace current_rel_end_yr = current_rel_end_est if current_rel_end_yr==. & current_rel_end_est!=. & partner_id_pl!=. & syear<=current_rel_end_est
+
+* Can I also figure out the relationship number?
+tab current_rel_number if inrange(partnered_pl,1,4), m
+
+browse pid syear status_pl partnered_pl partner_id_pl current_rel_number current_rel_start_yr current_rel_start_est current_rel_end_yr master_start_yr1 master_end_yr1 master_start_yr2 master_end_yr2 rhm_beginy1 rhm_endy1 rhm_beginy2 rhm_endy2 if inlist(partnered_pl,1,2) & current_rel_number==. 
+
+sort pid syear
+replace current_rel_number = current_rel_number[_n-1] if current_rel_number==. & inrange(partnered_pl,1,4) & pid==pid[_n-1] & syear==syear[_n-1]+1 & partner_id_pl==partner_id_pl[_n-1] // & current_rel_start_yr==current_rel_start_yr[_n-1] // the dropout years causing problems
+
+gen rel_counter=0 // see ukhls step c (around row 900)
+forvalues r=1/10{
+	replace rel_counter = rel_counter + 1 if master_start_yr`r' <= syear // this is meant to cover all relationship types
+}
+
+gen rel_no_est = current_rel_number
+replace rel_no_est = rel_counter + 1 if rel_no_est==. & inrange(partnered_pl,1,4) // estimate
+
+gen current_rel_number_v0 = current_rel_number
+replace current_rel_number = rel_no_est if current_rel_number==.
+
+sort pid syear
+browse pid syear status_pl partnered_pl partner_id_pl current_rel_number current_rel_start_yr current_rel_start_est current_rel_end_yr master_start_yr1 master_end_yr1 master_start_yr2 master_end_yr2 rhm_beginy1 rhm_endy1 rhm_beginy2 rhm_endy2 if inlist(partnered_pl,1,2) & current_rel_number_v0==. 
+
+browse pid syear status_pl partnered_pl partner_id_pl current_rel_number current_rel_number_v0 current_rel_start_yr current_rel_start_est current_rel_end_yr master_start_yr1 master_end_yr1 master_start_yr2 master_end_yr2 rhm_beginy1 rhm_endy1 rhm_beginy2 rhm_endy2 if inlist(pid,103,6301, 25821002,26223302)
+
 // clean up file to make it smaller
 drop rhm_partnr* rhm_beginy* rhm_endy* rhm_rel_type* master_rel_type* master_how_end* master_start_yr* master_end_yr* // couplm_rel1_start couplem_rel1_start_real first_chm_lc
 
@@ -1032,6 +1102,14 @@ save "$temp/mpf_lookup.dta", replace
 restore
 
 ********************************************************************************
+********************************************************************************
+********************************************************************************
+**# Other household composition info
+********************************************************************************
+********************************************************************************
+********************************************************************************
+
+********************************************************************************
 * Trying to get age of youngest / oldest child in HH
 * OH and I could also possibly use this to get number of people over 65?
 * (do I need this since I have actual care hours? Feel like I did this for US
@@ -1088,5 +1166,96 @@ collapse (max) kidsu18_hh kidsu6_hh num_65up_hh age_oldest_child ///
 		(min) age_youngest_child (sum) kidsu18 kidsu6 age65up, by(hid syear) // this at HH level
 
 save "$temp/hh_comp_lookup.dta", replace
+
+restore
+
+********************************************************************************
+* Attempting to use mother / father id and / or relationship info
+* aka parent / child to get a sense of whether mother / father in HH
+* Variables provided by SOEP don't have great coverage so want to see if 
+* I can supplement here (this is following PSID code I wrote)
+********************************************************************************
+use "$temp/pbrutto_cleaned.dta", clear // this file has the relationship info
+
+tabstat relation_pb relation_v1_pb relation_v2_pb relation_v3_pb relation_v4_pb, by(syear)
+label values relation_pb stell_h 
+tab relation_pb // this might not be that helpful because this isnt a relationship matrix; so only useful if parent of HH head is in the HH, but you don't know if they are parent of someone else...
+
+gen hh_relation_gp = .
+replace hh_relation_gp = 0 if relation_pb == 0
+replace hh_relation_gp = 1 if inlist(relation_pb,11,12,13)
+replace hh_relation_gp = 2 if inrange(relation_pb,20,24)
+replace hh_relation_gp = 3 if inrange(relation_pb,30,35)
+replace hh_relation_gp = 4 if inrange(relation_pb,25,27)
+replace hh_relation_gp = 4 if inrange(relation_pb,36,71)
+replace hh_relation_gp = 99 if relation_pb==99
+
+label define relation 0 "HH Head" 1 "Partner" 2 "Child" 3 "Parent" 4 "Other Rel / Non-rel" 99 "Unknown"
+label values hh_relation_gp relation
+
+merge m:1 pid using "$temp/bioparen_cleaned.dta"
+drop if _merge==2
+tab survey_status_pb _merge, m row
+drop _merge
+
+gen age = syear - birthyr_pb
+
+browse pid syear hid age hh_relation_gp father_pid_bp mother_pid_bp
+
+// browse pid syear hid cid age hh_relation_gp father_pid_bp mother_pid_bp if hid==.s
+// browse pid syear hid cid age hh_relation_gp father_pid_bp mother_pid_bp if inlist(pid, 46803,588503)
+// browse pid syear hid cid age hh_relation_gp father_pid_bp mother_pid_bp if inlist(cid, 27, 60, 175, 4685, 40126, 58858)
+
+drop if hid==.s // wanted to see if I could use cid but that feels risky too
+
+// count how many distinct mother / father IDs in HH
+quietly unique father_pid_bp if father_pid_bp!=., by(hid syear) gen(num_fathers)
+bysort hid syear (num_fathers): replace num_fathers=num_fathers[1]
+tab num_fathers, m
+
+quietly unique mother_pid_bp if mother_pid_bp!=., by(hid syear) gen(num_mothers)
+bysort hid syear (num_mothers): replace num_mothers=num_mothers[1]
+tab num_mothers, m // up to 3 fathers and 4 mothers
+
+bysort hid syear (father_pid_bp): gen father_no = sum(father_pid_bp != father_pid_bp[_n-1]) if father_pid_bp!=.
+bysort hid syear (mother_pid_bp): gen mother_no = sum(mother_pid_bp != mother_pid_bp[_n-1]) if mother_pid_bp!=.
+
+forvalues n=1/4{
+	gen father_no`n' = father_pid_bp if father_no==`n'
+	bysort hid syear (father_no`n'): replace father_no`n'=father_no`n'[1]
+	gen mother_no`n' = mother_pid_bp if mother_no==`n'
+	bysort hid syear (mother_no`n'): replace mother_no`n'=mother_no`n'[1]
+}
+
+forvalues n=1/4{
+	capture drop father`n'_in_hh
+	capture drop mother`n'_in_hh
+
+	capture gen father`n'_in_hh = .
+	replace father`n'_in_hh = 1  if pid == father_no`n'
+	bysort hid syear (father`n'_in_hh): replace father`n'_in_hh=father`n'_in_hh[1]
+	capture gen mother`n'_in_hh = .
+	replace mother`n'_in_hh = 1  if pid == mother_no`n'
+	bysort hid syear (mother`n'_in_hh): replace mother`n'_in_hh=mother`n'_in_hh[1]
+}
+
+browse pid syear hid age hh_relation_gp num_fathers father*_in_hh father_no* father_pid_bp mother*_in_hh mother_no* num_mothers mother_pid_bp
+
+// now want to designate if that person's father / mother specifically is in HH
+gen father_in_hh = 0
+gen mother_in_hh = 0
+
+forvalues n=1/4{
+	replace father_in_hh = 1 if father_no`n' == father_pid_bp & father`n'_in_hh == 1
+	replace mother_in_hh = 1 if mother_no`n' == mother_pid_bp & mother`n'_in_hh == 1
+}
+
+browse pid syear hid age hh_relation_gp father_in_hh father_pid_bp num_fathers father*_in_hh father_no*  mother_in_hh mother_pid_bp mother*_in_hh mother_no* num_mothers 
+
+// create lookup file
+preserve
+
+collapse (max) father_in_hh mother_in_hh, by(pid syear)
+save "$temp/parent_coresidence_lookup.dta", replace
 
 restore

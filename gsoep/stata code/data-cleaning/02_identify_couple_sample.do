@@ -27,48 +27,6 @@ use "$created_data/ppathl_partnership_history.dta", replace // alternatively, co
 // this is going to drop the durations not in sample anyway because won't be "partnered" so going to do what i did with UKHLS - use this to just get a unique list of ids in couples (NOT by year) to THEN use with ppathl as base file to THEN merge on rest of info.
 // OUTPUT HERE: list of eligible IDS
 
-// there are definitely people listed as partnered in this file that I don't have recorded as partnered. So, should I use my normal relationship start / end indicators as a backup? need to do this before I drop non-partnered people (So have the non-partnered year to observe a transition)
-
-inspect current_rel_start_yr if partner_id_pl!=. & partner_id_pl!=.n & full_status_pl!=0 // about 5% (the dropout years I still need to sort out...bc with those, it's more like 13%
-browse pid syear partnered_pl current_rel_number current_rel_type current_rel_start_yr current_rel_end_yr partner_id_pl partner_id_rhm full_status_pl
-
-sort pid syear
-
-*enter
-gen rel_start=0
-replace rel_start=1 if (inrange(partnered_pl,1,4) & partnered_pl[_n-1]==0) & pid==pid[_n-1] & syear==syear[_n-1]+1
-
-*exit
-gen rel_end=0
-replace rel_end=1 if (partnered_pl==0 & inrange(partnered_pl[_n-1],1,4)) & pid==pid[_n-1] & syear==syear[_n-1]+1
-
-gen rel_end_pre=0
-replace rel_end_pre=1 if (inrange(partnered_pl,1,4) & partnered_pl[_n+1]==0) & pid==pid[_n+1] & syear==syear[_n+1]-1
-
-*cohab to marr
-gen marr_trans=0
-replace marr_trans=1 if (inlist(partnered_pl,1,3) & inlist(partnered_pl[_n-1],2,4)) & pid==pid[_n-1] & partner_id_pl==partner_id_pl[_n-1] & syear==syear[_n-1]+1
-
-* then create indicator of start date
-gen current_rel_start_est = syear if rel_start==1
-bysort pid partner_id_pl (current_rel_start_est): replace current_rel_start_est=current_rel_start_est[1] if partner_id_pl!=.
-
-gen current_rel_end_est = syear if rel_end_pre==1
-bysort pid partner_id_pl (current_rel_end_est): replace current_rel_end_est=current_rel_end_est[1]  if partner_id_pl!=. 
-
-gen transition_year = syear if marr_trans==1
-bysort pid partner_id_pl (transition_year): replace transition_year=transition_year[1]  if partner_id_pl!=. 
-
-bysort pid partner_id_pl: egen ever_transition = max(marr_trans) if inrange(partnered_pl,1,4)
-
-sort pid syear
-
-gen current_rel_start_yr_v0 = current_rel_start_yr // I like to retain original copies
-gen current_rel_end_yr_v0 = current_rel_end_yr // I like to retain original copies
-
-replace current_rel_start_yr = current_rel_start_est if current_rel_start_yr==. & current_rel_start_est!=. & partner_id_pl!=. & syear>=current_rel_start_est
-replace current_rel_end_yr = current_rel_end_est if current_rel_end_yr==. & current_rel_end_est!=. & partner_id_pl!=. & syear<=current_rel_end_est
-
 // first, restrict to couples
 * need to figure out which values I should keep based on which partnered have ids
 inspect partner_id_pl if partnered_pl==0 // all missing
@@ -146,6 +104,7 @@ browse couple_id pid partner_id_pl partnered_pl syear current_rel_number current
 bysort pid partner_id_pl: egen rel_number_all = min(current_rel_number) if partner_id_pl!=. // think it is as simple as this? I just use the first rel number because it's a continuous relationship from that point?
 // one problem is that SOMETIMES that info is missing. this is primarily problematic if cohab is missing but not marriage - because marriage might be incremented one too many? or if cohab is just missing as a relationship then the marriage number should be applied to cohab and is therefore right? I think this is another like do the best we can with what we have
 sort couple_id pid syear
+// browse couple_id pid partner_id_pl partnered_pl syear rel_number_all current_rel_number current_rel_type ever_transition rel_start_all rel_end_all current_rel_start_yr current_rel_end_yr 
 
 // probably need to also update "how end" - because we want info from the LAST partnership not the first (like cohab will probably say break up but married will say intact)
 browse couple_id pid partner_id_pl partnered_pl syear current_rel_number current_rel_type current_rel_how_end ever_transition rel_start_all rel_end_all current_rel_start_yr current_rel_end_yr full_status_pl
@@ -272,7 +231,7 @@ unique couple_id if rel_start_yr_couple >= 1990 & inlist(min_dur,0,1) & rel_star
 ********************************
 * Actual restrictions
 ********************************
-keep if rel_start_yr_couple >= 1990 & inlist(min_dur,0,1) // keeping up to two, because if got married in 2001, say, might not appear in survey until 2003, which is a problem. 
+keep if rel_start_yr_couple >= 1990 & inlist(min_dur,0,1) // keeping up to one in case marriage recorded after survey in year prior
 keep if rel_start_yr_couple <=2020 // now will be 2020 because updated to 2023 (and assume 1st year of full data is 2021, so that's three years)
 
 * Also - we are certain of relationship start date (so if both partners were missing / estimated - probably drop?) let's do this after I do the above
