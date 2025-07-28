@@ -14,12 +14,15 @@
 * Then, we merge all datasets together to create one master file
 * No real recoding or cleaning besides missing values happens in this step
 
-net install soephelp,from("https://git.soep.de/mpetrenz/soephelp/-/raw/master/") replace
+// net install soephelp,from("https://git.soep.de/mpetrenz/soephelp/-/raw/master/") replace // moved to setup file
 
 /*from website: https://companion.soep.de/Data%20Structure%20of%20SOEPcore/Data%20Sets.html#
 (see section on pl)
 alt option to not need to load SIX GB of data
 use pid hid cid syear plh0149-plh0151 using "$data/pl.dta" // so just use the variables you want (though, I probably have a longer list of variables, but still much less than the full dataset)
+
+Useful info re: updates from v39 to v40 (and historical updates as well):
+https://git.soep.de/kwenzig/publicecoredoku/-/blob/master/meta/WhatsNew.md
 */
 
 ********************************************************************************
@@ -39,7 +42,7 @@ use pid hid cid syear plh0149-plh0151 using "$data/pl.dta" // so just use the va
 
 // use "$GSOEP/ppathl.dta", clear
 // let's try this way
-use pid syear hid cid sex parid partner psample sampreg netto germborn corigin gebjahr eintritt erstbefr austritt letztbef birthregion_ew using "$GSOEP/ppathl.dta", clear
+use pid syear hid cid sex parid partner psample sampreg netto germborn corigin gebjahr eintritt erstbefr austritt letztbef birthregion_ew birthregion loc1989 using "$GSOEP/ppathl.dta", clear
 
 label language EN
 
@@ -75,7 +78,9 @@ rename netto survey_status_pl
 rename status status_pl
 rename psample psample_pl
 rename sampreg where_germany_pl
-rename birthregion_ew where_born_germany_pl
+rename birthregion_ew where_born_ew_pl
+rename birthregion where_born_state_pl
+rename loc1989 where_1989_ew_pl
 
 browse
 
@@ -85,9 +90,14 @@ label values partnered_pl partnered
 
 tab birthyr_pl, m
 
-tab birthyr_pl where_born_germany_pl, m // okay the year of reunification doesn't quite explain this. I guess it could be if not born in Germany?
-tab born_germany_pl where_born_germany_pl, m
-tab birthyr_pl where_born_germany_pl if born_germany_pl==1, m
+tab birthyr_pl where_born_ew_pl, m // okay the year of reunification doesn't quite explain this. I guess it could be if not born in Germany?
+tab born_germany_pl where_born_ew_pl, m
+tab birthyr_pl where_born_ew_pl if born_germany_pl==1, m
+tab birthyr_pl where_born_state_pl, m
+tab syear where_born_state_pl, m
+tab where_born_state_pl if born_germany_pl==1, m
+
+tab where_born_state_pl where_born_ew_pl , m 
 
 save "$temp/ppathl_cleaned.dta", replace
 
@@ -107,7 +117,7 @@ save "$temp/ppathl_partnerstatus.dta", replace
 **# PL
 *** All original individual data
 ********************************************************************************
-use pid syear hid cid intid pab0002 pab0004 pab0005 pab0006 pab0008 pab0013 plb0022_h plb0185_v1 plb0185_v2 plb0186_h plb0193* plb0193_v1 plb0193_v2 plb0196_h plb0197 plb0471_h plb0474_h plc0013_h plc0014_h plc0015_h plc0017_h pld0038 pld0039 pld0040 pld0131_h pld0132_h pld0133 pld0134 pld0135 pld0136 pld0137 pld0138 pld0139 pld0140 pld0141 pld0142 pld0143 pld0144 pld0145 pld0149 pld0150 pld0151 pld0152 pld0153 pld0154 pld0159 ple0008 ple0040 ple0041_h plg0012_h plg0012_v1 plg0012_v2 plh0007 plh0012_h plh0173 plh0174 plh0175 plh0176 plh0178 plh0179 plh0180 plh0182 plh0258_h pli0011 pli0012_h pli0016_h pli0019_h pli0022_h pli0038_h pli0038_v1 pli0038_v2 pli0038_v3 pli0038_v4 pli0040 pli0043_h pli0044_h pli0046 pli0054 pli0055 pli0057 plk0001_v1 plk0001_v2 plk0001_v3 pli0034* pli0049_h pli0031_h using "$GSOEP/pl.dta", clear // plb0193_h
+use pid syear hid cid intid pab0002 pab0004 pab0005 pab0006 pab0008 pab0013 plb0022_h plb0185_v1 plb0185_v2 plb0186_h plb0193* plb0193_v1 plb0193_v2 plb0196_h plb0197 plb0471_h plb0474_h plc0013_h plc0014_h plc0015_h plc0017_h pld0038 pld0039 pld0040 pld0131_h pld0132_h pld0133 pld0134 pld0135 pld0136 pld0137 pld0138 pld0139 pld0140 pld0141 pld0142 pld0143 pld0144 pld0145 pld0149 pld0150 pld0151 pld0152 pld0153 pld0154 pld0159 ple0008 ple0040 ple0041_h plg0012_h plg0012_v1 plg0012_v2 plh0007 plh0012_h plh0173 plh0174 plh0175 plh0176 plh0178 plh0179 plh0180 plh0182 plh0258_h pli0011 pli0012_h pli0016_h pli0019_h pli0022_h pli0038_h pli0038_v1 pli0038_v2 pli0038_v3 pli0038_v4 pli0040 pli0043_h pli0044_h pli0046 pli0054 pli0055 pli0057 plk0001_v1 plk0001_v2 plk0001_v3 pli0034* pli0049_h pli0031_h plb0304_h pld0002 pld0023 plj0118_h pld0001 pld0024 plj0119_h using "$GSOEP/pl.dta", clear // plb0193_h
 
 label language EN
 
@@ -205,6 +215,13 @@ rename pli0034_v4 repair_sundays_v4
 rename plk0001_v1 partnerid_v1
 rename plk0001_v2 partnerid_v2
 rename plk0001_v3 partnerid_v3
+rename plb0304_h employment_termination
+rename pld0002 mother_live_pl_v1
+rename pld0023 mother_present_yn_pl
+rename plj0118_h mother_live_pl_v2
+rename pld0001 father_live_pl_v1
+rename pld0024 father_present_yn_pl
+rename plj0119_h father_live_pl_v2
 
 save "$temp/pl_cleaned.dta", replace
 
@@ -290,8 +307,10 @@ save "$temp/pbrutto_cleaned.dta", replace
 **# PEQUIV
 *** This is the file created for CNEF (to be comparable to other countries)
 *** Because of that, some of the variables are nicely coded in a way i am used to
+*** Okay, but need to note, this has NOT been updated for v40, so still on v39
+*** So actually probably DON'T want to overrely on these data
 ********************************************************************************
-use pid syear hid cid d11105 d11106 d11107 d11108 d11109 l11101 h11103 h11104 h11105 h11106 h11107 h11108 h11109 m11126 m11124 using "$GSOEP/pequiv.dta", clear // d11112ll
+use pid syear hid cid d11105 d11106 d11107 d11108 d11109 l11101 h11103 h11104 h11105 h11106 h11107 h11108 h11109 m11126 m11124 i11101 i11102 i11103 using "$GSOEP/pequiv.dta", clear // d11112ll
 label language EN
 
 unique pid // 196531, 1196228
@@ -315,8 +334,35 @@ rename h11108 num_hh_13_15_cnef
 rename h11109 num_hh_16_18_cnef
 rename m11126 self_reported_health_cnef
 rename m11124 disability_yn_cnef
+rename i11101 hh_gross_income_py_cnef
+rename i11102 hh_net_income_py_cnef
+rename i11103 hh_gross_laborinc_py_cnef
 
 save "$temp/pequiv_cleaned.dta", replace
+
+********************************************************************************
+**# PKAL
+*** Data from the monthly calendar from the individual questionnaires (long)
+*** Only using this because CPF pulls in a few variables
+*** from here to calculate retirement status
+********************************************************************************
+use pid syear hid cid kal1e01 kal2d01_h using "$GSOEP/pkal.dta", clear
+label language EN
+
+unique pid // 125994 820405
+tab syear, m
+sort pid syear
+
+mvdecode _all, mv(-9=.\-8=.s\-7/-6=.\-5=.s\-4/-3=.\-2=.n\-1=.) // .s = not in survey, .n is n/a, regular missing is dk, etc. -9 new as of v40
+
+rename kal1e01 early_ret_pension_py_pk
+rename kal2d01_h old_age_pension_py_pk
+
+foreach var in early_ret_pension_py_pk old_age_pension_py_pk{
+	replace `var' = 0 if `var'==2
+}
+
+save "$temp/pkal_cleaned.dta", replace
 
 ********************************************************************************
 **# BIOL
@@ -406,7 +452,7 @@ save "$temp/biol_cleaned.dta", replace
 *** HOWEVER, this is not always up to date up to the same info as the main survey
 *** so need to figure this out. Think only updated through 2019 respondents atm
 ********************************************************************************
-use pid cid fcurrloc fprofedu fsedu locchild1 mcurrloc mprofedu msedu bioyear living* using "$GSOEP/bioparen.dta", clear // this is JUST keyed on pid - so it is 1 row per pid, NOT long
+use pid cid fcurrloc falocup fprofedu fsedu locchild1 mcurrloc malocup mprofedu msedu fnr1 mnr1 fydeath mydeath bioyear bioup living* using "$GSOEP/bioparen.dta", clear // this is JUST keyed on pid - so it is 1 row per pid, NOT long
 label language EN
 
 unique pid // 118608, 118608
@@ -418,13 +464,20 @@ tab bioyear, m // okay so in v39, biography surveys not updated past 2019, but n
 mvdecode _all, mv(-9=.\-8=.s\-7/-6=.\-5=.s\-4/-3=.\-2=.n\-1=.) // .s = not in survey, .n is n/a, regular missing is dk, etc. -9 new as of v40
 
 rename fcurrloc where_father_live_bp
+rename falocup father_live_updated_bp
 rename fprofedu father_vocational_bp
 rename fsedu father_educ_bp
 rename locchild1 live_fam_bp
 rename mcurrloc where_mother_live_bp
+rename malocup mother_live_updated_bp
 rename mprofedu mother_vocational_bp
 rename msedu mother_educ_bp
+rename fnr1 father_pid_bp
+rename mnr1 mother_pid_bp
+rename fydeath father_death_yr_bp
+rename mydeath mother_death_yr_bp
 rename bioyear bioyear_bp
+rename bioup bio_updated_bp
 rename living1 num_yrs_bio_bp
 rename living2 num_yrs_singlemom_bp
 rename living3 num_yrs_partneredmom_bp
@@ -448,7 +501,7 @@ save "$temp/bioparen_cleaned.dta", replace
 **# HL
 *** All original HH data
 ********************************************************************************
-use hid syear cid intid hlc0005_h hlf0001_h hlf0153_h hlf0261 hlf0291 hlf0315_h hlf0317_h hlf0320 hlk0044_v1 hlk0044_v2 hlk0044_v3 using "$GSOEP/hl.dta", clear
+use hid syear cid intid hlc0005_h hlf0001_h hlf0153_h hlf0261 hlf0291 hlf0315_h hlf0317_h hlf0320 hlk0044_v1 hlk0044_v2 hlk0044_v3 hlf0135 using "$GSOEP/hl.dta", clear
 label language EN
 
 unique hid // 72943, 468837
@@ -463,6 +516,7 @@ tab hlk0044_v3, m
 rename hlc0005_h hh_net_income_monthly_hl
 rename hlf0001_h housing_status_hl
 rename hlf0153_h area_live_hl
+rename hlf0135 distance_metro_hl
 rename hlf0261 outside_help_hl
 rename hlf0291 aid_in_hh_hl
 rename hlf0315_h aid_outside_hh_hl
@@ -511,3 +565,22 @@ rename bula_h federal_state_hb
 rename hhgr hh_size_hb
 
 save "$temp/hbrutto_cleaned.dta", replace
+
+********************************************************************************
+**# REGIONL
+*** Struggling to find documentation but *think* this is urban / rural at least
+*** Think most of this is only available with contract
+********************************************************************************
+use "$GSOEP/regionl.dta", clear
+label language EN
+
+unique hid // 316487, 565967 // why are there so many hids?!
+
+mvdecode _all, mv(-9=.\-8=.s\-7/-6=.\-5=.s\-4/-3=.\-2=.n\-1=.) // .s = not in survey, .n is n/a, regular missing is dk, etc. -9 new as of v40
+
+keep hid syear regtyp
+
+rename regtyp region_type
+
+save "$temp/regionl_cleaned.dta", replace
+

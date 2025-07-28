@@ -27,6 +27,8 @@ set seed 8675309
 // net install cleanplots, from("https://tdmize.github.io/data/cleanplots")
 set scheme cleanplots
 
+net install soephelp,from("https://git.soep.de/mpetrenz/soephelp/-/raw/master/") replace
+
 // net install desctable, from("https://tdmize.github.io/data") replace
 
 // net install mimrgns, from("http://fmwww.bc.edu/RePEc/bocode/m/") replace

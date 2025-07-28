@@ -590,8 +590,8 @@ replace fedu3=temp_fedu3 if temp_fedu3>fedu3 & (temp_fedu3>0 & temp_fedu3<.)
 
 	
 * edu4
-recode fsedu (6/8=1)(1/2=2) (3 9=3)(4 5=3) (-5=-8)(-2=-3) (0=-1), gen(fedu4)
-recode fprofedu (26/27 30/32=4) (20 28=3) (50 51=1) (20 23=2)	///
+recode fsedu (6/8=1)(1/2=2) (3 9=3)(4 5=3) (-5=-8)(-2=-3) (0=-1), gen(fedu4)  // from bioparen: father_educ_bp
+recode fprofedu (26/27 30/32=4) (20 28=3) (50 51=1) (20 23=2)	/// // from bioparen: father_vocational_bp
 				(-5/0=-10) (else=-9),  gen(temp_fedu4)
 
 replace fedu4=temp_fedu4 if (fedu4==. | fedu4<0) & (temp_fedu4>0 & temp_fedu4<.) 

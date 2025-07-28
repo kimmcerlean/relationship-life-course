@@ -72,7 +72,7 @@ assert eligible_rel_start_year!=.
 assert eligible_rel_end_year!=.
 // assert eligible_rel_status!=. // this is false - I think because not complete for everyone (this was true in UKHLS as well)
 assert eligible_partner!=.
-// assert eligible_rel_no!=. // this is false - I think because not complete for everyone  (this was true in UKHLS as well)
+assert eligible_rel_no!=. // I fixed this
 
 // now generate a relationship duration so I know which years to keep
 generate relative_duration = syear - eligible_rel_start_year
@@ -139,6 +139,12 @@ drop _merge
 merge 1:1 pid hid cid syear using "$temp/pequiv_cleaned.dta"
 drop if _merge==2
 tab status_pl _merge, m // some no int years actually also match (unclear if there is valid data though)
+tab syear _merge, m // in theory this isn't updated through 2023, but some still match?
+drop _merge
+
+merge 1:1 pid hid cid syear using "$temp/pkal_cleaned.dta"
+drop if _merge==2
+tab status_pl _merge, m // confirm that the non-matches are non-sample
 drop _merge
 
 merge 1:1 pid hid cid syear using "$temp/biol_cleaned.dta" // this file is chaos and really actually only matches one year -- will merge on as is for now, but might need to revisit  this file and its use and uniqueness. ideal is to use bioparen anyway (bc that is just pid)
@@ -183,6 +189,14 @@ tab status_pl _merge, m // bc hbrutto also contains non sample info AND it's HH 
 drop _merge
 
 merge m:1 hid syear using "$temp/hh_comp_lookup.dta"
+drop if _merge==2 // same here as above bc it's HH info
+drop _merge
+
+merge m:1 pid syear using "$temp/parent_coresidence_lookup.dta"
+drop if _merge==2 //
+drop _merge
+
+merge m:1 hid syear using "$temp/regionl_cleaned.dta"
 drop if _merge==2 // same here as above bc it's HH info
 drop _merge
 
