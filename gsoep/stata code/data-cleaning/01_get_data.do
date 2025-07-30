@@ -310,7 +310,7 @@ save "$temp/pbrutto_cleaned.dta", replace
 *** Okay, but need to note, this has NOT been updated for v40, so still on v39
 *** So actually probably DON'T want to overrely on these data
 ********************************************************************************
-use pid syear hid cid d11105 d11106 d11107 d11108 d11109 l11101 h11103 h11104 h11105 h11106 h11107 h11108 h11109 m11126 m11124 i11101 i11102 i11103 using "$GSOEP/pequiv.dta", clear // d11112ll
+use pid syear hid cid d11105 d11106 d11107 d11108 d11109 l11101 h11103 h11104 h11105 h11106 h11107 h11108 h11109 m11126 m11124 i11110 i11101 i11102 i11103 using "$GSOEP/pequiv.dta", clear // d11112ll
 label language EN
 
 unique pid // 196531, 1196228
@@ -334,6 +334,7 @@ rename h11108 num_hh_13_15_cnef
 rename h11109 num_hh_16_18_cnef
 rename m11126 self_reported_health_cnef
 rename m11124 disability_yn_cnef
+rename i11110 earnings_gross_py_cnef
 rename i11101 hh_gross_income_py_cnef
 rename i11102 hh_net_income_py_cnef
 rename i11103 hh_gross_laborinc_py_cnef

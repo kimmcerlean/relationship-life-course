@@ -81,7 +81,7 @@ browse pid partnered_pl partner_id_pl syear relative_duration max_eligible_rels 
 
 // keep a few durations around 0 to 10
 keep if relative_duration >=-2
-keep if relative_duration <=12
+keep if relative_duration <=13 // updating this to 13 for now so I can fill in the PY income through 12, but will drop before I impute, so this really only matters for that
 
 save "$temp/gsoep_couple_sample_base.dta", replace // here we save the file of couples for which we will now merge the rest of the data onto.
 
@@ -121,33 +121,33 @@ unique pid eligible_partner // 29531
 // there will be quite a bit of non-matches, but validating that the sample years do have matches
 use "$temp/gsoep_couple_sample_base.dta", clear
 
-merge 1:1 pid hid cid syear using "$temp/pl_cleaned.dta"
+merge 1:1 pid syear using "$temp/pl_cleaned.dta" // hid cid 
 drop if _merge==2
 tab status_pl _merge, m // confirm that the non-matches are non-sample
 drop _merge
 
-merge 1:1 pid hid cid syear using "$temp/pgen_cleaned.dta"
+merge 1:1 pid syear using "$temp/pgen_cleaned.dta" // hid cid 
 drop if _merge==2
 tab status_pl _merge, m // confirm that the non-matches are non-sample
 drop _merge
 
-merge 1:1 pid hid cid syear using "$temp/pbrutto_cleaned.dta"
+merge 1:1 pid syear using "$temp/pbrutto_cleaned.dta" // hid cid 
 drop if _merge==2
 tab status_pl _merge, m // pbrutto actully also contains info from non-sample years, so match rate is much higher (<1% non-match - but still all dropouts)
 drop _merge
 
-merge 1:1 pid hid cid syear using "$temp/pequiv_cleaned.dta"
+merge 1:1 pid syear using "$temp/pequiv_cleaned.dta" // hid cid 
 drop if _merge==2
 tab status_pl _merge, m // some no int years actually also match (unclear if there is valid data though)
 tab syear _merge, m // in theory this isn't updated through 2023, but some still match?
 drop _merge
 
-merge 1:1 pid hid cid syear using "$temp/pkal_cleaned.dta"
+merge 1:1 pid syear using "$temp/pkal_cleaned.dta" //  hid cid
 drop if _merge==2
 tab status_pl _merge, m // confirm that the non-matches are non-sample
 drop _merge
 
-merge 1:1 pid hid cid syear using "$temp/biol_cleaned.dta" // this file is chaos and really actually only matches one year -- will merge on as is for now, but might need to revisit  this file and its use and uniqueness. ideal is to use bioparen anyway (bc that is just pid)
+merge 1:1 pid syear using "$temp/biol_cleaned.dta" // this file is chaos and really actually only matches one year -- will merge on as is for now, but might need to revisit  this file and its use and uniqueness. ideal is to use bioparen anyway (bc that is just pid) // hid cid 
 drop if _merge==2
 gen biol_int_year = 0
 replace biol_int_year = 1 if _merge==3 // will flag which year is their biol year just for reference

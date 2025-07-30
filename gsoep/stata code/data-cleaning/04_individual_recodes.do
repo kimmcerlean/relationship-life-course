@@ -149,6 +149,7 @@ tab psample_pl where_born_ew_pl, row // okay like 93% of those in A were born in
 browse pid syear psample_pl firstyr_survey_pl lastyr_survey_pl birthyr_pl where_born_state_pl where_born_ew_pl where_1989_ew_pl
 browse pid syear psample_pl firstyr_survey_pl lastyr_survey_pl birthyr_pl where_born_state_pl where_born_ew_pl where_1989_ew_pl if birthyr_pl >=1988
 tab where_born_ew_pl where_1989_ew_pl if birthyr_pl >=1985 & birthyr_pl<=1989, row
+tab birthyr_pl where_1989_ew_pl, m
 
 gen where_born_ew = .
 replace where_born_ew = 0 if born_in_germany==0
@@ -175,6 +176,19 @@ replace where_born_state = 0 if born_in_germany==0
 replace where_born_state = where_born_state_pl if born_in_germany==1 & inrange(where_born_state_pl,1,16) // not missing
 label values where_born_state birthregion
 
+// just in case, let's clean the 1989 location variable as well
+tab birthyr_pl where_1989_ew_pl, m
+gen where_1989_ew = .
+replace where_1989_ew = where_1989_ew_pl
+replace where_1989_ew = 0 if birthyr_pl>=1990 & birthyr_pl!=.
+
+label define where_1989 0 "Not Born" 1 "East" 2 "West" 3 "Abroad"
+label values where_1989_ew where_1989
+
+	// this also should be fixed, right? so check that?
+	unique pid if where_1989_ew!=.
+	unique pid where_1989_ew if where_1989_ew!=. // okay yes it is
+	
 // Country born
 label define cob ///
 0 "Germany (Survey Country)" ///
@@ -637,6 +651,19 @@ gen home_owner=.
 replace home_owner=0 if inrange(housing_status_hg,2,5)
 replace home_owner=1 if housing_status_hg==1
 
+// want to reorder the housing_status so higher = "better" (home owner). currently opposite order
+gen housing_status=.
+replace housing_status=1 if housing_status_hg==5 // shared / home
+replace housing_status=2 if housing_status_hg==3 // sub-tenant
+replace housing_status=3 if inlist(housing_status_hg,2,4) // main-tenant
+replace housing_status=4 if housing_status_hg==1 // owner
+
+label define housing_status 1 "shared housing" 2 "sub-tenant" 3 "main tenant" 4 "home-owner"
+label values housing_status housing_status
+tab housing_status_hg, m
+tab housing_status, m
+tab housing_status home_owner,m 
+
 * Marital Status (this is all currently from marriage as gendering project)
 // updating labels for some variables that are only in german
 label define marst 1 "Married" 2 "Register same-sex" 3 "Single, never married"  4 "Divorced" 5 "Widowed"
@@ -794,7 +821,7 @@ drop temp_fedu*
 
 tab fedu3, m
 tab father_educ_bp fedu3, m
-tab father_vocational_bp  medu3, m
+tab father_vocational_bp  fedu3, m
 
 *** Fill MV based on other waves // I actually don't think this adds anything...
 	foreach p in f m  			{    
@@ -822,18 +849,23 @@ tab num_yrs_bio_bp who_lived_with_bl, m
 	bysort pid (fam_struct_change): replace fam_struct_change=fam_struct_change[1]
 	tab fam_struct_change, m
 	
-	quietly unique num_yrs_bio_bl if num_yrs_bio_bl!=., by(pid) gen(fam_years_change)
-	bysort pid (fam_years_change): replace fam_years_change=fam_years_change[1]
+	quietly unique num_yrs_bio_bl if num_yrs_bio_bl!=., by(pid) gen(fam_years_change_bl)
+	bysort pid (fam_years_change_bl): replace fam_years_change_bl=fam_years_change_bl[1]
+
+	quietly unique num_yrs_bio_bp if num_yrs_bio_bp!=., by(pid) gen(fam_years_change_bp)
+	bysort pid (fam_years_change_bp): replace fam_years_change_bp=fam_years_change_bp[1]
+
 	bysort pid: egen max_yrs_bio_bl = max(num_yrs_bio_bl)
-	tab fam_years_change, m
+	tab fam_years_change_bl, m
+	tab fam_years_change_bp, m // but this one shouldn't change...
 	tab max_yrs_bio_bl, m
 	tab num_yrs_bio_bl, m
 	tab num_yrs_bio_bl max_yrs_bio_bl, m
 	 
 	bysort pid (who_lived_with_bl): replace who_lived_with_bl=who_lived_with_bl[1]
-	bysort pid (num_yrs_bio_bl): replace num_yrs_bio_bl=num_yrs_bio_bl[1] if fam_years_change<=1
+	bysort pid (num_yrs_bio_bl): replace num_yrs_bio_bl=num_yrs_bio_bl[1] if fam_years_change_bl<=1
 	
-	gen yrs_bio_parent = num_yrs_bio_bl
+	gen yrs_bio_parent = num_yrs_bio_bl if fam_years_change_bl<=1
 	replace yrs_bio_parent = max_yrs_bio_bl if yrs_bio_parent==. & max_yrs_bio_bl!=.
 	
 	tab yrs_bio_parent num_yrs_bio_bp, m
@@ -904,7 +936,7 @@ label values person_surveyed_hb befhpmax
 tab person_surveyed_hb, m // I actually don't know what this is - the range is 0-10. Is this like within HH person number? Not sure where that info is. Also - there are many missing. maybe it goes with pteil? person number in HH (no - bc that is also HH info...) but without info on who that is, this is not that useful? do I need to combine with relationship to HH head (so then it's like HH head v. other?) could also just use to indicate if respondent is the person surveyed. but this only applies to like - the HH questionaire - the respondent answers their own survey. so this also probably not that useful...
 
 // some people actually never have interview?
-tab ever_int, m // let's write this down because I think I want to drop?
+tab ever_int, m // let's write this down because I think I want to drop? at least probably need to flag...
 
 // temp save
 save "$created_data/gsoep_couple_data_recoded.dta", replace
@@ -997,9 +1029,10 @@ lab var ftpt_h "Employment Level (based on hours)"
 tab ftpt_h ftpt_r, m // loosely congruous
 
 * Earnings (individual)
-tabstat gross_labor_inc_pg net_labor_inc_pg, by(employed_binary) stats(N mean)
+tabstat gross_labor_inc_pg net_labor_inc_pg earnings_gross_py_cnef, by(employed_binary) stats(N mean) // okay so I think the CNEF version actually includes 0s if not employed - ALSO remember kim, the CNEF is PY and employed is current. so...this won't work as is GAH.
+// browse pid syear employed_binary earnings_gross_py_cnef
 tab employed_binary
-	
+
 gen gross_income_lm = .
 replace gross_income_lm = 0 if employed_binary==0 // same thing, want earnings to be 0 if not employed
 replace gross_income_lm = gross_labor_inc_pg if employed_binary==1
@@ -1009,6 +1042,9 @@ replace net_income_lm = 0 if employed_binary==0
 replace net_income_lm = net_labor_inc_pg if employed_binary==1
 
 tabstat weekly_work_hrs gross_income_lm net_income_lm, by(employed_binary)
+
+inspect earnings_gross_py_cnef if syear<2023
+inspect earnings_gross_py_cnef if syear<2023 & status_pl==1 // so this variable I think is actually fine as is
 
 * Total Income (HH)
 gen hh_net_income_mon_est_cnef = hh_net_income_py_cnef / 12 // cnef is annual - how close are they if trned to monthly?
@@ -1027,6 +1063,29 @@ browse pid syear status_pl hh_net_income_monthly_hg net_income_lm hh_gross_labor
 
 gen hh_income_net_monthly = hh_net_income_monthly_hg
 replace hh_income_net_monthly = 0 if hh_net_income_monthly_hg==. & hh_gross_income_py_cnef==0 // let's just do this for now. there are cases that I think the HH are just non-response because there is at least individual labor market income, so HH income should not be 0
+
+// I am confusing myself - should I use gross and just either use annual for HH and monthly for individual? or get the CNEF version for individual that I believe is annual? but then both of these need to be moved from t-1 to t
+gen hh_gross_income_mon_est_cnef = hh_gross_income_py_cnef / 12 // cnef is annual - how close are they if trned to monthly?
+browse pid syear gross_income_lm hh_gross_income_mon_est_cnef gross_salary_ly earnings_gross_py_cnef hh_gross_income_py_cnef net_income_lm hh_net_income_py_cnef
+
+* I am going to realign the CNEF variables here (and then drop relative duration of 13)
+sort pid syear
+browse pid syear employed_binary earnings_gross_py_cnef hh_gross_income_py_cnef hh_net_income_py_cnef
+
+gen earnings_gross_t_cnef = .
+replace earnings_gross_t_cnef = earnings_gross_py_cnef[_n+1] if pid==pid[_n+1] & syear==syear[_n+1]-1
+
+gen hh_gross_income_t_cnef = .
+replace hh_gross_income_t_cnef = hh_gross_income_py_cnef[_n+1] if pid==pid[_n+1] & syear==syear[_n+1]-1
+
+gen hh_net_income_t_cnef = .
+replace hh_net_income_t_cnef = hh_net_income_py_cnef[_n+1] if pid==pid[_n+1] & syear==syear[_n+1]-1
+
+inspect earnings_gross_t_cnef if relative_duration<=12 // for some people still missing if attrited because won;t have info for their last year in survey (bc no subsequent survey)
+inspect earnings_gross_py_cnef if relative_duration<=12
+browse pid syear employed_binary earnings_gross_t_cnef earnings_gross_py_cnef hh_gross_income_t_cnef hh_gross_income_py_cnef hh_net_income_t_cnef hh_net_income_py_cnef 
+
+drop if relative_duration==13 // only added this so I could fill in through duration 12, but all of my checks are through 12 so will delete now because I don't use
 
 * Employment adjacent: retirement
 	// not pulling in from CPF for the moment - going to attempt to use the SOEP variable: py_retired and / or employment status
@@ -1442,11 +1501,11 @@ save "$created_data/gsoep_couple_data_recoded.dta", replace
 // use "$created_data/gsoep_couple_data_recoded.dta", clear
 
 // let's do a check of the variables I either will use for analysis or will use to impute, so I can be sure I a. properly impute and b. properly recoded
-misstable summarize weekly_work_hrs housework_weekdays housework_saturdays housework_sundays repair_weekdays repair_saturdays repair_sundays errands_weekdays errands_saturdays errands_sundays childcare_weekdays childcare_saturdays childcare_sundays aid_in_hh_hl gross_income_lm net_income_lm employment emplst_pg employed_binary edu4 isced97_pg yrs_educ_pg edu4_fixed isced97_fixed yrs_educ_fixed any_births_bh kidsu18_hh age_youngest_child partnered_total marst_defacto hh_income_net_monthly hh_gross_income_py_cnef hh_net_income_py_cnef num_65up_hh num_parent_in_hh any_parent_in_hh born_in_germany where_born_ew where_born_state country_born_pl global_region_born nationality_pb nationality_region nationality_fixed nat_region_fixed father_educ mother_educ who_lived_with yrs_bio_parent yrs_live_mom yrs_live_dad yrs_live_other where_germany_pl federal_state_hb region_type live_fam_bp housing_status_hg home_owner religious_affiliation religion_est retirement_yr disability_yn disability_amount self_reported_health birthyr_pl first_birth_year eligible_rel_start_year eligible_rel_end_year eligible_rel_status eligible_rel_no psample_pl status_pl survey_status_pb sex_pl, all // so the >. will also help me understand if any of my lingering .n / .s etc remain, because that is where the alphabet missing go
+misstable summarize weekly_work_hrs housework_weekdays housework_saturdays housework_sundays repair_weekdays repair_saturdays repair_sundays errands_weekdays errands_saturdays errands_sundays childcare_weekdays childcare_saturdays childcare_sundays aid_in_hh_hl gross_income_lm net_income_lm earnings_gross_py_cnef earnings_gross_t_cnef employment emplst_pg employed_binary edu4 isced97_pg yrs_educ_pg edu4_fixed isced97_fixed yrs_educ_fixed any_births_bh kidsu18_hh age_youngest_child partnered_total marst_defacto hh_income_net_monthly hh_gross_income_py_cnef hh_gross_income_t_cnef hh_net_income_py_cnef hh_net_income_t_cnef num_65up_hh num_parent_in_hh any_parent_in_hh born_in_germany where_born_ew where_born_state where_1989_ew country_born_pl global_region_born nationality_pb nationality_region nationality_fixed nat_region_fixed father_educ mother_educ who_lived_with yrs_bio_parent yrs_live_mom yrs_live_dad yrs_live_other where_germany_pl federal_state_hb region_type live_fam_bp housing_status home_owner religious_affiliation religion_est retirement_yr disability_yn disability_amount self_reported_health birthyr_pl first_birth_year eligible_rel_start_year eligible_rel_end_year eligible_rel_status eligible_rel_no psample_pl status_pl survey_status_pb sex_pl, all // so the >. will also help me understand if any of my lingering .n / .s etc remain, because that is where the alphabet missing go
 
 preserve
 
-local varlist "weekly_work_hrs housework_weekdays housework_saturdays housework_sundays repair_weekdays repair_saturdays repair_sundays errands_weekdays errands_saturdays errands_sundays childcare_weekdays childcare_saturdays childcare_sundays aid_in_hh_hl gross_income_lm net_income_lm employment emplst_pg employed_binary edu4 isced97_pg yrs_educ_pg edu4_fixed isced97_fixed yrs_educ_fixed any_births_bh kidsu18_hh age_youngest_child partnered_total marst_defacto hh_income_net_monthly hh_gross_income_py_cnef hh_net_income_py_cnef num_65up_hh num_parent_in_hh any_parent_in_hh born_in_germany where_born_ew where_born_state country_born_pl global_region_born nationality_pb nationality_region nationality_fixed nat_region_fixed father_educ mother_educ who_lived_with yrs_bio_parent yrs_live_mom yrs_live_dad yrs_live_other where_germany_pl federal_state_hb region_type live_fam_bp housing_status_hg home_owner religious_affiliation religion_est retirement_yr disability_yn disability_amount self_reported_health birthyr_pl first_birth_year eligible_rel_start_year eligible_rel_end_year eligible_rel_status eligible_rel_no psample_pl status_pl survey_status_pb sex_pl"
+local varlist "weekly_work_hrs housework_weekdays housework_saturdays housework_sundays repair_weekdays repair_saturdays repair_sundays errands_weekdays errands_saturdays errands_sundays childcare_weekdays childcare_saturdays childcare_sundays aid_in_hh_hl gross_income_lm net_income_lm earnings_gross_py_cnef earnings_gross_t_cnef employment emplst_pg employed_binary edu4 isced97_pg yrs_educ_pg edu4_fixed isced97_fixed yrs_educ_fixed any_births_bh kidsu18_hh age_youngest_child partnered_total marst_defacto hh_income_net_monthly hh_gross_income_py_cnef hh_gross_income_t_cnef hh_net_income_py_cnef hh_net_income_t_cnef num_65up_hh num_parent_in_hh any_parent_in_hh born_in_germany where_born_ew where_born_state where_1989_ew country_born_pl global_region_born nationality_pb nationality_region nationality_fixed nat_region_fixed father_educ mother_educ who_lived_with yrs_bio_parent yrs_live_mom yrs_live_dad yrs_live_other where_germany_pl federal_state_hb region_type live_fam_bp housing_status home_owner religious_affiliation religion_est retirement_yr disability_yn disability_amount self_reported_health birthyr_pl first_birth_year eligible_rel_start_year eligible_rel_end_year eligible_rel_status eligible_rel_no psample_pl status_pl survey_status_pb sex_pl"
 
 // can I follow this to export more easily? https://www.statalist.org/forums/forum/general-stata-discussion/general/1766742-export-results-from-misstable-sum-to-excel
 frame create results str32 varname `c(obs_t)' (eq_dot gt_dot lt_dot ///
