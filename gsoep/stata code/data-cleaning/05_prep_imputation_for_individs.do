@@ -24,8 +24,7 @@ unique pid, by(ever_int) // about 8.6%
 browse pid eligible_partner syear sex_pl psample_pl born_in_germany weekly_work_hrs housework_weekdays edu4_fixed if ever_int==0 // so, we do get info from ppathl and other bio file (which I don't understand) as well as HH info, which makes sense
 tab survey_status_pl if ever_int==0, m // most are 30s: Persons In Successfully Interviewed HH Without Individual Interview or 40: Person in non completed gross HH
 
-**# Need to come back to this and decide. let's just keep recoding for now
-// drop if ever_int==0
+drop if ever_int==0
 
 ********************************************************************************
 * Rectangularize
@@ -326,6 +325,8 @@ save "$created_data/gsoep_couples_alldurs_wide.dta", replace
 ********************************************************************************
 * Last variable updates
 ********************************************************************************
+// I actually do very few of these - will let imputation handle
+
 /* these codes are for PSID. these are also different because I mostly filled in off-years, not large gaps
 // option 1: fill in based on right and left
 forvalues y=1998(2)2022{
@@ -351,16 +352,18 @@ missing values.  (so does all of these BEFORE mi - which again, is my approach t
 
 ********
 * Do I want to fill in religion for in-between years?
-browse pid religious_affiliation* religion_est* // okay, I think religion, let's just do if the surrounding years are the same (like truly just 1 year pre / post) - this will not work for many, because in early waves, religion asked very infrequently, but there are some people with every other filled in. Do this for now, and can come back to this if I change my mind
+browse pid religious_affiliation* religion_est* // okay, I think religion, let's just do if the surrounding years are the same (like truly just 1 year pre / post) - this will not work for many, because in early waves, religion asked very infrequently, but there are some people with every other filled in. Okay, after discussion with LP, will NOT fill this in
 
+/*
 forvalues y=1/13{
 	local z=`y'+1
 	local x=`y'-1
 	replace religious_affiliation`y' = religious_affiliation`x' if religious_affiliation`y'==. & religious_affiliation`x' == religious_affiliation`z' // okay yes, this added very few
 }
+*/
 
 ********
-* Could actually also possibly do the same for retirement? (feel like if 0 pre non-response and 0 post, probably still 0? it's just post dropout that are difficult to fill in). also like - if first value is 0, then all prior are probably zero as well? Again, it's the post dropout that I probably shouldn't fill in
+* Could actually also possibly do the same for retirement? (feel like if 0 pre non-response and 0 post, probably still 0? it's just post dropout that are difficult to fill in). also like - if first value is 0, then all prior are probably zero as well? Again, it's the post dropout that I probably shouldn't fill in. I will leave this, because retired feels like a status that doesn't change often.
 browse pid retired_yn*
 
 egen retired_year1 = rowfirst(retired_yn*)
@@ -388,13 +391,14 @@ forvalues y=1/13{
 * Disability / health? disability_yn disability_amount self_reported_health
 browse pid disability_yn* disability_amount* // if I decide to ONLY do the yes / no here, but then want to impute amount, need to set amount to 0 if yn == 0. but, in other surveys, I only impute the yn
 
+/*
 forvalues y=1/13{
 	local z=`y'+1
 	local x=`y'-1
 	replace disability_yn`y' = disability_yn`x' if disability_yn`y'==. & disability_yn`x' == disability_yn`z'
 	replace disability_amount`y' = disability_amount`x' if disability_amount`y'==. & disability_amount`x' == disability_amount`z'
 }
-
+*/
 browse pid self_reported_health* // I actually think this changes too much to do this, will just impute all
 
 ********
@@ -402,12 +406,14 @@ browse pid self_reported_health* // I actually think this changes too much to do
 tab housing_status3 home_owner3, m // home_owner is a recode of housing_status. I guess need to impute housing status as it is the base variable
 browse pid housing_status* home_owner* 
 
+/*
 forvalues y=1/13{
 	local z=`y'+1
 	local x=`y'-1
 	replace housing_status`y' = housing_status`x' if housing_status`y'==. & housing_status`x' == housing_status`z'
 	replace home_owner`y' = home_owner`x' if home_owner`y'==. & home_owner`x' == home_owner`z'
 }
+*/
 
 ********
 * Same with education (backup for fixed version?) - although both PSID AND UKHLS use education at time 0, which I already created. So, shoudld I just use that? Education, at least, can only change in one direction, unlike rest of these, so actually if min / max education same and / or surrounding years same, education has to be same
