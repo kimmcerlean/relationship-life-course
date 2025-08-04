@@ -640,6 +640,24 @@ tab federal_state_hg, m // lots of missing
 tab federal_state_cnef, m // also has lots of missing
 tab federal_state_hb federal_state_cnef, m
 
+// actually, to facilitate creation of above later post imputation, want to split Berlin into east and west
+tab federal_state_hb where_germany_pl, m
+
+gen federal_state = federal_state_hb if federal_state_hb <=10
+replace federal_state = 11 if federal_state_hb==11 & where_germany_pl==1 // West Berlin
+replace federal_state = 12 if federal_state_hb==11 & where_germany_pl==2 // East Berlin
+replace federal_state = federal_state_hb + 1 if inrange(federal_state_hb,12,16)
+
+label define federal_state 1 "Schleswig-Holstein" 2 "Hamburg" 3 "Niedersachsen" 4 "Bremen" 5 "Nordrhein-Westfalen" 6 "Hessen" ///
+7 "Rheinland-Pfalz,Saarland" 8 "Baden-Wuerttemberg" 9 "Bayern" 10 "Saarland" 11 "West Berlin" 12 "East Berlin" ///
+13 "Brandenburg" 14 "Mecklenburg-Vorpommern" 15 "Sachsen" 16 "Sachsen-Anhalt" 17 "Thueringen"
+
+label values federal_state federal_state
+tab federal_state, m
+tab federal_state_hb federal_state, m
+tab federal_state_hb where_germany_pl, m
+tab federal_state where_germany_pl, m
+
 // Type of residence
 tab region_type, m // very few missing
 
@@ -1501,7 +1519,7 @@ save "$created_data/gsoep_couple_data_recoded.dta", replace
 // use "$created_data/gsoep_couple_data_recoded.dta", clear
 
 // let's do a check of the variables I either will use for analysis or will use to impute, so I can be sure I a. properly impute and b. properly recoded
-misstable summarize weekly_work_hrs housework_weekdays housework_saturdays housework_sundays repair_weekdays repair_saturdays repair_sundays errands_weekdays errands_saturdays errands_sundays childcare_weekdays childcare_saturdays childcare_sundays aid_in_hh_hl gross_income_lm net_income_lm earnings_gross_py_cnef earnings_gross_t_cnef employment emplst_pg employed_binary edu4 isced97_pg yrs_educ_pg edu4_fixed isced97_fixed yrs_educ_fixed any_births_bh kidsu18_hh age_youngest_child partnered_total marst_defacto hh_income_net_monthly hh_gross_income_py_cnef hh_gross_income_t_cnef hh_net_income_py_cnef hh_net_income_t_cnef num_65up_hh num_parent_in_hh any_parent_in_hh born_in_germany where_born_ew where_born_state where_1989_ew country_born_pl global_region_born nationality_pb nationality_region nationality_fixed nat_region_fixed father_educ mother_educ who_lived_with yrs_bio_parent yrs_live_mom yrs_live_dad yrs_live_other where_germany_pl federal_state_hb region_type live_fam_bp housing_status home_owner religious_affiliation religion_est retirement_yr disability_yn disability_amount self_reported_health birthyr_pl first_birth_year eligible_rel_start_year eligible_rel_end_year eligible_rel_status eligible_rel_no psample_pl status_pl survey_status_pb sex_pl, all // so the >. will also help me understand if any of my lingering .n / .s etc remain, because that is where the alphabet missing go
+misstable summarize weekly_work_hrs housework_weekdays housework_saturdays housework_sundays repair_weekdays repair_saturdays repair_sundays errands_weekdays errands_saturdays errands_sundays childcare_weekdays childcare_saturdays childcare_sundays aid_in_hh_hl gross_income_lm net_income_lm earnings_gross_py_cnef earnings_gross_t_cnef employment emplst_pg employed_binary edu4 isced97_pg yrs_educ_pg edu4_fixed isced97_fixed yrs_educ_fixed any_births_bh kidsu18_hh age_youngest_child partnered_total marst_defacto hh_income_net_monthly hh_gross_income_py_cnef hh_gross_income_t_cnef hh_net_income_py_cnef hh_net_income_t_cnef num_65up_hh num_parent_in_hh any_parent_in_hh born_in_germany where_born_ew where_born_state where_1989_ew country_born_pl global_region_born nationality_pb nationality_region nationality_fixed nat_region_fixed father_educ mother_educ who_lived_with yrs_bio_parent yrs_live_mom yrs_live_dad yrs_live_other where_germany_pl federal_state region_type live_fam_bp housing_status home_owner religious_affiliation religion_est retirement_yr disability_yn disability_amount self_reported_health birthyr_pl first_birth_year eligible_rel_start_year eligible_rel_end_year eligible_rel_status eligible_rel_no psample_pl status_pl survey_status_pb sex_pl, all // so the >. will also help me understand if any of my lingering .n / .s etc remain, because that is where the alphabet missing go
 
 preserve
 
