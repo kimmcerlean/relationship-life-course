@@ -624,7 +624,7 @@ tabstat weekly_work_hrs housework_weekdays housework_saturdays housework_sundays
 tabstat weekly_work_hrs housework_weekdays housework_saturdays housework_sundays repair_weekdays repair_saturdays repair_sundays errands_weekdays errands_saturdays errands_sundays aid_in_hh_hl employment gross_income_lm earnings_gross_t_cnef kidsu18_hh age_youngest_child marst_imp num_65up_hh any_parent_in_hh hh_gross_income_t_cnef federal_state urban_region housing_status religious_affiliation disability_yn self_reported_health retired_yn where_born_state father_educ mother_educ yrs_bio_parent yrs_live_mom yrs_live_dad yrs_live_other, by(imputed) stats(mean sd p50) columns(statistics)
 
 histogram weekly_work_hrs, width(1)
-twoway (histogram weekly_work_hrs if imputed==0, width(2) color(blue%30)) (histogram weekly_work_hrs if imputed==1, width(2) color(red%30)), legend(order(1 "Observed" 2 "Imputed") rows(1) position(6)) xtitle("Weekly Employment Hours")
+twoway (histogram weekly_work_hrs if imputed==0 & weekly_work_hrs <=100, width(2) color(blue%30)) (histogram weekly_work_hrs if imputed==1 & weekly_work_hrs <=100, width(2) color(red%30)), legend(order(1 "Observed" 2 "Imputed") rows(1) position(6)) xtitle("Weekly Employment Hours")
 twoway (histogram weekly_work_hrs if imputed==0 & sex_pl==1, width(2) color(blue%30)) (histogram weekly_work_hrs if imputed==1 & sex_pl==1, width(2) color(red%30)), legend(order(1 "Observed" 2 "Imputed") rows(1) position(6))
 twoway (histogram weekly_work_hrs if imputed==0 & sex_pl==2, width(2) color(blue%30)) (histogram weekly_work_hrs if imputed==1 & sex_pl==2, width(2) color(red%30)), legend(order(1 "Observed" 2 "Imputed") rows(1) position(6))
 
@@ -637,7 +637,7 @@ preserve
 collapse (mean) weekly_work_hrs housework_weekdays, by(duration imputed)
 
 twoway (line weekly_work_hrs duration if imputed==0 & duration >=2 & duration<=12) (line weekly_work_hrs duration if imputed==1 & duration >=2 & duration<=12), legend(order(1 "Observed" 2 "Imputed") rows(1) position(6)) ytitle("Weekly Employment Hours") title("Avg Employment Hours by Duration") xtitle("Marital Duration") // yscale(range(32 38))
-twoway (line housework_weekdays duration if imputed==0 & duration >=2 & duration<=12) (line housework_weekdays duration if imputed==1 & duration >=2 & duration<=12), legend(order(1 "Observed" 2 "Imputed") rows(1) position(6)) ytitle("Weekly Housework Hours") title("Avg Housework Hours by Duration") xtitle("Marital Duration") // yscale(range(10 15))
+twoway (line housework_weekdays duration if imputed==0 & duration >=2 & duration<=12) (line housework_weekdays duration if imputed==1 & duration >=2 & duration<=12), legend(order(1 "Observed" 2 "Imputed") rows(1) position(6)) ytitle("Weekly Housework Hours") title("Avg Housework Hours by Duration") xtitle("Marital Duration") yscale(range(0 3)) ylabel(0(1)3)
 
 restore
 
