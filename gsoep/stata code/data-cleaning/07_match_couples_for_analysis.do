@@ -537,9 +537,18 @@ mi estimate: proportion couple_hw_weekday
 	// Cutpoints: within equal HW
 	sum couple_weekday_hw_total, detail
 	sum couple_weekday_hw_total if couple_weekday_hw_total!=0, detail
-	mi passive: egen hw_weekday_hilow_equal = cut(couple_weekday_hw_total) if couple_weekday_hw_total!=0 & couple_hw_weekday==3, group(2)
+	sum couple_weekday_hw_total if couple_weekday_hw_total!=0 & 
+	- okay so , detail
+	sum couple_weekday_hw_total if couple_hw_weekday==3, detail // I put the 0s in here, so actually, I think I should *not* remove 0s
+	mi passive: egen hw_weekday_hilow_equal = cut(couple_weekday_hw_total) if couple_hw_weekday==3, group(2) // couple_weekday_hw_total!=0 & 
+	// is this not working because it's impossible to split into two groups? Now, it is just splitting 0 into low. why isn't it splitting at like...3
+	tab couple_weekday_hw_total if couple_hw_weekday==3 // so this is why it's not splitting - bc 70% are 2 or below. It is impossible to split at 2
 	tab hw_weekday_hilow_equal if couple_hw_weekday==3
 	tabstat couple_weekday_hw_total, by(hw_weekday_hilow_equal)
+	mi passive: egen hw_weekday_hilow_test = cut(couple_weekday_hw_total), group(2) // couple_weekday_hw_total!=0 & 
+	tab hw_weekday_hilow_test if couple_hw_weekday==3, m
+	tab hw_weekday_hilow_test, m // okay but the frequencies are essentially reversed for everyone v. the equal housework...
+	tabstat couple_weekday_hw_total, by(hw_weekday_hilow_test)
 	
 	// Cutpoints: within she does most OR all
 	sum housework_weekdays_woman, detail
@@ -614,7 +623,7 @@ mi passive: gen housework_weekdays_5_man = housework_weekdays_man * 5
 mi passive: egen housework_weekly_est_man = rowtotal(housework_weekdays_5_man housework_saturdays_man housework_sundays_man), missing
 
 mi passive: egen couple_weekly_hw_total = rowtotal(housework_weekly_est_woman housework_weekly_est_man)
-mi passive: gen woman_weekly_hw_share = housework_weekly_est_man / couple_weekly_hw_total // this does have missing I think is couple HW total is 0
+mi passive: gen woman_weekly_hw_share = housework_weekly_est_woman / couple_weekly_hw_total // this does have missing I think is couple HW total is 0
 
 sum housework_weekly_est_woman, det
 sum housework_weekly_est_woman if housework_weekly_est_woman!=0, det
@@ -636,7 +645,7 @@ mi estimate: proportion couple_hw_weekly
 	// Cutpoints: within equal HW
 	sum couple_weekly_hw_total, detail
 	sum couple_weekly_hw_total if couple_weekly_hw_total!=0, detail
-	mi passive: egen hw_weekly_hilow_equal = cut(couple_weekly_hw_total) if couple_weekly_hw_total!=0 & couple_hw_weekly==3, group(2)
+	mi passive: egen hw_weekly_hilow_equal = cut(couple_weekly_hw_total) if couple_weekly_hw_total!=0 & couple_hw_weekly==3, group(2) // need to think about if I should keep 0 here as well, because 0 hours of housework also goes in category 3
 	tab hw_weekly_hilow_equal if couple_hw_weekly==3
 	tabstat couple_weekly_hw_total, by(hw_weekly_hilow_equal)
 	
