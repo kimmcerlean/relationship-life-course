@@ -883,6 +883,8 @@ keep if complete_seq==1
 
 mi update
 
+unique pidp eligible_partner // 2730
+
 save "$created_data/ukhls_couples_imputed_wide_complete.dta", replace 
 
 // truncated data (so not attrit or dissolve - set to missing instead)

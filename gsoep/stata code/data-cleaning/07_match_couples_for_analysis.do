@@ -544,11 +544,26 @@ mi estimate: proportion couple_hw_weekday
 	// is this not working because it's impossible to split into two groups? Now, it is just splitting 0 into low. why isn't it splitting at like...3
 	tab couple_weekday_hw_total if couple_hw_weekday==3 // so this is why it's not splitting - bc 70% are 2 or below. It is impossible to split at 2
 	tab hw_weekday_hilow_equal if couple_hw_weekday==3
-	tabstat couple_weekday_hw_total, by(hw_weekday_hilow_equal)
+	tabstat couple_weekday_hw_total, by(hw_weekday_hilow_equal) stats(mean min max)
 	mi passive: egen hw_weekday_hilow_test = cut(couple_weekday_hw_total), group(2) // couple_weekday_hw_total!=0 & 
 	tab hw_weekday_hilow_test if couple_hw_weekday==3, m
-	tab hw_weekday_hilow_test, m // okay but the frequencies are essentially reversed for everyone v. the equal housework...
-	tabstat couple_weekday_hw_total, by(hw_weekday_hilow_test)
+	tab hw_weekday_hilow_test, m // okay but the frequencies are essentially reversed for everyone v. the equal housework... should I just split at 2? is that what this is doing?
+	tabstat couple_weekday_hw_total, by(hw_weekday_hilow_test) stats(mean min max) // wait this doesn't make any sense?, but the max is 2.5 in first group
+	
+	// let's try to split at 2
+	mi passive: gen hw_weekday_equal = 0 if couple_weekday_hw_total <=2
+	mi passive: replace hw_weekday_equal = 1 if couple_weekday_hw_total > 2 & couple_weekday_hw_total < 50
+	tab hw_weekday_equal if couple_hw_weekday==3, m
+	tab hw_weekday_equal, m
+	tab hw_weekday_hilow_test  hw_weekday_equal if couple_hw_weekday==3
+	
+	twoway (histogram couple_weekday_hw_total if hw_weekday_equal==0, width(1) color(gray%30)) ///
+	(histogram couple_weekday_hw_total if hw_weekday_equal==1, width(1) color(pink%30)) ///
+	, legend(order(1 "Low" 2 "High") rows(1) position(6)) xtitle("Core HW: Weekdays, Couple Total")
+	
+	twoway (histogram couple_weekday_hw_total if hw_weekday_hilow_test==0, width(1) color(gray%30)) ///
+	(histogram couple_weekday_hw_total if hw_weekday_hilow_test==1, width(1) color(pink%30)) ///
+	, legend(order(1 "Low" 2 "High") rows(1) position(6)) xtitle("Core HW: Weekdays, Couple Total") // yeah these overlap in a way they should not...
 	
 	// Cutpoints: within she does most OR all
 	sum housework_weekdays_woman, detail
@@ -599,12 +614,12 @@ mi estimate: proportion couple_hw couple_hw_hrs couple_hw_hrs_alt
 mi passive: gen couple_hw_hrs_weekday=.
 mi passive: replace couple_hw_hrs_weekday = 1 if inlist(couple_hw_weekday,1,2) & hw_weekday_hilow_woman==1 // 1 = high, 0 = low
 mi passive: replace couple_hw_hrs_weekday = 2 if inlist(couple_hw_weekday,1,2) & hw_weekday_hilow_woman==0 
-mi passive: replace couple_hw_hrs_weekday = 3 if couple_hw_weekday==3 & hw_weekday_hilow_equal==1 // 1 = high, 0 = low
-mi passive: replace couple_hw_hrs_weekday = 4 if couple_hw_weekday==3 & hw_weekday_hilow_equal==0 
+mi passive: replace couple_hw_hrs_weekday = 3 if couple_hw_weekday==3 & hw_weekday_equal==1 // 1 = high, 0 = low
+mi passive: replace couple_hw_hrs_weekday = 4 if couple_hw_weekday==3 & hw_weekday_equal==0 
 mi passive: replace couple_hw_hrs_weekday = 5 if couple_hw_weekday==4
 mi passive: replace couple_hw_hrs_weekday = 4 if housework_weekdays_woman==0 & housework_weekdays_man==0  // neither is so small, just put in equal low
 
-label define couple_hw_hrs_combo 1 "Woman Most: High" 2 "Woman Most: Low" 3 "Equal: High" 4 "Equal: Low" 5 "Man Most: All"
+capture label define couple_hw_hrs_combo 1 "Woman Most: High" 2 "Woman Most: Low" 3 "Equal: High" 4 "Equal: Low" 5 "Man Most: All"
 label values couple_hw_hrs_weekday couple_hw_hrs_combo
 
 mi estimate: proportion couple_hw_weekday couple_hw_hrs_weekday
@@ -645,7 +660,7 @@ mi estimate: proportion couple_hw_weekly
 	// Cutpoints: within equal HW
 	sum couple_weekly_hw_total, detail
 	sum couple_weekly_hw_total if couple_weekly_hw_total!=0, detail
-	mi passive: egen hw_weekly_hilow_equal = cut(couple_weekly_hw_total) if couple_weekly_hw_total!=0 & couple_hw_weekly==3, group(2) // need to think about if I should keep 0 here as well, because 0 hours of housework also goes in category 3
+	mi passive: egen hw_weekly_hilow_equal = cut(couple_weekly_hw_total) if couple_hw_weekly==3, group(2) // need to think about if I should keep 0 here as well, because 0 hours of housework also goes in category 3 // couple_weekly_hw_total!=0 -- yeah remove this, because 0s included in the PSID / UKHLS versions
 	tab hw_weekly_hilow_equal if couple_hw_weekly==3
 	tabstat couple_weekly_hw_total, by(hw_weekly_hilow_equal)
 	
@@ -698,7 +713,7 @@ mi estimate: proportion couple_hw_combined
 	// Cutpoints: within equal HW
 	sum couple_combined_hw_total, detail
 	sum couple_combined_hw_total if couple_combined_hw_total!=0, detail
-	mi passive: egen hw_combined_hilow_equal = cut(couple_combined_hw_total) if couple_combined_hw_total!=0 & couple_hw_combined==3, group(2)
+	mi passive: egen hw_combined_hilow_equal = cut(couple_combined_hw_total) if couple_hw_combined==3, group(2) // couple_combined_hw_total!=0 
 	tab hw_combined_hilow_equal if couple_hw_combined==3
 	tabstat couple_combined_hw_total, by(hw_combined_hilow_equal)
 	
@@ -722,6 +737,64 @@ capture label define couple_hw_hrs_combo 1 "Woman Most: High" 2 "Woman Most: Low
 label values couple_hw_hrs_combined couple_hw_hrs_combo
 
 mi estimate: proportion couple_hw_combined couple_hw_hrs_combined
+
+/* I am doing this sort of out of order, but want to pull some basic housework descriptives:
+1. Summary measures using my three different definitions
+sum housework_weekdays_woman, det
+sum housework_weekdays_man, det
+sum couple_weekday_hw_total, det
+sum woman_weekday_hw_share, det
+
+sum housework_weekly_est_woman, det
+sum housework_weekly_est_man, det
+sum couple_weekly_hw_total, det
+sum woman_weekly_hw_share, det
+
+sum housework_combined_woman, det
+sum housework_combined_man, det
+sum couple_combined_hw_total, det
+sum woman_combined_hw_share, det
+
+// actually this is better duh
+tabstat housework_weekdays_woman housework_weekdays_man couple_weekday_hw_total woman_weekday_hw_share ///
+housework_weekly_est_woman housework_weekly_est_man couple_weekly_hw_total woman_weekly_hw_share ///
+housework_combined_woman housework_combined_man couple_combined_hw_total woman_combined_hw_share ///
+, stats(mean min p25 p50 p75 max) columns(statistics)
+
+tabstat housework_saturdays_woman housework_saturdays_man housework_sundays_woman housework_sundays_man ///
+, stats(mean min p25 p50 p75 max) columns(statistics)
+
+2. proportions
+mi estimate: proportion couple_hw_weekday couple_hw_weekly couple_hw_combined
+mi estimate: proportion couple_hw_weekday couple_hw_weekly couple_hw_combined if relative_duration>=0 & relative_duration<=10
+
+3. Histograms at overall level
+histogram housework_weekdays_woman, width(1)
+histogram housework_weekdays_man, width(1)
+histogram couple_weekday_hw_total if couple_weekday_hw_total<=20, width(1)
+twoway (histogram housework_weekdays_woman if housework_weekdays_woman<=15, width(1) color(pink%30)) (histogram housework_weekdays_man if housework_weekdays_man<=15, width(1) color(blue%30)), legend(order(1 "Women" 2 "Men") rows(1) position(6)) xtitle("Core Housework: Weekdays")
+
+histogram housework_weekly_est_woman, width(5)
+histogram housework_weekly_est_man, width(5)
+histogram couple_weekly_hw_total if couple_weekly_hw_total<=100, width(2)
+twoway (histogram housework_weekly_est_woman if housework_weekly_est_woman<=60, width(2) color(pink%30)) (histogram housework_weekly_est_man if housework_weekly_est_man<=60, width(2) color(blue%30)), legend(order(1 "Women" 2 "Men") rows(1) position(6)) xtitle("Core Housework: Weekly")
+
+histogram housework_combined_woman, width(1)
+histogram housework_combined_man, width(1)
+histogram couple_combined_hw_total if couple_combined_hw_total<=20, width(1)
+twoway (histogram housework_combined_woman if housework_combined_woman<=15, width(1) color(pink%30)) (histogram housework_combined_man if housework_combined_man<=15, width(1) color(blue%30)), legend(order(1 "Women" 2 "Men") rows(1) position(6)) xtitle("Core HW + Repairs: Weekdays")
+
+4. Histograms by who does most
+histogram housework_weekdays_woman if inlist(couple_hw_weekday,1,2) & housework_weekdays_woman<=15, width(1)
+histogram couple_weekday_hw_total if couple_hw_weekday==3 & couple_weekday_hw_total<=15, width(1)
+
+histogram housework_weekly_est_woman if inlist(couple_hw_weekly,1,2) & housework_weekly_est_woman<=80, width(2)
+histogram couple_weekly_hw_total if couple_hw_weekly==3 & couple_weekly_hw_total<=80, width(2)
+
+histogram housework_combined_woman if inlist(couple_hw_combined,1,2) & housework_combined_woman<=15, width(1)
+histogram couple_combined_hw_total if couple_hw_combined==3 & couple_combined_hw_total<=15, width(1)
+
+*/
 
 **# Bookmark #1
 // temp save
@@ -859,8 +932,8 @@ save "$created_data/gsoep_couples_imputed_long_recoded.dta", replace
 // use "$created_data/gsoep_couples_imputed_long_recoded.dta", clear
 // check
 inspect woman_weekday_hw_share if couple_weekday_hw_total == 0 & imputed==1 // so yes, these are missing when couple HW total is 0 because can't divide by 0, will remove from below
-inspect woman_weekly_hw_share if couple_weekday_hw_total == 0 & imputed==1 // so yes, these are missing when couple HW total is 0 because can't divide by 0, will remove from below
-inspect woman_combined_hw_share if couple_weekday_hw_total == 0 & imputed==1 // so yes, these are missing when couple HW total is 0 because can't divide by 0, will remove from below
+inspect woman_weekly_hw_share if couple_weekly_hw_total == 0 & imputed==1 // so yes, these are missing when couple HW total is 0 because can't divide by 0, will remove from below
+inspect woman_combined_hw_share if couple_combined_hw_total == 0 & imputed==1 // so yes, these are missing when couple HW total is 0 because can't divide by 0, will remove from below
 
 inspect hw_weekday_hilow_woman if housework_weekdays_woman == 0 & imputed==1 // I only did for women with hW hours. so these missings also make sense
 inspect hw_weekly_hilow_woman if housework_weekly_est_woman == 0 & imputed==1 // I only did for women with hW hours. so these missings also make sense
@@ -906,125 +979,116 @@ save "$created_data/gsoep_couples_imputed_long_recoded.dta", replace
 
 // mi estimate: proportion couple_hw_hrs_end couple_hw_end if duration >=0 & duration <=10
 
-**# Nothing below here updated from UKHLS code - need variables from HPC
-
 ********************************************************************************
 **# Deduplicate
 ********************************************************************************
-drop if duration < 0 | duration > 10
-drop duration_rec
+drop if relative_duration < 0 | relative_duration > 10
+drop duration
 
 mi update
 
-// need to get rid of one record per couple; currently duplicated - but problem is hidp is missing when not in sample so need to create a constant family variable
-inspect hidp if duration==0
-inspect hidp if duration==1
+// need to get rid of one record per couple; currently duplicated - I *think* there is where my handy dandy couple id can come in? or can just do by sex like I did UKHLS. should I do this *again*? because the per id has ties that don't make sense...
+unique pid eligible_partner
+unique eligible_couple_id
+inspect eligible_couple_id
 
-browse pidp eligible_partner int_year duration hidp
+// alternatively - do I like not even need to create this and just keep who is partner 1?
+gen long partner_1 = cond(pid < eligible_partner, pid, eligible_partner) // omg was whole problem here this whole time - needed to do LONG because some getting truncated? I am dumb...
+gen long partner_2 = cond(pid < eligible_partner, eligible_partner, pid)
+egen long couple_id = group(partner_1 partner_2)
+unique couple_id
 
-/*
-// is there a better place to do this? maybe in earlier step and carry it through? let's do this for now but return to this later?
-// I guess, a second option is to just keep all men or all women? if I have all matches and I dropped diff sex couples, then in theory, dropping one gender would drop in half?
-mi passive: gen long fam_id =  hidp if duration==1
-mi passive: replace fam_id = hidp if fam_id==. & duration==0
-mi passive: replace fam_id = hidp if fam_id==. & duration==2
-mi passive: replace fam_id = hidp if fam_id==. & duration==5
-mi passive: replace fam_id = hidp if fam_id==. & duration==10
-bysort pidp eligible_partner (fam_id): replace fam_id = fam_id[1]
-inspect fam_id
+browse couple_id pid eligible_partner relative_duration partner_1  partner_2 eligible_couple_id
 
-// unique pidp eligible_partner if fam_id==.
+unique pid eligible_partner, by(SEX)
+unique couple_id, by(SEX)
 
-sort pidp eligible_partner imputed _mi_m duration
+tab SEX SEX_sp, m
 
-browse pidp eligible_partner couple_id duration fam_id hidp
+bysort couple_id relative_duration _mi_m : egen per_id = rank(pid)
+tab per_id, m
 
-unique pidp eligible_partner
-unique pidp eligible_partner, by(SEX)
-unique fam_id
-unique pidp eligible_partner fam_id
-tab SEX
-rename xw_sex_sp SEX_sp
+sort pid eligible_partner imputed _mi_m relative_duration
+// browse pid eligible_partner eligible_couple_id SEX relative_duration per_id
+// browse pid eligible_partner eligible_couple_id SEX relative_duration per_id if !inlist(per_id,1,2)
+// browse couple_id pid eligible_partner relative_duration partner_1  partner_2 eligible_couple_id if !inlist(per_id,1,2)
 
-bysort fam_id duration _mi_m : egen per_id = rank(couple_id)
-tab per_id, m // see I think this is not working properly
-bysort fam_id duration _mi_m : egen num_couples = max(per_id)
-
-sort pidp eligible_partner imputed _mi_m duration
-browse pidp eligible_partner SEX couple_id duration fam_id hidp per_id num_couples if imputed==0
-*/
-
-// okay yes, sex should work
+// does it matter which we use? sex or per id? no they literally all match
 tab couple_work if imputed==1
+tab couple_work per_id if imputed==1, col
 tab couple_work SEX if imputed==1, col
 
+tab couple_hw_hrs_weekday if imputed==1
+tab couple_hw_hrs_weekday per_id if imputed==1, col
+tab couple_hw_hrs_weekday SEX if imputed==1, col
+
 tab family_type if imputed==1
+tab family_type per_id if imputed==1, col
 tab family_type SEX if imputed==1, col
 
-// keep if inlist(per_id,1,3,5,7,9,11)
-unique pidp eligible_partner // 14126 / 16522 new
+tab per_id SEX // I guess let's just keep women? that's what I do for UK (but PSID does per id) the outcomes are all the same
+
+// keep if per_id==1
+unique pid eligible_partner // 20856
+unique couple_id // 10428
 keep if SEX==2
-unique pidp eligible_partner // 7063 / 8261 new
+unique pid eligible_partner // 10428
 
 // need to do age restrictions (18-60)
 // keep if age_all>=18 & age_all<=60 // wait, if I drop these now, won't be rectangular anymore...
 gen age_flag = 0
-replace age_flag = 1 if (age_all>=18 & age_all<=60) & (age_all_sp>=18 & age_all_sp<=60) 
+replace age_flag = 1 if (age>=18 & age<=60) & (age_sp>=18 & age_sp<=60) 
 
-bysort pidp eligible_partner _mi_m: egen age_eligible=total(age_flag)
+bysort pid eligible_partner _mi_m: egen age_eligible=total(age_flag)
 tab age_eligible, m // 0 means never within age range
 
-sort pidp eligible_partner imputed _mi_m duration
+sort pid eligible_partner imputed _mi_m relative_duration
 drop if age_eligible==0
 
 mi update
 
-unique pidp eligible_partner // now 6271 / 7410 new
+unique pid eligible_partner // now 9776
 
 save "$created_data/gsoep_couples_imputed_long_deduped.dta", replace
-
 
 ********************************************************************************
 **# Quick descriptives for full sample while long
 ********************************************************************************
-//
-histogram weekly_hrs_woman if couple_work_ow_end==6
-histogram weekly_hrs_man if couple_work_ow_end==6
-
-tab ft_pt_det_man_end ft_pt_det_woman_end if couple_work_ow_end==6, cell
-tab ft_pt_man_end ft_pt_woman_end, cell
-
 tab couple_work_ow_end imputed, col
 tab couple_work_end imputed, col
 
 // descriptives at all durations
-desctable i.ft_pt_woman_end i.overwork_woman_end i.ft_pt_det_woman_end i.ft_pt_man_end i.overwork_man_end i.ft_pt_det_man_end i.couple_work_end i.couple_work_ow_end i.couple_work_ow_detailed_end i.couple_hw_end i.couple_hw_hrs_end i.couple_hw_hrs_alt_end i.couple_hw_hrs_combo_end i.rel_type i.couple_num_children_gp_end i.family_type_end, filename("$results/gsoep_mi_desc") stats(mimean)
+desctable i.ft_pt_woman_end i.overwork_woman_end i.ft_pt_man_end i.overwork_man_end i.couple_work_end i.couple_work_ow_end i.couple_work_ow_detailed_end i.couple_hw_weekday_end i.couple_hw_hrs_weekday_end i.couple_hw_weekly_end i.couple_hw_hrs_weekly_end i.couple_hw_combined_end i.couple_hw_hrs_combined_end i.rel_type i.couple_num_children_gp_end i.family_type_end, filename("$results/gsoep_mi_desc") stats(mimean)
 // desctable i.ft_pt_woman i.overwork_woman i.ft_pt_man i.overwork_man i.couple_work i.couple_work_ow i.couple_hw i.couple_hw_hrs i.rel_type i.couple_num_children_gp i.family_type, filename("$results/mi_desc_all") stats(mimean)  // modify - okay can't use modify but want to see if this replaces the previous or adds a new sheet. okay it replaces the previous oops
 
-mi estimate: proportion couple_work_ow_end family_type_end // validate that this matches. it does
+mi estimate: proportion couple_work_ow_end couple_hw_weekday_end family_type_end // validate that this matches. it does
 
 // should I just loop through durations while long? should I confirm the numbers are the same either way? - so here, try to loop through durations
-** Note 6/6/25: have not done this yet for updated sequences (with more rel start dates included)** (takes a while - possibly send to HPC)
+** Note 8/6/25: have not done this yet** (takes a while - possibly send to HPC - but also not actually sure needed because this is what we can get in R much more easily (and is really the whole point of the sequences...)
+/* Commenting out for now so not accidentally run and slow things down
 forvalues d=0/10{
-	desctable i.ft_pt_woman_end i.overwork_woman_end i.ft_pt_det_woman_end i.ft_pt_man_end i.overwork_man_end i.ft_pt_det_man_end i.couple_work_end i.couple_work_ow_end i.couple_work_ow_detailed_end i.couple_hw_end i.couple_hw_hrs_end i.couple_hw_hrs_alt_end i.couple_hw_hrs_combo_end i.rel_type i.couple_num_children_gp_end i.family_type_end if duration==`d', filename("$results/gsoep_mi_desc_`d'") stats(mimean) decimals(4)
+	desctable i.ft_pt_woman_end i.overwork_woman_end i.ft_pt_man_end i.overwork_man_end i.couple_work_end i.couple_work_ow_end i.couple_work_ow_detailed_end i.couple_hw_weekday_end i.couple_hw_hrs_weekday_end i.couple_hw_weekly_end i.couple_hw_hrs_weekly_end i.couple_hw_combined_end i.couple_hw_hrs_combined_end i.rel_type i.couple_num_children_gp_end i.family_type_end if duration==`d', filename("$results/gsoep_mi_desc_`d'") stats(mimean) decimals(4)
 }
 
-// mi xeq: proportion couple_hw_end if duration==5 // troubleshooting bc this is where the code stalled. I think this is because some have "neither HW" and some don't. okay, yes that is the problem
-
-mi estimate: proportion couple_work_ow_end family_type_end if duration==0
-mi estimate: proportion couple_work_ow_end family_type_end if duration==5
+mi estimate: proportion couple_work_ow_end couple_hw_weekday_end family_type_end if duration==0
+mi estimate: proportion couple_work_ow_end couple_hw_weekday_end family_type_end if duration==5
 
 /* oh, wait, I think I can actually just group by duration?? ah, no you cannot do that with mi. i knew this
 desctable i.ft_pt_woman_end i.overwork_woman_end i.ft_pt_man_end i.overwork_man_end i.couple_work_end i.couple_work_ow_end i.couple_hw_end i.couple_hw_hrs_end i.rel_type i.couple_num_children_gp_end i.family_type_end, filename("$results/mi_desc_dur") stats(mimean) group(duration)
 */
+*/
 
 // I think duration needs to start at 1 to work in r
-gen duration_v0 = duration
-replace duration = duration + 1
+gen duration = relative_duration + 1
 
-// use "$created_data/gsoep_couples_imputed_long_deduped.dta", clear
+local regular_vars : char _dta[_mi_rvars]
+display "`regular_vars'"
+local imputed_vars : char _dta[_mi_ivars]
+display "`imputed_vars'"
+local passive_vars : char _dta[_mi_pvars]
+display "`passive_vars'"
 
-drop hidp sampst ivfio hubuys hufrys humops huiron husits huboss year marital_status_defacto partnered current_rel_start_year current_rel_end_year rowcount age_flag age_eligible duration_v0 psu strata religion_est housing_status_alt // any_aid any_aid_sp current_parent_status current_parent_status_sp // think I need to keep the base variables the passive variables I created are based off of, otherwise, they are reset back to missing I think, which causes problems when I reshape.
+drop eligible_couple_id couple_id_unique where_germany_pl survey_status_pl status_pl disability_amount emplst_pg isced97_pg yrs_educ_pg nationality_pb survey_status_pb live_fam_bp region_type edu4 home_owner marst_defacto partnered_total religion_est employed_binary hh_net_income_t_cnef num_parent_in_hh fillin in_rel_year partnered_imp ever_int where_born_ew where_1989_ew who_lived_with last_birth_year num_elig_partners retired_year1 retired_first_obs nmis_age nmis_parent nmis_status imputed relative_duration where_germany_pl_sp survey_status_pl_sp status_pl_sp disability_amount_sp emplst_pg_sp isced97_pg_sp yrs_educ_pg_sp survey_status_pb_sp live_fam_bp_sp edu4_sp home_owner_sp marst_defacto_sp partnered_total_sp religion_est_sp employed_binary_sp hh_net_income_t_cnef_sp num_parent_in_hh_sp in_rel_year_sp partnered_imp_sp ever_transition_sp transition_year_sp ever_int_sp where_born_ew_sp where_1989_ew_sp who_lived_with_sp last_birth_year_sp rowcount rel_type_min_dur partner_1 partner_2 _Unique per_id age_flag age_eligible
 
 mi update
 
@@ -1032,26 +1096,25 @@ mi update
 **# Reshape back to wide to see the data by duration and compare to long estimates
 ********************************************************************************
 
-mi reshape wide age_all fihhmngrs_dv gor_dv nkids_dv jbstat aidhh aidxhh aidhrs howlng work_hours jbhrs fimnlabgrs_dv nchild_dv hiqual_dv country_all employed total_hours age_youngest_child partnered_imp marital_status_imp int_year orig_record age_all_sp fihhmngrs_dv_sp gor_dv_sp nkids_dv_sp jbstat_sp aidhrs_sp howlng_sp work_hours_sp jbhrs_sp fimnlabgrs_dv_sp employed_sp total_hours_sp age_youngest_child_sp partnered_imp_sp marital_status_imp_sp weekly_hrs_woman weekly_hrs_man housework_woman housework_man marital_status_woman marital_status_man partnered_woman partnered_man num_children_woman num_children_man ft_pt_woman overwork_woman ft_pt_man overwork_man ft_pt_det_woman ft_pt_det_man couple_work couple_work_ow couple_work_ow_detailed  couple_hw_total woman_hw_share hw_terc_woman hw_hilow_woman hw_hilow_man couple_hw hw_hilow_woman_gp1 hw_hilow_woman_gp2 hw_hilow_man_gp4 hw_hilow_woman_combo couple_hw_hrs couple_hw_hrs_alt couple_hw_hrs_combo rel_type couple_num_children couple_num_children_gp family_type ft_pt_woman_end overwork_woman_end ft_pt_man_end overwork_man_end ft_pt_det_woman_end ft_pt_det_man_end couple_work_end couple_work_ow_detailed_end couple_work_ow_end couple_hw_end couple_hw_hrs_end couple_hw_hrs_alt_end couple_hw_hrs_combo_end couple_num_children_gp_end family_type_end npens_dv tenure_dv jshrs employment_status disabled_est sr_health aid_hours num_parents_hh master_religion respondent_info npens_dv_sp tenure_dv_sp employment_status_sp disabled_est_sp sr_health_sp aid_hours_sp num_parents_hh_sp master_religion_sp respondent_info_sp employment_status_woman employment_status_man monthly_earnings_woman monthly_earnings_man carework_woman carework_man region_woman region_man housing_woman housing_man religion_woman religion_man disabled_woman disabled_man sr_health_woman sr_health_man any_aid any_aid_sp current_parent_status current_parent_status_sp ///
-, i(pidp eligible_partner eligible_rel_start_year eligible_rel_end_year eligible_rel_status) j(duration)
+mi reshape wide employment self_reported_health disability_yn religious_affiliation errands_sundays housework_saturdays housework_sundays childcare_saturdays childcare_sundays repair_saturdays errands_weekdays housework_weekdays childcare_weekdays repair_weekdays errands_saturdays aid_in_hh_hl kidsu18_hh num_65up_hh age_youngest_child age nationality_region federal_state housing_status weekly_work_hrs gross_income_lm net_income_lm hh_income_net_monthly earnings_gross_t_cnef hh_gross_income_t_cnef repair_sundays any_outside_help any_parent_in_hh current_parent_status marst_imp retired_yn full_status_pl duplicate_record urban_region employment_sp self_reported_health_sp disability_yn_sp religious_affiliation_sp errands_sundays_sp housework_saturdays_sp housework_sundays_sp childcare_saturdays_sp childcare_sundays_sp repair_saturdays_sp errands_weekdays_sp housework_weekdays_sp childcare_weekdays_sp repair_weekdays_sp errands_saturdays_sp nationality_pb_sp aid_in_hh_hl_sp kidsu18_hh_sp num_65up_hh_sp age_youngest_child_sp age_sp nationality_region_sp federal_state_sp housing_status_sp weekly_work_hrs_sp gross_income_lm_sp net_income_lm_sp hh_income_net_monthly_sp earnings_gross_t_cnef_sp hh_gross_income_t_cnef_sp repair_sundays_sp any_outside_help_sp any_parent_in_hh_sp current_parent_status_sp marst_imp_sp retired_yn_sp full_status_pl_sp urban_region_sp weekly_hrs_woman weekly_hrs_man employment_status_woman employment_status_man monthly_earnings_woman monthly_earnings_man annual_earnings_woman annual_earnings_man housework_weekdays_woman housework_weekdays_man housework_saturdays_woman housework_saturdays_man housework_sundays_woman housework_sundays_man repair_weekdays_woman repair_weekdays_man repair_saturdays_woman repair_saturdays_man repair_sundays_woman repair_sundays_man errands_weekdays_woman errands_weekdays_man errands_saturdays_woman errands_saturdays_man errands_sundays_woman errands_sundays_man aid_in_hh_woman aid_in_hh_man marital_status_woman marital_status_man partnered_woman partnered_man num_children_woman num_children_man age_youngest_woman age_youngest_man federal_state_woman federal_state_man where_ew_woman where_ew_man urban_region_woman urban_region_man housing_woman housing_man religion_woman religion_man disabled_woman disabled_man sr_health_woman sr_health_man retired_woman retired_man ft_pt_woman overwork_woman ft_pt_man overwork_man couple_work couple_work_ow_detailed couple_work_ow couple_weekday_hw_total woman_weekday_hw_share couple_hw_weekday housework_weekdays_5_woman housework_weekly_est_woman housework_weekdays_5_man housework_weekly_est_man couple_weekly_hw_total woman_weekly_hw_share couple_hw_weekly housework_combined_woman housework_combined_man couple_combined_hw_total woman_combined_hw_share couple_hw_combined syear rel_type couple_num_children couple_num_children_gp family_type hw_weekly_hilow_woman hw_weekly_hilow_equal couple_hw_hrs_weekly hw_combined_hilow_equal hw_combined_hilow_woman couple_hw_hrs_combined hw_weekday_hilow_woman hw_weekday_hilow_equal hw_weekday_hilow_test hw_weekday_equal couple_hw_hrs_weekday ft_pt_woman_end overwork_woman_end ft_pt_man_end overwork_man_end couple_work_end couple_work_ow_detailed_end couple_work_ow_end couple_hw_weekday_end couple_hw_hrs_weekday_end couple_hw_weekly_end couple_hw_hrs_weekly_end couple_hw_combined_end couple_hw_hrs_combined_end couple_num_children_gp_end family_type_end  ///
+, i(pid eligible_partner eligible_rel_start_year eligible_rel_end_year eligible_rel_status) j(duration)
 
 tab _mi_miss, m // see what happens if I reshape but DON'T convert
 tab _mi_m, m
 
-browse pidp eligible_partner max_dur _mi_id _mi_miss _mi_m couple_work_end* couple_work_ow_end* couple_hw_hrs_combo_end*
-browse pidp eligible_partner max_dur _mi_id _mi_miss _mi_m couple_work_end* couple_work_ow_end* couple_hw_hrs_combo_end* if inrange(_mi_m,1,10)
+browse pid eligible_partner max_dur _mi_m couple_work_end* couple_work_ow_end* couple_hw_weekday_end*
+browse pid eligible_partner max_dur _mi_m couple_work_end* couple_work_ow_end* couple_hw_weekday_end* if inrange(_mi_m,1,10)
 
-unique pidp eligible_partner // so now there are 7410 uniques and 11 observations for each (base + 10 imputations) - so 81510 observations
-unique pidp eligible_partner, by(_mi_m)
+unique pid eligible_partner // so now there are 9776 uniques and 11 observations for each (base + 10 imputations) - so 107536 observations
+unique pid eligible_partner, by(_mi_m)
 
 // create indicator of complete sequences
 gen complete_seq = .
 replace complete_seq = 0 if max_dur < 9
-replace complete_seq = 1 if max_dur >= 9 // so 9 is really 10 (because 0-9 = 1-10)
+replace complete_seq = 1 if max_dur >= 9 // so 9 is really 10 (because 0-9 = 1-10) // I feel like the # of complete sequences here is much lower than in other countries?
 
 tab rel_type10 if complete_seq==1, m
-browse pidp eligible_partner min_dur max_dur complete_seq rel_type* // okay, so max_dur is based on start of 0, but I changed it, so now need it to be +1
-// browse pidp eligible_partner min_dur max_dur complete_seq rel_type* if complete_seq==1 & rel_type10==3
+browse pid eligible_partner min_dur max_dur complete_seq rel_type* // okay, so max_dur is based on start of 0, but I changed it, so now need it to be +1
 
 // then create indicator of length of complete sequence
 gen sequence_length_alt=max_dur + 1
@@ -1067,21 +1130,12 @@ forvalues d=1/10{
 replace sequence_length = sequence_length - 1 
 
 tab sequence_length complete_seq, m
-replace complete_seq=0 if complete_seq==1 & sequence_length < 10
-drop if sequence_length==0
-
-tab sequence_length complete_seq, m
-tab sequence_length sequence_length_alt, m
-
-replace sequence_length = sequence_length_alt if sequence_length==. & complete_seq==0
-// replace sequence_length = sequence_length_alt if sequence_length==0 & complete_seq==0
+tab sequence_length sequence_length_alt, m // these match
 replace sequence_length = 10 if complete_seq==1
-
-// browse pidp eligible_partner min_dur max_dur sequence_length complete_seq rel_type* if complete_seq==1 & rel_type10==3
 
 // note how ended (attrit or dissolve)
 tab eligible_rel_status complete_seq, m
-browse pidp eligible_partner min_dur max_dur sequence_length eligible_rel_status complete_seq rel_type*
+browse pid eligible_partner min_dur max_dur sequence_length eligible_rel_status complete_seq rel_type*
 
 gen status_end = .
 forvalues d=1/10{
@@ -1092,15 +1146,15 @@ forvalues d=1/10{
 label values status_end rel_type
 tab status_end complete_seq, m
 
-browse pidp eligible_partner  min_dur max_dur sequence_length status_end eligible_rel_status rel_type* couple_work_end* if complete_seq==0 // & inlist(status_end,1,2)
+browse pid eligible_partner  min_dur max_dur sequence_length status_end eligible_rel_status rel_type* couple_work_end* if complete_seq==0 // & inlist(status_end,1,2)
 
 gen how_end=.
 replace how_end = 0 if complete_seq==1 // intact
 replace how_end = 1 if complete_seq==0 & status_end==4 // dissolved
 replace how_end = 2 if complete_seq==0 & status_end==3 // attrit
 
-label define how_end 0 "Intact" 1 "Dissolved" 2 "Attrited"
-label values how_end how_end
+label define how_end_seq 0 "Intact" 1 "Dissolved" 2 "Attrited"
+label values how_end how_end_seq
 
 tab how_end complete_seq, m
 
@@ -1116,44 +1170,61 @@ use "$created_data/gsoep_couples_imputed_wide.dta", clear
 
 keep if complete_seq==1
 
-// tab couple_hw_hrs_combo_end10 if _mi_m!=0, m
-// tab couple_work_ow_end10 if _mi_m!=0, m
-// tab family_type_end10 if _mi_m!=0, m
-// browse pidp eligible_partner min_dur max_dur  _mi_m sequence_length couple_hw_hrs_combo_end* couple_work_ow_end* rel_type* if couple_work_ow_end1==. & _mi_m!=0
-// browse pidp eligible_partner min_dur max_dur  _mi_m sequence_length couple_hw_hrs_combo_end* couple_work_ow_end* rel_type* if pidp==293086125
+tab couple_hw_weekday_end10 if _mi_m!=0, m
+tab couple_work_ow_end10 if _mi_m!=0, m
+tab family_type_end10 if _mi_m!=0, m
 
 mi update
+
+unique couple_id // 2372
 
 save "$created_data/gsoep_couples_imputed_wide_complete.dta", replace 
 
 // truncated data (so not attrit or dissolve - set to missing instead)
 use "$created_data/gsoep_couples_imputed_wide.dta", clear
 
-browse pidp eligible_partner complete_seq sequence_length couple_work_ow_end* couple_hw_hrs_combo_end* family_type_end*
+browse pid eligible_partner complete_seq sequence_length couple_work_ow_end* couple_hw_hrs_weekday_end* family_type_end*
 fre couple_work_ow_end5
-fre couple_hw_hrs_combo_end5
+fre couple_hw_hrs_weekday_end
 fre family_type_end5
+
+tab couple_hw_hrs_weekday_end1 couple_hw_hrs_weekly_end1
 
 forvalues d=1/11{
 	capture gen couple_work_ow_trunc`d' = couple_work_ow_end`d'
 	replace couple_work_ow_trunc`d' = . if inlist(couple_work_ow_end`d',98,99)
 	label values couple_work_ow_trunc`d' couple_work_ow
-	capture gen couple_hw_hrs_combo_trunc`d' = couple_hw_hrs_combo_end`d'
-	replace couple_hw_hrs_combo_trunc`d' = . if inlist(couple_hw_hrs_combo_end`d',98,99)
-	label values couple_hw_hrs_combo_trunc`d' couple_hw_hrs_combo
+	
+	capture gen couple_hw_hrs_weekday_trunc`d' = couple_hw_hrs_weekday_end`d'
+	replace couple_hw_hrs_weekday_trunc`d' = . if inlist(couple_hw_hrs_weekday_end`d',98,99)
+	label values couple_hw_hrs_weekday_trunc`d' couple_hw_hrs_combo
+	
+	capture gen couple_hw_hrs_weekly_trunc`d' = couple_hw_hrs_weekly_end`d'
+	replace couple_hw_hrs_weekly_trunc`d' = . if inlist(couple_hw_hrs_weekly_end`d',98,99)
+	label values couple_hw_hrs_weekly_trunc`d' couple_hw_hrs_combo
+	
+	capture gen couple_hw_hrs_combined_trunc`d' = couple_hw_hrs_combined_end`d'
+	replace couple_hw_hrs_combined_trunc`d' = . if inlist(couple_hw_hrs_combined_end`d',98,99)
+	label values couple_hw_hrs_combined_trunc`d' couple_hw_hrs_combo
+	
 	capture gen family_type_trunc`d' = family_type_end`d'
 	replace family_type_trunc`d' = . if inlist(family_type_end`d',98,99)
 	label values family_type_trunc`d' family_type
 }
 
 fre couple_work_ow_trunc5
-fre couple_hw_hrs_combo_trunc5
+fre couple_hw_hrs_weekday_trunc5
 fre family_type_trunc5
 
+// should not have any missing at time 1
 tab couple_work_ow_trunc1 if _mi_m!=0, m
-tab couple_hw_hrs_combo_trunc1 if _mi_m!=0, m
+tab couple_hw_hrs_weekday_trunc1 if _mi_m!=0, m
+tab couple_hw_hrs_weekly_trunc1 if _mi_m!=0, m
+tab couple_hw_hrs_combined_trunc1 if _mi_m!=0, m
 tab family_type_trunc1 if _mi_m!=0, m
 
-// browse pidp eligible_partner complete_seq sequence_length couple_work_ow_trunc* couple_hw_hrs_combo_trunc* family_type_trunc* if _mi_m!=0
+unique pid eligible_partner
+
+// browse pid eligible_partner complete_seq sequence_length couple_work_ow_trunc* couple_hw_hrs_weekday_trunc* family_type_trunc* if _mi_m!=0
 
 save "$created_data/gsoep_couples_wide_truncated.dta", replace 
