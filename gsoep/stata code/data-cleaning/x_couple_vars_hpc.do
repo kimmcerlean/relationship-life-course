@@ -280,7 +280,7 @@ mi passive: replace who_lived_with_man = 2 if who_lived_with_man==. & mom_pct_ma
 mi passive: replace who_lived_with_man = 3 if who_lived_with_man==. & dad_pct_man>.5000000 & dad_pct_man!=.
 mi passive: replace who_lived_with_man = 4 if who_lived_with_man==. & other_pct_man>.5000000 & other_pct_man!=.
 
-label define who_lived_with 1 "Both Parents" 2 "Mom" 3 "Dad" 4 "Other"
+capture label define who_lived_with 1 "Both Parents" 2 "Mom" 3 "Dad" 4 "Other"
 label values who_lived_with_woman who_lived_with_man who_lived_with
 
 tab who_lived_with_woman, m
@@ -324,7 +324,7 @@ mi passive: gen overwork_man=. // Cha and Weeden = 50 hrs, Cha 2010 = 50 and 60,
 mi passive: replace overwork_man = 0 if weekly_hrs_man >= 0 & weekly_hrs_man < 50
 mi passive: replace overwork_man = 1 if weekly_hrs_man >=50 & weekly_hrs_man < 200 
 
-label define ft_pt 0 "Not working" 1 "PT" 2 "FT"
+capture label define ft_pt 0 "Not working" 1 "PT" 2 "FT"
 label values ft_pt_woman ft_pt_man ft_pt
 
 tab ft_pt_woman overwork_woman
@@ -423,6 +423,10 @@ label values couple_work_ow couple_work_ow
 
 mi estimate: proportion couple_work_ow_detailed couple_work_ow
 
+**# Bookmark #1
+// temp save
+save "created data/stata/gsoep_couples_imputed_long_recoded.dta", replace
+
 ********************
 * Unpaid work
 ********************
@@ -470,7 +474,7 @@ mi estimate: proportion couple_hw_weekday
 	// Cutpoints: within equal HW
 	sum couple_weekday_hw_total, detail
 	sum couple_weekday_hw_total if couple_weekday_hw_total!=0, detail
-	mi passive: egen hw_weekday_hilow_equal = cut(couple_weekday_hw_total) if couple_weekday_hw_total!=0 & couple_hw_weekday==3, group(2)
+	mi passive: egen hw_weekday_hilow_equal = cut(couple_weekday_hw_total) if couple_weekday_hw_total!=0 & couple_hw_weekday==3, group(2) // why is this only generating one variable?
 	tab hw_weekday_hilow_equal if couple_hw_weekday==3
 	tabstat couple_weekday_hw_total, by(hw_weekday_hilow_equal)
 	
@@ -722,7 +726,7 @@ tab rel_type if _mi_m!=0, m
 
 // browse pid eligible_partner _mi_m relative_duration ever_transition dur_transitioned rel_type master_rel_type marst_imp marst_defacto min_dur max_dur
 
-label define rel_type 0 "Pre-Relationship" 1 "Married" 2 "Cohab" 3 "Attrited" 4 "Broke Up"
+capture label define rel_type 0 "Pre-Relationship" 1 "Married" 2 "Cohab" 3 "Attrited" 4 "Broke Up"
 label values rel_type rel_type
 
 tab rel_type, m
