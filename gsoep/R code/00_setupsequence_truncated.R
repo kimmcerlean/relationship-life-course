@@ -324,8 +324,7 @@ ggseqdplot(seq.fam) +
   labs(x = "Year")
 
 # Temp save - below not updated yet
-
-save.image("created data/gsoep/gsoep-setupsequence-truncated.RData")
+# save.image("created data/gsoep/gsoep-setupsequence-truncated.RData")
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Dissimilarity matrix
@@ -338,7 +337,7 @@ fam.miss.cost <- seqcost(seq.fam, method="CONSTANT",
 work.miss.cost <- seqcost(seq.work.ow, method="CONSTANT", 
                          miss.cost=0, with.missing=TRUE, miss.cost.fixed=TRUE)
 
-hw.miss.cost <- seqcost(seq.hw.hrs, method="CONSTANT", 
+hw.miss.cost <- seqcost(seq.hw.hrs.weekly, method="CONSTANT", 
                          miss.cost=0, with.missing=TRUE, miss.cost.fixed=TRUE)
 
 # Then make indel costs very high
@@ -358,7 +357,7 @@ hw.miss.indel
 dist.work.om <- seqdist(seq.work.ow, method="OM", indel=work.miss.indel, 
                            sm= work.miss.cost$sm, with.missing=TRUE)
 
-dist.hw.om <- seqdist(seq.hw.hrs, method="OM", indel=hw.miss.indel, 
+dist.hw.om <- seqdist(seq.hw.hrs.weekly, method="OM", indel=hw.miss.indel, 
                               sm= hw.miss.cost$sm, with.missing=TRUE)
 
 dist.fam.om <- seqdist(seq.fam, method="OM", indel=fam.miss.indel, 
@@ -379,10 +378,10 @@ for (i in 1:length(seq.len.work)){
   }
 }
 
-hw.min.len <- matrix(NA,ncol=length(seq.len.hw),nrow=length(seq.len.hw))
-for (i in 1:length(seq.len.hw)){
-  for (j in 1:length(seq.len.hw)){
-    hw.min.len[i,j] <- min(c(seq.len.hw[i],seq.len.hw[j]))
+hw.min.len <- matrix(NA,ncol=length(seq.len.hw.weekly),nrow=length(seq.len.hw.weekly))
+for (i in 1:length(seq.len.hw.weekly)){
+  for (j in 1:length(seq.len.hw.weekly)){
+    hw.min.len[i,j] <- min(c(seq.len.hw.weekly[i],seq.len.hw.weekly[j]))
   }
 }
 
@@ -468,7 +467,7 @@ rf1<-ggseqrfplot(seq.fam, diss=dist.fam.min, k=500, sortv="from.start",
 rf2<-ggseqrfplot(seq.work.ow, diss=dist.work.min, k=500, sortv="from.start",
                  which.plot="medoids") + theme(legend.position="none")
 
-rf3<-ggseqrfplot(seq.hw.hrs, diss=dist.hw.min, k=500, sortv="from.start",
+rf3<-ggseqrfplot(seq.hw.hrs.weekly, diss=dist.hw.min, k=500, sortv="from.start",
                  which.plot="medoids") + theme(legend.position="none")
 
 grid.arrange(rf1,rf2,rf3, ncol=3, nrow=1)

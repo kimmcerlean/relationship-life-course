@@ -2,7 +2,7 @@
 #    Program: cluster-plots
 #    Author: Kim McErlean & Lea Pessin 
 #    Date: January 2025
-#    Modified: June 9 2025
+#    Modified: August 14 2025
 #    Goal: Create relative frequency and state distribution plots
 #         comparing across cluster solutions - all sequences, including truncated
 # --------------------------------------------------------------------
@@ -96,23 +96,23 @@ if (Sys.getenv(c("USERNAME")) == "lpessin") {
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Load cluster information created in step 2s
+# Load cluster information created in step 2
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-load("created data/ukhls/typology-comparison-truncated-prep.RData")
+load("created data/gsoep/typology-comparison-truncated-prep.RData")
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Add cluster information to source data ---- 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # Cut tree (this happened in step 2)
-# mc5 <- mcdist.om.pam.ward$clustering$cluster6 # these are sub"folders" in ward output
+# mc5 <- mcdist.om.pam.ward$clustering$cluster5 # these are sub"folders" in ward output
 
 # add cluster membership indicator 
 data <- data |>
   mutate(cluster = mc5,
          id2 = row_number())
 
-# Obtain relative frequencies of the six cluster (using weights)
+# Obtain relative frequencies of the clusters (using weights)
 # Convert relative frequencies to percentages (used for labeling the y-axes)
 
 data <- data |>
@@ -133,11 +133,11 @@ data <- data |>
 # mcdist.det.min <- mcdist.det.om / fam.min.len
 
 #### State distribution
-pdf("results/UKHLS/UKHLS_MCSA_SDPlot_truncated_mc5.pdf",
+pdf("results/GSOEP/GSOEP_MCSA_SDPlot_truncated_mc5.pdf",
     width=15,
     height=28)
 
-seqplotMD(channels=list('Paid Work'=seq.work.ow,Family=seq.fam,Housework=seq.hw.hrs),
+seqplotMD(channels=list('Paid Work'=seq.work.ow,Family=seq.fam,Housework=seq.hw.hrs.weekly),
           group = data$mc.factor, type="d",
           xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE)  
 
@@ -145,11 +145,11 @@ dev.off()
 
 
 #### Relative frequency: 100 K (start, domain: fam)
-pdf("results/UKHLS/UKHLS_RF100Plot_start_truncated_mc5.pdf",
+pdf("results/GSOEP/GSOEP_RF100Plot_start_truncated_mc5.pdf",
     width=15,
     height=42)
 
-seqplotMD(channels=list('Paid Work'=seq.work.ow,Family=seq.fam,Housework=seq.hw.hrs),
+seqplotMD(channels=list('Paid Work'=seq.work.ow,Family=seq.fam,Housework=seq.hw.hrs.weekly),
           group = data$mc.factor, type="rf", diss=mcdist.det.min,
           xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
           dom.byrow=FALSE,k=100,sortv="from.start",dom.crit=2,
@@ -159,11 +159,11 @@ dev.off()
 
 
 #### Relative frequency: 100 K (end, domain: fam)
-pdf("results/UKHLS/UKHLS_RF100Plot_end_truncated_mc5.pdf",
+pdf("results/GSOEP/GSOEP_RF100Plot_end_truncated_mc5.pdf",
     width=15,
     height=42)
 
-seqplotMD(channels=list('Paid Work'=seq.work.ow,Family=seq.fam,Housework=seq.hw.hrs),
+seqplotMD(channels=list('Paid Work'=seq.work.ow,Family=seq.fam,Housework=seq.hw.hrs.weekly),
           group = data$mc.factor, type="rf", diss=mcdist.det.min,
           xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
           dom.byrow=FALSE,k=100,sortv="from.end",dom.crit=2,
@@ -179,7 +179,7 @@ dev.off()
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Load cluster information created in step 2 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-load("created data/ukhls/typology-comparison-truncated-prep.RData")
+load("created data/gsoep/typology-comparison-truncated-prep.RData")
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Add cluster information to source data ---- 
@@ -215,11 +215,11 @@ data <- data |>
 
 
 #### State distribution
-pdf("results/UKHLS/UKHLS_MCSA_SDPlot_truncated_mc6.pdf",
+pdf("results/GSOEP/GSOEP_MCSA_SDPlot_truncated_mc6.pdf",
     width=15,
     height=28)
 
-seqplotMD(channels=list('Paid Work'=seq.work.ow,Family=seq.fam,Housework=seq.hw.hrs),
+seqplotMD(channels=list('Paid Work'=seq.work.ow,Family=seq.fam,Housework=seq.hw.hrs.weekly),
           group = data$mc.factor, type="d",
           xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE)  
 
@@ -227,11 +227,11 @@ dev.off()
 
 
 #### Relative frequency: 100 K (start, domain: fam)
-pdf("results/UKHLS/UKHLS_RF100Plot_start_truncated_mc6.pdf",
+pdf("results/GSOEP/GSOEP_RF100Plot_start_truncated_mc6.pdf",
     width=15,
     height=42)
 
-seqplotMD(channels=list('Paid Work'=seq.work.ow,Family=seq.fam,Housework=seq.hw.hrs),
+seqplotMD(channels=list('Paid Work'=seq.work.ow,Family=seq.fam,Housework=seq.hw.hrs.weekly),
           group = data$mc.factor, type="rf", diss=mcdist.det.min,
           xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
           dom.byrow=FALSE,k=100,sortv="from.start",dom.crit=2,
@@ -240,11 +240,11 @@ seqplotMD(channels=list('Paid Work'=seq.work.ow,Family=seq.fam,Housework=seq.hw.
 dev.off()
 
 #### Relative frequency: 100 K (end, domain: fam)
-pdf("results/UKHLS/UKHLS_RF100Plot_end_truncated_mc6.pdf",
+pdf("results/GSOEP/GSOEP_RF100Plot_end_truncated_mc6.pdf",
     width=15,
     height=42)
 
-seqplotMD(channels=list('Paid Work'=seq.work.ow,Family=seq.fam,Housework=seq.hw.hrs),
+seqplotMD(channels=list('Paid Work'=seq.work.ow,Family=seq.fam,Housework=seq.hw.hrs.weekly),
           group = data$mc.factor, type="rf", diss=mcdist.det.min,
           xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
           dom.byrow=FALSE,k=100,sortv="from.end",dom.crit=2,
@@ -259,7 +259,7 @@ dev.off()
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Load cluster information created in step 2 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-load("created data/ukhls/typology-comparison-truncated-prep.RData")
+load("created data/gsoep/typology-comparison-truncated-prep.RData")
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Add cluster information to source data ---- 
@@ -305,11 +305,11 @@ data <- data |>
 # mcdist.det.min <- mcdist.det.om / fam.min.len
 
 #### State distribution
-pdf("results/UKHLS/UKHLS_MCSA_SDPlot_truncated_mc7.pdf",
+pdf("results/GSOEP/GSOEP_MCSA_SDPlot_truncated_mc7.pdf",
     width=15,
     height=28)
 
-seqplotMD(channels=list('Paid Work'=seq.work.ow,Family=seq.fam,Housework=seq.hw.hrs),
+seqplotMD(channels=list('Paid Work'=seq.work.ow,Family=seq.fam,Housework=seq.hw.hrs.weekly),
           group = data$mc.factor, type="d",
           xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE)  
 
@@ -317,11 +317,11 @@ dev.off()
 
 
 #### Relative frequency: 100 K, (start, domain: fam)
-pdf("results/UKHLS/UKHLS_RF100Plot_start_truncated_mc7.pdf",
+pdf("results/GSOEP/GSOEP_RF100Plot_start_truncated_mc7.pdf",
     width=15,
     height=42)
 
-seqplotMD(channels=list('Paid Work'=seq.work.ow,Family=seq.fam,Housework=seq.hw.hrs),
+seqplotMD(channels=list('Paid Work'=seq.work.ow,Family=seq.fam,Housework=seq.hw.hrs.weekly),
           group = data$mc.factor, type="rf", diss=mcdist.det.min,
           xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
           dom.byrow=FALSE,k=100,sortv="from.start",dom.crit=2,
@@ -331,11 +331,11 @@ dev.off()
 
 
 #### Relative frequency: 100 K, (end, domain: fam)
-pdf("results/UKHLS/UKHLS_RF100Plot_end_truncated_mc7.pdf",
+pdf("results/GSOEP/GSOEP_RF100Plot_end_truncated_mc7.pdf",
     width=15,
     height=42)
 
-seqplotMD(channels=list('Paid Work'=seq.work.ow,Family=seq.fam,Housework=seq.hw.hrs),
+seqplotMD(channels=list('Paid Work'=seq.work.ow,Family=seq.fam,Housework=seq.hw.hrs.weekly),
           group = data$mc.factor, type="rf", diss=mcdist.det.min,
           xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
           dom.byrow=FALSE,k=100,sortv="from.end",dom.crit=2,
@@ -347,19 +347,17 @@ dev.off()
 # Charts for 8 cluster solution
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-# Want to see if this helps the family clusters
-
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Load cluster information created in step 2 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-load("created data/ukhls/typology-comparison-truncated-prep.RData")
+load("created data/gsoep/typology-comparison-truncated-prep.RData")
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Add cluster information to source data ---- 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-# Cut tree (did not do this for 8 yet)
-mc8 <- mcdist.om.pam.ward$clustering$cluster8 # these are sub"folders" in ward output
+# Cut tree
+# mc8 <- mcdist.om.pam.ward$clustering$cluster8 # these are sub"folders" in ward output
 
 # add cluster membership indicator 
 data <- data |>
@@ -387,11 +385,11 @@ data <- data |>
 # mcdist.det.min <- mcdist.det.om / fam.min.len
 
 #### State distribution
-pdf("results/UKHLS/UKHLS_MCSA_SDPlot_truncated_mc8.pdf",
+pdf("results/GSOEP/GSOEP_MCSA_SDPlot_truncated_mc8.pdf",
     width=15,
     height=28)
 
-seqplotMD(channels=list('Paid Work'=seq.work.ow,Family=seq.fam,Housework=seq.hw.hrs),
+seqplotMD(channels=list('Paid Work'=seq.work.ow,Family=seq.fam,Housework=seq.hw.hrs.weekly),
           group = data$mc.factor, type="d",
           xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE)  
 
@@ -399,11 +397,11 @@ dev.off()
 
 
 #### Relative frequency: 100 K (start, domain: fam)
-pdf("results/UKHLS/UKHLS_RF100Plot_truncated_start_mc8.pdf",
+pdf("results/GSOEP/GSOEP_RF100Plot_truncated_start_mc8.pdf",
     width=15,
     height=42)
 
-seqplotMD(channels=list('Paid Work'=seq.work.ow,Family=seq.fam,Housework=seq.hw.hrs),
+seqplotMD(channels=list('Paid Work'=seq.work.ow,Family=seq.fam,Housework=seq.hw.hrs.weekly),
           group = data$mc.factor, type="rf", diss=mcdist.det.min,
           xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
           dom.byrow=FALSE,k=100,sortv="from.start",dom.crit=2,
@@ -412,11 +410,11 @@ seqplotMD(channels=list('Paid Work'=seq.work.ow,Family=seq.fam,Housework=seq.hw.
 dev.off()
 
 #### Relative frequency: 100 K (end, domain: fam)
-pdf("results/UKHLS/UKHLS_RF100Plot_truncated_end_mc8.pdf",
+pdf("results/GSOEP/GSOEP_RF100Plot_truncated_end_mc8.pdf",
     width=15,
     height=42)
 
-seqplotMD(channels=list('Paid Work'=seq.work.ow,Family=seq.fam,Housework=seq.hw.hrs),
+seqplotMD(channels=list('Paid Work'=seq.work.ow,Family=seq.fam,Housework=seq.hw.hrs.weekly),
           group = data$mc.factor, type="rf", diss=mcdist.det.min,
           xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
           dom.byrow=FALSE,k=100,sortv="from.end",dom.crit=2,

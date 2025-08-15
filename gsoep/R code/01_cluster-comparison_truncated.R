@@ -2,8 +2,9 @@
 #    Program: cluster-comparison_truncated
 #    Author: Kim McErlean & Lea Pessin 
 #    Date: January 2025
-#    Modified: May 15 2025
-#    Goal: compare clusters for SC v. MC solution - all sequences, including truncated
+#    Modified: August 13 2025
+#    Goal: compare clusters for SC v. MC solution,
+#     all sequences, including truncated (GSOEP)
 # --------------------------------------------------------------------
 # --------------------------------------------------------------------
 
@@ -86,7 +87,7 @@ if (Sys.getenv(c("USERNAME")) == "lpessin") {
 # Load sequences created in step 00 ----
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-load("created data/ukhls/ukhls-setupsequence-truncated.RData")
+load("created data/gsoep/gsoep-setupsequence-truncated.RData")
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -111,49 +112,21 @@ x <- 2:15 ## this is number of clusters
 
 # Extract r2 and silhouette for the combined clustering
 
-mcsa<-seqMD(channels=list(seq.work.ow, seq.hw.hrs, seq.fam),
+mcsa<-seqMD(channels=list(seq.work.ow, seq.hw.hrs.weekly, seq.fam),
             with.missing=TRUE,
             what="MDseq") ##, right=NA)
 seqlength(mcsa)
 seqlength(mcsa, with.missing = FALSE) # okay, this isn't working, 
 # but all sequences are same length across domains, so can just use 1 domain
 
-# did a lot of this in step 0
-#seq.len.hw<-seqlength(seq.hw.hrs, with.missing = FALSE)
-#seq.len.fam<-seqlength(seq.fam, with.missing = FALSE)
-
-# Now create costs: set sm to 0 for missing
-#fam.miss.cost <- seqcost(seq.fam, method="CONSTANT", 
-#                         miss.cost=0, with.missing=TRUE, miss.cost.fixed=TRUE)
-
-#work.miss.cost <- seqcost(seq.work.ow, method="CONSTANT", 
-#                          miss.cost=0, with.missing=TRUE, miss.cost.fixed=TRUE)
-
-#hw.miss.cost <- seqcost(seq.hw.hrs, method="CONSTANT", 
-#                        miss.cost=0, with.missing=TRUE, miss.cost.fixed=TRUE)
-
-# Then make indel costs very high
-#fam.miss.indel<- rep(1,ncol(fam.miss.cost$sm))
-#fam.miss.indel[length(fam.miss.indel)] <- 99999
-#fam.miss.indel
-
-#work.miss.indel<- rep(1,ncol(work.miss.cost$sm))
-#work.miss.indel[length(work.miss.indel)] <- 99999
-#work.miss.indel
-
-#hw.miss.indel<- rep(1,ncol(hw.miss.cost$sm))
-#hw.miss.indel[length(hw.miss.indel)] <- 99999
-#hw.miss.indel
-
-
 ## Now create multi-channel distance
-mcdist.det.om <- seqdistmc(channels=list(seq.work.ow, seq.hw.hrs, seq.fam), ## Seq states NOT om matrix
+mcdist.det.om <- seqdistmc(channels=list(seq.work.ow, seq.hw.hrs.weekly, seq.fam), ## Seq states NOT om matrix
                            method="OM", 
                            indel=list(work.miss.indel,hw.miss.indel, fam.miss.indel),
                            sm=list(work.miss.cost$sm, hw.miss.cost$sm, fam.miss.cost$sm),
                            with.missing=TRUE) 
 
-## Create length matrix
+## Create length matrix - done in step 0
 #fam.min.len <- matrix(NA,ncol=length(seq.len.fam),nrow=length(seq.len.fam))
 #for (i in 1:length(seq.len.fam)){
 #  for (j in 1:length(seq.len.fam)){
@@ -221,13 +194,13 @@ hw.hrs.r2 <- hw.hrs.val[,7]
 # Save for later ----
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-save.image("created data/ukhls/ukhls_cluster-comparison-truncated.RData")
+save.image("created data/gsoep/gsoep_cluster-comparison-truncated.RData")
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Create figure comparing normalized v. not (for MC)  ---- 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-pdf("results/UKHLS/UKHLS_truncated_sequences_cluster_mcsa.pdf")
+pdf("results/GSOEP/GSOEP_truncated_sequences_cluster_mcsa.pdf")
 
 # MCSA: Normalized
 p1<-plot(x, mc.min.asw, type = "b", frame = FALSE, pch = 19, main="MCSA: Normalized", 
@@ -266,7 +239,7 @@ dev.off()
 # Create figure comparing separate channels and MCSA ---- 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-pdf("results/UKHLS/UKHLS_truncated_sequences_cluster.pdf",
+pdf("results/GSOEP/GSOEP_truncated_sequences_cluster.pdf",
     width=20,
     height=10)
 
@@ -306,8 +279,8 @@ lines(x, work.ow.r2, pch = 19, col = "black", type = "b", lty = 2)
 legend("bottomright", legend=c("ASW", "R2"),
        col=c("blue", "black"), lty = 1:2, cex=1.2)
 
-# Housework Channel: Hours with Group-specific thresholds
-plot(x, hw.hrs.asw, type = "b", frame = FALSE, pch = 19, main="Housework (with Hours)", 
+# Housework Channel: Weekly
+plot(x, hw.hrs.asw, type = "b", frame = FALSE, pch = 19, main="Housework (Weekly)", 
      col = "blue", xlab = "N. clusters", ylab = "", ylim = c(0,0.8),
      cex.main=2,
      cex.lab=1.6,
