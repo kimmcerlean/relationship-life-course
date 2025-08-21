@@ -98,7 +98,7 @@ data <- data%>%filter(sequence_length>=3)
 ## testing with 5 imputations for now to avoid using unique sequences
 ## (maybe) once we figure this out, can try to add all
 # For reference, it's 2^31-1 (which is 46340)
-# we have 72660 with 10 imputations, so that drops to 36330
+# we have 56290 with 10 imputations, so that drops to 28145
 data <- data%>%filter(`_mi_m`==1 | `_mi_m`==2 | `_mi_m`==3 | `_mi_m`==4 | `_mi_m`==5)
 table(data$`_mi_m`)
 
@@ -397,7 +397,7 @@ save.image("created data/gsoep/gsoep-setupsequence-truncated.RData")
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Exporting figures
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
+# All HW options
 pdf("results/GSOEP/GSOEP_Base_Sequences_truncated.pdf",
     width=12,
     height=8)
@@ -440,6 +440,34 @@ s3<-ggseqdplot(seq.fam) +
 grid.arrange(s2a,s2b,s2c,s1,s3, ncol=3, nrow=2)
 dev.off()
 
+# Preferred HW option
+pdf("results/GSOEP/GSOEP_Base_Sequences_truncated_v2.pdf",
+    width=12,
+    height=3)
+
+s1<-ggseqdplot(seq.work.ow) +
+  scale_x_discrete(labels = 1:10) +
+  labs(x = "Relationship Duration", y=NULL) + 
+  theme(legend.position="none") +
+  ggtitle("Paid Work") + 
+  theme(plot.title=element_text(hjust=0.5))
+
+s2<-ggseqdplot(seq.hw.hrs.weekly) +
+  scale_x_discrete(labels = 1:10) +
+  labs(x = "Relationship Duration", y=NULL) + 
+  theme(legend.position="none") +
+  ggtitle("Housework") + 
+  theme(plot.title=element_text(hjust=0.5))
+
+s3<-ggseqdplot(seq.fam) +
+  scale_x_discrete(labels = 1:10) +
+  labs(x = "Relationship Duration", y=NULL) + 
+  theme(legend.position="none") +
+  ggtitle("Family") + 
+  theme(plot.title=element_text(hjust=0.5))
+
+grid.arrange(s1,s3,s2, ncol=3, nrow=1)
+dev.off()
 
 #pdf("results/GSOEP/GSOEP_Base_Index_truncated.pdf",
 #    width=12,

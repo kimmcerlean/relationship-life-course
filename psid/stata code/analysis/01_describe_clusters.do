@@ -16,13 +16,14 @@
 ********************************************************************************
 * First, clean up the cluster file, so just has variables I want
 ********************************************************************************
-use "$temp/PSID_clusters.dta", clear
+use "$temp/PSID_clusters_truncated_sequences.dta", clear
 
 // append using "$created_data/psid_couples_base.dta"
 // browse unique_id partner_id _mi_m _mi_id
 // tab _mi_miss, m
 // drop _mi_miss
 
+drop couple_id
 egen couple_id = group(unique_id partner_id)
 // rename _mi_id couple_id
 unique couple_id _mi_id
@@ -30,9 +31,9 @@ unique unique_id partner_id
 
 gen mim = _mi_m
 
-keep couple_id unique_id partner_id mim mc_ward_det_4cl mc_ward_det_5cl mc4_factor mc5_factor
+keep couple_id unique_id partner_id mim mc6_factor mc7_factor mc8_factor // old (non-truncated): mc_ward_det_4cl mc_ward_det_5cl mc4_factor mc5_factor
 
-save "$created_data/PSID_clusters.dta", replace
+save "$created_data/PSID_truncated_clusters.dta", replace
 
 // so if I do flong (and rename _mi_m to m so it's created again), Stata turns _mi_m of 1 into 0 and all of my passive variables are messed up and become same across imputations - so this is problematic
 // if I do wide, the desctable doesn't seem to recognize that these are imputed data, but it does retain diffs across imputations, there is just not a 0.
@@ -52,13 +53,20 @@ mi register regular rel_start_all rel_end_all age_focal* SEX rel_status rel_type
 ********************************************************************************
 * Now, merge clusters onto the original Stata imputed data
 ********************************************************************************
-use "$created_data/psid_couples_imputed_wide.dta", clear
+use "$created_data/psid_couples_wide_truncated.dta", clear
+
+mi set m -= (6,7,8,9,10) // only did first 5 imputations for now
+// unique unique_id partner_id if sequence_length>=3
+keep if sequence_length>=3 // also only keep relationships longer than 3 years now (for truncated sequences)
+
+mi update
 
 gen mim = _mi_m
+drop couple_id
 egen couple_id = group (unique_id partner_id)
 
 // mi merge 1:1 couple_id mim using "$created_data/PSID_clusters.dta", gen(howmatch) // keep(match) 
-merge 1:1 couple_id mim using "$created_data/PSID_clusters.dta"
+merge 1:1 couple_id mim using "$created_data/PSID_truncated_clusters.dta"
 
 tab _mi_m _merge, m // confirm that this is mi 0 - it is
 drop mim
@@ -69,18 +77,17 @@ mi update
 ********************************************************************************
 * Figure out the data structure
 ********************************************************************************
-browse unique_id partner_id _mi_m mc_ward_det_4cl mc_ward_det_5cl mc4_factor mc5_factor
+browse unique_id partner_id _mi_m mc6_factor mc7_factor mc8_factor
 // there are no sequence objects here. Are there supposed to be? Or we just care about cluster membership?
 
-tab mc_ward_det_4cl, m
-tab mc_ward_det_5cl, m
-tab mc4_factor, m
-tab mc5_factor, m // these match the charts I created but, is it problematic that no one in imputation 0 is assigned to a cluster? or is that fine? do I give them their own cluster maybe?
-tab mc5_factor mc_ward_det_5cl // so the two different cluster options lead to two different arrangements...
+tab mc6_factor, m
+tab mc7_factor, m
+tab mc8_factor, m // these match the charts I created but, is it problematic that no one in imputation 0 is assigned to a cluster? or is that fine? do I give them their own cluster maybe?
 
 // for now, very crude labels
-capture label define mc5_factor 1 "traditional" 2 "attrition" 3 "dissolution" 4 "egal with kids" 5 "egal-ish no kids"
-label values mc5_factor mc5_factor
+capture label define mc8_factor 1 "cf cohab + 2nd shift" 2 "persistent trad work" 3 "work complexity + cohab" 4 "ow + delayed parenthood" ///
+5 "work complexity + fam intensity" 6 "dual FT + 1-2 kids" 7 "dual FT + CF" 8 "dual FT + 2-3 kids"
+label values mc8_factor mc8_factor
 
 ********************************************************************************
 * Any variables still need to be created
@@ -124,25 +131,21 @@ replace same_race=1 if raceth_man==raceth_woman
 
 // make some sort of birth cohort? can also use age to describe within cluster (but categorical will be easier for between cluster)
 // well, age is hard because time-varying. so could just use at time 0
-gen birth_yr_man=birth_yr_all if SEX==1
-replace birth_yr_man=birth_yr_all_sp if SEX==2
-
-gen birth_yr_woman=birth_yr_all if SEX==2
-replace birth_yr_woman=birth_yr_all_sp if SEX==1
-
 gen bcohort_man = .
-replace bcohort_man = 1 if birth_yr_man < 1960
-replace bcohort_man = 2 if birth_yr_man >= 1960 & birth_yr_man < 1970
-replace bcohort_man = 3 if birth_yr_man >= 1970 & birth_yr_man < 1980
-replace bcohort_man = 4 if birth_yr_man >= 1980 & birth_yr_man < 2000
+replace bcohort_man = 1 if dob_man < 1960
+replace bcohort_man = 2 if dob_man >= 1960 & dob_man < 1970
+replace bcohort_man = 3 if dob_man >= 1970 & dob_man < 1980
+replace bcohort_man = 4 if dob_man >= 1980 & dob_man < 1990
+replace bcohort_man = 5 if dob_man >= 1990 & dob_man < 2005
 
 gen bcohort_woman = .
-replace bcohort_woman = 1 if birth_yr_woman < 1960
-replace bcohort_woman = 2 if birth_yr_woman >= 1960 & birth_yr_woman < 1970
-replace bcohort_woman = 3 if birth_yr_woman >= 1970 & birth_yr_woman < 1980
-replace bcohort_woman = 4 if birth_yr_woman >= 1980 & birth_yr_woman < 2000
+replace bcohort_woman = 1 if dob_woman < 1960
+replace bcohort_woman = 2 if dob_woman >= 1960 & dob_woman < 1970
+replace bcohort_woman = 3 if dob_woman >= 1970 & dob_woman < 1980
+replace bcohort_woman = 4 if dob_woman >= 1980 & dob_woman < 1990
+replace bcohort_woman = 5 if dob_woman >= 1990 & dob_woman < 2005
 
-capture label define bcohort 1 "Pre-1960s" 2 "1960s" 3 "1970s" 4 "1980s+"
+capture label define bcohort 1 "Pre-1960s" 2 "1960s" 3 "1970s" 4 "1980s" 5 "1990s+"
 label values bcohort_man bcohort_woman bcohort
 
 gen age_man1 = age_focal1  if SEX==1
@@ -162,7 +165,7 @@ label values age_gp_woman1 age_gp
 // relationship start as well
 gen rel_cohort=.
 replace rel_cohort = 1 if rel_start_all >=1990 & rel_start_all<2000
-replace rel_cohort = 2 if rel_start_all >=2000 & rel_start_all<2012
+replace rel_cohort = 2 if rel_start_all >=2000 & rel_start_all<2025
 tab rel_cohort, m
 
 // income or earnings (perhaps earnings is a bit endogenous to employment, but could work)
@@ -183,7 +186,7 @@ tab _mi_m couple_earnings_quart1
 mi update
 // mi register regular education_man education_woman couple_educ_type raceth_man raceth_woman birth_yr_man birth_yr_woman bcohort_man bcohort_woman age_man1 age_woman1 // do I need to register?
 
-save "$created_data/PSID_clusters_analysis.dta", replace
+save "$created_data/PSID_truncated_clusters_analysis.dta", replace
 
 ********************************************************************************
 **# Within cluster descriptives

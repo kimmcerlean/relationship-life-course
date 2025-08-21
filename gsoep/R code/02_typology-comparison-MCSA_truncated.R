@@ -120,52 +120,52 @@ mcdist.om.pam.ward <- wcKMedRange(mcdist.det.min, kvals = 2:10,
 mc5 <- mcdist.om.pam.ward$clustering$cluster5 # these are sub"folders" in ward output
 
 # Label the clusters from 1 to 5
-labels5<-unique(mc5)
-sort(labels5)
+# labels5<-unique(mc5)
+# sort(labels5)
 
-mc5.factor <- factor(mc5, levels = sort(labels5),
-                     c("1", "2", "3", "4", "5"))
+# mc5.factor <- factor(mc5, levels = sort(labels5),
+#                     c("1", "2", "3", "4", "5"))
 
 # Separate objects for each channel and for each cluster
 
-data$mc5.factor <- as.numeric(mc5.factor)
+# data$mc5.factor <- as.numeric(mc5.factor)
 
 # Identify position of variables indicating start and end of sequences
 
-mc5.work.ow1.seq <- seq.work.ow[data$mc5.factor == "1", ]
-mc5.work.ow2.seq <- seq.work.ow[data$mc5.factor == "2", ]
-mc5.work.ow3.seq <- seq.work.ow[data$mc5.factor == "3", ]
-mc5.work.ow4.seq <- seq.work.ow[data$mc5.factor == "4", ]
-mc5.work.ow5.seq <- seq.work.ow[data$mc5.factor == "5", ]
+# mc5.work.ow1.seq <- seq.work.ow[data$mc5.factor == "1", ]
+# mc5.work.ow2.seq <- seq.work.ow[data$mc5.factor == "2", ]
+# mc5.work.ow3.seq <- seq.work.ow[data$mc5.factor == "3", ]
+# mc5.work.ow4.seq <- seq.work.ow[data$mc5.factor == "4", ]
+# mc5.work.ow5.seq <- seq.work.ow[data$mc5.factor == "5", ]
 
-mc5.hw.hrs1.seq <- seq.hw.hrs.weekly[data$mc5.factor == "1", ]
-mc5.hw.hrs2.seq <- seq.hw.hrs.weekly[data$mc5.factor == "2", ]
-mc5.hw.hrs3.seq <- seq.hw.hrs.weekly[data$mc5.factor == "3", ]
-mc5.hw.hrs4.seq <- seq.hw.hrs.weekly[data$mc5.factor == "4", ]
-mc5.hw.hrs5.seq <- seq.hw.hrs.weekly[data$mc5.factor == "5", ]
+# mc5.hw.hrs1.seq <- seq.hw.hrs.weekly[data$mc5.factor == "1", ]
+# mc5.hw.hrs2.seq <- seq.hw.hrs.weekly[data$mc5.factor == "2", ]
+# mc5.hw.hrs3.seq <- seq.hw.hrs.weekly[data$mc5.factor == "3", ]
+# mc5.hw.hrs4.seq <- seq.hw.hrs.weekly[data$mc5.factor == "4", ]
+# mc5.hw.hrs5.seq <- seq.hw.hrs.weekly[data$mc5.factor == "5", ]
 
-mc5.fam1.seq <- seq.fam[data$mc5.factor == "1", ]
-mc5.fam2.seq <- seq.fam[data$mc5.factor == "2", ]
-mc5.fam3.seq <- seq.fam[data$mc5.factor == "3", ]
-mc5.fam4.seq <- seq.fam[data$mc5.factor == "4", ]
-mc5.fam5.seq <- seq.fam[data$mc5.factor == "5", ]
+# mc5.fam1.seq <- seq.fam[data$mc5.factor == "1", ]
+# mc5.fam2.seq <- seq.fam[data$mc5.factor == "2", ]
+# mc5.fam3.seq <- seq.fam[data$mc5.factor == "3", ]
+# mc5.fam4.seq <- seq.fam[data$mc5.factor == "4", ]
+# mc5.fam5.seq <- seq.fam[data$mc5.factor == "5", ]
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # Obtain relative frequencies of the five clusters
 
-relfreq5 <- data %>% 
-  count(mc5.factor) %>% 
-  mutate(share = n/ sum(n)) %>%
-  arrange(share)
+# relfreq5 <- data %>% 
+#  count(mc5.factor) %>% 
+#  mutate(share = n/ sum(n)) %>%
+#  arrange(share)
 
 # Convert relative frequencies to percentages (will be used for labeling the y-axes)
-share <- round(as.numeric(relfreq5$share)*100, 1)
+# share <- round(as.numeric(relfreq5$share)*100, 1)
 
 # display frequencies of each cluster.
-print(relfreq5)
+# print(relfreq5)
 
-write.csv(relfreq5,("results/GSOEP/truncated_cluster_freq_mc5.csv"))
+# write.csv(relfreq5,("results/GSOEP/truncated_cluster_freq_mc5.csv"))
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Prep work for 6 cluster solution
@@ -353,13 +353,82 @@ print(relfreq8)
 
 write.csv(relfreq8,("results/GSOEP/truncated_cluster_freq_mc8.csv"))
 
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Prep work for 9 cluster solution
+# This might be crazy - but family cluster on its own could yield many clusters?
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+# Cut tree at cluster==9
+
+mc9 <- mcdist.om.pam.ward$clustering$cluster9 # these are sub"folders" in ward output
+
+# Label the clusters from 1 to 9
+labels9<-unique(mc9)
+sort(labels9)
+
+mc9.factor <- factor(mc9, levels = sort(labels9),
+                     c("1", "2", "3", "4", "5", "6", "7", "8", "9"))
+
+# Separate objects for each channel and for each cluster
+
+data$mc9.factor <- as.numeric(mc9.factor)
+
+# Identify position of variables indicating start and end of sequences
+
+mc9.work.ow1.seq <- seq.work.ow[data$mc9.factor == "1", ]
+mc9.work.ow2.seq <- seq.work.ow[data$mc9.factor == "2", ]
+mc9.work.ow3.seq <- seq.work.ow[data$mc9.factor == "3", ]
+mc9.work.ow4.seq <- seq.work.ow[data$mc9.factor == "4", ]
+mc9.work.ow5.seq <- seq.work.ow[data$mc9.factor == "5", ]
+mc9.work.ow6.seq <- seq.work.ow[data$mc9.factor == "6", ]
+mc9.work.ow7.seq <- seq.work.ow[data$mc9.factor == "7", ]
+mc9.work.ow8.seq <- seq.work.ow[data$mc9.factor == "8", ]
+mc9.work.ow9.seq <- seq.work.ow[data$mc9.factor == "9", ]
+
+mc9.hw.hrs1.seq <- seq.hw.hrs.weekly[data$mc9.factor == "1", ]
+mc9.hw.hrs2.seq <- seq.hw.hrs.weekly[data$mc9.factor == "2", ]
+mc9.hw.hrs3.seq <- seq.hw.hrs.weekly[data$mc9.factor == "3", ]
+mc9.hw.hrs4.seq <- seq.hw.hrs.weekly[data$mc9.factor == "4", ]
+mc9.hw.hrs5.seq <- seq.hw.hrs.weekly[data$mc9.factor == "5", ]
+mc9.hw.hrs6.seq <- seq.hw.hrs.weekly[data$mc9.factor == "6", ]
+mc9.hw.hrs7.seq <- seq.hw.hrs.weekly[data$mc9.factor == "7", ]
+mc9.hw.hrs8.seq <- seq.hw.hrs.weekly[data$mc9.factor == "8", ]
+mc9.hw.hrs9.seq <- seq.hw.hrs.weekly[data$mc9.factor == "9", ]
+
+mc9.fam1.seq <- seq.fam[data$mc9.factor == "1", ]
+mc9.fam2.seq <- seq.fam[data$mc9.factor == "2", ]
+mc9.fam3.seq <- seq.fam[data$mc9.factor == "3", ]
+mc9.fam4.seq <- seq.fam[data$mc9.factor == "4", ]
+mc9.fam5.seq <- seq.fam[data$mc9.factor == "5", ]
+mc9.fam6.seq <- seq.fam[data$mc9.factor == "6", ]
+mc9.fam7.seq <- seq.fam[data$mc9.factor == "7", ]
+mc9.fam8.seq <- seq.fam[data$mc9.factor == "8", ]
+mc9.fam9.seq <- seq.fam[data$mc9.factor == "9", ]
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+# Obtain relative frequencies of the nine clusters
+
+relfreq9 <- data %>% 
+  count(mc9.factor) %>% 
+  mutate(share = n/ sum(n)) %>%
+  arrange(share)
+
+# Convert relative frequencies to percentages (will be used for labeling the y-axes)
+share <- round(as.numeric(relfreq9$share)*100, 1)
+
+# display frequencies of each cluster.
+print(relfreq9)
+
+write.csv(relfreq9,("results/GSOEP/truncated_cluster_freq_mc9.csv"))
+
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Save
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-save.image("created data/gsoep/typology-comparison-truncated-prep.RData")
-
 # also, export the data with the clusters attached to use for analysis in stata
 write.dta(data, "created data/gsoep/GSOEP_clusters_truncated_sequences.dta")
+
+save.image("created data/gsoep/typology-comparison-truncated-prep.RData")
 
 # load("created data/gsoep/typology-comparison-truncated-prep.RData")

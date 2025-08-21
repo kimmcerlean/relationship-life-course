@@ -1180,6 +1180,7 @@ unique couple_id // 2372
 
 save "$created_data/gsoep_couples_imputed_wide_complete.dta", replace 
 
+**# THIS IS OUR MAIN ANALYSIS FILE
 // truncated data (so not attrit or dissolve - set to missing instead)
 use "$created_data/gsoep_couples_imputed_wide.dta", clear
 
@@ -1227,4 +1228,75 @@ unique pid eligible_partner
 
 // browse pid eligible_partner complete_seq sequence_length couple_work_ow_trunc* couple_hw_hrs_weekday_trunc* family_type_trunc* if _mi_m!=0
 
+// we are dropping those in the refugee over-samples. I am going to drop those here (but not from main file above jic) because feels easier
+// other sample things (sequence length >=3) happen in R
+
+gen sample_type = .
+replace sample_type = 1 if inrange(psample_pl,1,14)
+replace sample_type = 1 if inrange(psample_pl,20,23)
+replace sample_type = 2 if inlist(psample_pl,15,16,25,26)
+replace sample_type = 3 if inlist(psample_pl,17,18,19,24)
+
+gen sample_type_sp = .
+replace sample_type_sp = 1 if inrange(psample_pl_sp,1,14)
+replace sample_type_sp = 1 if inrange(psample_pl_sp,20,23)
+replace sample_type_sp = 2 if inlist(psample_pl_sp,15,16,25,26)
+replace sample_type_sp = 3 if inlist(psample_pl_sp,17,18,19,24)
+
+label define sample_type 1 "core" 2 "migrant" 3 "refugee"
+label values sample_type sample_type_sp sample_type
+
+tab sample_type, m
+// oh - are refugees typically partnered to each other? Like prob drop if either is a refugee?
+tab sample_type sample_type_sp, m // wait - does it make sense it's perfectly matched? is this because it's based on HH? so if in same HH, in same sample? I guess this means that SOEP respondents never marry other SOEP respondents (that is what this implies - that the partner is ONLY a SOEP respondent as a result of being a partner...)
+// browse pid eligible_partner sample_type sample_type_sp psample_pl psample_pl_sp full_status_pl1 full_status_pl_sp1
+
+tab born_germany_woman born_germany_man, m // because this isn't congruous
+tab born_germany_woman born_germany_man if sample_type!=3, m 
+tab born_germany_woman born_germany_man if sample_type==3, m // but then basically 100% overlap in both not being born in Germany. Okay, I think this is fine.
+
+drop if sample_type==3 | sample_type_sp==3
+
 save "$created_data/gsoep_couples_wide_truncated.dta", replace 
+
+********************************************************************************
+**# Troubleshooting / QA area
+********************************************************************************
+use "$created_data/gsoep_couples_imputed_long_deduped.dta", clear
+
+// Underwork - is this real? and is it because of non-employment or PT employment?
+tab couple_work imputed, col // higher among imputed, but that isn't that surprising because imputed always have more people with no hours (across surveys)
+tab couple_work_end imputed, col 
+tab couple_work rel_type, col // there is more attrition in the GSOEP - is this why?
+// so underwork is quite prevalent among the attrited, but no more than among the married...and actually, since we're ignoring attrition in the clusters, this shouldn't be driven by this...
+tab psample_pl couple_work, row // is any of this due to NOT WEIGHTING the data? like - could some of this be driven by oversamples of some populations??
+tab born_germany_woman couple_work, row // okay - this is very much driven by migration samples. who...may actually be overrepresented?
+tab born_germany_man couple_work, row
+tab couple_work_end born_germany_woman , col // is this also why attrition so high? I think also yes
+tab born_germany_woman rel_type, row
+tab where_ew_woman born_germany_woman, row
+tab syear born_germany_woman, row // okay yeah drops in 2013 (some migrants added), then again in 2016...by end, really high proportion of those born outside of Germany...
+// this is from panel data.org BUT the caveat is that this covers all years of the SOEP, so will be biased towards less migrants, since we restrict to later years
+// display 321547 / (321547 + 1124719) // 22.2%
+ 
+tabstat weekly_hrs_woman weekly_hrs_man, by(couple_work) stats(mean sd p50 min max) columns(statistics)
+tabstat weekly_hrs_woman weekly_hrs_man, by(rel_type) stats(mean sd p50 min max) columns(statistics) // trying to also compare basic statistics to prior research as well
+tab ft_pt_woman ft_pt_man if couple_work==5, cell // so 70% are both not working, only <6% are both PT
+tabstat age age_sp, by(couple_work) stats(mean p25 p50 p75 min max) // so they are older, but not wildly so
+tabstat age_youngest_woman age_youngest_man num_children_woman, by(couple_work) stats(mean p50 min max) // they have the most # of children - but seems crazy that they would both not work...
+twoway (histogram weekly_hrs_woman if ft_pt_woman==1, width(1) color(pink%30)) (histogram weekly_hrs_man if ft_pt_man==1, width(1) color(blue%30)), legend(order(1 "Women" 2 "Men") rows(1) position(6)) xtitle("Average Work Hours among PT Workers")
+
+twoway (histogram weekly_hrs_woman if weekly_hrs_woman<100, width(1) color(pink%30)) (histogram weekly_hrs_man if weekly_hrs_man<100, width(1) color(blue%30)), legend(order(1 "Women" 2 "Men") rows(1) position(6)) xtitle("Average Work Hours") // Does this feel like too many 0s for men?
+
+twoway (histogram weekly_hrs_woman if couple_work==5, width(1) color(pink%30)) (histogram weekly_hrs_man if couple_work==5, width(1) color(blue%30)), legend(order(1 "Women" 2 "Men") rows(1) position(6)) xtitle("Average Work Hours among those in Underwork Group") // yes - dominated by those not working AND both not working
+
+// browse pid eligible_partner relative_duration couple_work ft_pt_woman ft_pt_man weekly_hrs_woman weekly_hrs_man _mi_m
+
+// Let's compare all created variables
+tab ft_pt_man imputed, col
+tab ft_pt_woman imputed, col
+tab couple_work imputed, col
+tab couple_work_ow imputed, col
+tab couple_hw_hrs_weekday imputed, col // this is interesting - when imputed, way less woman most high and way more woman most low...this is maybe because the weekday is so volatile because such low numbers of hours?
+tab couple_hw_hrs_weekly imputed, col // here there are less women most high, but only like 5% less (more like 20% above), so this validates my feelings about the housework measure
+tab couple_hw_hrs_combined imputed, col

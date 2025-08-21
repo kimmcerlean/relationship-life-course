@@ -16,32 +16,51 @@
 ********************************************************************************
 * First, clean up the cluster file, so just has variables I want
 ********************************************************************************
-use "$temp/UKHLS_clusters_truncated_sequences.dta", clear
+use "$temp/GSOEP_clusters_truncated_sequences.dta", clear
 
-// egen couple_id = group(pidp eligible_partner)
-// browse couple_id pidp eligible_partner _mi_id // okay these don't match (made couple id earlier in the process)
+drop couple_id
+egen couple_id = group(pid eligible_partner)
+// rename _mi_id couple_id
 unique couple_id _mi_id
-unique pidp eligible_partner
+unique pid eligible_partner
 
 gen mim = _mi_m
 
-keep couple_id pidp eligible_partner mim mc5_factor mc6_factor mc7_factor mc8_factor
+keep couple_id pid eligible_partner mim mc5_factor mc6_factor mc7_factor mc8_factor // old (non-truncated): mc_ward_det_4cl mc_ward_det_5cl mc4_factor mc5_factor
 
-save "$created_data/UKHLS_truncated_clusters.dta", replace
+save "$created_data/GSOEP_truncated_clusters.dta", replace
 
 ********************************************************************************
 * Now, merge clusters onto the original Stata imputed data
 ********************************************************************************
-use "$created_data/ukhls_couples_wide_truncated.dta", clear
+use "$created_data/gsoep_couples_wide_truncated.dta", clear
+
+	// tab psample_pl
+	// tab psample_pl born_germany_woman, m row
+	// tab psample_pl born_germany_woman, m col
+	
+gen sample_type = .
+replace sample_type = 1 if inrange(psample_pl,1,14)
+replace sample_type = 1 if inrange(psample_pl,20,23)
+replace sample_type = 2 if inlist(psample_pl,15,16,25,26)
+replace sample_type = 3 if inlist(psample_pl,17,18,19,24)
+
+label define sample_type 1 "core" 2 "migrant" 3 "refugee"
+label values sample_type sample_type
+	
+	// tab couple_work_ow1 sample_type, col
+
 mi set m -= (6,7,8,9,10) // only did first 5 imputations for now
+// unique pid eligible_partner if sequence_length>=3
 keep if sequence_length>=3 // also only keep relationships longer than 3 years now (for truncated sequences)
 
 mi update
 
 gen mim = _mi_m
+drop couple_id
+egen couple_id = group (pid eligible_partner)
 
-// mi merge 1:1 couple_id mim using "$created_data/PSID_clusters.dta", gen(howmatch) // keep(match) 
-merge 1:1 couple_id mim using "$created_data/UKHLS_truncated_clusters.dta"
+merge 1:1 couple_id mim using "$created_data/GSOEP_truncated_clusters.dta"
 
 tab _mi_m _merge, m // confirm that this is mi 0 - it is
 drop mim
@@ -52,39 +71,36 @@ mi update
 ********************************************************************************
 * Figure out the data structure
 ********************************************************************************
-browse pidp eligible_partner _mi_m mc_ward_det_4cl mc_ward_det_5cl mc4_factor mc5_factor
+browse unique_id partner_id _mi_m mc6_factor mc7_factor mc8_factor
 // there are no sequence objects here. Are there supposed to be? Or we just care about cluster membership?
 
-tab mc_ward_det_4cl, m
-tab mc_ward_det_5cl, m
-tab mc4_factor, m
-tab mc5_factor, m // these match the charts I created but, is it problematic that no one in imputation 0 is assigned to a cluster? or is that fine? do I give them their own cluster maybe?
-tab mc5_factor mc_ward_det_5cl // so the two different cluster options lead to two different arrangements...
+tab mc6_factor, m
+tab mc7_factor, m
+tab mc8_factor, m // these match the charts I created but, is it problematic that no one in imputation 0 is assigned to a cluster? or is that fine? do I give them their own cluster maybe?
 
 // for now, very crude labels
-capture label define mc5_factor 1 "attrition" 2 "underemployed no kids" 3 "traditonal" 4 "egalitarian" 5 "dissolution"
-label values mc5_factor mc5_factor
+capture label define mc8_factor 1 "cf cohab + 2nd shift" 2 "persistent trad work" 3 "work complexity + cohab" 4 "ow + delayed parenthood" ///
+5 "work complexity + fam intensity" 6 "dual FT + 1-2 kids" 7 "dual FT + CF" 8 "dual FT + 2-3 kids"
+label values mc8_factor mc8_factor
 
 ********************************************************************************
 * Any variables still need to be created
 ********************************************************************************
 // couple education: this was fixed, not imputed, so don't need to use mi passive
-gen education_man=hiqual_fixed if SEX==1
-replace education_man=hiqual_fixed_sp if SEX==2
-replace education_man = 6 if education_man == 9 // so they are consecutive
+gen education_man=fixed_education if SEX==1
+replace education_man=fixed_education_sp if SEX==2
 
-gen education_woman=hiqual_fixed if SEX==2
-replace education_woman=hiqual_fixed_sp if SEX==1
-replace education_woman = 6 if education_woman == 9 
+gen education_woman=fixed_education if SEX==2
+replace education_woman=fixed_education_sp if SEX==1
 
-capture label define hiqual 1 "Degree" 2 "Other Higher Degree" 3 "A level" 4 "GCSE" 5 "Other qual" 6 "No qual"
-label values education_man education_woman hiqual
+capture label define educ 1 "LTHS" 2 "HS" 3 "Some College" 4 "College"
+label values education_man education_woman fixed_education* educ
 
 gen couple_educ_type=.
-replace couple_educ_type = 1 if inrange(education_man,2,6) & inrange(education_woman,2,6)
-replace couple_educ_type = 2 if inrange(education_man,2,6) & education_woman==1
-replace couple_educ_type = 3 if education_man==1 & inrange(education_woman,2,6)
-replace couple_educ_type = 4 if education_man==1 & education_woman==1
+replace couple_educ_type = 1 if inrange(education_man,1,3) & inrange(education_woman,1,3)
+replace couple_educ_type = 2 if inrange(education_man,1,3) & education_woman==4
+replace couple_educ_type = 3 if education_man==4 & inrange(education_woman,1,3)
+replace couple_educ_type = 4 if education_man==4 & education_woman==4
 
 capture label define couple_educ_type 1 "Neither College" 2 "Her College" 3 "Him College" 4 "Both College"
 label values couple_educ_type couple_educ_type
@@ -92,60 +108,45 @@ tab couple_educ_type, m // does this feel very uneducated?
 tab _mi_m couple_educ_type, row
 
 // gendered race variables
-tab xw_ethn_dv _mi_m , m
+tab _mi_m raceth_fixed_focal, m
 
-gen ethn_man=xw_ethn_dv if SEX==1
-replace ethn_man=xw_ethn_dv_sp if SEX==2
+gen raceth_man=raceth_fixed_focal if SEX==1
+replace raceth_man=raceth_fixed_focal_sp if SEX==2
 
-gen ethn_woman=xw_ethn_dv if SEX==2
-replace ethn_woman=xw_ethn_dv_sp if SEX==1
+gen raceth_woman=raceth_fixed_focal if SEX==2
+replace raceth_woman=raceth_fixed_focal_sp if SEX==1
 
-gen race_man = .
-replace race_man = 0 if inrange(ethn_man,5,97) 
-replace race_man = 1 if inrange(ethn_man,1,4) 
-
-gen race_woman = .
-replace race_woman = 0 if inrange(ethn_woman,5,97) 
-replace race_woman = 1 if inrange(ethn_woman,1,4) 
+capture label define raceth 1 "NH White" 2 "Black" 3 "Hispanic" 4 "NH Asian" 5 "NH Other"
+labe values raceth_man raceth_woman raceth_fixed_focal raceth_fixed_focal_sp raceth
 
 gen same_race=.
-replace same_race=0 if race_man!=race_woman
-replace same_race=1 if race_man==race_woman
-
-// country?
-recode gor_dv1 (1/9=1)(10=2)(11=3)(12=4), gen(country1)
-label values gor_dv1 country_all
-
-label values country1 country
+replace same_race=0 if raceth_man!=raceth_woman
+replace same_race=1 if raceth_man==raceth_woman
 
 // make some sort of birth cohort? can also use age to describe within cluster (but categorical will be easier for between cluster)
 // well, age is hard because time-varying. so could just use at time 0
-gen birth_yr_man=dob if SEX==1
-replace birth_yr_man=dob_sp if SEX==2
-
-gen birth_yr_woman=dob if SEX==2
-replace birth_yr_woman=dob_sp if SEX==1
-
 gen bcohort_man = .
-replace bcohort_man = 1 if birth_yr_man < 1960
-replace bcohort_man = 2 if birth_yr_man >= 1960 & birth_yr_man < 1970
-replace bcohort_man = 3 if birth_yr_man >= 1970 & birth_yr_man < 1980
-replace bcohort_man = 4 if birth_yr_man >= 1980 & birth_yr_man < 2000
+replace bcohort_man = 1 if dob_man < 1960
+replace bcohort_man = 2 if dob_man >= 1960 & dob_man < 1970
+replace bcohort_man = 3 if dob_man >= 1970 & dob_man < 1980
+replace bcohort_man = 4 if dob_man >= 1980 & dob_man < 1990
+replace bcohort_man = 5 if dob_man >= 1990 & dob_man < 2005
 
 gen bcohort_woman = .
-replace bcohort_woman = 1 if birth_yr_woman < 1960
-replace bcohort_woman = 2 if birth_yr_woman >= 1960 & birth_yr_woman < 1970
-replace bcohort_woman = 3 if birth_yr_woman >= 1970 & birth_yr_woman < 1980
-replace bcohort_woman = 4 if birth_yr_woman >= 1980 & birth_yr_woman < 2000
+replace bcohort_woman = 1 if dob_woman < 1960
+replace bcohort_woman = 2 if dob_woman >= 1960 & dob_woman < 1970
+replace bcohort_woman = 3 if dob_woman >= 1970 & dob_woman < 1980
+replace bcohort_woman = 4 if dob_woman >= 1980 & dob_woman < 1990
+replace bcohort_woman = 5 if dob_woman >= 1990 & dob_woman < 2005
 
-capture label define bcohort 1 "Pre-1960s" 2 "1960s" 3 "1970s" 4 "1980s+"
+capture label define bcohort 1 "Pre-1960s" 2 "1960s" 3 "1970s" 4 "1980s" 5 "1990s+"
 label values bcohort_man bcohort_woman bcohort
 
-gen age_man1 = age_all1  if SEX==1
-replace age_man1 = age_all_sp1 if SEX==2
+gen age_man1 = age_focal1  if SEX==1
+replace age_man1 = age_focal_sp1 if SEX==2
 
-gen age_woman1=age_all1 if SEX==2
-replace age_woman1=age_all_sp1 if SEX==1
+gen age_woman1=age_focal1 if SEX==2
+replace age_woman1=age_focal_sp1 if SEX==1
 
 gen age_gp_woman1 = .
 replace age_gp_woman1 = 1 if age_woman1 < = 24
@@ -157,46 +158,41 @@ label values age_gp_woman1 age_gp
 
 // relationship start as well
 gen rel_cohort=.
-replace rel_cohort = 1 if eligible_rel_start_year >=1900 & eligible_rel_start_year<2000
-replace rel_cohort = 2 if eligible_rel_start_year >=2000 & eligible_rel_start_year<2005
-replace rel_cohort = 3 if eligible_rel_start_year >=2005 & eligible_rel_start_year<2020
+replace rel_cohort = 1 if rel_start_all >=1990 & rel_start_all<2000
+replace rel_cohort = 2 if rel_start_all >=2000 & rel_start_all<2025
 tab rel_cohort, m
-
-label define rel_cohort 1 "1990s" 2 "2000-2005" 3 "2005+"
-label values rel_cohort rel_cohort
 
 // income or earnings (perhaps earnings is a bit endogenous to employment, but could work)
 // these are imputed so need mi passive
-mi passive: egen couple_earnings_t1 = rowtotal(fimnlabgrs_dv1 fimnlabgrs_dv_sp1), missing
+mi passive: egen couple_earnings_t1 = rowtotal(earnings_t_focal1 earnings_t_focal_sp1)
 
-browse pidp eligible_partner couple_earnings_t1 fimnlabgrs_dv1 fimnlabgrs_dv_sp1 fihhmngrs_dv1 fihhmngrs_dv_sp1 
+browse unique_id partner_id family_income_t1 family_income_t_sp1 couple_earnings_t1 earnings_t_focal1 earnings_t_focal_sp1
 sum couple_earnings_t1, detail
 
-mi passive: egen couple_earnings_quart1 = cut(couple_earnings_t1) if couple_earnings_t1>0 & couple_earnings_t1!=., group(4)
+mi passive: egen couple_earnings_quart1 = cut(couple_earnings_t1) if couple_earnings_t1!=0, group(4)
 tab couple_earnings_quart1, m
 mi passive: replace couple_earnings_quart1 = couple_earnings_quart1 + 1
-mi passive: replace couple_earnings_quart1 = 0 if couple_earnings_t1<=0
+mi passive: replace couple_earnings_quart1 = 0 if couple_earnings_t1==0
 
 tabstat couple_earnings_t1, by(couple_earnings_quart1)
 tab _mi_m couple_earnings_quart1
 
 mi update
+// mi register regular education_man education_woman couple_educ_type raceth_man raceth_woman birth_yr_man birth_yr_woman bcohort_man bcohort_woman age_man1 age_woman1 // do I need to register?
 
-save "$created_data/UKHLS_clusters_analysis.dta", replace
+save "$created_data/PSID_truncated_clusters_analysis.dta", replace
 
 ********************************************************************************
 **# Within cluster descriptives
 ********************************************************************************
 *Descriptive table for entire sample
-// just doing as part of below
-// desctable i.education_man i.education_woman i.couple_educ_type i.raceth_man i.raceth_woman c.age_man1 c.age_woman1 i.bcohort_man i.bcohort_woman i.couple_earnings_quart1 c.couple_earnings_t1, filename("$tables/desc_sample_all") stats(mimean) 
+desctable i.education_man i.education_woman i.couple_educ_type i.raceth_man i.raceth_woman c.age_man1 c.age_woman1 i.bcohort_man i.bcohort_woman i.couple_earnings_quart1 c.couple_earnings_t1, filename("$tables/desc_sample_all") stats(mimean) 
 
-//  validate that these match when done below
-mi estimate: proportion couple_educ_type country1
+mi estimate: proportion couple_educ_type raceth_woman // validate that this matches
 mi estimate: mean couple_earnings_t1
 
-mi estimate, esampvaryok: proportion couple_educ_type country1 if mc5_factor==1
-mi estimate, esampvaryok: proportion couple_educ_type country1 if mc5_factor==4
+mi estimate, esampvaryok: proportion couple_educ_type raceth_woman if mc5_factor==1
+mi estimate, esampvaryok: proportion couple_educ_type raceth_woman if mc5_factor==4
 mi estimate, esampvaryok: mean couple_earnings_t1  if mc5_factor==1
 tabstat couple_earnings_t1, by(mc5_factor)
 
@@ -206,59 +202,56 @@ tabstat couple_earnings_t1, by(mc5_factor)
 // mi estimate: mean educ_man1 educ_man2 educ_man3 educ_man4
 
 *Descriptive table by cluster
-putexcel set "$tables/UKHLS_descriptives_by_cluster.xlsx", replace
+putexcel set "$tables/descriptives_by_cluster.xlsx", replace
 putexcel B1 = "Full Sample"
-putexcel C1 = "1: Attrition"
-putexcel D1 = "2: Underemployed No Kids"
-putexcel E1 = "3: Traditonal"
-putexcel F1 = "4: Egalitarian"
-putexcel G1 = "5: Dissolution"
-putexcel A2 = "Educ Man: Degree"
-putexcel A3 = "Educ Man: Other Higher Degree"
-putexcel A4 = "Educ Man: A Level"
-putexcel A5 = "Educ Man: GCSE"
-putexcel A6 = "Educ Man: Other Qual"
-putexcel A7 = "Educ Man: No Qual"
-putexcel A8 = "Educ Woman: Degree"
-putexcel A9 = "Educ Woman: Other Higher Degree"
-putexcel A10 = "Educ Woman: A Level"
-putexcel A11 = "Educ Woman: GCSE"
-putexcel A12 = "Educ Woman: Other Qual"
-putexcel A13 = "Educ Woman: No Qual"
-putexcel A14 = "Couple Educ: Neither College"
-putexcel A15 = "Couple Educ: Her College"
-putexcel A16 = "Couple Educ: Him College"
-putexcel A17 = "Couple Educ: Both College"
-putexcel A18 = "Race Man: Non-White"
-putexcel A19 = "Race Man: White"
-putexcel A20 = "Race Woman: Non-White"
-putexcel A21 = "Race Woman: White"
-putexcel A22 = "Country: England"
-putexcel A23 = "Country: Wales"
-putexcel A24 = "Country: Scotland"
-putexcel A25 = "Country: N. Ireland"
-putexcel A26 = "Age Man"
-putexcel A27 = "Age Woman"
-putexcel A28 = "Birth Cohort Man: Pre 1960s"
-putexcel A29 = "Birth Cohort Man: 1960s"
-putexcel A30 = "Birth Cohort Man: 1970s"
-putexcel A31 = "Birth Cohort Man: 1980s+"
-putexcel A32 = "Birth Cohort Woman: Pre 1960s"
-putexcel A33 = "Birth Cohort Woman: 1960s"
-putexcel A34 = "Birth Cohort Woman: 1970s"
-putexcel A35 = "Birth Cohort Woman: 1980s+"
-putexcel A36 = "Couple Earnings: $0"
-putexcel A37 = "Couple Earnings: Q1"
-putexcel A38 = "Couple Earnings: Q2"
-putexcel A39 = "Couple Earnings: Q3"
-putexcel A40 = "Couple Earnings: Q4"
-putexcel A41 = "Couple Earnings"
-putexcel A42 = "Rel Cohort: 1990-1999"
-putexcel A43 = "Rel Cohort: 2000-2005"
-putexcel A44 = "Rel Cohort: 2005+"
+putexcel C1 = "1: Traditional"
+putexcel D1 = "2: Attrition"
+putexcel E1 = "3: Dissolution"
+putexcel F1 = "4: Egal with Kids"
+putexcel G1 = "5: Egal-ish No Kids"
+putexcel A2 = "Educ Man: LTHS"
+putexcel A3 = "Educ Man: HS"
+putexcel A4 = "Educ Man: Some College"
+putexcel A5 = "Educ Man: College+"
+putexcel A6 = "Educ Woman: LTHS"
+putexcel A7 = "Educ Woman: HS"
+putexcel A8 = "Educ Woman: Some College"
+putexcel A9 = "Educ Woman: College+"
+putexcel A10 = "Couple Educ: Neither College"
+putexcel A11 = "Couple Educ: Her College"
+putexcel A12 = "Couple Educ: Him College"
+putexcel A13 = "Couple Educ: Both College"
+putexcel A14 = "Race Man: NH White"
+putexcel A15 = "Race Man: Black"
+putexcel A16 = "Race Man: Hispanic"
+putexcel A17 = "Race Man: NH Asian"
+putexcel A18 = "Race Man: NH Other"
+putexcel A19 = "Race Woman: NH White"
+putexcel A20 = "Race Woman: Black"
+putexcel A21 = "Race Woman: Hispanic"
+putexcel A22 = "Race Woman: NH Asian"
+putexcel A23 = "Race Woman: NH Other"
+putexcel A24 = "Age Man"
+putexcel A25 = "Age Woman"
+putexcel A26 = "Birth Cohort Man: Pre 1960s"
+putexcel A27 = "Birth Cohort Man: 1960s"
+putexcel A28 = "Birth Cohort Man: 1970s"
+putexcel A29 = "Birth Cohort Man: 1980s+"
+putexcel A30 = "Birth Cohort Woman: Pre 1960s"
+putexcel A31 = "Birth Cohort Woman: 1960s"
+putexcel A32 = "Birth Cohort Woman: 1970s"
+putexcel A33 = "Birth Cohort Woman: 1980s+"
+putexcel A34 = "Couple Earnings: $0"
+putexcel A35 = "Couple Earnings: Q1"
+putexcel A36 = "Couple Earnings: Q2"
+putexcel A37 = "Couple Earnings: Q3"
+putexcel A38 = "Couple Earnings: Q4"
+putexcel A39 = "Couple Earnings"
+putexcel A40 = "Rel Cohort: 1990-1999"
+putexcel A41 = "Rel Cohort: 2000+"
 
 // full sample
-forvalues e=1/6{
+forvalues e=1/4{
    capture gen educ_man`e' = education_man==`e'
    mi estimate: mean educ_man`e'
    matrix m`e' = e(b_mi)
@@ -267,12 +260,12 @@ forvalues e=1/6{
    putexcel B`row' = `m`e'', nformat(##.#%)
 }
 
-forvalues e=1/6{
+forvalues e=1/4{
    capture gen educ_woman`e' = education_woman==`e'
    mi estimate: mean educ_woman`e'
    matrix w`e' = e(b_mi)
    local w`e' = w`e'[1,1]
-   local row = 7+`e'
+   local row = 5+`e'
    putexcel B`row' = `w`e'', nformat(##.#%)
 }
 
@@ -281,53 +274,44 @@ forvalues e=1/4{
    mi estimate: mean couple_educ`e'
    matrix c`e' = e(b_mi)
    local c`e' = c`e'[1,1]
-   local row = 13+`e'
+   local row = 9+`e'
    putexcel B`row' = `c`e'', nformat(##.#%)
 }
 
-forvalues r=0/1{
-   capture gen race_man`r' = race_man==`r'
+forvalues r=1/5{
+   capture gen race_man`r' = raceth_man==`r'
    mi estimate: mean race_man`r'
    matrix r`r' = e(b_mi)
    local r`r' = r`r'[1,1]
-   local row = 18+`r'
+   local row = 13+`r'
    putexcel B`row' = `r`r'', nformat(##.#%)
 }
 
-forvalues r=0/1{
-   capture gen race_woman`r' = race_woman==`r'
+forvalues r=1/5{
+   capture gen race_woman`r' = raceth_woman==`r'
    mi estimate: mean race_woman`r'
    matrix rw`r' = e(b_mi)
    local rw`r' = rw`r'[1,1]
-   local row = 20+`r'
+   local row = 18+`r'
    putexcel B`row' = `rw`r'', nformat(##.#%)
-}
-
-forvalues c=1/4{
-   capture gen country_x`c' = country1==`c'
-   mi estimate: mean country_x`c'
-   matrix c`c' = e(b_mi)
-   local c`c' = c`c'[1,1]
-   local row = 21+`c'
-   putexcel B`row' = `c`c'', nformat(##.#%)
 }
 
 mi estimate: mean age_man1
 matrix a = e(b_mi)
 local a = a[1,1]
-putexcel B26 = `a', nformat(##.#)
+putexcel B24 = `a', nformat(##.#)
 
 mi estimate: mean age_woman1
 matrix aw = e(b_mi)
 local aw = aw[1,1]
-putexcel B27 = `aw', nformat(##.#)
+putexcel B25 = `aw', nformat(##.#)
    
 forvalues b=1/4{
    capture gen bc_man`b' = bcohort_man==`b'
    mi estimate: mean bc_man`b'
    matrix b`b' = e(b_mi)
    local b`b' = b`b'[1,1]
-   local row = 27+`b'
+   local row = 25+`b'
    putexcel B`row' = `b`b'', nformat(##.#%)
 }
 
@@ -336,7 +320,7 @@ forvalues b=1/4{
    mi estimate: mean bc_woman`b'
    matrix bw`b' = e(b_mi)
    local bw`b' = bw`b'[1,1]
-   local row = 31+`b'
+   local row = 29+`b'
    putexcel B`row' = `bw`b'', nformat(##.#%)
 }
 
@@ -345,21 +329,21 @@ forvalues ce=0/4{
    mi estimate: mean earn_quart`ce'
    matrix ce`ce' = e(b_mi)
    local ce`ce' = ce`ce'[1,1]
-   local row = 36+`ce'
+   local row = 34+`ce'
    putexcel B`row' = `ce`ce'', nformat(##.#%)
 }
 
 mi estimate: mean couple_earnings_t1
 matrix ce = e(b_mi)
 local ce = ce[1,1]
-putexcel B41 = `ce', nformat(#####)
+putexcel B39 = `ce', nformat(#####)
 
-forvalues rc=1/3{
+forvalues rc=1/2{
    capture gen relcoh`rc' = rel_cohort==`rc'
    mi estimate: mean relcoh`rc'
    matrix rc`rc' = e(b_mi)
    local rc`rc' = rc`rc'[1,1]
-   local row = 41+`rc'
+   local row = 39+`rc'
    putexcel B`row' = `rc`rc'', nformat(##.#%)
 }
 
@@ -369,7 +353,7 @@ local col1 "C D E F G"
 
 forvalues c=1/5{
 	local col: word `c' of `col1'
-	forvalues e=1/6{
+	forvalues e=1/4{
 	   mi estimate, esampvaryok: mean educ_man`e' if mc5_factor==`c'
 	   matrix m`e' = e(b_mi)
 	   local m`e' = m`e'[1,1]
@@ -380,11 +364,11 @@ forvalues c=1/5{
 
 forvalues c=1/5{
 	local col: word `c' of `col1'
-	forvalues e=1/6{
+	forvalues e=1/4{
 	   mi estimate, esampvaryok: mean educ_woman`e' if mc5_factor==`c'
 	   matrix w`e' = e(b_mi)
 	   local w`e' = w`e'[1,1]
-	   local row = 7+`e'
+	   local row = 5+`e'
 	   putexcel `col'`row' = `w`e'', nformat(##.#%)
 	}
 }
@@ -395,41 +379,30 @@ forvalues c=1/5{
 	   mi estimate, esampvaryok: mean couple_educ`e' if mc5_factor==`c'
 	   matrix c`e' = e(b_mi)
 	   local c`e' = c`e'[1,1]
-	   local row = 13+`e'
+	   local row = 9+`e'
 	   putexcel `col'`row' = `c`e'', nformat(##.#%)
 	}
 }
 
 forvalues c=1/5{
 	local col: word `c' of `col1'
-	forvalues r=0/1{
+	forvalues r=1/5{
 	   mi estimate, esampvaryok: mean race_man`r' if mc5_factor==`c'
 	   matrix r`r' = e(b_mi)
 	   local r`r' = r`r'[1,1]
-	   local row = 18+`r'
+	   local row = 13+`r'
 	   putexcel `col'`row' = `r`r'', nformat(##.#%)
 	}
 }
 
 forvalues c=1/5{
 	local col: word `c' of `col1'
-	forvalues r=0/1{
+	forvalues r=1/5{
 	   mi estimate, esampvaryok: mean race_woman`r'  if mc5_factor==`c'
 	   matrix rw`r' = e(b_mi)
 	   local rw`r' = rw`r'[1,1]
-	   local row = 20+`r'
+	   local row = 18+`r'
 	   putexcel `col'`row' = `rw`r'', nformat(##.#%)
-	}
-}
-
-forvalues c=1/5{
-	local col: word `c' of `col1'
-	forvalues co=1/4{
-	   mi estimate, esampvaryok: mean country_x`co' if mc5_factor==`c'
-	   matrix co`co' = e(b_mi)
-	   local co`co' = co`co'[1,1]
-	   local row = 21+`co'
-	   putexcel `col'`row' = `co`co'', nformat(##.#%)
 	}
 }
 
@@ -438,7 +411,7 @@ forvalues c=1/5{
 	mi estimate, esampvaryok: mean age_man1 if mc5_factor==`c'
 	matrix a = e(b_mi)
 	local a = a[1,1]
-	putexcel `col'26 = `a', nformat(##.#)
+	putexcel `col'24 = `a', nformat(##.#)
 }
 
 
@@ -447,7 +420,7 @@ forvalues c=1/5{
 	mi estimate, esampvaryok: mean age_woman1 if mc5_factor==`c'
 	matrix aw = e(b_mi)
 	local aw = aw[1,1]
-	putexcel `col'27 = `aw', nformat(##.#)
+	putexcel `col'25 = `aw', nformat(##.#)
 }
 
 forvalues c=1/5{
@@ -456,7 +429,7 @@ forvalues c=1/5{
 	   mi estimate, esampvaryok: mean bc_man`b' if mc5_factor==`c'
 	   matrix b`b' = e(b_mi)
 	   local b`b' = b`b'[1,1]
-	   local row = 27+`b'
+	   local row = 25+`b'
 	   putexcel `col'`row' = `b`b'', nformat(##.#%)
 	}
 }
@@ -467,7 +440,7 @@ forvalues c=1/5{
 	   mi estimate, esampvaryok: mean bc_woman`b' if mc5_factor==`c'
 	   matrix bw`b' = e(b_mi)
 	   local bw`b' = bw`b'[1,1]
-	   local row = 31+`b'
+	   local row = 29+`b'
 	   putexcel `col'`row' = `bw`b'', nformat(##.#%)
 	}
 }
@@ -478,7 +451,7 @@ forvalues c=1/5{
 	   mi estimate, esampvaryok: mean earn_quart`ce' if mc5_factor==`c'
 	   matrix ce`ce' = e(b_mi)
 	   local ce`ce' = ce`ce'[1,1]
-	   local row = 36+`ce'
+	   local row = 34+`ce'
 	   putexcel `col'`row' = `ce`ce'', nformat(##.#%)
 	}
 }
@@ -488,16 +461,16 @@ forvalues c=1/5{
 	mi estimate, esampvaryok: mean couple_earnings_t1 if mc5_factor==`c'
 	matrix ce = e(b_mi)
 	local ce = ce[1,1]
-	putexcel `col'41 = `ce', nformat(#####)
+	putexcel `col'39 = `ce', nformat(#####)
 }
 
 forvalues c=1/5{
 	local col: word `c' of `col1'
-	forvalues rc=1/3{
+	forvalues rc=1/2{
 	   mi estimate, esampvaryok: mean relcoh`rc' if mc5_factor==`c'
 	   matrix rc`rc' = e(b_mi)
 	   local rc`rc' = rc`rc'[1,1]
-	   local row = 41+`rc'
+	   local row = 39+`rc'
 	   putexcel `col'`row' = `rc`rc'', nformat(##.#%)
 	}
 }
@@ -534,9 +507,7 @@ restore
 
 // replace mc5_factor=0 if mc5_factor==.
 
-mi reshape long age_all fihhmngrs_dv gor_dv nkids_dv jbstat aidhh aidxhh aidhrs howlng work_hours jbhrs fimnlabgrs_dv nchild_dv hiqual_dv country_all employed total_hours age_youngest_child partnered_imp marital_status_imp aidhrs_rec int_year orig_record age_all_sp fihhmngrs_dv_sp gor_dv_sp nkids_dv_sp jbstat_sp aidhrs_sp howlng_sp work_hours_sp jbhrs_sp fimnlabgrs_dv_sp employed_sp total_hours_sp age_youngest_child_sp partnered_imp_sp marital_status_imp_sp aidhrs_rec_sp weekly_hrs_woman weekly_hrs_man housework_woman housework_man marital_status_woman marital_status_man partnered_woman partnered_man num_children_woman num_children_man ft_pt_woman overwork_woman ft_pt_man overwork_man ft_pt_det_woman ft_pt_det_man couple_work couple_work_ow  couple_hw_total woman_hw_share hw_terc_woman hw_hilow_woman hw_hilow_man couple_hw hw_hilow_woman_gp1 hw_hilow_woman_gp2 hw_hilow_man_gp4 couple_hw_hrs couple_hw_hrs_alt rel_type couple_num_children couple_num_children_gp family_type ft_pt_woman_end overwork_woman_end ft_pt_man_end overwork_man_end ft_pt_det_woman_end ft_pt_det_man_end couple_work_end couple_work_ow_end couple_hw_end couple_hw_hrs_end couple_hw_hrs_alt_end couple_num_children_gp_end family_type_end ///
-, i(pidp eligible_partner eligible_rel_start_year eligible_rel_end_year eligible_rel_status) j(duration)
-
+mi reshape long ft_pt_woman_end overwork_woman_end ft_pt_man_end overwork_man_end couple_work_end couple_work_ow_end couple_hw_end couple_hw_hrs_end couple_hw_hrs_alt_end rel_type couple_num_children_gp_end family_type_end in_sample hh_status relationship housework_focal age_focal weekly_hrs_t_focal earnings_t_focal family_income_t partnered_imp educ_focal_imp num_children_imp_hh weekly_hrs_woman weekly_hrs_man housework_woman housework_man partnered_woman partnered_man num_children_woman num_children_man ft_pt_woman overwork_woman ft_pt_man overwork_man ft_pt_det_woman ft_pt_det_man  in_sample_sp hh_status_sp relationship_sp housework_focal_sp age_focal_sp weekly_hrs_t_focal_sp earnings_t_focal_sp family_income_t_sp partnered_imp_sp num_children_imp_hh_sp, i(unique_id partner_id rel_start_all rel_end_all) j(duration) 
 
 tab _mi_m mc5_factor, m
 
@@ -556,13 +527,13 @@ label values work_seq couple_work_ow
 label values hw_seq couple_hw_hrs
 label values fam_seq family_type
 
-putexcel set "$tables/UKHLS_cluster_composition.xlsx", replace
+putexcel set "$tables/cluster_composition.xlsx", replace
 putexcel B1 = "Full Sample"
-putexcel C1 = "1: Attrition"
-putexcel D1 = "2: Underemployed No Kids"
-putexcel E1 = "3: Traditional"
-putexcel F1 = "4: Egalitarian"
-putexcel G1 = "5: Dissolution"
+putexcel C1 = "1: Traditional"
+putexcel D1 = "2: Attrition"
+putexcel E1 = "3: Dissolution"
+putexcel F1 = "4: Egal with Kids"
+putexcel G1 = "5: Egal-ish No Kids"
 
 putexcel A2 = "Work"
 putexcel A3 = "Male BW"
