@@ -302,6 +302,7 @@ rename bcx_N num_bio_kids
 preserve
 collapse (max) any_mpf, by(pidp num_bio_kids)
 tab num_bio_kids any_mpf, m
+gen long eligible_partner = pidp
 
 save "$temp/mpf_lookup.dta", replace 
 restore
