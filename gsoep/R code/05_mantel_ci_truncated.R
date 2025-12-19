@@ -109,10 +109,10 @@ load("created data/gsoep/gsoep-setupsequence-truncated.RData")
 #quantile(mantel_work.fam$perm, probs=c(.90, .95, .975, .99))
 #quantile(mantel_hw.fam$perm, probs=c(.90, .95, .975, .99))
 
-##### Total
-mantel.work.hw.ci <- mantel(lower(dist.work.min) ~ lower(dist.hw.min), nperm=1000)
-mantel.work.fam.ci <- mantel(lower(dist.work.min) ~ lower(dist.fam.min), nperm=1000)
-mantel.hw.fam.ci <- mantel(lower(dist.hw.min) ~ lower(dist.fam.min), nperm=1000)
+##### 100 permutations - for more variable CIs
+mantel.work.hw.ci <- mantel(lower(dist.work.min) ~ lower(dist.hw.min), nperm=100)
+mantel.work.fam.ci <- mantel(lower(dist.work.min) ~ lower(dist.fam.min), nperm=100)
+mantel.hw.fam.ci <- mantel(lower(dist.hw.min) ~ lower(dist.fam.min), nperm=100)
 
 mantel.df.work.hw.ci <- data.frame(mantel.work.hw.ci)
 mantel.df.work.fam.ci <- data.frame(mantel.work.fam.ci)
@@ -123,7 +123,23 @@ mantel.col <- c('mantelr','pval1','pval2','pval3','llim.2.5%','ulim.97.5%')
 mantel.df <- data.frame(mantel.col, mantel.df.work.hw.ci, 
                         mantel.df.work.fam.ci, mantel.df.hw.fam.ci)
 
-write.xlsx(mantel.df, "results/GSOEP/gsoep_mantel_ci_truncated.xlsx")
+write.xlsx(mantel.df, "results/GSOEP/gsoep_mantel_ci_truncated_100perm.xlsx")
+
+##### 1000 permutations
+#mantel.work.hw.ci <- mantel(lower(dist.work.min) ~ lower(dist.hw.min), nperm=1000)
+#mantel.work.fam.ci <- mantel(lower(dist.work.min) ~ lower(dist.fam.min), nperm=1000)
+#mantel.hw.fam.ci <- mantel(lower(dist.hw.min) ~ lower(dist.fam.min), nperm=1000)
+
+#mantel.df.work.hw.ci <- data.frame(mantel.work.hw.ci)
+#mantel.df.work.fam.ci <- data.frame(mantel.work.fam.ci)
+#mantel.df.hw.fam.ci <- data.frame(mantel.hw.fam.ci)
+
+#mantel.col <- c('mantelr','pval1','pval2','pval3','llim.2.5%','ulim.97.5%')
+
+#mantel.df <- data.frame(mantel.col, mantel.df.work.hw.ci, 
+#                        mantel.df.work.fam.ci, mantel.df.hw.fam.ci)
+
+#write.xlsx(mantel.df, "results/GSOEP/gsoep_mantel_ci_truncated_1000perm.xlsx")
 
 # Save again
-save.image("created data/gsoep/gsoep_mantel_by_cluster_ci_trunc.RData")
+#save.image("created data/gsoep/gsoep_mantel_by_cluster_ci_trunc.RData")
