@@ -1178,6 +1178,27 @@ mi update
 
 unique couple_id // 2372
 
+// per below, do I need to remove the refugee sample here? (to do the sequence length robustness?)
+gen sample_type = .
+replace sample_type = 1 if inrange(psample_pl,1,14)
+replace sample_type = 1 if inrange(psample_pl,20,23)
+replace sample_type = 2 if inlist(psample_pl,15,16,25,26)
+replace sample_type = 3 if inlist(psample_pl,17,18,19,24)
+
+gen sample_type_sp = .
+replace sample_type_sp = 1 if inrange(psample_pl_sp,1,14)
+replace sample_type_sp = 1 if inrange(psample_pl_sp,20,23)
+replace sample_type_sp = 2 if inlist(psample_pl_sp,15,16,25,26)
+replace sample_type_sp = 3 if inlist(psample_pl_sp,17,18,19,24)
+
+label define sample_type 1 "core" 2 "migrant" 3 "refugee"
+label values sample_type sample_type_sp sample_type
+
+tab sample_type, m
+tab sample_type sample_type_sp, m // there are actually no refugees. is it because none make it to 10 years?
+
+drop if sample_type==3 | sample_type_sp==3 // so this doesn't drop anyone.
+
 save "$created_data/gsoep_couples_imputed_wide_complete.dta", replace 
 
 **# THIS IS OUR MAIN ANALYSIS FILE
@@ -1258,6 +1279,18 @@ tab born_germany_woman born_germany_man if sample_type==3, m // but then basical
 drop if sample_type==3 | sample_type_sp==3
 
 save "$created_data/gsoep_couples_wide_truncated.dta", replace 
+
+// get counts of unique couples by length for appendix
+unique pid eligible_partner if sequence_length>=2
+unique pid eligible_partner if sequence_length>=3
+unique pid eligible_partner if sequence_length>=4
+unique pid eligible_partner if sequence_length>=5
+unique pid eligible_partner if sequence_length>=6
+unique pid eligible_partner if sequence_length>=7
+unique pid eligible_partner if sequence_length>=8
+unique pid eligible_partner if sequence_length>=9
+unique pid eligible_partner if sequence_length>=10
+
 
 ********************************************************************************
 **# Troubleshooting / QA area

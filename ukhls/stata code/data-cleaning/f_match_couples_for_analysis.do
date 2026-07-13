@@ -919,6 +919,17 @@ tab family_type_trunc1 if _mi_m!=0, m
 
 save "$created_data/ukhls_couples_wide_truncated.dta", replace 
 
+// get counts of unique couples by length for appendix
+unique pidp eligible_partner if sequence_length>=2
+unique pidp eligible_partner if sequence_length>=3
+unique pidp eligible_partner if sequence_length>=4
+unique pidp eligible_partner if sequence_length>=5
+unique pidp eligible_partner if sequence_length>=6
+unique pidp eligible_partner if sequence_length>=7
+unique pidp eligible_partner if sequence_length>=8
+unique pidp eligible_partner if sequence_length>=9
+unique pidp eligible_partner if sequence_length>=10
+
 /*
 // fully wide data (not actually sure we need this)
 mi convert wide, clear

@@ -24,7 +24,7 @@ set seed 8675309
 
 set maxvar 10000
 
-net install cleanplots, from("https://tdmize.github.io/data/cleanplots") replace
+// net install cleanplots, from("https://tdmize.github.io/data/cleanplots") replace
 set scheme cleanplots
 
 net install desctable, from("https://tdmize.github.io/data") replace

@@ -654,6 +654,30 @@ restore
 */
 
 ********************************************************************************
+*Exploration
+********************************************************************************
+// trying to sort out what correlates with mothers shifting back from no work to PT work in some clusters. is it child aging? (just some clusters I can't tell if they're having an additional kid which is confusing)
+// Specifically real clusters: 2, 3, and a bit 7. These are MC9: 8, 4, 1 (respectively)
+
+// use "$created_data/GSOEP_truncated_clusters_analysis.dta", clear
+browse mc9_factor couple_work_ow_trunc* age_youngest_child1 age_youngest_child2 age_youngest_child3 age_youngest_child4 age_youngest_child5 age_youngest_child6 age_youngest_child7 age_youngest_child8 age_youngest_child9 age_youngest_child10 if mc9_factor==8 // in real cluster 2, around duration 4-5, it switches
+	forvalues d=1/10{
+		tabstat age_youngest_child`d' if mc9_factor==8 & age_youngest_child`d'!=9999
+	}
+browse mc9_factor couple_work_ow_trunc* age_youngest_child1 age_youngest_child2 age_youngest_child3 age_youngest_child4 age_youngest_child5 age_youngest_child6 age_youngest_child7 age_youngest_child8 age_youngest_child9 age_youngest_child10 if mc9_factor==4 // in real cluster 3, around duration 3-4-5, it switches
+	forvalues d=1/10{
+		tabstat age_youngest_child`d' if mc9_factor==4 & age_youngest_child`d'!=9999
+	}
+	forvalues d=1/10{
+		tabstat age_youngest_child`d' if mc9_factor==4 & age_youngest_child`d'!=9999 & couple_work_ow_trunc`d'==2
+		tabstat age_youngest_child`d' if mc9_factor==4 & age_youngest_child`d'!=9999 & couple_work_ow_trunc`d'==1
+	}
+browse mc9_factor couple_work_ow_trunc* age_youngest_child1 age_youngest_child2 age_youngest_child3 age_youngest_child4 age_youngest_child5 age_youngest_child6 age_youngest_child7 age_youngest_child8 age_youngest_child9 age_youngest_child10 if mc9_factor==1 // in real cluster 7, around duration 7-8, it switches
+	forvalues d=1/10{
+		tabstat age_youngest_child`d' if mc9_factor==1 & age_youngest_child`d'!=9999
+	}
+
+********************************************************************************
 **# Describe sequences
 ********************************************************************************
 // I think the data need to be LONG here (to get average across durations)
@@ -778,3 +802,4 @@ forvalues c=1/9{
 mi estimate, esampvaryok: proportion couple_work_ow_trunc couple_hw_hrs_weekly_trunc family_type_trunc if duration <=10 & mc9_factor==1
 mi estimate, esampvaryok: proportion couple_work_ow_trunc couple_hw_hrs_weekly_trunc family_type_trunc if duration <=10 & mc9_factor==4
 mi estimate, esampvaryok: proportion couple_work_ow_trunc couple_hw_hrs_weekly_trunc family_type_trunc if duration <=10 & mc9_factor==9
+

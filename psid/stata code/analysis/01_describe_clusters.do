@@ -202,6 +202,16 @@ replace age_gp_woman1 = 3 if age_woman1 > 34 & age_woman1 < = 1000
 label define age_gp 1 "18-24" 2 "25-34" 3 "35+"
 label values age_gp_woman1 age_gp
 
+// relationship order - created earier (step 5 of prep), but want to create a binary indicator of whether in first rel
+tab rel_no_woman, m
+tab rel_no_man, m
+
+gen in_first_rel_woman = 0
+replace in_first_rel_woman = 1 if rel_no_woman==1
+
+gen in_first_rel_man = 0
+replace in_first_rel_man = 1 if rel_no_man==1
+
 // first birth timing relative to relationship start
 	// the first birth info for each partner was created in step 5 in cluster prep
 	// oh, I guess i also have the first birth timing rel variables for focal spouse already created also...
@@ -213,6 +223,24 @@ replace first_birth_timing_man = . if yr_first_birth_man==9999
 
 gen first_birth_timing_woman = yr_first_birth_woman - rel_start_all
 replace first_birth_timing_woman = . if yr_first_birth_woman==9999
+
+// create a binary of pre / post
+	// browse unique_id partner_id SEX rel_start_all first_birth_timing_woman yr_first_birth_woman first_birth_timing_man yr_first_birth_man
+mi passive: gen first_birth_pre_rel_man = .
+mi passive: replace first_birth_pre_rel_man = 0 if first_birth_timing_man >=0 & first_birth_timing_man!=.
+mi passive: replace first_birth_pre_rel_man = 0 if yr_first_birth_man==9999 // can actually put 9999 here because is, theoretically, 0 if no births
+mi passive: replace first_birth_pre_rel_man = 1 if first_birth_timing_man <0 & first_birth_timing_man!=.
+
+tab first_birth_timing_man first_birth_pre_rel_man, m
+tab yr_first_birth_man first_birth_pre_rel_man, m
+
+mi passive: gen first_birth_pre_rel_woman = .
+mi passive: replace first_birth_pre_rel_woman = 0 if first_birth_timing_woman >=0 & first_birth_timing_woman!=.
+mi passive: replace first_birth_pre_rel_woman = 0 if yr_first_birth_woman==9999 // can actually put 9999 here because is, theoretically, 0 if no births
+mi passive: replace first_birth_pre_rel_woman = 1 if first_birth_timing_woman <0 & first_birth_timing_woman!=.
+
+tab first_birth_timing_woman first_birth_pre_rel_woman, m
+tab yr_first_birth_woman first_birth_pre_rel_woman, m
 
 // age of oldest child...wait, if I do this at relationship start, this is actually essentially the same? so I might not need to create this? Okay duh, this is why the POSITIVE version was useful - because that is essentially what that was...okay, let's just leave for now, we can revisit coding if needed later
 browse unique_id partner_id SEX rel_start_all yr_first_birth_woman first_birth_timing_woman yr_first_birth_man first_birth_timing_man family_type1
@@ -510,60 +538,64 @@ putexcel A26 = "Age Man (T1)"
 putexcel A27 = "Age Woman (T1)"
 putexcel A28 = "Relationship Number Man"
 putexcel A29 = "Relationship Number Woman"
-putexcel A30 = "First Birth Timing Man"
-putexcel A31 = "First Birth Timing Woman"
-putexcel A32 = "Age Youngest Child in HH"
-putexcel A33 = "Ever Parent Man"
-putexcel A34 = "Ever Parent Woman"
-putexcel A35 = "MPF Y/N Man"
-putexcel A36 = "MPF Y/N Woman"
-putexcel A37 = "Man's Father has College Degree"
-putexcel A38 = "Man's Mother has College Degree"
-putexcel A39 = "Woman's Father has College Degree"
-putexcel A40 = "Woman's Mother has College Degree"
-putexcel A41 = "Man Lived with Bio Parents"
-putexcel A42 = "Woman Lived with Bio Parents"
-putexcel A43 = "Rel Cohort: 1990-1999"
-putexcel A44 = "Rel Cohort: 2000-2009"
-putexcel A45 = "Rel Cohort: 2010+"
-putexcel A46 = "Birth Cohort Man: Pre 1960s"
-putexcel A47 = "Birth Cohort Man: 1960s"
-putexcel A48 = "Birth Cohort Man: 1970s"
-putexcel A49 = "Birth Cohort Man: 1980s"
-putexcel A50 = "Birth Cohort Man: 1990s+"
-putexcel A51 = "Birth Cohort Woman: Pre 1960s"
-putexcel A52 = "Birth Cohort Woman: 1960s"
-putexcel A53 = "Birth Cohort Woman: 1970s"
-putexcel A54 = "Birth Cohort Woman: 1980s"
-putexcel A55 = "Birth Cohort Woman: 1990s+"
-putexcel A56 = "Religion Man: None"
-putexcel A57 = "Religion Man: Catholic"
-putexcel A58 = "Religion Man: Protestant"
-putexcel A59 = "Religion Man: Other Christian"
-putexcel A60 = "Religion Man: Other Non-Christian"
-putexcel A61 = "Religion Woman: None"
-putexcel A62 = "Religion Woman: Catholic"
-putexcel A63 = "Religion Woman: Protestant"
-putexcel A64 = "Religion Woman: Other Christian"
-putexcel A65 = "Religion Woman: Other Non-Christian"
-putexcel A66 = "Disabled Man Y/N"
-putexcel A67 = "Disabled Woman Y/N"
-putexcel A68 = "Man's Parents in HH (# Years)"
-putexcel A69 = "Woman's Parents in HH (# Years)"
-putexcel A70 = "Where Live Man: Same State"
-putexcel A71 = "Where Live Man: Same Region"
-putexcel A72 = "Where Live Man: Diff Region"
-putexcel A73 = "Where Live Woman: Same State"
-putexcel A74 = "Where Live Woman: Same Region"
-putexcel A75 = "Where Live Woman: Diff Region"
-putexcel A76 = "Number People 65+ in HH (average)"
-putexcel A77 = "Self-rated health Man (Avg T1)"
-putexcel A78 = "Self-rated health Woman (Avg T1)"
+putexcel A30 = "In First Rel YN: Man"
+putexcel A31 = "In First Rel YN: Woman"
+putexcel A32 = "First Birth Timing Man"
+putexcel A33 = "First Birth Timing Woman"
+putexcel A34 = "First Birth Pre Rel YN: Man"
+putexcel A35 = "First Birth Pre Rel YN: Woman"
+putexcel A36 = "Age Youngest Child in HH"
+putexcel A37 = "Ever Parent Man"
+putexcel A38 = "Ever Parent Woman"
+putexcel A39 = "MPF Y/N Man"
+putexcel A40 = "MPF Y/N Woman"
+putexcel A41 = "Man's Father has College Degree"
+putexcel A42 = "Man's Mother has College Degree"
+putexcel A43 = "Woman's Father has College Degree"
+putexcel A44 = "Woman's Mother has College Degree"
+putexcel A45 = "Man Lived with Bio Parents"
+putexcel A46 = "Woman Lived with Bio Parents"
+putexcel A47 = "Rel Cohort: 1990-1999"
+putexcel A48 = "Rel Cohort: 2000-2009"
+putexcel A49 = "Rel Cohort: 2010+"
+putexcel A50 = "Birth Cohort Man: Pre 1960s"
+putexcel A51 = "Birth Cohort Man: 1960s"
+putexcel A52 = "Birth Cohort Man: 1970s"
+putexcel A53 = "Birth Cohort Man: 1980s"
+putexcel A54 = "Birth Cohort Man: 1990s+"
+putexcel A55 = "Birth Cohort Woman: Pre 1960s"
+putexcel A56 = "Birth Cohort Woman: 1960s"
+putexcel A57 = "Birth Cohort Woman: 1970s"
+putexcel A58 = "Birth Cohort Woman: 1980s"
+putexcel A59 = "Birth Cohort Woman: 1990s+"
+putexcel A60 = "Religion Man: None"
+putexcel A61 = "Religion Man: Catholic"
+putexcel A62 = "Religion Man: Protestant"
+putexcel A63 = "Religion Man: Other Christian"
+putexcel A64 = "Religion Man: Other Non-Christian"
+putexcel A65 = "Religion Woman: None"
+putexcel A66 = "Religion Woman: Catholic"
+putexcel A67 = "Religion Woman: Protestant"
+putexcel A68 = "Religion Woman: Other Christian"
+putexcel A69 = "Religion Woman: Other Non-Christian"
+putexcel A70 = "Disabled Man Y/N"
+putexcel A71 = "Disabled Woman Y/N"
+putexcel A72 = "Man's Parents in HH (# Years)"
+putexcel A73 = "Woman's Parents in HH (# Years)"
+putexcel A74 = "Where Live Man: Same State"
+putexcel A75 = "Where Live Man: Same Region"
+putexcel A76 = "Where Live Man: Diff Region"
+putexcel A77 = "Where Live Woman: Same State"
+putexcel A78 = "Where Live Woman: Same Region"
+putexcel A79 = "Where Live Woman: Diff Region"
+putexcel A80 = "Number People 65+ in HH (average)"
+putexcel A81 = "Self-rated health Man (Avg T1)"
+putexcel A82 = "Self-rated health Woman (Avg T1)"
 
-local desc_vars "couple_educ1 couple_educ2 couple_educ3 couple_educ4 couple_earnings_t1 house_status1 house_status2 house_status3 race_man1 race_man2 race_man3 race_man4 race_man5 race_woman1 race_woman2 race_woman3 race_woman4 race_woman5 imm_sample_man imm_sample_woman region_gp1 region_gp2 region_gp3 region_gp4 age_man1 age_woman1 rel_no_man rel_no_woman first_birth_timing_man first_birth_timing_woman age_youngest_woman1 ever_parent_man ever_parent_woman mpf_man mpf_woman father_college_man mother_college_man father_college_woman mother_college_woman family_structure_man family_structure_woman rel_cohort1 rel_cohort2 rel_cohort3 bc_man1 bc_man2 bc_man3 bc_man4 bc_man5 bc_woman1 bc_woman2 bc_woman3 bc_woman4 bc_woman5 relig_man1 relig_man2 relig_man3 relig_man4 relig_man5 relig_woman1 relig_woman2 relig_woman3 relig_woman4 relig_woman5 disabled_man1 disabled_woman1 years_parent_in_hh_man years_parent_in_hh_woman lives_man1 lives_man2 lives_man3 lives_woman1 lives_woman2 lives_woman3 num_65up_hh_avg sr_health_man_rev1 sr_health_woman_rev1" // region_gp5 - this is "other" and it's too small in some cluster + imputation combos
+local desc_vars "couple_educ1 couple_educ2 couple_educ3 couple_educ4 couple_earnings_t1 house_status1 house_status2 house_status3 race_man1 race_man2 race_man3 race_man4 race_man5 race_woman1 race_woman2 race_woman3 race_woman4 race_woman5 imm_sample_man imm_sample_woman region_gp1 region_gp2 region_gp3 region_gp4 age_man1 age_woman1 rel_no_man rel_no_woman in_first_rel_man in_first_rel_woman first_birth_timing_man first_birth_timing_woman first_birth_pre_rel_man first_birth_pre_rel_woman age_youngest_woman1 ever_parent_man ever_parent_woman mpf_man mpf_woman father_college_man mother_college_man father_college_woman mother_college_woman family_structure_man family_structure_woman rel_cohort1 rel_cohort2 rel_cohort3 bc_man1 bc_man2 bc_man3 bc_man4 bc_man5 bc_woman1 bc_woman2 bc_woman3 bc_woman4 bc_woman5 relig_man1 relig_man2 relig_man3 relig_man4 relig_man5 relig_woman1 relig_woman2 relig_woman3 relig_woman4 relig_woman5 disabled_man1 disabled_woman1 years_parent_in_hh_man years_parent_in_hh_woman lives_man1 lives_man2 lives_man3 lives_woman1 lives_woman2 lives_woman3 num_65up_hh_avg sr_health_man_rev1 sr_health_woman_rev1" // region_gp5 - this is "other" and it's too small in some cluster + imputation combos
 
 // full sample
-forvalues w=1/77{
+forvalues w=1/81{
 	local row=`w'+1
 	local var: word `w' of `desc_vars'
 	mi estimate: mean `var'	
@@ -578,7 +610,7 @@ local col1 "C D E F G H I J"
 
 forvalues c=1/8{
 	local col: word `c' of `col1'
-	forvalues w=1/77{
+	forvalues w=1/81{
 		local row=`w'+1
 		local var: word `w' of `desc_vars'
 		mi estimate, esampvaryok: mean `var' if mc8_factor==`c'
@@ -594,6 +626,9 @@ mi estimate, esampvaryok: proportion couple_educ_type raceth_woman if mc8_factor
 mi estimate, esampvaryok: mean couple_earnings_t1 sr_health_man_rev1 father_college_woman if mc8_factor==1
 mi estimate, esampvaryok: mean couple_earnings_t1 sr_health_man_rev1 father_college_woman if mc8_factor==8
 tabstat couple_earnings_t1, by(mc8_factor)
+
+// tabstat in_first_rel_man in_first_rel_woman first_birth_pre_rel_man first_birth_pre_rel_woman // added these later (11/7 - afer adding for UK / DE)
+// tabstat in_first_rel_man in_first_rel_woman first_birth_pre_rel_man first_birth_pre_rel_woman, by(mc8_factor)
 
 // stopped here 9/5 (above is done - updated the variables so need to fix the reshape below)
 // okay back 10/20/25 - actually very few variables to add, because most of the created were fixed. so just truncated (x3) + sr health vars

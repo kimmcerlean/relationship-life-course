@@ -737,6 +737,39 @@ foreach var in couple_work_ow_end couple_hw_hrs_combo_end family_type_end{
 
 unique unique_id partner_id // so now there are 4363 uniques and 11 observations for each (base + 10 imputations). 5828 with updated sample
 
+// okay, want to briefly look at the pre-marital birth indicators. Currently create in step 1 but let's temprarily move here
+browse unique_id partner_id SEX rel_start_all FIRST_BIRTH_YR birth_timing_rel FIRST_BIRTH_YR_sp birth_timing_rel_sp yr_first_birth_woman yr_first_birth_man
+
+gen first_birth_timing_man = yr_first_birth_man - rel_start_all
+replace first_birth_timing_man = . if yr_first_birth_man==9999
+
+gen first_birth_timing_woman = yr_first_birth_woman - rel_start_all
+replace first_birth_timing_woman = . if yr_first_birth_woman==9999
+
+// create a binary of pre / post
+	// browse unique_id partner_id SEX rel_start_all first_birth_timing_woman yr_first_birth_woman first_birth_timing_man yr_first_birth_man
+mi passive: gen first_birth_pre_rel_man = .
+mi passive: replace first_birth_pre_rel_man = 0 if first_birth_timing_man >=0 & first_birth_timing_man!=.
+mi passive: replace first_birth_pre_rel_man = 0 if yr_first_birth_man==9999 // can actually put 9999 here because is, theoretically, 0 if no births
+mi passive: replace first_birth_pre_rel_man = 1 if first_birth_timing_man <0 & first_birth_timing_man!=.
+
+tab first_birth_timing_man first_birth_pre_rel_man, m
+tab yr_first_birth_man first_birth_pre_rel_man, m
+
+mi passive: gen first_birth_pre_rel_woman = .
+mi passive: replace first_birth_pre_rel_woman = 0 if first_birth_timing_woman >=0 & first_birth_timing_woman!=.
+mi passive: replace first_birth_pre_rel_woman = 0 if yr_first_birth_woman==9999 // can actually put 9999 here because is, theoretically, 0 if no births
+mi passive: replace first_birth_pre_rel_woman = 1 if first_birth_timing_woman <0 & first_birth_timing_woman!=.
+
+tab first_birth_timing_woman first_birth_pre_rel_woman, m
+tab yr_first_birth_woman first_birth_pre_rel_woman, m
+
+tab first_birth_pre_rel_man first_birth_pre_rel_woman
+mi passive: gen either_birth_pre_rel = .
+mi passive: replace either_birth_pre_rel = 0 if first_birth_pre_rel_man==0 & first_birth_pre_rel_woman==0
+mi passive: replace either_birth_pre_rel = 1 if first_birth_pre_rel_man==1 | first_birth_pre_rel_woman==1
+tab either_birth_pre_rel, m
+
 // create indicator of complete sequences
 gen complete_seq = .
 replace complete_seq = 0 if max_dur < 9
@@ -836,6 +869,18 @@ fre couple_hw_hrs_combo_trunc5
 fre family_type_trunc5
 
 save "$created_data/psid_couples_wide_truncated.dta", replace 
+
+// get counts of unique couples by length for appendix
+unique unique_id partner_id if sequence_length>=2
+unique unique_id partner_id if sequence_length>=3
+unique unique_id partner_id if sequence_length>=4
+unique unique_id partner_id if sequence_length>=5
+unique unique_id partner_id if sequence_length>=6
+unique unique_id partner_id if sequence_length>=7
+unique unique_id partner_id if sequence_length>=8
+unique unique_id partner_id if sequence_length>=9
+unique unique_id partner_id if sequence_length>=10
+
 
 /*
 // don't need this; this is when I didn't know how to get clusters on to data
