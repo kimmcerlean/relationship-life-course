@@ -4,7 +4,7 @@
 #    Date: January 2025
 #    Modified: Jan 22, 2026
 #    Goal: Compare mantel coefficients of different sequence length configurations
-#    Now UPDATED to be current (less detailed) sequence states
+#    (Never did this for Germany before, so this is new, actual sequence states)
 # --------------------------------------------------------------------
 # --------------------------------------------------------------------
 
@@ -83,14 +83,14 @@ if (Sys.getenv(c("USERNAME")) == "lpessin") {
 # Import created data ----
 # ~~~~~~~~~~~~~~~~~~~~~~~~
 
-data <- read_dta("created data/ukhls/ukhls_couples_imputed_wide_complete.dta")
+data <- read_dta("created data/gsoep/gsoep_couples_imputed_wide_complete.dta")
 
 # Filter to just 1 imputation
 # think we did this instead of Rubin's rules bc we didn't know. For our purposes, this works for uncertainty iMO
 # Really, we also picked 3 bc of US cohabitation - so this is a check that 3 is at least mostly correlated with 10.
 data <- data%>%filter(`_mi_m`== 1) 
 table(data$couple_work_ow_end1)
-table(data$couple_hw_hrs_combo_end1)
+table(data$couple_hw_hrs_weekly_end1)
 table(data$family_type_end1)
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -103,7 +103,7 @@ table(data$family_type_end1)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Variables
 ## couple_work_ow_end: Couple-level work indicator (overwork split out)
-## couple_hw_hrs_combo_end:	Couple-level housework indicator, split by time spent 
+## couple_hw_hrs_weekly_end:	Couple-level housework indicator, split by time spent (Germany uses weekly created)
 ##on HW, percentiles created within a specific subgroup (e.g. she does most)
 ## family_type_end:	Type of family based on relationship type + number of 
 ##children
@@ -234,12 +234,12 @@ ggseqdplot(seq.work.ow.2) +
 # Columns
 lab_t=c()
 for (i in 1:2){
-  lab_t[i]=paste("couple_hw_hrs_combo_end",i, sep="")
+  lab_t[i]=paste("couple_hw_hrs_weekly_end",i, sep="")
 }
-col_hw.hrs.alt.2 =which(colnames(data)%in%lab_t) 
+col_hw.hrs.weekly.2 =which(colnames(data)%in%lab_t) 
 
 # Sequence object
-seq.hw.hrs.2 <- seqdef(data[,col_hw.hrs.alt.2], cpal = colspace.hw.hrs.combo, labels=longlab.hw.hrs.combo, 
+seq.hw.hrs.2 <- seqdef(data[,col_hw.hrs.weekly.2], cpal = colspace.hw.hrs.combo, labels=longlab.hw.hrs.combo, 
                          states= shortlab.hw.hrs.combo)
 
 ggseqdplot(seq.hw.hrs.2) +
@@ -290,12 +290,12 @@ ggseqdplot(seq.work.ow.3) +
 # Columns
 lab_t=c()
 for (i in 1:3){
-  lab_t[i]=paste("couple_hw_hrs_combo_end",i, sep="")
+  lab_t[i]=paste("couple_hw_hrs_weekly_end",i, sep="")
 }
-col_hw.hrs.alt.3 =which(colnames(data)%in%lab_t) 
+col_hw.hrs.weekly.3 =which(colnames(data)%in%lab_t) 
 
 # Sequence object
-seq.hw.hrs.3 <- seqdef(data[,col_hw.hrs.alt.3], cpal = colspace.hw.hrs.combo, labels=longlab.hw.hrs.combo, 
+seq.hw.hrs.3 <- seqdef(data[,col_hw.hrs.weekly.3], cpal = colspace.hw.hrs.combo, labels=longlab.hw.hrs.combo, 
                            states= shortlab.hw.hrs.combo)
 
 ggseqdplot(seq.hw.hrs.3) +
@@ -347,12 +347,12 @@ ggseqdplot(seq.work.ow.4) +
 # Columns
 lab_t=c()
 for (i in 1:4){
-  lab_t[i]=paste("couple_hw_hrs_combo_end",i, sep="")
+  lab_t[i]=paste("couple_hw_hrs_weekly_end",i, sep="")
 }
-col_hw.hrs.alt.4 =which(colnames(data)%in%lab_t) 
+col_hw.hrs.weekly.4 =which(colnames(data)%in%lab_t) 
 
 # Sequence object
-seq.hw.hrs.4 <- seqdef(data[,col_hw.hrs.alt.4], cpal = colspace.hw.hrs.combo, labels=longlab.hw.hrs.combo, 
+seq.hw.hrs.4 <- seqdef(data[,col_hw.hrs.weekly.4], cpal = colspace.hw.hrs.combo, labels=longlab.hw.hrs.combo, 
                            states= shortlab.hw.hrs.combo)
 
 ggseqdplot(seq.hw.hrs.4) +
@@ -404,12 +404,12 @@ ggseqdplot(seq.work.ow.5) +
 # Columns
 lab_t=c()
 for (i in 1:5){
-  lab_t[i]=paste("couple_hw_hrs_combo_end",i, sep="")
+  lab_t[i]=paste("couple_hw_hrs_weekly_end",i, sep="")
 }
-col_hw.hrs.alt.5 =which(colnames(data)%in%lab_t) 
+col_hw.hrs.weekly.5 =which(colnames(data)%in%lab_t) 
 
 # Sequence object
-seq.hw.hrs.5 <- seqdef(data[,col_hw.hrs.alt.5], cpal = colspace.hw.hrs.combo, labels=longlab.hw.hrs.combo, 
+seq.hw.hrs.5 <- seqdef(data[,col_hw.hrs.weekly.5], cpal = colspace.hw.hrs.combo, labels=longlab.hw.hrs.combo, 
                            states= shortlab.hw.hrs.combo)
 
 ggseqdplot(seq.hw.hrs.5) +
@@ -461,12 +461,12 @@ ggseqdplot(seq.work.ow.6) +
 # Columns
 lab_t=c()
 for (i in 1:6){
-  lab_t[i]=paste("couple_hw_hrs_combo_end",i, sep="")
+  lab_t[i]=paste("couple_hw_hrs_weekly_end",i, sep="")
 }
-col_hw.hrs.alt.6 =which(colnames(data)%in%lab_t) 
+col_hw.hrs.weekly.6 =which(colnames(data)%in%lab_t) 
 
 # Sequence object
-seq.hw.hrs.6 <- seqdef(data[,col_hw.hrs.alt.6], cpal = colspace.hw.hrs.combo, labels=longlab.hw.hrs.combo, 
+seq.hw.hrs.6 <- seqdef(data[,col_hw.hrs.weekly.6], cpal = colspace.hw.hrs.combo, labels=longlab.hw.hrs.combo, 
                            states= shortlab.hw.hrs.combo)
 
 ggseqdplot(seq.hw.hrs.6) +
@@ -518,12 +518,12 @@ ggseqdplot(seq.work.ow.7) +
 # Columns
 lab_t=c()
 for (i in 1:7){
-  lab_t[i]=paste("couple_hw_hrs_combo_end",i, sep="")
+  lab_t[i]=paste("couple_hw_hrs_weekly_end",i, sep="")
 }
-col_hw.hrs.alt.7 =which(colnames(data)%in%lab_t) 
+col_hw.hrs.weekly.7 =which(colnames(data)%in%lab_t) 
 
 # Sequence object
-seq.hw.hrs.7 <- seqdef(data[,col_hw.hrs.alt.7], cpal = colspace.hw.hrs.combo, labels=longlab.hw.hrs.combo, 
+seq.hw.hrs.7 <- seqdef(data[,col_hw.hrs.weekly.7], cpal = colspace.hw.hrs.combo, labels=longlab.hw.hrs.combo, 
                            states= shortlab.hw.hrs.combo)
 
 ggseqdplot(seq.hw.hrs.7) +
@@ -575,12 +575,12 @@ ggseqdplot(seq.work.ow.8) +
 # Columns
 lab_t=c()
 for (i in 1:8){
-  lab_t[i]=paste("couple_hw_hrs_combo_end",i, sep="")
+  lab_t[i]=paste("couple_hw_hrs_weekly_end",i, sep="")
 }
-col_hw.hrs.alt.8 =which(colnames(data)%in%lab_t) 
+col_hw.hrs.weekly.8 =which(colnames(data)%in%lab_t) 
 
 # Sequence object
-seq.hw.hrs.8 <- seqdef(data[,col_hw.hrs.alt.8], cpal = colspace.hw.hrs.combo, labels=longlab.hw.hrs.combo, 
+seq.hw.hrs.8 <- seqdef(data[,col_hw.hrs.weekly.8], cpal = colspace.hw.hrs.combo, labels=longlab.hw.hrs.combo, 
                            states= shortlab.hw.hrs.combo)
 
 ggseqdplot(seq.hw.hrs.8) +
@@ -632,12 +632,12 @@ ggseqdplot(seq.work.ow.9) +
 # Columns
 lab_t=c()
 for (i in 1:9){
-  lab_t[i]=paste("couple_hw_hrs_combo_end",i, sep="")
+  lab_t[i]=paste("couple_hw_hrs_weekly_end",i, sep="")
 }
-col_hw.hrs.alt.9 =which(colnames(data)%in%lab_t) 
+col_hw.hrs.weekly.9 =which(colnames(data)%in%lab_t) 
 
 # Sequence object
-seq.hw.hrs.9 <- seqdef(data[,col_hw.hrs.alt.9], cpal = colspace.hw.hrs.combo, labels=longlab.hw.hrs.combo, 
+seq.hw.hrs.9 <- seqdef(data[,col_hw.hrs.weekly.9], cpal = colspace.hw.hrs.combo, labels=longlab.hw.hrs.combo, 
                            states= shortlab.hw.hrs.combo)
 
 ggseqdplot(seq.hw.hrs.9) +
@@ -689,12 +689,12 @@ ggseqdplot(seq.work.ow.10) +
 # Columns
 lab_t=c()
 for (i in 1:10){
-  lab_t[i]=paste("couple_hw_hrs_combo_end",i, sep="")
+  lab_t[i]=paste("couple_hw_hrs_weekly_end",i, sep="")
 }
-col_hw.hrs.alt.10 =which(colnames(data)%in%lab_t) 
+col_hw.hrs.weekly.10 =which(colnames(data)%in%lab_t) 
 
 # Sequence object
-seq.hw.hrs.10 <- seqdef(data[,col_hw.hrs.alt.10], cpal = colspace.hw.hrs.combo, labels=longlab.hw.hrs.combo, 
+seq.hw.hrs.10 <- seqdef(data[,col_hw.hrs.weekly.10], cpal = colspace.hw.hrs.combo, labels=longlab.hw.hrs.combo, 
                             states= shortlab.hw.hrs.combo)
 
 ggseqdplot(seq.hw.hrs.10) +
@@ -791,5 +791,5 @@ mantel_comp <- data.frame(length, stats_comp, sig_comp)
 
 print(mantel_comp)
 
-write.xlsx(mantel_comp, "results/UKHLS/ukhls_mantel_seqlength-complete.xlsx")
+write.xlsx(mantel_comp, "results/GSOEP/gsoep_mantel_seqlength-complete.xlsx")
 

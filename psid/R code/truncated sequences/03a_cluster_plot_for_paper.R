@@ -171,6 +171,77 @@ seqplotMD(channels=list('Paid Work'=seq.work.ow,Housework=seq.hw.hrs,Family=seq.
 
 dev.off()
 
+#### Relative frequency: 100 K (end, domain: fam)
+pdf("results/PSID/PSID_RF100Plot_end_mc8_letterx2.pdf",
+    width=16,
+    height=22)
+    
+# paper="letter") # this doesn't work, says margins too small
+
+seqplotMD(channels=list('Paid Work'=seq.work.ow,Housework=seq.hw.hrs,Family=seq.fam),
+          group = data$real.cluster$cluster.id, type="rf", diss=mcdist.det.min,
+          xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
+          dom.byrow=FALSE,k=100,sortv="from.end",dom.crit=3,
+          cex.legend=0.7, main="United States")
+
+dev.off()
+
+#### Want to see if doing representative plots (or other options)
+### could work for Trinity presentation.
+### One risk of this is that the representative sequences might not be 10 years, which might make this wonkier gah
+  # yes this is a problem
+### still also need to sort out the dimensions above
+pdf("results/PSID/PSID_RepSeq_Trunc_mc8.pdf",
+    width=15,
+    height=28)
+
+seqplotMD(channels=list('Paid Work'=seq.work.ow,Housework=seq.hw.hrs,Family=seq.fam),
+          group = data$real.cluster$cluster.id, type="r", diss=mcdist.det.min,
+          xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
+          criterion="density", coverage=.25) # think will need to play around with these  
+#I worry with sorting based on frequency is that every single state needs to match at all durations, which is prob not as likely as I think
+# coverage of .5 didn't work - all black lol (think it's bc I need SO MANY sequences to hit that)
+# so also trying just 10 below
+
+dev.off()
+
+pdf("results/PSID/PSID_RepSeq10_Trunc_mc8.pdf",
+    width=15,
+    height=28)
+
+seqplotMD(channels=list('Paid Work'=seq.work.ow,Housework=seq.hw.hrs,Family=seq.fam),
+          group = data$real.cluster$cluster.id, type="r", diss=mcdist.det.min,
+          xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
+          criterion="density", nrep=10) # think will need to play around with these  
+#I worry with sorting based on frequency is that every single state needs to match at all durations, which is prob not as likely as I think
+
+dev.off()
+
+# think this is how you get medoid (per R manual) - the bottom row
+pdf("results/PSID/PSID_Medoid_Trunc_mc8.pdf",
+    width=15,
+    height=28)
+
+seqplotMD(channels=list('Paid Work'=seq.work.ow,Housework=seq.hw.hrs,Family=seq.fam),
+          group = data$real.cluster$cluster.id, type="r", diss=mcdist.det.min,
+          xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
+          criterion="dist", nrep=1) 
+
+dev.off()
+# Yes-  problem is, most of the medoids are just 3-4 durations long, rest are missing, so this also doesn't work well...
+
+### Trying modal also bc don't know what that will look like
+### think this is not nec. any one sequence. it takes modal state at each duration
+pdf("results/PSID/PSID_Modal_Trunc_mc8.pdf",
+    width=15,
+    height=28)
+
+seqplotMD(channels=list('Paid Work'=seq.work.ow,Housework=seq.hw.hrs,Family=seq.fam),
+          group = data$real.cluster$cluster.id, type="ms",
+          xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE)  
+
+dev.off()
+
 #pdf_convert("C:/Users/mcerl/Istituto Universitario Europeo/Pessin, Lea - 1. WeEqualize - Team Folder/Papers/Relationship Life Course/results/for paper/United States Cluster Plot.pdf",
 #            format = "png", dpi = 300, pages = 1,
 #            "C:/Users/mcerl/Istituto Universitario Europeo/Pessin, Lea - 1. WeEqualize - Team Folder/Papers/Relationship Life Course/results/for paper/United States Cluster Plot.png")

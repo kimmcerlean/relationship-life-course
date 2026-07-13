@@ -4,7 +4,7 @@
 #    Date: January 2025
 #    Modified: Jan 22, 2026
 #    Goal: Compare mantel coefficients of different sequence length configurations
-#    Okay, PSID was actually updated, so this is now less detailed sequence states
+#         Just using the detailed sequence states for ease
 # --------------------------------------------------------------------
 # --------------------------------------------------------------------
 
@@ -34,7 +34,7 @@ if (Sys.getenv(c("HOME" )) == "/home/lpessin") {
   required_packages <- c("TraMineR", "TraMineRextras","RColorBrewer", "paletteer", 
                          "colorspace","ggplot2","ggpubr", "ggseqplot", "vegan",
                          "patchwork", "cluster", "WeightedCluster","dendextend","seqHMM","haven",
-                         "labelled", "readxl", "openxlsx","tidyverse","ecodist")
+                         "labelled", "readxl", "openxlsx","tidyverse")
   lapply(required_packages, require, character.only = TRUE)
 }
 
@@ -42,7 +42,7 @@ if (Sys.getenv(c("HOME" )) == "/home/kmcerlea") {
   required_packages <- c("TraMineR", "TraMineRextras","RColorBrewer", "paletteer", 
                          "colorspace","ggplot2","ggpubr", "ggseqplot", "vegan",
                          "patchwork", "cluster", "WeightedCluster","dendextend","seqHMM","haven",
-                         "labelled", "readxl", "openxlsx","tidyverse","ecodist")
+                         "labelled", "readxl", "openxlsx","tidyverse")
   lapply(required_packages, require, character.only = TRUE)
 }
 
@@ -51,7 +51,7 @@ if (Sys.getenv(c("USERNAME")) == "mcerl") {
   required_packages <- c("TraMineR", "TraMineRextras","RColorBrewer", "paletteer", 
                          "colorspace","ggplot2","ggpubr", "ggseqplot", "vegan",
                          "patchwork", "cluster", "WeightedCluster","dendextend","seqHMM","haven",
-                         "labelled", "readxl", "openxlsx","tidyverse","ecodist")
+                         "labelled", "readxl", "openxlsx","tidyverse")
   
   install_if_missing <- function(packages) {
     missing_packages <- packages[!packages %in% installed.packages()[, "Package"]]
@@ -67,7 +67,7 @@ if (Sys.getenv(c("USERNAME")) == "lpessin") {
   required_packages <- c("TraMineR", "TraMineRextras","RColorBrewer", "paletteer", 
                          "colorspace","ggplot2","ggpubr", "ggseqplot", "vegan",
                          "patchwork", "cluster", "WeightedCluster","dendextend","seqHMM","haven",
-                         "labelled", "readxl", "openxlsx","tidyverse","ecodist")
+                         "labelled", "readxl", "openxlsx","tidyverse")
   
   install_if_missing <- function(packages) {
     missing_packages <- packages[!packages %in% installed.packages()[, "Package"]]
@@ -83,14 +83,32 @@ if (Sys.getenv(c("USERNAME")) == "lpessin") {
 # Import created data ----
 # ~~~~~~~~~~~~~~~~~~~~~~~~
 
-# data <- read_dta("created data/psid_couples_imputed_wide.dta")
-data <- read_dta("created data/psid_couples_imputed_wide_complete.dta")
+#data <- read_dta("created data/ukhls/ukhls_couples_imputed_wide.dta")
 
 # Filter to just 1 imputation
+#data <- data%>%filter(`_mi_m`== 1) 
+
+# Filter to just complete sequences to start
+#data <- data%>%filter(complete_seq== 1)
+
+# looking to do this for Germany, want to check if it matters which file I use (i am wondering if I used above because I didn't have this yet?)
+# I think also I only need half of this code. let's update with this file, run through top, confirm works, THEN use for DE
+data <- read_dta("created data/ukhls/ukhls_couples_imputed_wide_complete.dta")
+
+# Filter to just 1 imputation
+# think we did this instead of Rubin's rules bc we didn't know. For our purposes, this works for uncertainty iMO
+# Really, we also picked 3 bc of US cohabitation - so this is a check that 3 is at least mostly correlated with 10.
 data <- data%>%filter(`_mi_m`== 1) 
 
-# Filter to just complete sequences to start 
-#data <- data%>%filter(complete_seq== 1) # just using the complete file now
+# Note: January 2026.
+# we have since changed sequence states. So, I actually think I need to rerun the UK AND the US
+# First - I need to confirm which part of this code I use; I think it is just the top part
+# SO figure out old columns (I am pretty sure I retained?)
+table(data$couple_work_ow_end1) # NEW
+table(data$couple_work_ow_detailed_end1) # OLD - so replace with this
+
+table(data$couple_hw_hrs_combo_end1) # NEW
+table(data$couple_hw_hrs_alt_end1) # OLD - actually think this is fine, because this is what is used below.
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Preliminary analysis for MCSA 
@@ -101,8 +119,8 @@ data <- data%>%filter(`_mi_m`== 1)
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Variables
-## couple_work_ow_end: Couple-level work indicator (overwork split out)
-## couple_hw_hrs_combo_end:	Couple-level housework indicator, split by time spent 
+## couple_work_ow_detailed_end: Couple-level work indicator (overwork split out)
+## couple_hw_hrs_alt_end:	Couple-level housework indicator, split by time spent 
 ##on HW, percentiles created within a specific subgroup (e.g. she does most)
 ## family_type_end:	Type of family based on relationship type + number of 
 ##children
@@ -125,28 +143,31 @@ data <- data%>%filter(`_mi_m`== 1)
 #Couple Paid Work - WITH OW: labels
 
 shortlab.work.ow <- c("MBW", "1.5MBW", 
-                      "dualFT", "dualFT-anyOW", 
+                      "dualFT", "dualFT-hisOW", 
+                      "dualFT-herOW", "dualOW",
                       "FBW", "underWK",
                       "DISS", "ATT")
 
 longlab.work.ow <- c("male breadwinner", "1.5 male breadwinner", 
-                     "dual full-time", "dual full-time & any overwork", 
-                     "female breadwinner", "under work",
+                     "dual full-time", "dual full-time & his overwork", 
+                     "dual full-time & her overwork", "dual overwork",
+                     "female breadwinner", "under work", 
                      "dissolved", "attrited")
-
 
 # ------------------------------------------------------------------------------
 #Couple HW - amounts v2 (group-specific ptiles): labels 
 
-shortlab.hw.hrs.combo <- c("W-most:high", "W-most:low",
-                           "equal:high", "equal:low", 
-                           "M-most:all",
-                           "DISS", "ATT")
+shortlab.hw.hrs.alt <- c("W-all:high", "W-all:low",
+                         "W-most:high", "W-most:med", "W-most:low",
+                         "equal:high", "equal:low", 
+                         "M-most:high","M-most:low", 
+                         "DISS", "ATT")
 
-longlab.hw.hrs.combo <- c("woman does most/all: high", "woman does most/all: low",
-                          "equal:high", "equal:low", 
-                          "man does most: all",
-                          "dissolved", "attrited")
+longlab.hw.hrs.alt <- c("woman does all: high", "woman does all: low",
+                        "woman does most: high", "woman does most: med", "woman does most: low", 
+                        "equal:high", "equal:low", 
+                        "man does most: high", "man does most: low",  
+                        "dissolved", "attrited")
 
 # ------------------------------------------------------------------------------
 #Family type: labels
@@ -176,28 +197,24 @@ longlab.fam <- c("married, 0 Ch",
 #Couple Paid Work - OW: labels
 
 # Work colors
-col1 <- sequential_hcl(5, palette = "BuGn") [1:2] #Male BW
-col2 <- sequential_hcl(5, palette = "Purples")[1:2] #Dual FT
-col3 <- sequential_hcl(5, palette = "PuRd")[c(2)] #Female BW
-col4 <- sequential_hcl(5, palette = "PuRd")[c(1)]  #UnderWork
-col5 <- sequential_hcl(5, palette = "Grays")[c(2,4)] # Right-censored states
+col1 <- diverging_hcl(8, palette = "Purple-Green")
+col2 <- sequential_hcl(5, palette = "Grays")[c(2,4)] # Right-censored states
 
 # Combine to full color palette
-colspace.work.ow <- c(col1, col2, col3, col4, col5)
+colspace.work.ow <- c(col1, col2)
 
 # ------------------------------------------------------------------------------
 #Couple HW - amounts v2 (group-specific ptiles): labels 
 
 #Housework colors
-# col1 <- sequential_hcl(5, palette = "Reds") [1:2] #W-all
-col1 <- sequential_hcl(5, palette = "PurpOr")[c(1)] #W-most
-col2 <- sequential_hcl(5, palette = "PurpOr")[c(3)] #W-most
-col3 <- sequential_hcl(5, palette = "OrYel")[2:3] #Equal
-col4 <- sequential_hcl(5, palette = "Teal")[c(2)] #M-most
+col1 <- sequential_hcl(5, palette = "OrYel") [2:1] #W-all
+col2 <- sequential_hcl(5, palette = "Greens")[3:1] #W-most
+col3 <- sequential_hcl(5, palette = "Reds")[2:1] #Equal
+col4 <- sequential_hcl(5, palette = "Teal")[2:1] #Equal
 col5 <- sequential_hcl(5, palette = "Grays")[c(2,4)] # Right-censored states
 
 # Combine to full color palette
-colspace.hw.hrs.combo <- c(col1, col2, col3, col4, col5)
+colspace.hw.hrs.alt <- c(col1, col2, col3, col4, col5)
 
 # ------------------------------------------------------------------------------
 # Family colors
@@ -225,7 +242,7 @@ colspace.fam <- c(col1, col2, col3)
 # Columns
 lab_t=c()
 for (i in 1:2){
-  lab_t[i]=paste("couple_work_ow_end",i, sep="")
+  lab_t[i]=paste("couple_work_ow_detailed_end",i, sep="")
 }
 col_work.ow.2=which(colnames(data)%in%lab_t) 
 
@@ -242,15 +259,15 @@ ggseqdplot(seq.work.ow.2) +
 # Columns
 lab_t=c()
 for (i in 1:2){
-  lab_t[i]=paste("couple_hw_hrs_combo_end",i, sep="")
+  lab_t[i]=paste("couple_hw_hrs_alt_end",i, sep="")
 }
-col_hw.hrs.combo.2 =which(colnames(data)%in%lab_t) 
+col_hw.hrs.alt.2 =which(colnames(data)%in%lab_t) 
 
 # Sequence object
-seq.hw.hrs.combo.2 <- seqdef(data[,col_hw.hrs.combo.2], cpal = colspace.hw.hrs.combo, labels=longlab.hw.hrs.combo, 
-                         states= shortlab.hw.hrs.combo)
+seq.hw.hrs.alt.2 <- seqdef(data[,col_hw.hrs.alt.2], cpal = colspace.hw.hrs.alt, labels=longlab.hw.hrs.alt, 
+                           states= shortlab.hw.hrs.alt)
 
-ggseqdplot(seq.hw.hrs.combo.2) +
+ggseqdplot(seq.hw.hrs.alt.2) +
   scale_x_discrete(labels = 1:2) +
   labs(x = "Year")
 
@@ -281,7 +298,7 @@ ggseqdplot(seq.fam.2) +
 # Columns
 lab_t=c()
 for (i in 1:3){
-  lab_t[i]=paste("couple_work_ow_end",i, sep="")
+  lab_t[i]=paste("couple_work_ow_detailed_end",i, sep="")
 }
 col_work.ow.3=which(colnames(data)%in%lab_t) 
 
@@ -298,15 +315,15 @@ ggseqdplot(seq.work.ow.3) +
 # Columns
 lab_t=c()
 for (i in 1:3){
-  lab_t[i]=paste("couple_hw_hrs_combo_end",i, sep="")
+  lab_t[i]=paste("couple_hw_hrs_alt_end",i, sep="")
 }
-col_hw.hrs.combo.3 =which(colnames(data)%in%lab_t) 
+col_hw.hrs.alt.3 =which(colnames(data)%in%lab_t) 
 
 # Sequence object
-seq.hw.hrs.combo.3 <- seqdef(data[,col_hw.hrs.combo.3], cpal = colspace.hw.hrs.combo, labels=longlab.hw.hrs.combo, 
-                           states= shortlab.hw.hrs.combo)
+seq.hw.hrs.alt.3 <- seqdef(data[,col_hw.hrs.alt.3], cpal = colspace.hw.hrs.alt, labels=longlab.hw.hrs.alt, 
+                           states= shortlab.hw.hrs.alt)
 
-ggseqdplot(seq.hw.hrs.combo.3) +
+ggseqdplot(seq.hw.hrs.alt.3) +
   scale_x_discrete(labels = 1:3) +
   labs(x = "Year")
 
@@ -338,7 +355,7 @@ ggseqdplot(seq.fam.3) +
 # Columns
 lab_t=c()
 for (i in 1:4){
-  lab_t[i]=paste("couple_work_ow_end",i, sep="")
+  lab_t[i]=paste("couple_work_ow_detailed_end",i, sep="")
 }
 col_work.ow.4=which(colnames(data)%in%lab_t) 
 
@@ -355,15 +372,15 @@ ggseqdplot(seq.work.ow.4) +
 # Columns
 lab_t=c()
 for (i in 1:4){
-  lab_t[i]=paste("couple_hw_hrs_combo_end",i, sep="")
+  lab_t[i]=paste("couple_hw_hrs_alt_end",i, sep="")
 }
-col_hw.hrs.combo.4 =which(colnames(data)%in%lab_t) 
+col_hw.hrs.alt.4 =which(colnames(data)%in%lab_t) 
 
 # Sequence object
-seq.hw.hrs.combo.4 <- seqdef(data[,col_hw.hrs.combo.4], cpal = colspace.hw.hrs.combo, labels=longlab.hw.hrs.combo, 
-                           states= shortlab.hw.hrs.combo)
+seq.hw.hrs.alt.4 <- seqdef(data[,col_hw.hrs.alt.4], cpal = colspace.hw.hrs.alt, labels=longlab.hw.hrs.alt, 
+                           states= shortlab.hw.hrs.alt)
 
-ggseqdplot(seq.hw.hrs.combo.4) +
+ggseqdplot(seq.hw.hrs.alt.4) +
   scale_x_discrete(labels = 1:4) +
   labs(x = "Year")
 
@@ -395,7 +412,7 @@ ggseqdplot(seq.fam.4) +
 # Columns
 lab_t=c()
 for (i in 1:5){
-  lab_t[i]=paste("couple_work_ow_end",i, sep="")
+  lab_t[i]=paste("couple_work_ow_detailed_end",i, sep="")
 }
 col_work.ow.5=which(colnames(data)%in%lab_t) 
 
@@ -412,15 +429,15 @@ ggseqdplot(seq.work.ow.5) +
 # Columns
 lab_t=c()
 for (i in 1:5){
-  lab_t[i]=paste("couple_hw_hrs_combo_end",i, sep="")
+  lab_t[i]=paste("couple_hw_hrs_alt_end",i, sep="")
 }
-col_hw.hrs.combo.5 =which(colnames(data)%in%lab_t) 
+col_hw.hrs.alt.5 =which(colnames(data)%in%lab_t) 
 
 # Sequence object
-seq.hw.hrs.combo.5 <- seqdef(data[,col_hw.hrs.combo.5], cpal = colspace.hw.hrs.combo, labels=longlab.hw.hrs.combo, 
-                           states= shortlab.hw.hrs.combo)
+seq.hw.hrs.alt.5 <- seqdef(data[,col_hw.hrs.alt.5], cpal = colspace.hw.hrs.alt, labels=longlab.hw.hrs.alt, 
+                           states= shortlab.hw.hrs.alt)
 
-ggseqdplot(seq.hw.hrs.combo.5) +
+ggseqdplot(seq.hw.hrs.alt.5) +
   scale_x_discrete(labels = 1:5) +
   labs(x = "Year")
 
@@ -452,7 +469,7 @@ ggseqdplot(seq.fam.5) +
 # Columns
 lab_t=c()
 for (i in 1:6){
-  lab_t[i]=paste("couple_work_ow_end",i, sep="")
+  lab_t[i]=paste("couple_work_ow_detailed_end",i, sep="")
 }
 col_work.ow.6=which(colnames(data)%in%lab_t) 
 
@@ -469,15 +486,15 @@ ggseqdplot(seq.work.ow.6) +
 # Columns
 lab_t=c()
 for (i in 1:6){
-  lab_t[i]=paste("couple_hw_hrs_combo_end",i, sep="")
+  lab_t[i]=paste("couple_hw_hrs_alt_end",i, sep="")
 }
-col_hw.hrs.combo.6 =which(colnames(data)%in%lab_t) 
+col_hw.hrs.alt.6 =which(colnames(data)%in%lab_t) 
 
 # Sequence object
-seq.hw.hrs.combo.6 <- seqdef(data[,col_hw.hrs.combo.6], cpal = colspace.hw.hrs.combo, labels=longlab.hw.hrs.combo, 
-                           states= shortlab.hw.hrs.combo)
+seq.hw.hrs.alt.6 <- seqdef(data[,col_hw.hrs.alt.6], cpal = colspace.hw.hrs.alt, labels=longlab.hw.hrs.alt, 
+                           states= shortlab.hw.hrs.alt)
 
-ggseqdplot(seq.hw.hrs.combo.6) +
+ggseqdplot(seq.hw.hrs.alt.6) +
   scale_x_discrete(labels = 1:6) +
   labs(x = "Year")
 
@@ -509,7 +526,7 @@ ggseqdplot(seq.fam.6) +
 # Columns
 lab_t=c()
 for (i in 1:7){
-  lab_t[i]=paste("couple_work_ow_end",i, sep="")
+  lab_t[i]=paste("couple_work_ow_detailed_end",i, sep="")
 }
 col_work.ow.7=which(colnames(data)%in%lab_t) 
 
@@ -526,15 +543,15 @@ ggseqdplot(seq.work.ow.7) +
 # Columns
 lab_t=c()
 for (i in 1:7){
-  lab_t[i]=paste("couple_hw_hrs_combo_end",i, sep="")
+  lab_t[i]=paste("couple_hw_hrs_alt_end",i, sep="")
 }
-col_hw.hrs.combo.7 =which(colnames(data)%in%lab_t) 
+col_hw.hrs.alt.7 =which(colnames(data)%in%lab_t) 
 
 # Sequence object
-seq.hw.hrs.combo.7 <- seqdef(data[,col_hw.hrs.combo.7], cpal = colspace.hw.hrs.combo, labels=longlab.hw.hrs.combo, 
-                           states= shortlab.hw.hrs.combo)
+seq.hw.hrs.alt.7 <- seqdef(data[,col_hw.hrs.alt.7], cpal = colspace.hw.hrs.alt, labels=longlab.hw.hrs.alt, 
+                           states= shortlab.hw.hrs.alt)
 
-ggseqdplot(seq.hw.hrs.combo.7) +
+ggseqdplot(seq.hw.hrs.alt.7) +
   scale_x_discrete(labels = 1:7) +
   labs(x = "Year")
 
@@ -566,7 +583,7 @@ ggseqdplot(seq.fam.7) +
 # Columns
 lab_t=c()
 for (i in 1:8){
-  lab_t[i]=paste("couple_work_ow_end",i, sep="")
+  lab_t[i]=paste("couple_work_ow_detailed_end",i, sep="")
 }
 col_work.ow.8=which(colnames(data)%in%lab_t) 
 
@@ -583,15 +600,15 @@ ggseqdplot(seq.work.ow.8) +
 # Columns
 lab_t=c()
 for (i in 1:8){
-  lab_t[i]=paste("couple_hw_hrs_combo_end",i, sep="")
+  lab_t[i]=paste("couple_hw_hrs_alt_end",i, sep="")
 }
-col_hw.hrs.combo.8 =which(colnames(data)%in%lab_t) 
+col_hw.hrs.alt.8 =which(colnames(data)%in%lab_t) 
 
 # Sequence object
-seq.hw.hrs.combo.8 <- seqdef(data[,col_hw.hrs.combo.8], cpal = colspace.hw.hrs.combo, labels=longlab.hw.hrs.combo, 
-                           states= shortlab.hw.hrs.combo)
+seq.hw.hrs.alt.8 <- seqdef(data[,col_hw.hrs.alt.8], cpal = colspace.hw.hrs.alt, labels=longlab.hw.hrs.alt, 
+                           states= shortlab.hw.hrs.alt)
 
-ggseqdplot(seq.hw.hrs.combo.8) +
+ggseqdplot(seq.hw.hrs.alt.8) +
   scale_x_discrete(labels = 1:8) +
   labs(x = "Year")
 
@@ -623,7 +640,7 @@ ggseqdplot(seq.fam.8) +
 # Columns
 lab_t=c()
 for (i in 1:9){
-  lab_t[i]=paste("couple_work_ow_end",i, sep="")
+  lab_t[i]=paste("couple_work_ow_detailed_end",i, sep="")
 }
 col_work.ow.9=which(colnames(data)%in%lab_t) 
 
@@ -640,15 +657,15 @@ ggseqdplot(seq.work.ow.9) +
 # Columns
 lab_t=c()
 for (i in 1:9){
-  lab_t[i]=paste("couple_hw_hrs_combo_end",i, sep="")
+  lab_t[i]=paste("couple_hw_hrs_alt_end",i, sep="")
 }
-col_hw.hrs.combo.9 =which(colnames(data)%in%lab_t) 
+col_hw.hrs.alt.9 =which(colnames(data)%in%lab_t) 
 
 # Sequence object
-seq.hw.hrs.combo.9 <- seqdef(data[,col_hw.hrs.combo.9], cpal = colspace.hw.hrs.combo, labels=longlab.hw.hrs.combo, 
-                           states= shortlab.hw.hrs.combo)
+seq.hw.hrs.alt.9 <- seqdef(data[,col_hw.hrs.alt.9], cpal = colspace.hw.hrs.alt, labels=longlab.hw.hrs.alt, 
+                           states= shortlab.hw.hrs.alt)
 
-ggseqdplot(seq.hw.hrs.combo.9) +
+ggseqdplot(seq.hw.hrs.alt.9) +
   scale_x_discrete(labels = 1:9) +
   labs(x = "Year")
 
@@ -680,7 +697,7 @@ ggseqdplot(seq.fam.9) +
 # Columns
 lab_t=c()
 for (i in 1:10){
-  lab_t[i]=paste("couple_work_ow_end",i, sep="")
+  lab_t[i]=paste("couple_work_ow_detailed_end",i, sep="")
 }
 col_work.ow.10=which(colnames(data)%in%lab_t) 
 
@@ -697,15 +714,15 @@ ggseqdplot(seq.work.ow.10) +
 # Columns
 lab_t=c()
 for (i in 1:10){
-  lab_t[i]=paste("couple_hw_hrs_combo_end",i, sep="")
+  lab_t[i]=paste("couple_hw_hrs_alt_end",i, sep="")
 }
-col_hw.hrs.combo.10 =which(colnames(data)%in%lab_t) 
+col_hw.hrs.alt.10 =which(colnames(data)%in%lab_t) 
 
 # Sequence object
-seq.hw.hrs.combo.10 <- seqdef(data[,col_hw.hrs.combo.10], cpal = colspace.hw.hrs.combo, labels=longlab.hw.hrs.combo, 
-                            states= shortlab.hw.hrs.combo)
+seq.hw.hrs.alt.10 <- seqdef(data[,col_hw.hrs.alt.10], cpal = colspace.hw.hrs.alt, labels=longlab.hw.hrs.alt, 
+                            states= shortlab.hw.hrs.alt)
 
-ggseqdplot(seq.hw.hrs.combo.10) +
+ggseqdplot(seq.hw.hrs.alt.10) +
   scale_x_discrete(labels = 1:10) +
   labs(x = "Year")
 
@@ -733,40 +750,40 @@ ggseqdplot(seq.fam.10) +
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # Duration 2
-mcdist.om.2 <- seqdistmc(channels=list(seq.work.ow.2, seq.hw.hrs.combo.2, seq.fam.2), ## Seq states NOT om matrix
-                           method="OM", indel=1, sm="CONSTANT") 
+mcdist.om.2 <- seqdistmc(channels=list(seq.work.ow.2, seq.hw.hrs.alt.2, seq.fam.2), ## Seq states NOT om matrix
+                         method="OM", indel=1, sm="CONSTANT") 
 
 # Duration 3
-mcdist.om.3 <- seqdistmc(channels=list(seq.work.ow.3, seq.hw.hrs.combo.3, seq.fam.3), ## Seq states NOT om matrix
+mcdist.om.3 <- seqdistmc(channels=list(seq.work.ow.3, seq.hw.hrs.alt.3, seq.fam.3), ## Seq states NOT om matrix
                          method="OM", indel=1, sm="CONSTANT") 
 
 # Duration 4
-mcdist.om.4 <- seqdistmc(channels=list(seq.work.ow.4, seq.hw.hrs.combo.4, seq.fam.4), ## Seq states NOT om matrix
+mcdist.om.4 <- seqdistmc(channels=list(seq.work.ow.4, seq.hw.hrs.alt.4, seq.fam.4), ## Seq states NOT om matrix
                          method="OM", indel=1, sm="CONSTANT") 
 
 # Duration 5
-mcdist.om.5 <- seqdistmc(channels=list(seq.work.ow.5, seq.hw.hrs.combo.5, seq.fam.5), ## Seq states NOT om matrix
+mcdist.om.5 <- seqdistmc(channels=list(seq.work.ow.5, seq.hw.hrs.alt.5, seq.fam.5), ## Seq states NOT om matrix
                          method="OM", indel=1, sm="CONSTANT") 
 
 # Duration 6
-mcdist.om.6 <- seqdistmc(channels=list(seq.work.ow.6, seq.hw.hrs.combo.6, seq.fam.6), ## Seq states NOT om matrix
+mcdist.om.6 <- seqdistmc(channels=list(seq.work.ow.6, seq.hw.hrs.alt.6, seq.fam.6), ## Seq states NOT om matrix
                          method="OM", indel=1, sm="CONSTANT") 
 
 # Duration 7
-mcdist.om.7 <- seqdistmc(channels=list(seq.work.ow.7, seq.hw.hrs.combo.7, seq.fam.7), ## Seq states NOT om matrix
+mcdist.om.7 <- seqdistmc(channels=list(seq.work.ow.7, seq.hw.hrs.alt.7, seq.fam.7), ## Seq states NOT om matrix
                          method="OM", indel=1, sm="CONSTANT") 
 
 # Duration 8
-mcdist.om.8 <- seqdistmc(channels=list(seq.work.ow.8, seq.hw.hrs.combo.8, seq.fam.8), ## Seq states NOT om matrix
+mcdist.om.8 <- seqdistmc(channels=list(seq.work.ow.8, seq.hw.hrs.alt.8, seq.fam.8), ## Seq states NOT om matrix
                          method="OM", indel=1, sm="CONSTANT") 
 
 # Duration 9
-mcdist.om.9 <- seqdistmc(channels=list(seq.work.ow.9, seq.hw.hrs.combo.9, seq.fam.9), ## Seq states NOT om matrix
+mcdist.om.9 <- seqdistmc(channels=list(seq.work.ow.9, seq.hw.hrs.alt.9, seq.fam.9), ## Seq states NOT om matrix
                          method="OM", indel=1, sm="CONSTANT") 
 
 # Duration 10
-mcdist.om.10 <- seqdistmc(channels=list(seq.work.ow.10, seq.hw.hrs.combo.10, seq.fam.10), ## Seq states NOT om matrix
-                         method="OM", indel=1, sm="CONSTANT") 
+mcdist.om.10 <- seqdistmc(channels=list(seq.work.ow.10, seq.hw.hrs.alt.10, seq.fam.10), ## Seq states NOT om matrix
+                          method="OM", indel=1, sm="CONSTANT") 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -775,48 +792,33 @@ mcdist.om.10 <- seqdistmc(channels=list(seq.work.ow.10, seq.hw.hrs.combo.10, seq
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # all are compared to 10
-# mantel_comp.2 = mantel(mcdist.om.10, mcdist.om.2) # I switched which Mantel I am using to get CIs
-mantel_comp.2 = mantel(lower(mcdist.om.10) ~ lower(mcdist.om.2), nperm=1000)
-mantel_comp.3 = mantel(lower(mcdist.om.10) ~ lower(mcdist.om.3), nperm=1000)
-mantel_comp.4 = mantel(lower(mcdist.om.10) ~ lower(mcdist.om.4), nperm=1000)
-mantel_comp.5 = mantel(lower(mcdist.om.10) ~ lower(mcdist.om.5), nperm=1000)
-mantel_comp.6 = mantel(lower(mcdist.om.10) ~ lower(mcdist.om.6), nperm=1000)
-mantel_comp.7 = mantel(lower(mcdist.om.10) ~ lower(mcdist.om.7), nperm=1000)
-mantel_comp.8 = mantel(lower(mcdist.om.10) ~ lower(mcdist.om.8), nperm=1000)
-mantel_comp.9 = mantel(lower(mcdist.om.10) ~ lower(mcdist.om.9), nperm=1000)
-
-mantel_comp.2.df <- data.frame(mantel_comp.2)
-mantel_comp.3.df <- data.frame(mantel_comp.3)
-mantel_comp.4.df <- data.frame(mantel_comp.4)
-mantel_comp.5.df <- data.frame(mantel_comp.5)
-mantel_comp.6.df <- data.frame(mantel_comp.6)
-mantel_comp.7.df <- data.frame(mantel_comp.7)
-mantel_comp.8.df <- data.frame(mantel_comp.8)
-mantel_comp.9.df <- data.frame(mantel_comp.9)
-
-mantel_comp.2.df[1, ]
+mantel_comp.2 = mantel(mcdist.om.10, mcdist.om.2)
+mantel_comp.3 = mantel(mcdist.om.10, mcdist.om.3)
+mantel_comp.4 = mantel(mcdist.om.10, mcdist.om.4)
+mantel_comp.5 = mantel(mcdist.om.10, mcdist.om.5)
+mantel_comp.6 = mantel(mcdist.om.10, mcdist.om.6)
+mantel_comp.7 = mantel(mcdist.om.10, mcdist.om.7)
+mantel_comp.8 = mantel(mcdist.om.10, mcdist.om.8)
+mantel_comp.9 = mantel(mcdist.om.10, mcdist.om.9)
 
 ## create and export data frame with mantel coefficients
 length <- c(2,3,4,5,6,7,8,9)
 
-stats_comp <- c(mantel_comp.2.df[1, ],mantel_comp.3.df[1, ],mantel_comp.4.df[1, ],
-                mantel_comp.5.df[1, ],mantel_comp.6.df[1, ],mantel_comp.7.df[1, ],
-                mantel_comp.8.df[1, ],mantel_comp.9.df[1, ])
+stats_comp <- c(mantel_comp.2$statistic,mantel_comp.3$statistic,mantel_comp.4$statistic,
+                mantel_comp.5$statistic,mantel_comp.6$statistic,mantel_comp.7$statistic,
+                mantel_comp.8$statistic,mantel_comp.9$statistic)
 
-sig_comp <- c(mantel_comp.2.df[2, ],mantel_comp.3.df[2, ],mantel_comp.4.df[2, ],
-              mantel_comp.5.df[2, ],mantel_comp.6.df[2, ],mantel_comp.7.df[2, ],
-              mantel_comp.8.df[2, ],mantel_comp.9.df[2, ])
+sig_comp <- c(mantel_comp.2$signif,mantel_comp.3$signif,mantel_comp.4$signif,
+              mantel_comp.5$signif,mantel_comp.6$signif,mantel_comp.7$signif,
+              mantel_comp.8$signif,mantel_comp.9$signif)
 
 mantel_comp <- data.frame(length, stats_comp, sig_comp)
 
 print(mantel_comp)
 
-# write.xlsx(mantel_comp, "results/PSID/psid_mantel_sequence-complete.xlsx") # saved here (inexplicably); results/PSID/original clusters (non-truncated)/
-# So I think that is why the above does not match the appendix (it's like 90% match). I think what is in the Excel has actually already been updated to not detailed
-# BUT the appendix might still be detailed.
+# write.xlsx(mantel_comp, "results/UKHLS/ukhls_mantel_sequence-complete.xlsx") # saved here (inexplicably); results/UKHLS/original clusters (non-truncated)/
+write.xlsx(mantel_comp, "results/UKHLS/ukhls_mantel_seqlength-complete_det-states.xlsx")
 
-# In any case: use this one (reran Jan 2026 so confirmed updated to actual sequence states)
-write.xlsx(mantel_comp, "results/PSID/psid_mantel_seqlength-complete.xlsx")
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -833,7 +835,7 @@ write.xlsx(mantel_comp, "results/PSID/psid_mantel_seqlength-complete.xlsx")
 # ~~~~~~~~~~~~~~
 # Duration 2 --
 # ~~~~~~~~~~~~~~
-data <- read_dta("created data/psid_couples_imputed_wide.dta")
+data <- read_dta("created data/ukhls/ukhls_couples_imputed_wide.dta")
 table(data$sequence_length)
 
 # Filter to just 1 imputation
@@ -854,10 +856,10 @@ ggseqdplot(seq.work.ow.trunc2) +
   labs(x = "Year")
 
 # Sequence object
-seq.hw.hrs.combo.trunc2 <- seqdef(data[,col_hw.hrs.combo.2], cpal = colspace.hw.hrs.combo, labels=longlab.hw.hrs.combo, 
-                           states= shortlab.hw.hrs.combo)
+seq.hw.hrs.alt.trunc2 <- seqdef(data[,col_hw.hrs.alt.2], cpal = colspace.hw.hrs.alt, labels=longlab.hw.hrs.alt, 
+                                states= shortlab.hw.hrs.alt)
 
-ggseqdplot(seq.hw.hrs.combo.trunc2) +
+ggseqdplot(seq.hw.hrs.alt.trunc2) +
   scale_x_discrete(labels = 1:2) +
   labs(x = "Year")
 
@@ -871,7 +873,7 @@ ggseqdplot(seq.fam.trunc2) +
 # ~~~~~~~~~~~~~~
 # Duration 3 --
 # ~~~~~~~~~~~~~~
-data <- read_dta("created data/psid_couples_imputed_wide.dta")
+data <- read_dta("created data/ukhls/ukhls_couples_imputed_wide.dta")
 
 # Filter to just 1 imputation
 data <- data%>%filter(`_mi_m`== 1) 
@@ -889,10 +891,10 @@ ggseqdplot(seq.work.ow.trunc3) +
   labs(x = "Year")
 
 # Sequence object
-seq.hw.hrs.combo.trunc3 <- seqdef(data[,col_hw.hrs.combo.3], cpal = colspace.hw.hrs.combo, labels=longlab.hw.hrs.combo, 
-                                states= shortlab.hw.hrs.combo)
+seq.hw.hrs.alt.trunc3 <- seqdef(data[,col_hw.hrs.alt.3], cpal = colspace.hw.hrs.alt, labels=longlab.hw.hrs.alt, 
+                                states= shortlab.hw.hrs.alt)
 
-ggseqdplot(seq.hw.hrs.combo.trunc3) +
+ggseqdplot(seq.hw.hrs.alt.trunc3) +
   scale_x_discrete(labels = 1:3) +
   labs(x = "Year")
 
@@ -906,7 +908,7 @@ ggseqdplot(seq.fam.trunc3) +
 # ~~~~~~~~~~~~~~
 # Duration 4 --
 # ~~~~~~~~~~~~~~
-data <- read_dta("created data/psid_couples_imputed_wide.dta")
+data <- read_dta("created data/ukhls/ukhls_couples_imputed_wide.dta")
 
 # Filter to just 1 imputation
 data <- data%>%filter(`_mi_m`== 1) 
@@ -926,10 +928,10 @@ ggseqdplot(seq.work.ow.trunc4) +
   labs(x = "Year")
 
 # Sequence object
-seq.hw.hrs.combo.trunc4 <- seqdef(data[,col_hw.hrs.combo.4], cpal = colspace.hw.hrs.combo, labels=longlab.hw.hrs.combo, 
-                                states= shortlab.hw.hrs.combo)
+seq.hw.hrs.alt.trunc4 <- seqdef(data[,col_hw.hrs.alt.4], cpal = colspace.hw.hrs.alt, labels=longlab.hw.hrs.alt, 
+                                states= shortlab.hw.hrs.alt)
 
-ggseqdplot(seq.hw.hrs.combo.trunc4) +
+ggseqdplot(seq.hw.hrs.alt.trunc4) +
   scale_x_discrete(labels = 1:4) +
   labs(x = "Year")
 
@@ -944,7 +946,7 @@ ggseqdplot(seq.fam.trunc4) +
 # ~~~~~~~~~~~~~~
 # Duration 5 --
 # ~~~~~~~~~~~~~~
-data <- read_dta("created data/psid_couples_imputed_wide.dta")
+data <- read_dta("created data/ukhls/ukhls_couples_imputed_wide.dta")
 
 # Filter to just 1 imputation
 data <- data%>%filter(`_mi_m`== 1) 
@@ -963,10 +965,10 @@ ggseqdplot(seq.work.ow.trunc5) +
   labs(x = "Year")
 
 # Sequence object
-seq.hw.hrs.combo.trunc5 <- seqdef(data[,col_hw.hrs.combo.5], cpal = colspace.hw.hrs.combo, labels=longlab.hw.hrs.combo, 
-                                states= shortlab.hw.hrs.combo)
+seq.hw.hrs.alt.trunc5 <- seqdef(data[,col_hw.hrs.alt.5], cpal = colspace.hw.hrs.alt, labels=longlab.hw.hrs.alt, 
+                                states= shortlab.hw.hrs.alt)
 
-ggseqdplot(seq.hw.hrs.combo.trunc5) +
+ggseqdplot(seq.hw.hrs.alt.trunc5) +
   scale_x_discrete(labels = 1:5) +
   labs(x = "Year")
 
@@ -980,7 +982,7 @@ ggseqdplot(seq.fam.trunc5) +
 # ~~~~~~~~~~~~~~
 # Duration 6 --
 # ~~~~~~~~~~~~~~
-data <- read_dta("created data/psid_couples_imputed_wide.dta")
+data <- read_dta("created data/ukhls/ukhls_couples_imputed_wide.dta")
 
 # Filter to just 1 imputation
 data <- data%>%filter(`_mi_m`== 1) 
@@ -999,10 +1001,10 @@ ggseqdplot(seq.work.ow.trunc6) +
   labs(x = "Year")
 
 # Sequence object
-seq.hw.hrs.combo.trunc6 <- seqdef(data[,col_hw.hrs.combo.6], cpal = colspace.hw.hrs.combo, labels=longlab.hw.hrs.combo, 
-                                states= shortlab.hw.hrs.combo)
+seq.hw.hrs.alt.trunc6 <- seqdef(data[,col_hw.hrs.alt.6], cpal = colspace.hw.hrs.alt, labels=longlab.hw.hrs.alt, 
+                                states= shortlab.hw.hrs.alt)
 
-ggseqdplot(seq.hw.hrs.combo.trunc6) +
+ggseqdplot(seq.hw.hrs.alt.trunc6) +
   scale_x_discrete(labels = 1:6) +
   labs(x = "Year")
 
@@ -1016,7 +1018,7 @@ ggseqdplot(seq.fam.trunc6) +
 # ~~~~~~~~~~~~~~
 # Duration 7 --
 # ~~~~~~~~~~~~~~
-data <- read_dta("created data/psid_couples_imputed_wide.dta")
+data <- read_dta("created data/ukhls/ukhls_couples_imputed_wide.dta")
 
 # Filter to just 1 imputation
 data <- data%>%filter(`_mi_m`== 1) 
@@ -1035,10 +1037,10 @@ ggseqdplot(seq.work.ow.trunc7) +
   labs(x = "Year")
 
 # Sequence object
-seq.hw.hrs.combo.trunc7 <- seqdef(data[,col_hw.hrs.combo.7], cpal = colspace.hw.hrs.combo, labels=longlab.hw.hrs.combo, 
-                                states= shortlab.hw.hrs.combo)
+seq.hw.hrs.alt.trunc7 <- seqdef(data[,col_hw.hrs.alt.7], cpal = colspace.hw.hrs.alt, labels=longlab.hw.hrs.alt, 
+                                states= shortlab.hw.hrs.alt)
 
-ggseqdplot(seq.hw.hrs.combo.trunc7) +
+ggseqdplot(seq.hw.hrs.alt.trunc7) +
   scale_x_discrete(labels = 1:7) +
   labs(x = "Year")
 
@@ -1052,7 +1054,7 @@ ggseqdplot(seq.fam.trunc7) +
 # ~~~~~~~~~~~~~~
 # Duration 8 --
 # ~~~~~~~~~~~~~~
-data <- read_dta("created data/psid_couples_imputed_wide.dta")
+data <- read_dta("created data/ukhls/ukhls_couples_imputed_wide.dta")
 
 # Filter to just 1 imputation
 data <- data%>%filter(`_mi_m`== 1) 
@@ -1070,10 +1072,10 @@ ggseqdplot(seq.work.ow.trunc8) +
   labs(x = "Year")
 
 # Sequence object
-seq.hw.hrs.combo.trunc8 <- seqdef(data[,col_hw.hrs.combo.8], cpal = colspace.hw.hrs.combo, labels=longlab.hw.hrs.combo, 
-                                states= shortlab.hw.hrs.combo)
+seq.hw.hrs.alt.trunc8 <- seqdef(data[,col_hw.hrs.alt.8], cpal = colspace.hw.hrs.alt, labels=longlab.hw.hrs.alt, 
+                                states= shortlab.hw.hrs.alt)
 
-ggseqdplot(seq.hw.hrs.combo.trunc8) +
+ggseqdplot(seq.hw.hrs.alt.trunc8) +
   scale_x_discrete(labels = 1:8) +
   labs(x = "Year")
 
@@ -1087,7 +1089,7 @@ ggseqdplot(seq.fam.trunc8) +
 # ~~~~~~~~~~~~~~
 # Duration 9 --
 # ~~~~~~~~~~~~~~
-data <- read_dta("created data/psid_couples_imputed_wide.dta")
+data <- read_dta("created data/ukhls/ukhls_couples_imputed_wide.dta")
 
 # Filter to just 1 imputation
 data <- data%>%filter(`_mi_m`== 1) 
@@ -1105,10 +1107,10 @@ ggseqdplot(seq.work.ow.trunc9) +
   labs(x = "Year")
 
 # Sequence object
-seq.hw.hrs.combo.trunc9 <- seqdef(data[,col_hw.hrs.combo.9], cpal = colspace.hw.hrs.combo, labels=longlab.hw.hrs.combo, 
-                                states= shortlab.hw.hrs.combo)
+seq.hw.hrs.alt.trunc9 <- seqdef(data[,col_hw.hrs.alt.9], cpal = colspace.hw.hrs.alt, labels=longlab.hw.hrs.alt, 
+                                states= shortlab.hw.hrs.alt)
 
-ggseqdplot(seq.hw.hrs.combo.trunc9) +
+ggseqdplot(seq.hw.hrs.alt.trunc9) +
   scale_x_discrete(labels = 1:9) +
   labs(x = "Year")
 
@@ -1125,35 +1127,35 @@ ggseqdplot(seq.fam.trunc9) +
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # Duration 2
-mcdist.om.trunc2 <- seqdistmc(channels=list(seq.work.ow.trunc2, seq.hw.hrs.combo.trunc2, seq.fam.trunc2), ## Seq states NOT om matrix
+mcdist.om.trunc2 <- seqdistmc(channels=list(seq.work.ow.trunc2, seq.hw.hrs.alt.trunc2, seq.fam.trunc2), ## Seq states NOT om matrix
                               method="OM", indel=1, sm="CONSTANT") 
 
 # Duration 3
-mcdist.om.trunc3 <- seqdistmc(channels=list(seq.work.ow.trunc3, seq.hw.hrs.combo.trunc3, seq.fam.trunc3), ## Seq states NOT om matrix
+mcdist.om.trunc3 <- seqdistmc(channels=list(seq.work.ow.trunc3, seq.hw.hrs.alt.trunc3, seq.fam.trunc3), ## Seq states NOT om matrix
                               method="OM", indel=1, sm="CONSTANT") 
 
 # Duration 4
-mcdist.om.trunc4 <- seqdistmc(channels=list(seq.work.ow.trunc4, seq.hw.hrs.combo.trunc4, seq.fam.trunc4), ## Seq states NOT om matrix
+mcdist.om.trunc4 <- seqdistmc(channels=list(seq.work.ow.trunc4, seq.hw.hrs.alt.trunc4, seq.fam.trunc4), ## Seq states NOT om matrix
                               method="OM", indel=1, sm="CONSTANT") 
 
 # Duration 5
-mcdist.om.trunc5 <- seqdistmc(channels=list(seq.work.ow.trunc5, seq.hw.hrs.combo.trunc5, seq.fam.trunc5), ## Seq states NOT om matrix
+mcdist.om.trunc5 <- seqdistmc(channels=list(seq.work.ow.trunc5, seq.hw.hrs.alt.trunc5, seq.fam.trunc5), ## Seq states NOT om matrix
                               method="OM", indel=1, sm="CONSTANT") 
 
 # Duration 6
-mcdist.om.trunc6 <- seqdistmc(channels=list(seq.work.ow.trunc6, seq.hw.hrs.combo.trunc6, seq.fam.trunc6), ## Seq states NOT om matrix
+mcdist.om.trunc6 <- seqdistmc(channels=list(seq.work.ow.trunc6, seq.hw.hrs.alt.trunc6, seq.fam.trunc6), ## Seq states NOT om matrix
                               method="OM", indel=1, sm="CONSTANT") 
 
 # Duration 7
-mcdist.om.trunc7 <- seqdistmc(channels=list(seq.work.ow.trunc7, seq.hw.hrs.combo.trunc7, seq.fam.trunc7), ## Seq states NOT om matrix
+mcdist.om.trunc7 <- seqdistmc(channels=list(seq.work.ow.trunc7, seq.hw.hrs.alt.trunc7, seq.fam.trunc7), ## Seq states NOT om matrix
                               method="OM", indel=1, sm="CONSTANT") 
 
 # Duration 8
-mcdist.om.trunc8 <- seqdistmc(channels=list(seq.work.ow.trunc8, seq.hw.hrs.combo.trunc8, seq.fam.trunc8), ## Seq states NOT om matrix
+mcdist.om.trunc8 <- seqdistmc(channels=list(seq.work.ow.trunc8, seq.hw.hrs.alt.trunc8, seq.fam.trunc8), ## Seq states NOT om matrix
                               method="OM", indel=1, sm="CONSTANT") 
 
 # Duration 9
-mcdist.om.trunc9 <- seqdistmc(channels=list(seq.work.ow.trunc9, seq.hw.hrs.combo.trunc9, seq.fam.trunc9), ## Seq states NOT om matrix
+mcdist.om.trunc9 <- seqdistmc(channels=list(seq.work.ow.trunc9, seq.hw.hrs.alt.trunc9, seq.fam.trunc9), ## Seq states NOT om matrix
                               method="OM", indel=1, sm="CONSTANT") 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1182,69 +1184,60 @@ mcdist.om.trunc9 <- seqdistmc(channels=list(seq.work.ow.trunc9, seq.hw.hrs.combo
 
 # Complete sequences: length of 4
 dist.work.ow.om.c4 <- seqdist(seq.work.ow.4, method="OM", indel=1, sm= "CONSTANT")
-dist.hw.hrs.combo.om.c4 <- seqdist(seq.hw.hrs.combo.4, method="OM", indel=1, sm= "CONSTANT")
+dist.hw.hrs.alt.om.c4 <- seqdist(seq.hw.hrs.alt.4, method="OM", indel=1, sm= "CONSTANT")
 dist.fam.om.c4 <- seqdist(seq.fam.4, method="OM", indel=1, sm= "CONSTANT")
 
-mantel_ow.hw.hrs.combo.c4 = mantel(lower(dist.work.ow.om.c4) ~ lower(dist.hw.hrs.combo.om.c4), nperm=1000)
-mantel_ow.fam.c4 = mantel(lower(dist.work.ow.om.c4) ~ lower(dist.fam.om.c4), nperm=1000)
-mantel_hw.hrs.combo.fam.c4 = mantel(lower(dist.hw.hrs.combo.om.c4) ~ lower(dist.fam.om.c4), nperm=1000)
-
-mantel_ow.hw.hrs.combo.c4 <- data.frame(mantel_ow.hw.hrs.combo.c4)
-mantel_ow.fam.c4 <- data.frame(mantel_ow.fam.c4)
-mantel_hw.hrs.combo.fam.c4 <- data.frame(mantel_hw.hrs.combo.fam.c4)
+mantel_ow.hw.hrs.alt.c4 = mantel(dist.work.ow.om.c4, dist.hw.hrs.alt.om.c4)
+mantel_ow.fam.c4 = mantel(dist.work.ow.om.c4, dist.fam.om.c4)
+mantel_hw.hrs.alt.fam.c4 = mantel(dist.hw.hrs.alt.om.c4, dist.fam.om.c4)
 
 # Complete sequences: length of 7
 dist.work.ow.om.c7 <- seqdist(seq.work.ow.7, method="OM", indel=1, sm= "CONSTANT")
-dist.hw.hrs.combo.om.c7 <- seqdist(seq.hw.hrs.combo.7, method="OM", indel=1, sm= "CONSTANT")
+dist.hw.hrs.alt.om.c7 <- seqdist(seq.hw.hrs.alt.7, method="OM", indel=1, sm= "CONSTANT")
 dist.fam.om.c7 <- seqdist(seq.fam.7, method="OM", indel=1, sm= "CONSTANT")
 
-mantel_ow.hw.hrs.combo.c7 = mantel(lower(dist.work.ow.om.c7) ~ lower(dist.hw.hrs.combo.om.c7), nperm=1000)
-mantel_ow.fam.c7 = mantel(lower(dist.work.ow.om.c7) ~ lower(dist.fam.om.c7), nperm=1000)
-mantel_hw.hrs.combo.fam.c7 = mantel(lower(dist.hw.hrs.combo.om.c7) ~ lower(dist.fam.om.c7), nperm=1000)
-
-mantel_ow.hw.hrs.combo.c7 <- data.frame(mantel_ow.hw.hrs.combo.c7)
-mantel_ow.fam.c7 <- data.frame(mantel_ow.fam.c7)
-mantel_hw.hrs.combo.fam.c7 <- data.frame(mantel_hw.hrs.combo.fam.c7)
+mantel_ow.hw.hrs.alt.c7 = mantel(dist.work.ow.om.c7, dist.hw.hrs.alt.om.c7)
+mantel_ow.fam.c7 = mantel(dist.work.ow.om.c7, dist.fam.om.c7)
+mantel_hw.hrs.alt.fam.c7 = mantel(dist.hw.hrs.alt.om.c7, dist.fam.om.c7)
 
 # Complete sequences: length of 10
 dist.work.ow.om.c10 <- seqdist(seq.work.ow.10, method="OM", indel=1, sm= "CONSTANT")
-dist.hw.hrs.combo.om.c10 <- seqdist(seq.hw.hrs.combo.10, method="OM", indel=1, sm= "CONSTANT")
+dist.hw.hrs.alt.om.c10 <- seqdist(seq.hw.hrs.alt.10, method="OM", indel=1, sm= "CONSTANT")
 dist.fam.om.c10 <- seqdist(seq.fam.10, method="OM", indel=1, sm= "CONSTANT")
 
-mantel_ow.hw.hrs.combo.c10 = mantel(lower(dist.work.ow.om.c10) ~ lower(dist.hw.hrs.combo.om.c10), nperm=1000)
-mantel_ow.fam.c10 = mantel(lower(dist.work.ow.om.c10) ~ lower(dist.fam.om.c10), nperm=1000)
-mantel_hw.hrs.combo.fam.c10 = mantel(lower(dist.hw.hrs.combo.om.c10) ~ lower(dist.fam.om.c10), nperm=1000)
-
-mantel_ow.hw.hrs.combo.c10 <- data.frame(mantel_ow.hw.hrs.combo.c10)
-mantel_ow.fam.c10 <- data.frame(mantel_ow.fam.c10)
-mantel_hw.hrs.combo.fam.c10 <- data.frame(mantel_hw.hrs.combo.fam.c10)
+mantel_ow.hw.hrs.alt.c10 = mantel(dist.work.ow.om.c10, dist.hw.hrs.alt.om.c10)
+mantel_ow.fam.c10 = mantel(dist.work.ow.om.c10, dist.fam.om.c10)
+mantel_hw.hrs.alt.fam.c10 = mantel(dist.hw.hrs.alt.om.c10, dist.fam.om.c10)
 
 # Truncated sequences: length of 4
 dist.work.ow.om.t4 <- seqdist(seq.work.ow.trunc4, method="OM", indel=1, sm= "CONSTANT")
-dist.hw.hrs.combo.om.t4 <- seqdist(seq.hw.hrs.combo.trunc4, method="OM", indel=1, sm= "CONSTANT")
+dist.hw.hrs.alt.om.t4 <- seqdist(seq.hw.hrs.alt.trunc4, method="OM", indel=1, sm= "CONSTANT")
 dist.fam.om.t4 <- seqdist(seq.fam.trunc4, method="OM", indel=1, sm= "CONSTANT")
 
-mantel_ow.hw.hrs.combo.t4 = data.frame(mantel(lower(dist.work.ow.om.t4) ~ lower(dist.hw.hrs.combo.om.t4), nperm=1000))
-mantel_ow.fam.t4 = data.frame(mantel(lower(dist.work.ow.om.t4) ~ lower(dist.fam.om.t4), nperm=1000))
-mantel_hw.hrs.combo.fam.t4 = data.frame(mantel(lower(dist.hw.hrs.combo.om.t4) ~ lower(dist.fam.om.t4), nperm=1000))
+mantel_ow.hw.hrs.alt.t4 = mantel(dist.work.ow.om.t4, dist.hw.hrs.alt.om.t4)
+mantel_ow.fam.t4 = mantel(dist.work.ow.om.t4, dist.fam.om.t4)
+mantel_hw.hrs.alt.fam.t4 = mantel(dist.hw.hrs.alt.om.t4, dist.fam.om.t4)
 
 # Truncated sequences: length of 7
 dist.work.ow.om.t7 <- seqdist(seq.work.ow.trunc7, method="OM", indel=1, sm= "CONSTANT")
-dist.hw.hrs.combo.om.t7 <- seqdist(seq.hw.hrs.combo.trunc7, method="OM", indel=1, sm= "CONSTANT")
+dist.hw.hrs.alt.om.t7 <- seqdist(seq.hw.hrs.alt.trunc7, method="OM", indel=1, sm= "CONSTANT")
 dist.fam.om.t7 <- seqdist(seq.fam.trunc7, method="OM", indel=1, sm= "CONSTANT")
 
-mantel_ow.hw.hrs.combo.t7 = data.frame(mantel(lower(dist.work.ow.om.t7) ~ lower(dist.hw.hrs.combo.om.t7), nperm=1000))
-mantel_ow.fam.t7 = data.frame(mantel(lower(dist.work.ow.om.t7) ~ lower(dist.fam.om.t7), nperm=1000))
-mantel_hw.hrs.combo.fam.t7 = data.frame(mantel(lower(dist.hw.hrs.combo.om.t7) ~ lower(dist.fam.om.t7), nperm=1000))
+mantel_ow.hw.hrs.alt.t7 = mantel(dist.work.ow.om.t7, dist.hw.hrs.alt.om.t7)
+mantel_ow.fam.t7 = mantel(dist.work.ow.om.t7, dist.fam.om.t7)
+mantel_hw.hrs.alt.fam.t7 = mantel(dist.hw.hrs.alt.om.t7, dist.fam.om.t7)
 
 # Truncated sequences: length of 9
 dist.work.ow.om.t9 <- seqdist(seq.work.ow.trunc9, method="OM", indel=1, sm= "CONSTANT")
-dist.hw.hrs.combo.om.t9 <- seqdist(seq.hw.hrs.combo.trunc9, method="OM", indel=1, sm= "CONSTANT")
+dist.hw.hrs.alt.om.t9 <- seqdist(seq.hw.hrs.alt.trunc9, method="OM", indel=1, sm= "CONSTANT")
 dist.fam.om.t9 <- seqdist(seq.fam.trunc9, method="OM", indel=1, sm= "CONSTANT")
 
-mantel_ow.hw.hrs.combo.t9 = data.frame(mantel(lower(dist.work.ow.om.t9) ~ lower(dist.hw.hrs.combo.om.t9), nperm=1000))
-mantel_ow.fam.t9 = data.frame(mantel(lower(dist.work.ow.om.t9) ~ lower(dist.fam.om.t9), nperm=1000))
-mantel_hw.hrs.combo.fam.t9 = data.frame(mantel(lower(dist.hw.hrs.combo.om.t9) ~ lower(dist.fam.om.t9), nperm=1000))
+mantel_ow.hw.hrs.alt.t9 = mantel(dist.work.ow.om.t9, dist.hw.hrs.alt.om.t9)
+mantel_ow.fam.t9 = mantel(dist.work.ow.om.t9, dist.fam.om.t9)
+mantel_hw.hrs.alt.fam.t9 = mantel(dist.hw.hrs.alt.om.t9, dist.fam.om.t9)
+
+## Should I also consider if truncated by attrition or dissolution? Rather than all truncated sequences together?
+
 
 ## create and export data frame with mantel coefficients
 comparison <- c('Complete 4: work/hw', 'Complete 4: work/fam',  'Complete 4: hw/fam',
@@ -1254,59 +1247,37 @@ comparison <- c('Complete 4: work/hw', 'Complete 4: work/fam',  'Complete 4: hw/
                 'Truncated 7: work/hw', 'Truncated 7: work/fam',  'Truncated 7: hw/fam',
                 'Truncated 9: work/hw', 'Truncated 9: work/fam',  'Truncated 9: hw/fam')
 
-stats <- c(mantel_ow.hw.hrs.combo.c4[1, ], mantel_ow.fam.c4[1, ], mantel_hw.hrs.combo.fam.c4[1, ],
-           mantel_ow.hw.hrs.combo.c7[1, ], mantel_ow.fam.c7[1, ], mantel_hw.hrs.combo.fam.c7[1, ],
-           mantel_ow.hw.hrs.combo.c10[1, ], mantel_ow.fam.c10[1, ], mantel_hw.hrs.combo.fam.c10[1, ],
-           mantel_ow.hw.hrs.combo.t4[1, ], mantel_ow.fam.t4[1, ], mantel_hw.hrs.combo.fam.t4[1, ],
-           mantel_ow.hw.hrs.combo.t7[1, ], mantel_ow.fam.t7[1, ], mantel_hw.hrs.combo.fam.t7[1, ],
-           mantel_ow.hw.hrs.combo.t9[1, ], mantel_ow.fam.t9[1, ], mantel_hw.hrs.combo.fam.t9[1, ])
+stats <- c(mantel_ow.hw.hrs.alt.c4$statistic, mantel_ow.fam.c4$statistic, mantel_hw.hrs.alt.fam.c4$statistic,
+           mantel_ow.hw.hrs.alt.c7$statistic, mantel_ow.fam.c7$statistic, mantel_hw.hrs.alt.fam.c7$statistic,
+           mantel_ow.hw.hrs.alt.c10$statistic, mantel_ow.fam.c10$statistic, mantel_hw.hrs.alt.fam.c10$statistic,
+           mantel_ow.hw.hrs.alt.t4$statistic, mantel_ow.fam.t4$statistic, mantel_hw.hrs.alt.fam.t4$statistic,
+           mantel_ow.hw.hrs.alt.t7$statistic, mantel_ow.fam.t7$statistic, mantel_hw.hrs.alt.fam.t7$statistic,
+           mantel_ow.hw.hrs.alt.t9$statistic, mantel_ow.fam.t9$statistic, mantel_hw.hrs.alt.fam.t9$statistic)
 
-sig <- c(mantel_ow.hw.hrs.combo.c4[2, ], mantel_ow.fam.c4[2, ], mantel_hw.hrs.combo.fam.c4[2, ],
-         mantel_ow.hw.hrs.combo.c7[2, ], mantel_ow.fam.c7[2, ], mantel_hw.hrs.combo.fam.c7[2, ],
-         mantel_ow.hw.hrs.combo.c10[2, ], mantel_ow.fam.c10[2, ], mantel_hw.hrs.combo.fam.c10[2, ],
-         mantel_ow.hw.hrs.combo.t4[2, ], mantel_ow.fam.t4[2, ], mantel_hw.hrs.combo.fam.t4[2, ],
-         mantel_ow.hw.hrs.combo.t7[2, ], mantel_ow.fam.t7[2, ], mantel_hw.hrs.combo.fam.t7[2, ],
-         mantel_ow.hw.hrs.combo.t9[2, ], mantel_ow.fam.t9[2, ], mantel_hw.hrs.combo.fam.t9[2, ])
+sig <- c(mantel_ow.hw.hrs.alt.c4$signif, mantel_ow.fam.c4$signif, mantel_hw.hrs.alt.fam.c4$signif,
+         mantel_ow.hw.hrs.alt.c7$signif, mantel_ow.fam.c7$signif, mantel_hw.hrs.alt.fam.c7$signif,
+         mantel_ow.hw.hrs.alt.c10$signif, mantel_ow.fam.c10$signif, mantel_hw.hrs.alt.fam.c10$signif,
+         mantel_ow.hw.hrs.alt.t4$signif, mantel_ow.fam.t4$signif, mantel_hw.hrs.alt.fam.t4$signif,
+         mantel_ow.hw.hrs.alt.t7$signif, mantel_ow.fam.t7$signif, mantel_hw.hrs.alt.fam.t7$signif,
+         mantel_ow.hw.hrs.alt.t9$signif, mantel_ow.fam.t9$signif, mantel_hw.hrs.alt.fam.t9$signif)
 
 mantel_length <- data.frame(comparison, stats, sig)
 
-write.xlsx(mantel_length, "results/PSID/psid_mantel_length_comparison.xlsx")
+write.xlsx(mantel_length, "results/UKHLS/ukhls_mantel_length_comparison.xlsx")
 
 # ~~~~~~~~~~~~~~~~~~~~~~
 ## Save
 # ~~~~~~~~~~~~~~~~~~~~~~
 
-save.image("created data/mantel-seq-length.RData")
+save.image("created data/ukhls/mantel-seq-length.RData")
 
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Test bootstrapping for confidence intervals
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Complete sequences: length of 10
-mantel_ow.hw.hrs.combo.c10 = mantel(dist.work.ow.om.c10, dist.hw.hrs.combo.om.c10)
-mantel_ow.fam.c10 = mantel(dist.work.ow.om.c10, dist.fam.om.c10)
-mantel_hw.hrs.combo.fam.c10 = mantel(dist.hw.hrs.combo.om.c10, dist.fam.om.c10)
 
-mantel(dist.work.ow.om.c10, dist.hw.hrs.combo.om.c10, permutations=1000)
-
-# Vegan
-test.work.dist <- as.matrix(dist.work.ow.om.c10)
-test.fam.dist <- as.matrix(dist.fam.om.c10)
-mantel(dist.work.ow.om.c10 ~ dist.fam.om.c10, nperm=100)
-
-# Ecodist
-# https://stat.ethz.ch/pipermail/r-help/2011-January/266062.html
-test.work.dist <- dist(dist.work.ow.om.c10)
-test.fam.dist <- dist(dist.fam.om.c10)
-mantel(lower(dist.work.ow.om.c10) ~ lower(dist.fam.om.c10), nperm=100)
-
-# need these to match, and do these match ecodist
-mantel(dist.work.ow.om.c10, dist.fam.om.c10, permutations=999)
-mantel_ow.fam.c10$statistic
-quantile(mantel_ow.fam.c10$perm, probs=c(.90, .95, .975, .99))
-
+# ~~~~~~~~~~~~~~~~~~~~~~
+## Confidence intervals
+# ~~~~~~~~~~~~~~~~~~~~~~
 mantel.test.work.fam <- mantel(lower(dist.work.ow.om.c10) ~ lower(dist.fam.om.c10), nperm=100)
-mantel.test.work.hw <- mantel(lower(dist.work.ow.om.c10) ~ lower(dist.hw.hrs.combo.om.c10), nperm=100)
-mantel.test.hw.fam <- mantel(lower(dist.hw.hrs.combo.om.c10) ~ lower(dist.fam.om.c10), nperm=100)
+mantel.test.work.hw <- mantel(lower(dist.work.ow.om.c10) ~ lower(dist.hw.hrs.alt.om.c10), nperm=100)
+mantel.test.hw.fam <- mantel(lower(dist.hw.hrs.alt.om.c10) ~ lower(dist.fam.om.c10), nperm=100)
 
 mantel.df.work.fam <- data.frame(mantel.test.work.fam)
 mantel.df.work.hw <- data.frame(mantel.test.work.hw)
@@ -1314,67 +1285,8 @@ mantel.df.hw.fam <- data.frame(mantel.test.hw.fam)
 mantel.col <- c('mantelr','pval1','pval2','pval3','llim.2.5%','ulim.97.5%')
 mantel.df <- data.frame(mantel.col, mantel.df.work.fam, mantel.df.hw.fam, mantel.df.work.hw)
 
-write.xlsx(mantel.df, "results/PSID/tables/psid_mantel_ci_mi1.xlsx")
+write.xlsx(mantel.df, "results/UKHLS/tables/ukhls_mantel_ci_mi1.xlsx")
 
 # compare to previous estimates
 mantel_ow.fam.c10$statistic
 mantel_ow.fam.c10$signif
-
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Exporting figure of sequences for just complete sequences
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# realizing - these are just for 1 imputation; have migrated this to new setup file
-
-pdf("results/PSID/PSID_Base_Sequences_complete.pdf",
-    width=12,
-    height=3)
-
-s1<-ggseqdplot(seq.work.ow.10) +
-  scale_x_discrete(labels = 1:10) +
-  labs(x = "Relationship Duration", y=NULL) + 
-  theme(legend.position="none") +
-  ggtitle("Paid Work") + 
-  theme(plot.title=element_text(hjust=0.5))
-
-s2<-ggseqdplot(seq.hw.hrs.combo.10) +
-  scale_x_discrete(labels = 1:10) +
-  labs(x = "Relationship Duration", y=NULL) + 
-  theme(legend.position="none") +
-  ggtitle("Housework") + 
-  theme(plot.title=element_text(hjust=0.5))
-
-s3<-ggseqdplot(seq.fam.10) +
-  scale_x_discrete(labels = 1:10) +
-  labs(x = "Relationship Duration") + 
-  theme(legend.position="none") +
-  ggtitle("Family") + 
-  theme(plot.title=element_text(hjust=0.5))
-
-grid.arrange(s3,s1,s2, ncol=3, nrow=1)
-dev.off()
-
-pdf("results/PSID/PSID_Base_Index_complete.pdf",
-    width=12,
-    height=5)
-
-i1<-ggseqiplot(seq.fam.10, sortv="from.start")
-i2<-ggseqiplot(seq.work.ow.10, sortv="from.start")
-i3<-ggseqiplot(seq.hw.hrs.combo.10, sortv="from.start")
-
-grid.arrange(i1,i2,i3, ncol=3, nrow=1)
-dev.off()
-
-pdf_convert("results/PSID/PSID_Base_Index_complete.pdf",
-            format = "png", dpi = 300, pages = 1,
-            "results/PSID/PSID_Base_Index_complete.png")
-
-pdf("results/PSID/PSID_Base_RF_complete.pdf",
-    width=12,
-    height=5)
-
-rf1<-ggseqrfplot(seq.fam.10, diss=dist.work.ow.om.c10, k=500, sortv="from.start",which.plot="medoids") + theme(legend.position="none")
-rf2<-ggseqrfplot(seq.work.ow.10, diss=dist.hw.hrs.combo.om.c10, k=500, sortv="from.start",which.plot="medoids") + theme(legend.position="none")
-rf3<-ggseqrfplot(seq.hw.hrs.combo.10, diss=dist.fam.om.c10, k=500, sortv="from.start",which.plot="medoids") + theme(legend.position="none")
-
-grid.arrange(rf1,rf2,rf3, ncol=3, nrow=1)
-dev.off()

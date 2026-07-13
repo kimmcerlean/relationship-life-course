@@ -439,3 +439,17 @@ dev.off()
 save.image("created data/setupsequence-truncated.RData")
 #load("created data/setupsequence-truncated.RData")
 
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Prelim robustness. What would substitution costs be with TRATE?
+# (so not even running with this, just exploring)
+# One Q: do I do by domain, or using the multichannel sequences?
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+seqtrate(seq.work.ow)
+seqtrate(seq.hw.hrs)
+seqtrate(seq.fam)
+
+work.trate.subcosts <- seqsubm(seq.work.ow, method = "TRATE")
+hw.trate.subcosts <- seqsubm(seq.hw.hrs, method = "TRATE")
+fam.trate.subcosts <- seqsubm(seq.fam, method = "TRATE")
+
