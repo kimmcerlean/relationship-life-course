@@ -292,7 +292,7 @@ sort pidp year
 browse pidp wavename year survey marital_status_defacto partnered partner_id ppid partner_pidp_bh sppid_bh if partnered==1
 
 ********************************************************************************
-** DoL variables
+**# DoL variables
 ********************************************************************************
 /*
 attempting to QA howlng here - coverage feels low in next file, want to see if that is actually true. do before all recodes.
@@ -622,6 +622,7 @@ tab age_youngest_child, m
 	merge m:1 pidp using "$temp/mpf_lookup.dta" // okay, not that I have added those without births, it's much better
 	drop if _merge==2
 	drop _merge
+	drop eligible_partner // this is a lookup created for later, I don't need this here (it's just pidp copied)
 
 	tab any_mpf, m
 	tab ever_parent any_mpf, m
@@ -857,10 +858,10 @@ foreach var in jbhrs work_hours total_hours howlng aidhrs fimnlabgrs_dv jbstat e
 // okay, doing this, but actually care more in next file once I have my actual sample
 
 ********************************************************************************
-* Okay, let's add on marital history as well, so I can use this to get duration / relationship order
+**# Compiling relationship history and current relationship info
 ********************************************************************************
 // main partner history
-merge m:1 pidp using "$temp/partner_history_tomatch.dta", keepusing(mh_*)
+merge m:1 pidp using "$temp/partner_history_tomatch.dta", keepusing(mh_* bh_*)
 tab marital_status_defacto _merge, row // so def some missing that shouldn't be... but not a lot (like coverage is 97-98% for those cohab / married, a little less for those dissolved)
 drop if _merge==2
 
@@ -953,6 +954,10 @@ gen current_rel_ongoing=.
 // gen current_rel_how_end=.
 gen current_rel_marr_end=.
 gen current_rel_coh_end=.
+gen current_rel_start_if=.
+gen current_rel_left_censor=.
+
+tab rel_no survey // confirm bhps not past 10
 
 forvalues r=1/14{
 	replace current_rel_start_year = mh_starty`r' if rel_no==`r'
@@ -964,6 +969,11 @@ forvalues r=1/14{
 	// replace current_rel_how_end = cohend`r' if rel_no==`r' & status`r'==2 // if cohab
 	replace current_rel_marr_end = mh_mrgend`r' if rel_no==`r'
 	replace current_rel_coh_end = mh_cohend`r' if rel_no==`r'
+	replace current_rel_start_if = mh_start_if`r' if rel_no==`r'
+}
+
+forvalues r=1/10{
+	replace current_rel_left_censor = bh_left`r' if rel_no==`r'
 }
 
 replace current_rel_start_year=. if current_rel_start_year==-9
@@ -974,8 +984,15 @@ replace current_rel_end_month=. if current_rel_end_month==-9
 label values current_rel_ongoing ongoing
 label values current_rel_marr_end mrgend
 label values current_rel_coh_end cohend
+label values current_rel_start_if start_if
 
 browse pidp year marital_status_defacto partner_id rel_no current_rel_start_year current_rel_start_month current_rel_end_year current_rel_end_month current_rel_ongoing rel_start rel_end rel_end_pre current_rel_marr_end current_rel_coh_end mh_partner1 mh_status1 mh_starty1 mh_startm1 mh_endy1 mh_endm1 mh_divorcey1 mh_divorcem1 mh_mrgend1 mh_cohend1 mh_ongoing1 mh_partner2 mh_status2 mh_starty2 mh_startm2 mh_endy2 mh_endm2 mh_divorcey2 mh_divorcem2 mh_mrgend2 mh_cohend2 mh_ongoing2
+
+	// did the left censor seem to work?
+	 tab xw_memorig current_rel_left_censor if partnered==1, m
+	 tab xw_memorig bh_left1 if partnered==1, m
+	 tab current_rel_start_year if inlist(xw_memorig,4,5,6)  & current_rel_left_censor==. & partnered==1, m // okay think the ones that are missing, we can assume NOT; they don't heap as expected. I think this is sufficient.
+	 tab xw_memorig current_rel_start_if if partnered==1, m
 
 // check start dates if I use my manually created ones - to help with later info
 gen rel_start_year_est = istrtdaty if rel_start==1
@@ -985,12 +1002,21 @@ gen rel_end_year_est = istrtdaty if rel_end_pre==1
 bysort pidp partner_id (rel_end_year_est): replace rel_end_year_est=rel_end_year_est[1]  if partner_id!=. // if partner id is missing, this actually doesn't work well
 
 sort pidp year
+// browse pidp partner_id year istrtdaty marital_status_defacto rel_start current_rel_start_year rel_start_year_est current_rel_left_censor mh_starty1 mh_starty2 mh_starty3
 
 gen rel_start_check=.
 replace rel_start_check=0 if current_rel_start_year!=rel_start_year_est & current_rel_start_year!=. & rel_start_year_est!=.
 replace rel_start_check=1 if current_rel_start_year==rel_start_year_est & current_rel_start_year!=. & rel_start_year_est!=.
 
 tab rel_start_check // okay not actually a lot of congruence (even when they are both non-missing). this is problematic if the first year observed they are already in a rel. like most are just missing...
+tab rel_start_check if current_rel_left_censor!=1 // oh right, when left censored, don't tend to have rel_start_year_est, so this insn't covering that anyway.
+
+	// before updating, let's create a flag denoting I am using this estimated date
+	gen rel_start_est_flag = 0
+	replace rel_start_est_flag = 1 if current_rel_start_year==. & rel_start_year_est!=. & partner_id!=. & istrtdaty>=rel_start_year_est
+	
+	gen rel_end_est_flag = 0
+	replace rel_end_est_flag = 1 if current_rel_end_year==. & rel_end_year_est!=. & partner_id!=. & istrtdaty<=rel_end_year_est
 
 replace current_rel_start_year = rel_start_year_est if current_rel_start_year==. & rel_start_year_est!=. & partner_id!=. & istrtdaty>=rel_start_year_est
 replace current_rel_end_year = rel_end_year_est if current_rel_end_year==. & rel_end_year_est!=. & partner_id!=. & istrtdaty<=rel_end_year_est
@@ -1007,6 +1033,7 @@ browse pidp istrtdaty marital_status_defacto partner_id rel_no current_rel_start
 
 gen rel_no_orig=rel_no
 
+/* this doesn't add any info, so let's comment out to avoid confusion
 forvalues r=1/14{
 	replace current_rel_start_year = mh_starty`r' if rel_no==. & partner_id!=. & inlist(marital_status_defacto,1,2) & marital_status_defacto==mh_status`r' & istrtdaty>=mh_starty`r' & istrtdaty<=mh_endy`r'
 	replace current_rel_start_month = mh_startm`r' if rel_no==. & partner_id!=. & inlist(marital_status_defacto,1,2) & marital_status_defacto==mh_status`r' & istrtdaty>=mh_starty`r' & istrtdaty<=mh_endy`r'
@@ -1016,6 +1043,7 @@ forvalues r=1/14{
 
 	replace rel_no=`r' if rel_no==. & partner_id!=. & inlist(marital_status_defacto,1,2) & marital_status_defacto==mh_status`r' & istrtdaty>=mh_starty`r' & istrtdaty<=mh_endy`r' // okay yes this didn't add any
 }
+*/
 
 // can I use the dates from the main file, not marital history? or the cross-wave file?
 tabstat lmar1y coh1by coh1ey lmcby41 lmcby42 lmspy41 lmspy42, by(year)
@@ -1080,8 +1108,37 @@ tab age_all missing_rel_start, row
 gen int_year = istrtdaty 
 replace int_year = year if istrtdaty < 0 // missing / dk, so not very helpful...
 
-// also need to make sure the start / end dates are congruent if the couple transitioned from cohabitation to marriage gAH
+* create indicator of duplicated interview years
+duplicates tag pidp int_year, generate(dup_year_count)
+// duplicates list pidp int_year
+	// browse pidp partner_id int_year year dup_year_count
+tab partnered dup_year_count, m row
+
+// also need to make sure the start / end dates are congruent if the couple transitioned from cohabitation to marriage gAH. I am going to move this to NEXT STEP after I try to match dates across partners For now, just adding the year transition info. Will also adjust that in next step.
 bysort pidp partner_id: egen ever_transition = max(marr_trans) if partnered==1
+
+	// but how many people does this miss if not observed in consecutive years? for this info, think i need WAVE year. for next info, I need real. so ... let's update this.
+	bysort pidp partner_id: egen first_couple_wave_year = min(year) if partner_id!=.
+	bysort pidp partner_id: egen last_couple_wave_year = max(year) if partner_id!=.
+	
+	gen first_rel_type = marital_status_defacto if year==first_couple_wave_year & partnered==1
+	gen last_rel_type = marital_status_defacto if year==last_couple_wave_year & partnered==1
+	
+	bysort pidp partner_id (first_rel_type): replace first_rel_type = first_rel_type[1]
+	bysort pidp partner_id (last_rel_type): replace last_rel_type = last_rel_type[1]
+	
+	label values first_rel_type last_rel_type marital_status_defacto
+	
+	// browse pidp partner_id year marital_status_defacto first_couple_wave_year last_couple_wave_year first_rel_type last_rel_type
+		
+	tab first_rel_type last_rel_type, m
+	tab first_rel_type last_rel_type if partnered==1, m 
+
+	gen transition_est = 0
+	replace transition_est = 1 if first_rel_type==2 & last_rel_type==1
+
+	tab transition_est ever_transition, m
+	
 gen year_transitioned = int_year if marr_trans==1 // note, year transition is first year marrriage. so years prior are cohab, then that year onward is marriage
 bysort pidp partner_id (year_transitioned): replace year_transitioned = year_transitioned[1]
 
@@ -1095,6 +1152,7 @@ bysort pidp partner_id: egen last_couple_year = max(int_year) if partnered==1
 sort pidp year
 browse pidp partner_id int_year marital_status_defacto first_couple_year last_couple_year current_rel_start_year current_rel_end_year marr_trans if ever_transition==1
 
+/*
 // updating dates specifically for those who transition because it will mess up the codes otherwise. add a flag to denote that I did still
 gen rel_end_flag=.
 replace rel_end_flag=0 if current_rel_end_year!=.
@@ -1134,14 +1192,15 @@ tab int_date_check if rel_end_all!=.
 tab int_date_check if rel_start_all!=. & rel_end_all!=.
 
 // browse pidp partner_id int_year marital_status_defacto rel_no rel_no_est rel_start_all rel_end_all status_all current_rel_start_year current_rel_end_year mh_starty1 mh_endy1 mh_starty2 mh_endy2 first_couple_year last_couple_year if partnered==1
+*/
 
 save "$created_data/UKHLS_long_all_recoded.dta", replace
 
 // note: this file is still NOT restricted in any way
 unique pidp // 118405, 807942 total py
 unique pidp partner_id // 135496	
-unique pidp, by(xw_sex) // 56297 m, 62216 w
-unique pidp, by(partnered) // 59866 0, 73581 1
+unique pidp, by(xw_sex) // 56230 m, 62170 w
+unique pidp, by(partnered) // 59583 0, 73581 1
 unique pidp partner_id if partnered==1 & current_rel_start_year==. // 8124 couples. does that feel like too many to be missing? okay now 7066
 unique pidp partner_id if partnered==1 & current_rel_end_year==. //  8150 couples. does that feel like too many to be missing? okay now it is 5688. when did this change gah?!
 // unique pidp partner_id if partnered==1, by(current_rel_start_year)

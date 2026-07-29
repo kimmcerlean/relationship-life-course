@@ -33,9 +33,44 @@ save "$temp/spid_lookup.dta", replace
 ********************************************************************************
 * Prep partner history file for later
 ********************************************************************************
+* Need to recover the left censor info from the original BHPS files
+use "$BHPS_mh/family.dta", clear
+
+gen long pid = pp // to be able to match to below
+
+forvalues m=1/10{
+	gen starty`m' = 1900 + floor(start_date`m'/12)
+}
+
+keep pp pid union* left* starty* marital cohabitation
+
+foreach var in * {
+	rename `var' bh_`var'
+}
+
+rename bh_pid pid
+
+save "$temp/bhps_partner_history_tomatch.dta", replace
+
+* Now, merge that info onto main marital history
 use "$UKHLS_mh/phistory_wide.dta", clear
 
-foreach var in status* partner* starty* startm* endy* endm* divorcey* divorcem* mrgend* cohend* ongoing* ttl_spells ttl_married ttl_civil_partnership ttl_cohabit ever_married ever_civil_partnership ever_cohabit lastintdate lastinty lastintm hhorig{
+// diagnose: did I impose heaping on these samples or is this how it is in raw data. Confirmed: this is how it is.
+// tab starty1 if inlist(hhorig,4,5,6)
+// tab starty1 start_if1 if inlist(hhorig,4,5,6)
+// tab starty1 if hhorig == 3
+
+merge m:1 pid using "$temp/bhps_partner_history_tomatch.dta"
+tab hhorig _merge, m
+
+drop if _merge==2
+drop _merge
+
+browse pidp pid hhorig status1 starty1 bh_starty1 bh_union1 bh_left1
+
+tab hhorig bh_left1, row
+
+foreach var in status* partner* starty* startm* start_if* endy* endm* divorcey* divorcem* mrgend* cohend* ongoing* ttl_spells ttl_married ttl_civil_partnership ttl_cohabit ever_married ever_civil_partnership ever_cohabit lastintdate lastinty lastintm hhorig{
 	rename `var' mh_`var' // renaming for ease of finding later, especially when matching partner info
 }
 

@@ -64,6 +64,7 @@ set scheme cleanplots
 // define globals
 global UKHLS    	"$root/UKHLS data/UKDA-6614-stata/stata/stata13_se" /*original UKHLS data*/
 global UKHLS_mh    	"$root/UKHLS data/UKDA-8473-stata/stata" /*UKHLS relationship history data*/
+global BHPS_mh    	"$root/UKHLS data/UKDA-5629-stata8/stata8" /*BHPS specific relationship history data*/
 global temp    		"$root/temp data/ukhls" /*intermediary processing files*/
 global created_data "$root/created data/ukhls" /*created data*/
 global results  	"$root/results/UKHLS"

@@ -19,10 +19,10 @@
 use "$created_data/ukhls_couples_alldurs_long.dta", clear
 
 // few final explorations and recodes
-unique pidp // 18613 / 22552 (new)
-unique pidp if hiqual_fixed==. //  725 (3%)
-unique pidp if xw_ethn_dv==. //  563
-unique pidp if xw_racel_dv==. //  639
+unique pidp // 18613 / 22552 (new) / 17718 (with left censored removed)
+unique pidp if hiqual_fixed==. //  372 (2%)
+unique pidp if xw_ethn_dv==. //  572
+unique pidp if xw_racel_dv==. //  721
 
 tab xw_memorig xw_sampst, m row // are these perfectly correlated? no
 tab marital_status_imp partnered_imp, m // only need to use one of these
@@ -50,22 +50,19 @@ tab duration, m
 // final cleanup of some variables that shouldn't be duplicated but are...
 unique pidp couple_id
 unique couple_id pidp eligible_partner
+unique couple_id pidp eligible_partner dob_year // fixed this in previous step now
 unique couple_id pidp eligible_partner min_dur max_dur first_couple_year last_couple_year
 
 sort pidp int_year
+/* no longer missing min durs
 browse pidp eligible_partner int_year year eligible_rel_start_year relative_duration first_couple_year last_couple_year current_rel_start_year min_dur max_dur if min_dur==.
 browse pidp eligible_partner int_year year eligible_rel_start_year relative_duration first_couple_year last_couple_year current_rel_start_year min_dur max_dur if inlist(pidp,163612085,4029691)
 drop if min_dur==. // more than 1 partner in a year
+*/
 browse pidp eligible_partner int_year year eligible_rel_start_year relative_duration first_couple_year last_couple_year current_rel_start_year min_dur max_dur if first_couple_year==.
 browse pidp eligible_partner int_year year eligible_rel_start_year relative_duration first_couple_year last_couple_year current_rel_start_year min_dur max_dur if pidp==82295645
 
-quietly unique dob_year, by(pidp) gen(dob_change)
-bysort pidp (dob_change): replace dob_change=dob_change[1]
-tab dob_change, m
-
-sort pidp int_year
-browse pidp int_year dob_year dob_change if dob_change>  1
-by pidp: egen dob = min(dob_year)
+rename dob_year dob // the variable I had created in this step (but moved up)
 
 // going to attempt to impute this
 gen year_first_birth_imp = year_first_birth
@@ -73,7 +70,7 @@ replace year_first_birth_imp = . if year_first_birth==0
 
 browse couple_id pidp eligible_partner int_year orig_record min_dur max_dur first_couple_year last_couple_year
 
-foreach var in min_dur max_dur first_couple_year last_couple_year ever_transition year_transitioned{
+foreach var in min_dur max_dur first_couple_year last_couple_year eligible_transition_status{
 	rename `var' `var'_v0
 }
 
@@ -81,8 +78,7 @@ bysort couple_id: egen min_dur = min(min_dur_v0)
 bysort couple_id: egen first_couple_year = min(first_couple_year_v0)
 bysort couple_id: egen max_dur = max(max_dur_v0)
 bysort couple_id: egen last_couple_year = max(last_couple_year_v0)
-bysort couple_id: egen ever_transition = max(ever_transition_v0)
-bysort couple_id: egen year_transitioned = min(year_transitioned)
+bysort couple_id: egen eligible_transition_status = max(eligible_transition_status_v0)
 
 sort pidp int_year
 
@@ -91,7 +87,7 @@ sort pidp int_year
 ********************************************************************************
 local reshape_vars "total_hours work_hours jbhrs jshrs howlng any_aid aidhrs aid_hours employed employment_status jbstat fimnlabgrs_dv current_parent_status nkids_dv age_youngest_child partnered_imp marital_status_imp npens_dv num_parents_hh fihhmngrs_dv gor_dv orig_record hiqual_dv nchild_dv partnered marital_status_defacto country_all age_all current_rel_start_year current_rel_end_year ivfio sampst hidp psu strata int_year year aidhh aidxhh husits hubuys hufrys huiron humops huboss tenure_dv housing_status_alt master_religion religion_est disabled_est sr_health respondent_info"
 
-keep couple_id pidp eligible_partner eligible_rel_start_year eligible_rel_end_year eligible_rel_status eligible_rel_no birth_timing_rel xw_sex min_dur max_dur first_year_observed first_couple_year last_year_observed last_couple_year duration xw_anychild_dv dob hiqual_fixed xw_ethn_dv xw_memorig xw_sampst xw_racel_dv year_first_birth year_first_birth_imp ever_transition year_transitioned father_educ mother_educ father_empstatus mother_empstatus family_structure family_structure14_det ever_parent `reshape_vars'
+keep couple_id pidp eligible_partner eligible_rel_start_year eligible_rel_end_year eligible_rel_status eligible_rel_no eligible_transition_year eligible_transition_status eligible_rel_lc_flag eligible_rel_miss_flag eligible_rel_est_flag eligible_rel_imp_flag birth_timing_rel xw_sex min_dur max_dur first_year_observed first_couple_year last_year_observed last_couple_year duration xw_anychild_dv dob hiqual_fixed xw_ethn_dv xw_memorig xw_sampst xw_racel_dv year_first_birth year_first_birth_imp father_educ mother_educ father_empstatus mother_empstatus family_structure family_structure14_det ever_parent `reshape_vars'
 
 reshape wide `reshape_vars'  ///
 , i(couple_id pidp eligible_partner eligible_rel_start_year eligible_rel_end_year eligible_rel_status eligible_rel_no xw_sex) ///
@@ -128,7 +124,7 @@ return matrix table = `matrix'
 end
 
 putexcel set "$root/imputation/ukhls_missingtable.xlsx", replace
-mmdesc hidp0-year_transitioned
+mmdesc total_hours0-eligible_transition_status
 putexcel A1 = matrix(r(table))
 
 ********************************************************************************
