@@ -53,6 +53,8 @@ set scheme cleanplots
 		if `"`c(hostname)'"' == "PPRC-STATS-P01" global code `"T:/github/relationship-life-course/ukhls"'
 		if `"`c(hostname)'"' == "PC008964" global root `"C:/Users/kmcerlea/Istituto Universitario Europeo/Pessin, Lea - 1. WeEqualize - Team Folder/Papers/Relationship Life Course"' // Team folder on EUI Computer
 		if `"`c(hostname)'"' == "PC008964" global code "\\bfsrv2\home$\kmcerlea\PersonalData\Documents\GitHub\relationship-life-course\ukhls"
+		if `"`c(hostname)'"' == "EUISharedPC7129" global root `"C:/Users/kmcerlea/Istituto Universitario Europeo/Pessin, Lea - 1. WeEqualize - Team Folder/Papers/Relationship Life Course"' // Team folder on EUI Computer
+		if `"`c(hostname)'"' == "EUISharedPC7129" global code "\\bfsrv2\home$\kmcerlea\PersonalData\Documents\GitHub\relationship-life-course\ukhls"
 	}
 			
 			
