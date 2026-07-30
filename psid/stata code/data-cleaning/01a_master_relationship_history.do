@@ -114,7 +114,7 @@ gen partner_1968_id = MX10 if MX8==22 | MX8==20
 gen partner_per_num = MX11 if MX8==22 | MX8==20
 gen long partner_unique_id = (partner_1968_id*1000) + partner_per_num
 
-bysort unique_id survey_yr: egen num_partners = count(ego_alter) if inlist(ego_alter, 2,3)
+bysort unique_id survey_yr: egen num_partners = count(ego_alter) if inlist(ego_alter, 2,3) // aka can they have multiple partners. answer is no (for all but 2 people - this is alluded to in one of the codebooks)
 bysort unique_id survey_yr (num_partners): replace num_partners = num_partners[1]
 
 sort unique_id survey_yr 
@@ -149,7 +149,7 @@ browse unique_id survey_yr partner_unique_id ego_alter rel_num marr_num
 drop rank help_var marr_rank marr_help_var
 
 // rogue dual relationship - keeping the iD that remains in subsequent records. From marriage, see if true here.
-// drop if ego_1968_id == 1821 & ego_per_num == 170 & survey_yr==1977 & partner_unique_id== 1821004
+drop if ego_1968_id == 1821 & ego_per_num == 170 & survey_yr==1977 & partner_unique_id== 1821004
 
 save "$temp/PSID_relationship_list_tomatch.dta", replace 
 
@@ -167,6 +167,8 @@ drop if _merge==2
 drop _merge
 
 rename MX8 rel_type
+label define rel_type 20 "Spouse" 22 "Partner"
+label values rel_type rel_type
 
 // also merge on marital history
 // merge on marital history - bc in order of prio, it should be marital history for marriages observed, then other variables for not in marital history or cohabitation.
@@ -251,6 +253,7 @@ tab MARST_DEFACTO_HEAD_ COUPLE_STATUS_HEAD_, m
 tab MARST_LEGAL_HEAD_ MARST_DEFACTO_HEAD_ , m
 tab relationship partnered,m  
 tab relationship MARITAL_PAIRS,m  
+tab COUPLE_STATUS_HEAD_ rel_type, m
 // tabstat RELATION_, by(survey_yr) // coding switched in 1983
 
 gen cohab_est_head=0
@@ -284,8 +287,10 @@ replace marital_status_updated = 1 if rel_type == 20 & marital_status_updated==1
 replace marital_status_updated = 2 if rel_type == 22 & marital_status_updated==1 // move the cohab I wasn't sure about
 replace marital_status_updated = 1 if rel_type == 20 & marital_status_updated==. // fill in missing
 replace marital_status_updated = 2 if rel_type == 22 & marital_status_updated==. 
+replace marital_status_updated = 2 if rel_type == 22 & inrange(marital_status_updated,3,6) // actually these are first year cohabitors
 
 tab marital_status_updated partnered, m col
+tab marital_status_updated rel_type, m
 
 bysort unique_id: egen first_survey_yr= min(survey_yr) if in_sample==1
 bysort unique_id (first_survey_yr): replace first_survey_yr=first_survey_yr[1]
@@ -299,7 +304,7 @@ browse unique_id survey_yr first_survey_yr last_survey_yr has_psid_gene in_sampl
 // browse unique_id survey_yr first_survey_yr last_survey_yr has_psid_gene in_sample hh_status SAMPLE partnered rel_type relationship partner_unique_id if partnered==0 & rel_type!=.
 // browse unique_id survey_yr first_survey_yr last_survey_yr has_psid_gene in_sample hh_status SAMPLE partnered rel_type relationship partner_unique_id if inlist(unique_id, 4006, 4170, 4041, 4207, 57183, 57030, 5971170, 5971021) 
 // ah okay, these are mostly first-yr cohabitors - so these are identified as partners in the matrix, but not in main file. this might be problematic bc the PSID doesn't collect any info on these people... BUT this is the true rel start, then ...
-tab RELATION_ if partnered==0 & inlist(rel_type,20,22), m
+tab RELATION_ if partnered==0 & inlist(rel_type,20,22), m // I don't think I use this info anyway? Below, I SOLELY use rel_type anyway
 
 ***************************************
 * relationship transitions - OBSERVED
@@ -330,7 +335,7 @@ replace cohab_end=1 if rel_type==22 & rel_type[_n+1]==0 & unique_id==unique_id[_
 gen marr_trans=0
 replace marr_trans=1 if rel_type==20 & rel_type[_n-1]==22 & unique_id==unique_id[_n-1] & wave==wave[_n-1]+1
 
-browse unique_id survey_yr rel_start marriage_start cohab_start rel_end marriage_end cohab_end first_survey_yr last_survey_yr has_psid_gene in_sample hh_status SAMPLE partnered rel_type relationship partner_unique_id mh_yr_married1 mh_yr_married2 mh_yr_married3
+browse unique_id survey_yr rel_start marriage_start cohab_start rel_end marriage_end cohab_end marr_trans SAMPLE partnered rel_type relationship partner_unique_id first_survey_yr last_survey_yr has_psid_gene in_sample hh_status  mh_yr_married1 mh_yr_married2 mh_yr_married3
 
 // how did it end - this will not cover attriton bc need to observe in next wave - add that here or later based on last observed couple year matching last year in sample?
 // i guess - if had multiple relationships - it also def had to be an end not an attrit - we just might not know if widowhood or divorce...but divorce more likely, especially in cohab
@@ -367,8 +372,8 @@ browse unique_id partner_unique_id survey_yr in_sample hh_status relationship pa
 gen entered_in_rel = .
 replace entered_in_rel = 0 if survey_yr == first_survey_yr & rel_type==0
 replace entered_in_rel = 1 if survey_yr == first_survey_yr & inlist(rel_type,20,22)
-	// think I need to fill these in temporarily but want a flag. Updates 7/16/26: but, i only give oyu a rel start if I see it transition. if you enter in rel, you shouldn't have a rel start for your FIRST relationship. No, no okay you do because below, I give you a rel start using survey info. I have to do this for my rankings to work is the problem...
-	// I think I need to update flag - entered in THIS rel. soo below code is mapped ot unique ID. Do i actually map to unique + partner?
+	// think I need to fill these in temporarily but want a flag. Below, I give you a rel start using survey info. I have to do this for my rankings to work is the problem...
+	// I think I need to update flag - entered in THIS rel. soo below code is mapped ot unique ID. Do i actually map to unique + partner? tldr: the below doesn't really matter, but leaving for posterity (bc can only enter in rel 1 in this system)
 	bysort unique_id partner_unique_id: egen entered_in_this_rel = max(entered_in_rel) // have to do this before copying to all rows, right?
 	bysort unique_id (entered_in_rel): replace entered_in_rel=entered_in_rel[1]
 	replace entered_in_this_rel = 0 if entered_in_this_rel==. // I see the problem in that this works when this file is long but not when I make it wide...need to sort out how to get this by relationship. I guess using the same info I use below? okay what i am realizing. if i map to rel 1 v. 2 v. 3 etc. isn't it just going to match?? like if rel1 is left censored,  that will be left censored and so will entered in rel??
@@ -409,7 +414,7 @@ forvalues r=1/6{
 }
 
 sort unique_id survey_yr
-browse unique_id partner_unique_id survey_yr hh_status partnered marital_status_updated rel_type rel1_start rel1_end rel1_how_end rel2_start rel2_end rel2_how_end rel3_start rel3_end mh_yr_married1 mh_yr_end1 mh_yr_married2 mh_yr_end2 mh_yr_married3 mh_yr_end3 rel_start marriage_start cohab_start rel_end marriage_end cohab_end has_psid_gene 
+browse unique_id partner_unique_id survey_yr hh_status partnered marital_status_updated rel_type rel1_start rel1_end rel1_how_end rel1_left_censored rel2_start rel2_end rel2_how_end rel3_start rel3_end mh_yr_married1 mh_yr_end1 mh_yr_married2 mh_yr_end2 mh_yr_married3 mh_yr_end3 rel_start marriage_start cohab_start rel_end marriage_end cohab_end has_psid_gene 
 
 tab rel1_start rel1_type, m
 tab rel1_left_censored, m
@@ -481,9 +486,9 @@ sort unique_id survey_yr
 browse unique_id partner_unique_id survey_yr first_survey_yr in_sample partnered entered_in_this_rel rel_type rel1_start rel1_end rel2_start rel2_end rel3_start rel3_end marr1_start marr1_end marr2_start marr2_end coh1_start coh1_end coh2_start coh2_end mh_yr_married1 mh_yr_end1 mh_yr_married2 mh_yr_end2 mh_yr_married3 mh_yr_end3 rel_start marriage_start cohab_start rel_end marriage_end cohab_end has_psid_gene rel1_left_censored marr1_left_censored coh1_left_censored
 
 tab rel1_left_censored entered_in_rel, m
+tab rel1_start rel1_left_censored, m
 tab marr1_left_censored entered_in_rel, m
 tab coh1_left_censored entered_in_rel, m
-
 
 ********************************************************************************
 * Just get per unique
@@ -579,6 +584,9 @@ label values status status
 recode status (1=0) (3=2) (4/5=1) (7/9=.), gen(mh_status)
 label values mh_status how_rel_end
 tab status mh_status, m
+
+capture label define rel_type 20 "Spouse" 22 "Partner"
+label values rel_type rel_type
 
 browse unique_id history_flag relno relationship rel_start rel_end rel_how_end rel_type rel_left_censored mh_yr_married mh_yr_end mh_status marr_start marr_end marr_how_end marr_left_censored coh_start coh_end coh_how_end coh_left_censored
 // 4006 good example of history with cohab - my marriage dates off by 1 year, so need to use real marital history data but my cohab data

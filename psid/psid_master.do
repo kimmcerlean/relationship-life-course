@@ -66,6 +66,8 @@ net get st0445 // these go into working directory (the ancillary files); pwd sho
 		if `"`c(hostname)'"' == "PPRC-STATS-P01" global root `"T:/Research Projects/Relationship Life Course (with LP)"' // PRC Stats Server
 		if `"`c(hostname)'"' == "PPRC-STATS-P01" global code `"T:/github/relationship-life-course/psid"'
 		if `"`c(hostname)'"' == "PC008964" global root `"C:/Users/kmcerlea/Istituto Universitario Europeo/Pessin, Lea - 1. WeEqualize - Team Folder/Papers/Relationship Life Course"' // Team folder on EUI Computer
+		if `"`c(hostname)'"' == "EUISharedPC7129" global root `"C:/Users/kmcerlea/Istituto Universitario Europeo/Pessin, Lea - 1. WeEqualize - Team Folder/Papers/Relationship Life Course"'
+		if `"`c(hostname)'"' == "EUISharedPC7129" global code "C:\Users\kmcerlea\OneDrive - Istituto Universitario Europeo\GitHub\relationship-life-course\psid"
 		if `"`c(hostname)'"' == "LAPTOP-TP2VHI6B" global code    "G:/Other computers/My Laptop/Documents/GitHub/relationship-life-course/psid" // I am actually not sure if having the code on a shared directory will work. I am a bit worried about version control if the code can be updated in OneDrive but not yet pushed to github; I am worried about accidental changes. putting code into my own folder for now
 	}
 			
