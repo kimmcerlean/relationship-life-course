@@ -3,7 +3,6 @@ set maxvar 10000
 
 cd "/home/kmcerlea/stage/Life Course"
 
-/*
 use "created data/stata/gsoep_couples_imputed_long.dta", clear
 
 ********************************************************************************
@@ -296,9 +295,7 @@ foreach var in weekly_hrs_woman weekly_hrs_man employment_status_woman employmen
 	inspect `var' if _mi_m != 0  
 	assert `var' != . if _mi_m != 0  
 } 
-*/
 
-use "created data/stata/gsoep_couples_imputed_long_recoded.dta", clear
 ********************************************************************************
 **# Create couple-level variables
 ********************************************************************************
@@ -660,24 +657,27 @@ save "created data/stata/gsoep_couples_imputed_long_recoded.dta", replace
 ********************
 * relationship type
 // wait why did I drop off syear somewhere
-tab transition_year ever_transition, m
+tab eligible_transition_year eligible_transition_status, m
 
 gen syear = eligible_rel_start_year + relative_duration // okay this matches other file though, so it's fine
-// browse pid eligible_partner relative_duration syear marst_imp eligible_rel_start_year ever_transition transition_year min_dur max_dur
+// browse pid eligible_partner relative_duration syear marst_imp eligible_rel_start_year eligible_transition_status eligible_transition_year min_dur max_dur
 
 mi passive: gen dur_transitioned=.
-mi passive: replace dur_transitioned = transition_year - eligible_rel_start_year if ever_transition==1
+mi passive: replace dur_transitioned = eligible_transition_year - eligible_rel_start_year if eligible_transition_status==1
 
-tab dur_transitioned ever_transition, m
+tab dur_transitioned eligible_transition_status, m
 
-// browse pid eligible_partner syear relative_duration marst_imp ever_transition transition_year dur_transitioned eligible_rel_start_year eligible_rel_end_year eligible_rel_status if ever_transition == 0 & dur_transitioned!=. // these are people I mistakenly captured before / after the start of their relationship. have adjusted code above so that only get a duration transiton if ever_transition == 1 (those are proper)
-// browse pid eligible_partner syear relative_duration marst_defacto marst_imp ever_transition transition_year dur_transitioned eligible_rel_start_year eligible_rel_end_year eligible_rel_status
+// browse pid eligible_partner syear relative_duration marst_imp eligible_transition_status eligible_transition_year dur_transitioned eligible_rel_start_year eligible_rel_end_year eligible_rel_status if eligible_transition_status == 0 & dur_transitioned!=. // these are people I mistakenly captured before / after the start of their relationship. have adjusted code above so that only get a duration transiton if eligible_transition_status == 1 (those are proper)
+// browse pid eligible_partner syear relative_duration marst_defacto marst_imp eligible_transition_status eligible_transition_year dur_transitioned eligible_rel_start_year eligible_rel_end_year eligible_rel_status
 
-tab marst_defacto if syear >= transition_year & syear < = eligible_rel_end_year & imputed==0, m
-tab marst_imp if syear >= transition_year & syear < = eligible_rel_end_year, m // so generally already fine
+tab marst_defacto if syear >= eligible_transition_year & syear < = eligible_rel_end_year & imputed==0, m
+tab marst_defacto if syear > eligible_transition_year & syear < = eligible_rel_end_year & imputed==0, m
+tab marst_imp if syear >= eligible_transition_year & syear < = eligible_rel_end_year, m // so generally already fine
 tab marst_imp if relative_duration >= dur_transitioned & relative_duration < = max_dur, m // so generally already fine
-tab marst_imp if syear < transition_year & syear > = eligible_rel_start_year & ever_transition==1, m 
-tab marst_imp if duration < dur_transitioned & relative_duration >= min_dur & ever_transition==1, m 
+tab marst_imp if relative_duration > dur_transitioned & relative_duration < = max_dur, m // better when not equal because can be either in transition year
+tab marst_imp if relative_duration == dur_transitioned
+tab marst_imp if syear < eligible_transition_year & syear > = eligible_rel_start_year & eligible_transition_status==1, m 
+tab marst_imp if duration < dur_transitioned & relative_duration >= min_dur & eligible_transition_status==1, m 
 
 // browse pid eligible_partner marst_defacto marst_imp syear relative_duration min_dur max_dur eligible_rel_start_year eligible_rel_end_year eligible_rel_status
 tab marst_imp if relative_duration > min_dur & relative_duration < max_dur , m
@@ -690,28 +690,33 @@ gen rel_type_min_dur = marst_defacto if relative_duration==min_dur
 bysort pid eligible_partner: egen master_rel_type = max(rel_type_min_dur)
 label values master_rel_type marst_defacto
 tab master_rel_type, m
-tab master_rel_type if ever_transition==1
+tab master_rel_type if eligible_transition_status==1
 
 sort pid eligible_partner  _mi_m relative_duration
 
-	// tab marst_imp if ever_transition==0 & relative_duration >= min_dur & relative_duration <= max_dur
-	// tab master_rel_type if ever_transition==0 & relative_duration >= min_dur & relative_duration <= max_dur
-	// tab master_rel_type marst_imp if ever_transition==0 & relative_duration >= min_dur & relative_duration <= max_dur
-	// browse pid eligible_partner _mi_m relative_duration ever_transition master_rel_type marst_imp marst_defacto min_dur max_dur
+	// tab marst_imp if eligible_transition_status==0 & relative_duration >= min_dur & relative_duration <= max_dur
+	// tab master_rel_type if eligible_transition_status==0 & relative_duration >= min_dur & relative_duration <= max_dur
+	// tab master_rel_type marst_imp if eligible_transition_status==0 & relative_duration >= min_dur & relative_duration <= max_dur
+	// browse pid eligible_partner _mi_m relative_duration eligible_transition_status master_rel_type marst_imp marst_defacto min_dur max_dur
 	
 mi passive: gen rel_type=.
 mi passive: replace rel_type = 0 if inlist(relative_duration,-2,-1) // pre-rel
-mi passive: replace rel_type = 1 if ever_transition==0 & marst_imp==1 & relative_duration >= min_dur & relative_duration <= max_dur // married, never transitioned
-mi passive: replace rel_type = 1 if ever_transition==1 & relative_duration >= dur_transitioned & relative_duration <= max_dur // married, post transition
-// mi passive: replace rel_type = 1 if rel_type==. & ever_transition==0 & relative_duration==0 & marst_imp==1
-mi passive: replace rel_type = 1 if rel_type==. & ever_transition==0 & master_rel_type==1 & relative_duration >= min_dur & relative_duration <= max_dur // never transitioned, rel type at start==married
-mi passive: replace rel_type = 1 if rel_type==. & ever_transition==0 & relative_duration==0 & master_rel_type==1 // people whose rel started mid-way through yr 0 always cause problems..
-mi passive: replace rel_type = 2 if ever_transition==0 & marst_imp==2 & relative_duration >= min_dur & relative_duration <= max_dur // partnered, never transitioned
-mi passive: replace rel_type = 2 if ever_transition==1 & relative_duration < dur_transitioned & relative_duration >= min_dur // pre transition
-mi passive: replace rel_type = 2 if ever_transition==1 & rel_type==. & relative_duration==0 // if transitioned, had to be cohab at start
+mi passive: replace rel_type = 1 if eligible_transition_status==0 & marst_imp==1 & relative_duration >= min_dur & relative_duration <= max_dur // married, never transitioned
+mi passive: replace rel_type = 1 if eligible_transition_status==1 & relative_duration == dur_transitioned & marst_imp==1 // if observed married in year of transition, mark as married
+mi passive: replace rel_type = 1 if eligible_transition_status==1 & relative_duration > dur_transitioned & relative_duration <= max_dur  // married, post transition
+// mi passive: replace rel_type = 1 if rel_type==. & eligible_transition_status==0 & relative_duration==0 & marst_imp==1
+mi passive: replace rel_type = 1 if rel_type==. & eligible_transition_status==0 & master_rel_type==1 & relative_duration >= min_dur & relative_duration <= max_dur // never transitioned, rel type at start==married
+mi passive: replace rel_type = 1 if rel_type==. & eligible_transition_status==0 & relative_duration==0 & master_rel_type==1 // people whose rel started mid-way through yr 0 always cause problems..
+
+mi passive: replace rel_type = 2 if eligible_transition_status==0 & marst_imp==2 & relative_duration >= min_dur & relative_duration <= max_dur // partnered, never transitioned
+mi passive: replace rel_type = 2 if eligible_transition_status==1 & relative_duration == dur_transitioned & marst_imp==2 // if observed cohab in this year, mark as cohab
+mi passive: replace rel_type = 2 if eligible_transition_status==1 & relative_duration == dur_transitioned & inrange(marst_imp,3,5) // if any other status besides married, say cohab
+mi passive: replace rel_type = 2 if eligible_transition_status==1 & relative_duration < dur_transitioned & relative_duration >= min_dur // pre transition
+mi passive: replace rel_type = 2 if eligible_transition_status==1 & rel_type==. & relative_duration==0 // if transitioned, had to be cohab at start
 // mi passive: replace rel_type = 2 if rel_type==. & relative_duration==0 & marst_imp==2
-mi passive: replace rel_type = 2 if rel_type==. & ever_transition==0 & master_rel_type==2 & relative_duration >= min_dur & relative_duration <= max_dur // never transitioned, rel type at start==partnered
+mi passive: replace rel_type = 2 if rel_type==. & eligible_transition_status==0 & master_rel_type==2 & relative_duration >= min_dur & relative_duration <= max_dur // never transitioned, rel type at start==partnered
 mi passive: replace rel_type = 2 if rel_type==. & relative_duration==0 & master_rel_type==2
+
 mi passive: replace rel_type = 3 if relative_duration > max_dur & eligible_rel_status==0 // intact but past end of relationship
 mi passive: replace rel_type = 3 if relative_duration > max_dur & eligible_rel_status==. // estimated attrition - doesn't actually matter if we know how it ended, because I am dropping anyway post end of rel
 mi passive: replace rel_type = 4 if relative_duration > max_dur & inlist(eligible_rel_status,1,2,3) // past end of relationship and designated ended - including widowhood here for these purposes - bc it is an observed end...
@@ -721,19 +726,19 @@ tab rel_type if _mi_m!=0, m
 	// tab rel_type if relative_duration >= min_dur & relative_duration <= max_dur, m
 	// tab rel_type if relative_duration < min_dur, m
 	// tab rel_type if relative_duration > max_dur, m
-	// tab rel_type if ever_transition==1 & relative_duration >= dur_transitioned, m
-	// tab rel_type if ever_transition==1 & relative_duration < dur_transitioned, m
+	// tab rel_type if eligible_transition_status==1 & relative_duration >= dur_transitioned, m
+	// tab rel_type if eligible_transition_status==1 & relative_duration < dur_transitioned, m
 
-// browse pid eligible_partner _mi_m relative_duration ever_transition dur_transitioned rel_type master_rel_type marst_imp marst_defacto min_dur max_dur
+// browse pid eligible_partner syear _mi_m relative_duration marst_imp eligible_transition_status dur_transitioned rel_type master_rel_type  marst_defacto min_dur max_dur eligible_transition_year eligible_rel_start_year eligible_rel_end_year
 
-capture label define rel_type 0 "Pre-Relationship" 1 "Married" 2 "Cohab" 3 "Attrited" 4 "Broke Up"
+label define rel_type 0 "Pre-Relationship" 1 "Married" 2 "Cohab" 3 "Attrited" 4 "Broke Up"
 label values rel_type rel_type
 
 tab rel_type, m
 mi estimate: proportion rel_type
 
 tab rel_type eligible_rel_status, row
-tab rel_type relative_duration if _mi_m!=0, m
+tab relative_duration rel_type if _mi_m!=0, m
 
 * number of children
 tab num_children_woman num_children_man if inlist(rel_type,1,2) & relative_duration>=0, m
