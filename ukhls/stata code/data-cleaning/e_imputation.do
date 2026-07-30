@@ -143,6 +143,7 @@ foreach var in dob xw_sex hiqual_fixed xw_ethn_dv xw_memorig xw_sampst eligible_
 	drop if `var' == . // most of these have no missing, but so educ and race are complete
 }
 
+
 mi set wide
 mi register imputed total_hours* work_hours* howlng* any_aid* aid_hours* employed* employment_status* jbstat* fimnlabgrs_dv* current_parent_status* nkids_dv* age_youngest_child* partnered_imp* marital_status_imp* npens_dv* num_parents_hh* fihhmngrs_dv* gor_dv* tenure_dv* master_religion* disabled_est* sr_health* xw_anychild_dv father_educ mother_educ father_empstatus mother_empstatus family_structure birth_timing_rel ever_parent family_structure14_det year_first_birth_imp // jbhrs*
 

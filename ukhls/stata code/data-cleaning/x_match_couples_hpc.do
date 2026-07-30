@@ -2,7 +2,7 @@ set maxvar 10000
 
 cd "/home/kmcerlea/stage/Life Course"
 
-/*
+
 use "created data/stata/ukhls_couples_imputed_long.dta", clear
 
 ********************************************************************************
@@ -428,22 +428,23 @@ replace duration = duration_rec - 2
 label values duration duration_rec . 
 
 mi passive: gen dur_transitioned=.
-mi passive: replace dur_transitioned = year_transitioned - eligible_rel_start_year
+mi passive: replace dur_transitioned = eligible_transition_year - eligible_rel_start_year
 
-tab year_transitioned ever_transition, m
+tab eligible_transition_year eligible_transition_status, m
+tab dur_transitioned eligible_transition_status, m
 
 **# Bookmark #2
 // temp save
 save "created data/stata/ukhls_couples_imputed_long_recoded.dta", replace
 
-only run through here for now, want to check this because I know this part gets problematic...
-might go back to hpc to do the dissolved / attrit versions of the variables? but need to see
-
-tab marital_status_defacto if int_year >= year_transitioned & int_year < = eligible_rel_end_year & imputed==0, m
-tab marital_status_imp if int_year >= year_transitioned & int_year < = eligible_rel_end_year, m // so generally already fine
+tab marital_status_defacto if int_year >= eligible_transition_year & int_year < = eligible_rel_end_year & imputed==0, m
+tab marital_status_imp if int_year >= eligible_transition_year & int_year < = eligible_rel_end_year, m // so generally already fine. the problem is. some people are OBSERVEd cohabiting in year they transition because of timing. need to account for this. think use OBSERVEd status where possible (if it makes sense)
+tab marital_status_imp if int_year >= (eligible_transition_year + 1) & int_year < = eligible_rel_end_year, m
 tab marital_status_imp if duration >= dur_transitioned & duration < = max_dur, m // so generally already fine
-tab marital_status_imp if int_year <= year_transitioned & int_year > = eligible_rel_start_year & ever_transition==1, m // some of these are married??
-tab marital_status_imp if duration <= dur_transitioned & duration >= min_dur & ever_transition==1, m // some of these are married??
+tab marital_status_imp if duration >= (dur_transitioned + 1) & duration < = max_dur, m 
+tab marital_status_imp if int_year <= eligible_transition_year & int_year > = eligible_rel_start_year & eligible_transition_status==1, m // some of these are married??
+tab marital_status_imp if duration <= dur_transitioned & duration >= min_dur & eligible_transition_status==1, m // some of these are married??
+tab marital_status_imp if duration == dur_transitioned, m // good counter examples: 95282, 142882
 
 capture label drop status
 label define status 0 "ended" 1 "ongoing" 99 "attrit"
@@ -455,25 +456,44 @@ tab marital_status_imp if duration >= min_dur & duration <= max_dur , m
 
 mi passive: gen rel_type=.
 mi passive: replace rel_type = 0 if inlist(duration,-2,-1) // pre-rel
-mi passive: replace rel_type = 1 if ever_transition==0 & marital_status_imp==1 & duration >= min_dur & duration <= max_dur
-mi passive: replace rel_type = 1 if ever_transition==1 & duration >= dur_transitioned & duration <= max_dur // married, post transition
+mi passive: replace rel_type = 1 if eligible_transition_status==0 & marital_status_imp==1 & duration >= min_dur & duration <= max_dur
+mi passive: replace rel_type = 1 if eligible_transition_status==1 & duration == dur_transitioned & marital_status_imp==1 // if observed married, mark as married
+mi passive: replace rel_type = 1 if eligible_transition_status==1 & duration > dur_transitioned & duration <= max_dur // married, post transition
 mi passive: replace rel_type = 1 if duration==0 & marital_status_imp==1
 mi passive: replace rel_type = 1 if rel_type==. & duration==0 & marital_status_imp[_n+1]==1 & pidp==pidp[_n+1]
 mi passive: replace rel_type = 1 if rel_type==. & marital_status_imp==1 & int_year >= eligible_rel_start_year & int_year <= eligible_rel_end_year
-mi passive: replace rel_type = 2 if ever_transition==0 & marital_status_imp==2 & duration >= min_dur & duration <= max_dur
-mi passive: replace rel_type = 2 if ever_transition==1 & duration <= dur_transitioned & duration >= min_dur // pre transition
+
+mi passive: replace rel_type = 2 if eligible_transition_status==0 & marital_status_imp==2 & duration >= min_dur & duration <= max_dur
+mi passive: replace rel_type = 2 if eligible_transition_status==1 & duration == dur_transitioned & marital_status_imp==2 // if observed cohab in this year, mark as cohab
+mi passive: replace rel_type = 2 if eligible_transition_status==1 & duration == dur_transitioned & inrange(marital_status_imp,3,6) // if any other status besides married, say cohab
+mi passive: replace rel_type = 2 if eligible_transition_status==1 & duration < dur_transitioned & duration >= min_dur // pre transition
 mi passive: replace rel_type = 2 if duration==0 & marital_status_imp==2
 mi passive: replace rel_type = 2 if rel_type==. & duration==0 & marital_status_imp[_n+1]==2 & pidp==pidp[_n+1]
 mi passive: replace rel_type = 2 if rel_type==. & marital_status_imp==2 & int_year >= eligible_rel_start_year & int_year <= eligible_rel_end_year
+mi passive: replace rel_type = 2 if rel_type==. & duration==0 & marital_status_imp==6 // so if it's first duration and never married, has to be cohab
+mi passive: replace rel_type = 2 if rel_type==. & duration==1 & max_dur>=1 & marital_status_imp==6 // so if it's first duration and never married, has to be cohab
+
 mi passive: replace rel_type = 3 if duration > max_dur & eligible_rel_status==1 // intact but past end of relationship
 mi passive: replace rel_type = 3 if duration > max_dur & eligible_rel_status==99 // estimated attrition
 mi passive: replace rel_type = 3 if duration > max_dur & eligible_rel_status==. // estimated attrition
 mi passive: replace rel_type = 4 if duration > max_dur & eligible_rel_status==0 // past end of relationship and designated ended
-mi passive: replace rel_type = rel_type[_n-1] if rel_type==. & duration >= min_dur & duration <=max_dur & pidp==pidp[_n-1]
+
+mi passive: replace rel_type = rel_type[_n-1] if rel_type==. & duration >= min_dur & duration <=max_dur & pidp==pidp[_n-1] & rel_type[_n-1]!=0
 mi passive: replace rel_type = rel_type[_n+1] if rel_type==. & duration >= 0 & duration <=max_dur & pidp==pidp[_n+1]
+
+// really struggling to fill in the last lingering relationship types... last line of code doesn't work to fill in all unless reverse sorted, hence this step
+gsort pidp eligible_partner _mi_m -duration 
+// browse pidp eligible_partner duration _mi_m rel_type
+mi passive: replace rel_type = rel_type[_n-1] if rel_type==. & duration <=max_dur & pidp==pidp[_n-1] & rel_type[_n-1]!=0
+
+sort pidp eligible_partner _mi_m duration 
+mi passive: replace rel_type = rel_type[_n+1] if rel_type==. & duration >= 0 & duration <=max_dur & pidp==pidp[_n+1]
+mi passive: replace rel_type = rel_type[_n-1] if rel_type==. & duration >= 0 & duration <=max_dur & pidp==pidp[_n-1] & rel_type[_n-1]!=0
 
 // tab rel_type if imputed==1, m
 // browse pidp eligible_partner marital_status_imp rel_type duration min_dur max_dur int_year eligible_rel_start_year eligible_rel_end_year eligible_rel_status orig_record total_hours // if inlist(pidp,510699,7731844,30620522,89355405,225385325)
+// browse pidp eligible_partner int_year duration marital_status_imp eligible_transition_status eligible_transition_year dur_transitioned eligible_rel_start_year eligible_rel_end_year eligible_rel_status duration_rec rel_type min_dur max_dur
+// tab  marital_status_imp rel_type, row
 
 label define rel_type 0 "Pre-Relationship" 1 "Married" 2 "Cohab" 3 "Attrited" 4 "Broke Up"
 label values rel_type rel_type
@@ -481,7 +501,10 @@ label values rel_type rel_type
 tab rel_type, m
 mi estimate: proportion rel_type
 
+mi passive: replace rel_type = 2 if duration==0 & inlist(rel_type,3,4) & inrange(marital_status_imp,3,6)
+
 tab rel_type eligible_rel_status, row
+tab duration rel_type if _mi_m!=0, m
 
 * number of children
 tab num_children_woman num_children_man if inlist(rel_type,1,2) & duration>=0, m
@@ -521,6 +544,10 @@ mi estimate: proportion family_type
 
 tab family_type rel_type
 
+**# Bookmark #3
+// temp save
+save "created data/stata/ukhls_couples_imputed_long_recoded.dta", replace
+
 // check
 inspect woman_hw_share if couple_hw_total == 0 & imputed==1 // so yes, these are missing when couple HW total is 0 because can't divide by 0, will remove from below
 inspect hw_terc_woman if housework_woman == 0 & imputed==1 // I only did for women with hW hours. so these missings also make sense
@@ -529,9 +556,8 @@ foreach var in ft_pt_woman overwork_woman ft_pt_man overwork_man couple_work cou
 	// inspect `var' if _mi_m != 0  
 	assert `var' != . if _mi_m != 0  
 } 
-*/
 
-use "created data/stata/ukhls_couples_imputed_long_recoded.dta", clear
+// use "created data/stata/ukhls_couples_imputed_long_recoded.dta", clear
 
 // designate that relationship dissolved and create versions of all variables that stop at this point
 foreach var in ft_pt_woman overwork_woman ft_pt_man overwork_man ft_pt_det_woman ft_pt_det_man couple_work couple_work_ow_detailed couple_work_ow couple_hw couple_hw_hrs couple_hw_hrs_alt couple_hw_hrs_combo couple_num_children_gp family_type{
