@@ -40,15 +40,34 @@ sort pid syear
 ********************************************************************************
 * Sex
 // cpf uses from ppathl - sex_pl (this is the only one I have as well)
-tab sex_pl, m // okay just 21 missing
+tab sex_pl, m // okay just 16 missing
 
 * Age
 gen age = syear-birthyr_pl if birthyr_pl!=.
-tab age, m // 1.46% missing
+tab age, m // 1.55% missing
 
 browse pid syear birthyr_pl
 unique pid
 unique pid birthyr_pl // ever missing for one year, but not another? no..
+
+* Easier to use sample type indicator (check this July 2026)
+label values psample_pl psample
+
+gen sample_type = .
+replace sample_type = 1 if inrange(psample_pl,1,14)
+replace sample_type = 1 if inrange(psample_pl,20,23)
+replace sample_type = 1 if inlist(psample_pl,27,31)
+replace sample_type = 2 if inlist(psample_pl,15,16,25,26,28,29,32,33)
+replace sample_type = 3 if inlist(psample_pl,17,18,19,24,30)
+
+label define sample_type 1 "core" 2 "migrant" 3 "refugee"
+label values sample_type sample_type
+
+tab sample_type, m
+tab psample_pl sample_type, m
+
+// histogram eligible_rel_start_year, width(1)
+// histogram eligible_rel_start_year if sample_type!=3, width(1)
 
 * Education
 // Years of education - cpf uses d11109 from pequiv, I renamed yrs_educ_cnef. there is also yrs_educ_pg
@@ -1197,7 +1216,7 @@ tabstat housework_weekdays errands_weekdays repair_weekdays childcare_weekdays, 
 browse pid sex_pl syear partnered_total housework_weekdays housework_saturdays housework_sundays repair_weekdays errands_weekdays // note that weekdays have been asked always, sat and sun inconsistent and generally in odd years only
 
 // Core HW
-tab housework_weekdays if status_pl==1, m // about 4.5% missing if in sample
+tab housework_weekdays if status_pl==1, m // about 3% missing if in sample
 tab housework_saturdays if status_pl==1, m // more than half missing
 tab housework_sundays if status_pl==1, m // more than half missing
 
@@ -1416,10 +1435,10 @@ save "$created_data/gsoep_couple_data_recoded.dta", replace
 **# Do I want to create any of the fixed variables here?
 ********************************************************************************
 // Education (following UKHLS)
-unique pid if status_pl==1 // 25582
-unique pid edu4 if status_pl==1 // 29003
-unique pid isced97_pg if status_pl==1 // 29419
-unique pid yrs_educ_pg if status_pl==1 // 29665
+unique pid if status_pl==1 // 19856
+unique pid edu4 if status_pl==1 //  23236
+unique pid isced97_pg if status_pl==1 // 23645
+unique pid yrs_educ_pg if status_pl==1 // 23894
 
 browse pid syear status_pl edu4 isced97_pg yrs_educ_pg // pid 2802 = good example of change
 
@@ -1519,7 +1538,7 @@ save "$created_data/gsoep_couple_data_recoded.dta", replace
 // use "$created_data/gsoep_couple_data_recoded.dta", clear
 
 // let's do a check of the variables I either will use for analysis or will use to impute, so I can be sure I a. properly impute and b. properly recoded
-misstable summarize weekly_work_hrs housework_weekdays housework_saturdays housework_sundays repair_weekdays repair_saturdays repair_sundays errands_weekdays errands_saturdays errands_sundays childcare_weekdays childcare_saturdays childcare_sundays aid_in_hh_hl gross_income_lm net_income_lm earnings_gross_py_cnef earnings_gross_t_cnef employment emplst_pg employed_binary edu4 isced97_pg yrs_educ_pg edu4_fixed isced97_fixed yrs_educ_fixed any_births_bh kidsu18_hh age_youngest_child partnered_total marst_defacto hh_income_net_monthly hh_gross_income_py_cnef hh_gross_income_t_cnef hh_net_income_py_cnef hh_net_income_t_cnef num_65up_hh num_parent_in_hh any_parent_in_hh born_in_germany where_born_ew where_born_state where_1989_ew country_born_pl global_region_born nationality_pb nationality_region nationality_fixed nat_region_fixed father_educ mother_educ who_lived_with yrs_bio_parent yrs_live_mom yrs_live_dad yrs_live_other where_germany_pl federal_state region_type live_fam_bp housing_status home_owner religious_affiliation religion_est retirement_yr disability_yn disability_amount self_reported_health birthyr_pl first_birth_year eligible_rel_start_year eligible_rel_end_year eligible_rel_status eligible_rel_no psample_pl status_pl survey_status_pb sex_pl, all // so the >. will also help me understand if any of my lingering .n / .s etc remain, because that is where the alphabet missing go
+misstable summarize weekly_work_hrs housework_weekdays housework_saturdays housework_sundays repair_weekdays repair_saturdays repair_sundays errands_weekdays errands_saturdays errands_sundays childcare_weekdays childcare_saturdays childcare_sundays aid_in_hh_hl gross_income_lm net_income_lm earnings_gross_py_cnef earnings_gross_t_cnef employment emplst_pg employed_binary edu4 isced97_pg yrs_educ_pg edu4_fixed isced97_fixed yrs_educ_fixed any_births_bh kidsu18_hh age_youngest_child partnered_total marst_defacto hh_income_net_monthly hh_gross_income_py_cnef hh_gross_income_t_cnef hh_net_income_py_cnef hh_net_income_t_cnef num_65up_hh num_parent_in_hh any_parent_in_hh born_in_germany where_born_ew where_born_state where_1989_ew country_born_pl global_region_born nationality_pb nationality_region nationality_fixed nat_region_fixed father_educ mother_educ who_lived_with yrs_bio_parent yrs_live_mom yrs_live_dad yrs_live_other where_germany_pl federal_state region_type live_fam_bp housing_status home_owner religious_affiliation religion_est retirement_yr disability_yn disability_amount self_reported_health birthyr_pl first_birth_year eligible_rel_start_year eligible_rel_end_year eligible_rel_status eligible_rel_no psample_pl status_pl survey_status_pb sex_pl, all showzeros // so the >. will also help me understand if any of my lingering .n / .s etc remain, because that is where the alphabet missing go
 
 preserve
 

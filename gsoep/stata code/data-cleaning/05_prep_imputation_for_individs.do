@@ -20,7 +20,7 @@
 use "$created_data/gsoep_couple_data_recoded.dta", clear
 
 tab ever_int, m // these respondents will never have data upon which to base the imputation
-unique pid, by(ever_int) // about 8.6%
+unique pid, by(ever_int) // about 8.2%
 browse pid eligible_partner syear sex_pl psample_pl born_in_germany weekly_work_hrs housework_weekdays edu4_fixed if ever_int==0 // so, we do get info from ppathl and other bio file (which I don't understand) as well as HH info, which makes sense
 tab survey_status_pl if ever_int==0, m // most are 30s: Persons In Successfully Interviewed HH Without Individual Interview or 40: Person in non completed gross HH
 
@@ -30,9 +30,9 @@ drop if ever_int==0
 * Rectangularize
 ********************************************************************************
 * want these uniques to match
-unique pid // 25602 192991
-unique pid eligible_partner // 27100 192991
-unique eligible_couple_id // 15791. one problem with doing couple ID the way I did previously (so it matches regardless of who is pid and who is partner), is that this won't work for fill in, because I am imputing at individual level, so need rows for all pids - BUT because pids can contribute multiple relationships, needs to be by relationship. so create new couple id to use just for these purposes and will retain original as well
+unique pid // 19876 172820
+unique pid eligible_partner // 21403 172820
+unique eligible_couple_id // 12823. one problem with doing couple ID the way I did previously (so it matches regardless of who is pid and who is partner), is that this won't work for fill in, because I am imputing at individual level, so need rows for all pids - BUT because pids can contribute multiple relationships, needs to be by relationship. so create new couple id to use just for these purposes and will retain original as well
 
 egen couple_id_unique = group(pid eligible_partner)
 unique couple_id_unique
@@ -48,8 +48,11 @@ unique couple_id_unique, by(relative_duration)
 bysort couple_id_unique: egen rowcount = count(relative_duration)
 tab rowcount, m // all should be 15
 
+unique pid eligible_partner
+unique couple_id_unique
+
 // pull through fixed variables // couple_id_unique
-foreach var in pid cid eligible_couple_id eligible_partner eligible_rel_start_year eligible_rel_end_year eligible_rel_status eligible_rel_no min_dur max_dur birthyr_pl firstyr_contact_pl firstyr_survey_pl first_couple_year lastyr_contact_pl lastyr_survey_pl last_couple_year edu4_fixed isced97_fixed yrs_educ_fixed born_in_germany where_born_ew where_born_state where_1989_ew country_born_pl global_region_born nationality_fixed nat_region_fixed any_births_bh sumkids first_birth_year last_birth_year psample_pl sex_pl ever_transition transition_year master_rel_type1 master_how_end1 master_start_yr1 master_end_yr1 master_rel_type2 master_how_end2 master_start_yr2 master_end_yr2 master_rel_type3 master_how_end3 master_start_yr3 master_end_yr3 master_rel_type4 master_how_end4 master_start_yr4 master_end_yr4 master_rel_type5 master_how_end5 master_start_yr5 master_end_yr5 master_rel_type6 master_how_end6 master_start_yr6 master_end_yr6 master_rel_type7 master_how_end7 master_start_yr7 master_end_yr7 master_rel_type8 master_how_end8 master_start_yr8 master_end_yr8 master_rel_type9 master_how_end9 master_start_yr9 master_end_yr9 master_rel_type10 master_how_end10 master_start_yr10 master_end_yr10 father_educ mother_educ who_lived_with yrs_bio_parent yrs_live_mom yrs_live_dad yrs_live_other retirement_yr any_mpf num_religion edu4_change isced_change yrs_educ_change ever_int biovalid_bh{
+foreach var in pid cid eligible_couple_id eligible_partner eligible_rel_start_year eligible_rel_end_year eligible_rel_status eligible_rel_no eligible_rel_lc_flag eligible_rel_miss_flag eligible_rel_est_flag min_dur max_dur current_rel_left_censored current_rel_left_censored_sp both_end_missing birthyr_pl firstyr_contact_pl firstyr_survey_pl first_couple_year lastyr_contact_pl lastyr_survey_pl last_couple_year edu4_fixed isced97_fixed yrs_educ_fixed born_in_germany where_born_ew where_born_state where_1989_ew country_born_pl global_region_born nationality_fixed nat_region_fixed any_births_bh sumkids first_birth_year last_birth_year psample_pl sex_pl eligible_transition_status eligible_transition_year master_rel_type1 master_how_end1 master_start_yr1 master_end_yr1 master_censor1 master_left_censored1 master_rel_type2 master_how_end2 master_start_yr2 master_end_yr2 master_censor2 master_left_censored2 master_rel_type3 master_how_end3 master_start_yr3 master_end_yr3 master_censor3 master_left_censored3 master_rel_type4 master_how_end4 master_start_yr4 master_end_yr4 master_censor4 master_left_censored4 master_rel_type5 master_how_end5 master_start_yr5 master_end_yr5 master_censor5 master_left_censored5 master_rel_type6 master_how_end6 master_start_yr6 master_end_yr6 master_censor6 master_left_censored6 master_rel_type7 master_how_end7 master_start_yr7 master_end_yr7 master_censor7 master_left_censored7 master_rel_type8 master_how_end8 master_start_yr8 master_end_yr8 master_censor8 master_left_censored8 master_rel_type9 master_how_end9 master_start_yr9 master_end_yr9 master_censor9 master_left_censored9 master_rel_type10 master_how_end10 master_start_yr10 master_end_yr10 master_censor10 master_left_censored10 father_educ mother_educ who_lived_with yrs_bio_parent yrs_live_mom yrs_live_dad yrs_live_other retirement_yr any_mpf num_religion edu4_change isced_change yrs_educ_change ever_int biovalid_bh{
 	bysort couple_id_unique (`var'): replace `var'=`var'[1] if `var'==.
 }
 
@@ -57,7 +60,7 @@ replace syear = eligible_rel_start_year + relative_duration if syear==.
 replace age = syear - birthyr_pl if age==.
 
 sort pid syear
-browse pid eligible_partner syear age birthyr_pl partnered_total eligible_rel_start_year eligible_rel_end_year eligible_rel_no relative_duration eligible_couple_id _fillin
+browse pid eligible_partner syear age birthyr_pl partnered_total eligible_rel_start_year eligible_rel_end_year eligible_rel_no relative_duration eligible_couple_id min_dur max_dur _fillin weekly_work_hrs housework_weekdays status_pl partner_id_pl
 
 ********************************************************************************
 * Now create some variables now that rectangularized
@@ -112,11 +115,13 @@ replace in_rel_year = 1 if syear>=eligible_rel_start_year & syear<=eligible_rel_
 tab marst_defacto if in_rel_year==1, m
 tab partnered_pl if in_rel_year==1, m
 
+/*
 gen eligible_rel_type=.
 forvalues r=1/10{
 	replace eligible_rel_type = master_rel_type`r' if eligible_rel_start_year == master_start_yr`r' & eligible_rel_end_year == master_end_yr`r'
 }
 label values eligible_rel_type rel_type // this isn't working, especially because I change start / end dates for marriage / cohab (and I need to handle that transition using the transition year info I have). I do that post imputation anyway
+*/
 
 gen marst_imp = marst_defacto 
 capture label define marst_defacto 1 "Married" 2 "Partnered" 3 "Never Partnered"  4 "Divorced" 5 "Widowed"
@@ -195,7 +200,7 @@ save "$created_data/gsoep_couples_alldurs_long.dta", replace
 ********************************************************************************
 use "$created_data/gsoep_couples_alldurs_long.dta", clear
 
-global keep_fixed "sex_pl birthyr_pl firstyr_contact_pl firstyr_survey_pl lastyr_contact_pl psample_pl lastyr_survey_pl country_born_pl eligible_rel_start_year eligible_rel_end_year eligible_rel_status eligible_rel_no ever_transition transition_year min_dur max_dur first_couple_year last_couple_year ever_int sumkids any_mpf born_in_germany where_born_ew where_born_state where_1989_ew global_region_born mother_educ father_educ yrs_bio_parent yrs_live_mom yrs_live_dad yrs_live_other who_lived_with first_birth_year last_birth_year edu4_fixed isced97_fixed yrs_educ_fixed nat_region_fixed nationality_fixed ever_parent birth_timing_rel"
+global keep_fixed "sex_pl birthyr_pl firstyr_contact_pl firstyr_survey_pl lastyr_contact_pl psample_pl lastyr_survey_pl country_born_pl eligible_rel_start_year eligible_rel_end_year eligible_rel_status eligible_rel_no eligible_rel_lc_flag eligible_rel_miss_flag eligible_rel_est_flag current_rel_left_censored current_rel_left_censored_sp both_end_missing eligible_transition_status eligible_transition_year min_dur max_dur first_couple_year last_couple_year ever_int sumkids any_mpf born_in_germany where_born_ew where_born_state where_1989_ew global_region_born mother_educ father_educ yrs_bio_parent yrs_live_mom yrs_live_dad yrs_live_other who_lived_with first_birth_year last_birth_year edu4_fixed isced97_fixed yrs_educ_fixed nat_region_fixed nationality_fixed ever_parent birth_timing_rel biovalid_bh any_births_bh retirement_yr"
 
 global keep_time "where_germany_pl survey_status_pl status_pl employment self_reported_health disability_yn disability_amount religious_affiliation errands_sundays housework_saturdays housework_sundays childcare_saturdays childcare_sundays repair_saturdays errands_weekdays housework_weekdays childcare_weekdays repair_weekdays errands_saturdays emplst_pg isced97_pg yrs_educ_pg nationality_pb survey_status_pb earnings_gross_t_cnef hh_gross_income_t_cnef hh_net_income_t_cnef live_fam_bp aid_in_hh_hl housing_status federal_state kidsu18_hh num_65up_hh age_youngest_child region_type age edu4 nationality_region home_owner marst_defacto partnered_total religion_est employed_binary weekly_work_hrs gross_income_lm net_income_lm hh_income_net_monthly repair_sundays any_outside_help num_parent_in_hh any_parent_in_hh current_parent_status in_rel_year marst_imp partnered_imp retired_yn full_status_pl" // hh_gross_income_py_cnef hh_net_income_py_cnef earnings_gross_py_cnef 
 
@@ -214,7 +219,7 @@ unique pid, by(num_elig_partners)
 
 sort pid eligible_partner syear
 sort pid syear _fillin
-browse pid eligible_partner syear _fillin full_status_pl status_pl firstyr_contact_pl firstyr_survey_pl lastyr_contact_pl lastyr_survey_pl housework_weekdays weekly_work_hrs employment edu4 if pid==2802
+browse pid eligible_partner syear relative_duration _fillin full_status_pl status_pl firstyr_contact_pl firstyr_survey_pl lastyr_contact_pl lastyr_survey_pl housework_weekdays weekly_work_hrs employment edu4 if pid==2802
 browse pid eligible_partner syear relative_duration _fillin full_status_pl status_pl firstyr_contact_pl firstyr_survey_pl lastyr_contact_pl lastyr_survey_pl housework_weekdays weekly_work_hrs employment edu4 if num_elig_partners > 1
 
 // how can I first flag if they have two rows for same year, one via fillin, one not.
@@ -259,6 +264,8 @@ replace full_status_pl = 3 if full_status_pl==. // unknown no sample status / no
 ********************************************************************************
 * Let's do the missing again now that rectangularized (and some new variables)
 ********************************************************************************
+misstable summarize weekly_work_hrs housework_weekdays housework_saturdays housework_sundays repair_weekdays repair_saturdays repair_sundays errands_weekdays errands_saturdays errands_sundays childcare_weekdays childcare_saturdays childcare_sundays aid_in_hh_hl gross_income_lm net_income_lm earnings_gross_t_cnef employment emplst_pg employed_binary edu4 isced97_pg yrs_educ_pg edu4_fixed isced97_fixed yrs_educ_fixed ever_parent current_parent_status kidsu18_hh age_youngest_child partnered_total marst_defacto partnered_imp marst_imp hh_income_net_monthly hh_gross_income_t_cnef hh_net_income_t_cnef num_65up_hh num_parent_in_hh any_parent_in_hh born_in_germany where_born_ew where_born_state where_1989_ew country_born_pl global_region_born nationality_pb nationality_region nationality_fixed nat_region_fixed father_educ mother_educ who_lived_with yrs_bio_parent yrs_live_mom yrs_live_dad yrs_live_other where_germany_pl federal_state region_type live_fam_bp housing_status home_owner religious_affiliation religion_est retired_yn retirement_yr disability_yn disability_amount self_reported_health birthyr_pl first_birth_year birth_timing_rel eligible_rel_start_year eligible_rel_end_year eligible_rel_status eligible_rel_no psample_pl full_status_pl survey_status_pb sex_pl, all showzeros
+
 /*
 preserve
 
@@ -305,6 +312,7 @@ browse relative_duration duration
 tab duration, m
 
 // confirm AGAIN these are truly unique
+unique pid eligible_partner
 unique pid eligible_partner $keep_fixed
 
 // drop rogue variables I wanted above

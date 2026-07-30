@@ -22,6 +22,7 @@
 /*
 use "$created_data/ppathl_partnership_history.dta", clear
 unique pid // 130434 5217360 - this is rectangularized so everyone has 40 years of records
+// Not sure why I don't use this file after I did all of that work to be honest? I guess the below is the starting point for this file, so makes sense I use as the starting point here? I think also makes it harder to check matches because already rectangularized, so here, I am compiling data that EXISTS to start.
 
 use "$temp/ppathl_partner_match_cleaned.dta", clear
 unique pid // 88288 598217 - this is restricted to partners
@@ -49,7 +50,7 @@ browse pid partnered_pl partner_id_pl syear ever_eligible max_eligible_rels num_
 keep if ever_eligible==1
 
 // need to copy info to all rows - for people with one relationship, this is easy, we just copy to all rows
-foreach var in eligible_couple_id eligible_rel_start_year eligible_rel_end_year eligible_rel_status eligible_partner eligible_rel_no ever_transition transition_year min_dur max_dur first_couple_year last_couple_year{
+foreach var in eligible_couple_id eligible_rel_start_year eligible_rel_end_year eligible_rel_status eligible_partner eligible_rel_no eligible_transition_status eligible_transition_year eligible_rel_lc_flag eligible_rel_miss_flag eligible_rel_est_flag eligible_couple_id min_dur max_dur first_couple_year last_couple_year{
 	bysort pid (`var'): replace `var' = `var'[1] if max_eligible_rels==1
 }
 
@@ -58,18 +59,18 @@ foreach var in eligible_couple_id eligible_rel_start_year eligible_rel_end_year 
 
 gsort pid -syear 
 
-foreach var in eligible_couple_id eligible_rel_start_year eligible_rel_end_year eligible_rel_status eligible_partner eligible_rel_no ever_transition transition_year min_dur max_dur first_couple_year last_couple_year{
+foreach var in eligible_couple_id eligible_rel_start_year eligible_rel_end_year eligible_rel_status eligible_partner eligible_rel_no eligible_transition_status eligible_transition_year eligible_rel_lc_flag eligible_rel_miss_flag eligible_rel_est_flag eligible_couple_id min_dur max_dur first_couple_year last_couple_year{
 	replace `var' = `var'[_n-1] if `var'==. & `var'[_n-1]!=. & pid==pid[_n-1] & max_eligible_rels > 1
 	// sort pid syear
 }
 
 sort pid syear // yes do this to get those remaining years
-foreach var in eligible_couple_id eligible_rel_start_year eligible_rel_end_year eligible_rel_status eligible_partner eligible_rel_no ever_transition transition_year min_dur max_dur first_couple_year last_couple_year{
+foreach var in eligible_couple_id eligible_rel_start_year eligible_rel_end_year eligible_rel_status eligible_partner eligible_rel_no eligible_transition_status eligible_transition_year eligible_rel_lc_flag eligible_rel_miss_flag eligible_rel_est_flag eligible_couple_id min_dur max_dur first_couple_year last_couple_year{
 	replace `var' = `var'[_n-1] if `var'==. & `var'[_n-1]!=. & pid==pid[_n-1] & max_eligible_rels > 1
 }
 
 assert eligible_rel_start_year!=.
-assert eligible_rel_end_year!=.
+// assert eligible_rel_end_year!=.
 // assert eligible_rel_status!=. // this is false - I think because not complete for everyone (this was true in UKHLS as well)
 assert eligible_partner!=.
 assert eligible_rel_no!=. // I fixed this
@@ -77,7 +78,8 @@ assert eligible_rel_no!=. // I fixed this
 // now generate a relationship duration so I know which years to keep
 generate relative_duration = syear - eligible_rel_start_year
 
-browse pid partnered_pl partner_id_pl syear relative_duration max_eligible_rels eligible_partner eligible_rel_start_year eligible_rel_end_year eligible_rel_status eligible_couple_id status_pl
+sort pid syear
+browse pid partnered_pl partner_id_pl syear relative_duration max_eligible_rels eligible_partner eligible_rel_start_year eligible_rel_end_year eligible_rel_status eligible_couple_id status_pl min_dur max_dur
 
 // keep a few durations around 0 to 10
 keep if relative_duration >=-2
@@ -85,8 +87,8 @@ keep if relative_duration <=13 // updating this to 13 for now so I can fill in t
 
 save "$temp/gsoep_couple_sample_base.dta", replace // here we save the file of couples for which we will now merge the rest of the data onto.
 
-unique pid // 28032
-unique pid eligible_partner // 29531
+unique pid // 28032 / 21661 (updated to remove LC)
+unique pid eligible_partner // 29531 / 23189 (updated to remove LC)
 
 ********************************************************************************
 **# Now we start merging on all of the gsoep files
@@ -156,7 +158,7 @@ drop _merge
 // files just on pid
 merge m:1 pid using "$temp/bioparen_cleaned.dta"
 drop if _merge==2
-tab status_pl _merge, m row // this file is tricky bc we get coverage on non-sample years if ever did this, but some poeple never do the bio interview / have data here (they also like didn't update this data briefly) so the sample coverage is not 100% (but it's close - it's 98%)...and general coverage is 90% bc of the uniqueness
+tab status_pl _merge, m row // this file is tricky bc we get coverage on non-sample years if ever did this, but some poeple never do the bio interview / have data here (they also like didn't update this data briefly) so the sample coverage is not 100% (but it's close - it's 99%)...and general coverage is 90% bc of the uniqueness
 drop _merge
 
 merge m:1 pid using "$created_data/consolidated_rel_history.dta"
@@ -201,7 +203,7 @@ drop if _merge==2 // same here as above bc it's HH info
 drop _merge
 
 // confirm still matches above. it does
-unique pid // 28032
-unique pid eligible_partner // 29531
+unique pid // 21661
+unique pid eligible_partner // 23189
 
 save "$temp/gsoep_couple_data_compiled.dta", replace

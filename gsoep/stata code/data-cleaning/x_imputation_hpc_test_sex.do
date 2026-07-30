@@ -13,10 +13,16 @@
 * This file takes recoded data from individuals in couples (created step 5)
 * and imputes missing years / variables
 
+set maxvar 10000
+
+cd "/home/kmcerlea/stage/Life Course"
+
+use "input data/gsoep_couples_alldurs_wide.dta", clear
+
 ********************************************************************************
 * Final file clean-up - remove people with missing on core CORE variables
 ********************************************************************************
-use "$created_data/gsoep_couples_alldurs_wide.dta", clear
+// use "$created_data/gsoep_couples_alldurs_wide.dta", clear
 
 // prep work - data
 egen nmis_age = rmiss(age0 age1 age2 age3 age4 age5 age6 age7 age8 age9 age10 age11 age12 age13 age14)
@@ -59,6 +65,7 @@ forvalues d=0/14{
 	replace full_status_pl`d' = 4 if full_status_pl`d'==-1
 	label values full_status_pl`d' full_status
 }
+
 
 // alt sex order so can test women first in imputation
 label define sex_orig 1 "male" 2 "female"
@@ -177,6 +184,7 @@ mi impute chained
 (pmm, knn(5) include (        repair_weekdays8 repair_weekdays9 repair_weekdays10 repair_weekdays11 repair_weekdays12 repair_weekdays13               housework_weekdays14 housework_saturdays14 housework_sundays14 weekly_work_hrs14 repair_saturdays14 repair_sundays14 errands_weekdays14 errands_saturdays14 errands_sundays14 i.aid_in_hh_hl14 i.employment14 gross_income_lm14 earnings_gross_t_cnef14 kidsu18_hh14 age_youngest_child14 i.marst_imp14 hh_gross_income_t_cnef14 i.federal_state14 i.num_65up_hh14 i.any_parent_in_hh14 i.urban_region14 i.housing_status14 i.religious_affiliation14 i.disability_yn14 i.self_reported_health14 i.retired_yn14 i.current_parent_status14 i.full_status_pl14 i.father_educ i.mother_educ i.where_born_state yrs_bio_parent yrs_live_mom yrs_live_dad yrs_live_other)) repair_weekdays14
 
 
+
 /* Repair Work: Saturdays */
 (pmm, knn(5) include (              repair_saturdays1 repair_saturdays2 repair_saturdays3 repair_saturdays4 repair_saturdays5 repair_saturdays6         housework_weekdays0 housework_saturdays0 housework_sundays0 repair_weekdays0 weekly_work_hrs0 repair_sundays0 errands_weekdays0 errands_saturdays0 errands_sundays0 i.aid_in_hh_hl0 i.employment0 gross_income_lm0 earnings_gross_t_cnef0 kidsu18_hh0 age_youngest_child0 i.marst_imp0 hh_gross_income_t_cnef0 i.federal_state0 i.num_65up_hh0 i.any_parent_in_hh0 i.urban_region0 i.housing_status0 i.religious_affiliation0 i.disability_yn0 i.self_reported_health0 i.retired_yn0 i.current_parent_status0 i.full_status_pl0 i.father_educ i.mother_educ i.where_born_state yrs_bio_parent yrs_live_mom yrs_live_dad yrs_live_other)) repair_saturdays0
 (pmm, knn(5) include (             repair_saturdays0 repair_saturdays2 repair_saturdays3 repair_saturdays4 repair_saturdays5 repair_saturdays6 repair_saturdays7         housework_weekdays1 housework_saturdays1 housework_sundays1 repair_weekdays1 weekly_work_hrs1 repair_sundays1 errands_weekdays1 errands_saturdays1 errands_sundays1 i.aid_in_hh_hl1 i.employment1 gross_income_lm1 earnings_gross_t_cnef1 kidsu18_hh1 age_youngest_child1 i.marst_imp1 hh_gross_income_t_cnef1 i.federal_state1 i.num_65up_hh1 i.any_parent_in_hh1 i.urban_region1 i.housing_status1 i.religious_affiliation1 i.disability_yn1 i.self_reported_health1 i.retired_yn1 i.current_parent_status1 i.full_status_pl1 i.father_educ i.mother_educ i.where_born_state yrs_bio_parent yrs_live_mom yrs_live_dad yrs_live_other)) repair_saturdays1
@@ -266,6 +274,7 @@ mi impute chained
 (pmm, knn(5) include (        errands_sundays6 errands_sundays7 errands_sundays8 errands_sundays9 errands_sundays10 errands_sundays11 errands_sundays13 errands_sundays14             housework_weekdays12 housework_saturdays12 housework_sundays12 repair_weekdays12 repair_saturdays12 repair_sundays12 errands_weekdays12 errands_saturdays12 weekly_work_hrs12 i.aid_in_hh_hl12 i.employment12 gross_income_lm12 earnings_gross_t_cnef12 kidsu18_hh12 age_youngest_child12 i.marst_imp12 hh_gross_income_t_cnef12 i.federal_state12 i.num_65up_hh12 i.any_parent_in_hh12 i.urban_region12 i.housing_status12 i.religious_affiliation12 i.disability_yn12 i.self_reported_health12 i.retired_yn12 i.current_parent_status12 i.full_status_pl12 i.father_educ i.mother_educ i.where_born_state yrs_bio_parent yrs_live_mom yrs_live_dad yrs_live_other)) errands_sundays12
 (pmm, knn(5) include (        errands_sundays7 errands_sundays8 errands_sundays9 errands_sundays10 errands_sundays11 errands_sundays12 errands_sundays14              housework_weekdays13 housework_saturdays13 housework_sundays13 repair_weekdays13 repair_saturdays13 repair_sundays13 errands_weekdays13 errands_saturdays13 weekly_work_hrs13 i.aid_in_hh_hl13 i.employment13 gross_income_lm13 earnings_gross_t_cnef13 kidsu18_hh13 age_youngest_child13 i.marst_imp13 hh_gross_income_t_cnef13 i.federal_state13 i.num_65up_hh13 i.any_parent_in_hh13 i.urban_region13 i.housing_status13 i.religious_affiliation13 i.disability_yn13 i.self_reported_health13 i.retired_yn13 i.current_parent_status13 i.full_status_pl13 i.father_educ i.mother_educ i.where_born_state yrs_bio_parent yrs_live_mom yrs_live_dad yrs_live_other)) errands_sundays13
 (pmm, knn(5) include (        errands_sundays8 errands_sundays9 errands_sundays10 errands_sundays11 errands_sundays12 errands_sundays13               housework_weekdays14 housework_saturdays14 housework_sundays14 repair_weekdays14 repair_saturdays14 repair_sundays14 errands_weekdays14 errands_saturdays14 weekly_work_hrs14 i.aid_in_hh_hl14 i.employment14 gross_income_lm14 earnings_gross_t_cnef14 kidsu18_hh14 age_youngest_child14 i.marst_imp14 hh_gross_income_t_cnef14 i.federal_state14 i.num_65up_hh14 i.any_parent_in_hh14 i.urban_region14 i.housing_status14 i.religious_affiliation14 i.disability_yn14 i.self_reported_health14 i.retired_yn14 i.current_parent_status14 i.full_status_pl14 i.father_educ i.mother_educ i.where_born_state yrs_bio_parent yrs_live_mom yrs_live_dad yrs_live_other)) errands_sundays14
+
 
 
 /* Someone in HH Requires Care*/
@@ -579,305 +588,11 @@ mi impute chained
 (pmm, knn(5) include (i.where_born_state i.father_educ i.mother_educ yrs_bio_parent yrs_live_mom yrs_live_other)) yrs_live_dad
 (pmm, knn(5) include (i.where_born_state i.father_educ i.mother_educ yrs_bio_parent yrs_live_mom yrs_live_dad)) yrs_live_other
 
-= birthyr_pl i.born_in_germany i.global_region_born i.psample_pl i.edu4_fixed birth_timing_rel eligible_rel_no, by(sex_rev) chaindots add(10) rseed(12345) noimputed augment force showcommand // dryrun // noisily i.eligible_rel_start_year first_birth_year // skipnonconvergence(2)  burnin(5) 
+= birthyr_pl i.born_in_germany i.global_region_born i.psample_pl i.edu4_fixed birth_timing_rel eligible_rel_no, by(sex_rev) chaindots add(10) rseed(12345) noimputed augment force showcommand noisily // dryrun // noisily i.eligible_rel_start_year first_birth_year // skipnonconvergence(2) 
 
 ;
 #delimit cr
 
 // log close
 
-save "$created_data/gsoep_individs_imputed_wide_bysex", replace
-
-
-********************************************************************************
-********************************************************************************
-**# * Imputation descriptives
-********************************************************************************
-********************************************************************************
-use "$created_data/gsoep_individs_imputed_wide_bysex", clear
-
-********************************************************************************
-* Reshape back to long
-********************************************************************************
-/* from step 5:
-global keep_time "where_germany_pl survey_status_pl status_pl employment self_reported_health disability_yn disability_amount religious_affiliation errands_sundays housework_saturdays housework_sundays childcare_saturdays childcare_sundays repair_saturdays errands_weekdays housework_weekdays childcare_weekdays repair_weekdays errands_saturdays emplst_pg isced97_pg yrs_educ_pg nationality_pb survey_status_pb earnings_gross_t_cnef hh_gross_income_t_cnef hh_net_income_t_cnef live_fam_bp aid_in_hh_hl housing_status federal_state kidsu18_hh num_65up_hh age_youngest_child region_type age edu4 nationality_region home_owner marst_defacto partnered_total religion_est employed_binary weekly_work_hrs gross_income_lm net_income_lm hh_income_net_monthly repair_sundays any_outside_help num_parent_in_hh any_parent_in_hh current_parent_status in_rel_year marst_imp partnered_imp retired_yn full_status_pl" // hh_gross_income_py_cnef hh_net_income_py_cnef earnings_gross_py_cnef 
-*/
-
-mi reshape long $keep_time fillin duplicate_record urban_region, i(pid eligible_partner eligible_couple_id couple_id_unique) j(duration)
-
-mi convert flong
-
-browse couple_id pid eligible_partner full_status_pl weekly_work_hrs housework_weekdays housework_saturdays _mi_miss _mi_m _mi_id
-gen imputed=0
-replace imputed=1 if inrange(_mi_m,1,10)
-
-inspect weekly_work_hrs if imputed==0
-inspect weekly_work_hrs if imputed==1
-
-inspect housework_weekdays housework_saturdays if imputed==0
-inspect housework_weekdays housework_saturdays if imputed==1
-
-mi update
-
-// mi register regular n
-
-save "$created_data/gsoep_individs_imputed_long_bysex", replace
-
-********************************************************************************
-* Compare imputed to not
-********************************************************************************
-
-tabstat weekly_work_hrs housework_weekdays housework_saturdays housework_sundays repair_weekdays, by(imputed) stats(mean sd p50)
-tabstat weekly_work_hrs housework_weekdays housework_saturdays housework_sundays repair_weekdays if sex_pl==1, by(imputed) stats(mean sd p50)
-tabstat weekly_work_hrs housework_weekdays housework_saturdays housework_sundays repair_weekdays if sex_pl==2, by(imputed) stats(mean sd p50)
-
-tabstat weekly_work_hrs housework_weekdays housework_saturdays housework_sundays repair_weekdays repair_saturdays repair_sundays errands_weekdays errands_saturdays errands_sundays aid_in_hh_hl employment gross_income_lm earnings_gross_t_cnef kidsu18_hh age_youngest_child marst_imp num_65up_hh any_parent_in_hh hh_gross_income_t_cnef federal_state urban_region housing_status religious_affiliation disability_yn self_reported_health retired_yn where_born_state father_educ mother_educ yrs_bio_parent yrs_live_mom yrs_live_dad yrs_live_other, by(imputed) stats(mean sd p50) columns(statistics)
-
-histogram weekly_work_hrs, width(1)
-twoway (histogram weekly_work_hrs if imputed==0 & weekly_work_hrs <=100, width(2) color(blue%30)) (histogram weekly_work_hrs if imputed==1 & weekly_work_hrs <=100, width(2) color(red%30)), legend(order(1 "Observed" 2 "Imputed") rows(1) position(6)) xtitle("Weekly Employment Hours")
-twoway (histogram weekly_work_hrs if imputed==0 & sex_pl==1, width(2) color(blue%30)) (histogram weekly_work_hrs if imputed==1 & sex_pl==1, width(2) color(red%30)), legend(order(1 "Observed" 2 "Imputed") rows(1) position(6))
-twoway (histogram weekly_work_hrs if imputed==0 & sex_pl==2, width(2) color(blue%30)) (histogram weekly_work_hrs if imputed==1 & sex_pl==2, width(2) color(red%30)), legend(order(1 "Observed" 2 "Imputed") rows(1) position(6))
-
-histogram weekly_work_hrs if weekly_hrs_t1_focal>0, width(1)
-histogram housework_weekdays, width(1)
-twoway (histogram housework_weekdays if imputed==0 & housework_weekdays <=50, width(2) color(blue%30)) (histogram housework_weekdays if imputed==1 & housework_weekdays <=50, width(2) color(red%30)), legend(order(1 "Observed" 2 "Imputed") rows(1) position(6)) xtitle("Weekly Housework Hours")
-
-preserve
-
-collapse (mean) weekly_work_hrs housework_weekdays, by(duration imputed)
-
-twoway (line weekly_work_hrs duration if imputed==0 & duration >=2 & duration<=12) (line weekly_work_hrs duration if imputed==1 & duration >=2 & duration<=12), legend(order(1 "Observed" 2 "Imputed") rows(1) position(6)) ytitle("Weekly Employment Hours") title("Avg Employment Hours by Duration") xtitle("Marital Duration") // yscale(range(32 38))
-twoway (line housework_weekdays duration if imputed==0 & duration >=2 & duration<=12) (line housework_weekdays duration if imputed==1 & duration >=2 & duration<=12), legend(order(1 "Observed" 2 "Imputed") rows(1) position(6)) ytitle("Weekly Housework Hours") title("Avg Housework Hours by Duration") xtitle("Marital Duration") yscale(range(0 3)) ylabel(0(1)3)
-
-restore
-
-//
-preserve
-
-collapse (mean) weekly_work_hrs housework_weekdays, by(sex_pl duration imputed)
-
-// men
-twoway (line weekly_work_hrs duration if imputed==0 & sex_pl==1) (line weekly_work_hrs duration if imputed==1 & sex_pl==1), legend(order(1 "Observed" 2 "Imputed") rows(1) position(6))
-twoway (line housework_weekdays duration if imputed==0 & sex_pl==1) (line housework_weekdays duration if imputed==1 & sex_pl==1), legend(order(1 "Observed" 2 "Imputed") rows(1) position(6))
-
-// women
-twoway (line weekly_work_hrs duration if imputed==0 & sex_pl==2) (line weekly_work_hrs duration if imputed==1 & sex_pl==2), legend(order(1 "Observed" 2 "Imputed") rows(1) position(6))
-twoway (line housework_weekdays duration if imputed==0 & sex_pl==2) (line housework_weekdays duration if imputed==1 & sex_pl==2), legend(order(1 "Observed" 2 "Imputed") rows(1) position(6))
-
-restore
-
-********************************************************************************
-**# Going to make a table so I can compare the categorical variables
-********************************************************************************
-use "$created_data/gsoep_individs_imputed_long_bysex", clear
-
-gen relative_duration = duration - 2
-keep if relative_duration >=0 & relative_duration <=10
-
-tab employment, gen(emp) // 13
-tab marst_imp, gen(marst) // 5
-tab federal_state, gen(state_res) // 17
-tab housing_status, gen(house) // 4
-tab religious_affiliation, gen(religion) // 11
-tab self_reported_health, gen(health) // 5 
-tab where_born_state, gen(state_birth) // 17
-tab father_educ, gen(dad_educ) // 3
-tab mother_educ, gen(mom_educ) // 3
-
-putexcel set "$results/GSOEP_imputation_descriptives", replace
-putexcel B1:C1 = "Duration: All", merge
-putexcel D1:E1 = "Duration: 0", merge
-putexcel F1:G1 = "Duration: 5", merge
-putexcel H1:I1 = "Duration: 10", merge
-putexcel A2 = "Variable"
-putexcel B2 = ("Not Imputed") D2 = ("Not Imputed") F2 = ("Not Imputed") H2 = ("Not Imputed") 
-putexcel C2 = ("Imputed") E2 = ("Imputed") G2 = ("Imputed") I2 = ("Imputed")
-
-// Means
-putexcel A3 = "Paid Work Hours (Weekly)"
-putexcel A4 = "Housework (Weekdays)"
-putexcel A5 = "Housework (Saturdays)"
-putexcel A6 = "Housework (Sundays)"
-putexcel A7 = "Repair Work (Weekdays)"
-putexcel A8 = "Repair Work (Saturdays)"
-putexcel A9 = "Repair Work (Sundays)"
-putexcel A10 = "Errands (Weekdays)"
-putexcel A11 = "Errands (Saturdays)"
-putexcel A12 = "Errands (Sundays)"
-putexcel A13 = "Someone in HH requires care"
-putexcel A14 = "1 FT"
-putexcel A15 = "2 PT"
-putexcel A16 = "3 Training"
-putexcel A17 = "4 Marginally employed"
-putexcel A18 = "5 PT Retired"
-putexcel A19 = "6 Military (vol)"
-putexcel A20 = "7 Volunteering"
-putexcel A21 = "8 Disabled"
-putexcel A22 = "9 Not employed"
-putexcel A23 = "10 Internship / ST work"
-putexcel A24 = "11 Military (comp)"
-putexcel A25 = "12 Short-time work"
-putexcel A26 = "13 Retired"
-putexcel A27 = "Earnings (Monthly)"
-putexcel A28 = "Earnings (Annual)"
-putexcel A29 = "Number of children"
-putexcel A30 = "Age of youngest child"
-putexcel A31 = "1 Married"
-putexcel A32 = "2 Partnered"
-putexcel A33 = "3 Never Married"
-putexcel A34 = "4 Divorced"
-putexcel A35 = "5 Widowed"
-putexcel A36 = "Number of people aged 65+ in HH"
-putexcel A37 = "Coresidence with parents (YN)"
-putexcel A38 = "Family income"
-putexcel A39 = "Live: 1 Schleswig-Holstein"
-putexcel A40 = "Live: 2 Hamburg"
-putexcel A41 = "Live: 3 Niedersachsen"
-putexcel A42 = "Live: 4 Bremen"
-putexcel A43 = "Live: 5 Nordrhein-Westfalen"
-putexcel A44 = "Live: 6 Hessen"
-putexcel A45 = "Live: 7 Rheinland-Pfalz,Saarland"
-putexcel A46 = "Live: 8 Baden-Wuerttemberg"
-putexcel A47 = "Live: 9 Bayern"
-putexcel A48 = "Live: 10 Saarland"
-putexcel A49 = "Live: 11 West Berlin"
-putexcel A50 = "Live: 12 East Berlin"
-putexcel A51 = "Live: 13 Brandenburg"
-putexcel A52 = "Live: 14 Mecklenburg-Vorpommern"
-putexcel A53 = "Live: 15 Sachsen"
-putexcel A54 = "Live: 16 Sachsen-Anhalt"
-putexcel A55 = "Live: 17 Thueringen"
-putexcel A56 = "Lives in urban area"
-putexcel A57 = "1 Shared Housing"
-putexcel A58 = "2 Sub-tenant"
-putexcel A59 = "3 Main-tenant"
-putexcel A60 = "4 Owner"
-putexcel A61 = "1 Catholic"
-putexcel A62 = "2 Protestant"
-putexcel A63 = "3 Other Christian"
-putexcel A64 = "4 Islam"
-putexcel A65 = "5 Other"
-putexcel A66 = "6 Non-denominational"
-putexcel A67 = "7 Orthodox Christian"
-putexcel A68 = "8 Islam"
-putexcel A69 = "9 Shiite"
-putexcel A70 = "10 Alevi"
-putexcel A71 = "11 Multiple"
-putexcel A72 = "Disability status (Y/N)"
-putexcel A73 = "Retired (Y/N)"
-putexcel A74 = "1 Very Good"
-putexcel A75 = "2 Good"
-putexcel A76 = "3 Satisfactory"
-putexcel A77 = "4 Poor"
-putexcel A78 = "5 Bad"
-putexcel A79 = "Born: 0 Abroad"
-putexcel A80 = "Born: 1 Schleswig-Holstein"
-putexcel A81 = "Born: 2 Hamburg"
-putexcel A82 = "Born: 3 Niedersachsen"
-putexcel A83 = "Born: 4 Bremen"
-putexcel A84 = "Born: 5 Nordrhein-Westfalen"
-putexcel A85 = "Born: 6 Hessen"
-putexcel A86 = "Born: 7 Rheinland-Pfalz"
-putexcel A87 = "Born: 8 Baden-Wuerttemberg"
-putexcel A88 = "Born: 9 Bayern"
-putexcel A89 = "Born: 10 Saarland"
-putexcel A90 = "Born: 11 Berlin"
-putexcel A91 = "Born: 12 Brandenburg"
-putexcel A92 = "Born: 13 Mecklenburg-Vorpommern"
-putexcel A93 = "Born: 14 Sachsen"
-putexcel A94 = "Born: 15 Sachsen-Anhalt"
-putexcel A95 = "Born: 16 Thueringen"
-putexcel A96 = "Father's educ: 1 [0-2] Low"
-putexcel A97 = "Father's educ: 2 [3-4] Medium"
-putexcel A98 = "Father's educ: 3 [5-6] High"
-putexcel A99 = "Mother's educ: 1 [0-2] Low"
-putexcel A100 = "Mother's educ: 2 [3-4] Medium"
-putexcel A101 = "Mother's educ: 2 3 [5-6] High"
-putexcel A102 = "Residence up to age 15: Yrs both bio parents"
-putexcel A103 = "Residence up to age 15: Yrs just bio mom"
-putexcel A104 = "Residence up to age 15: Yrs just bio dad"
-putexcel A105 = "Residence up to age 15: Yrs neither bio parent"
-
-local desc_vars "weekly_work_hrs housework_weekdays housework_saturdays housework_sundays repair_weekdays repair_saturdays repair_sundays errands_weekdays errands_saturdays errands_sundays aid_in_hh_hl emp1 emp2 emp3 emp4 emp5 emp6 emp7 emp8 emp9 emp10 emp11 emp12 emp13 gross_income_lm earnings_gross_t_cnef kidsu18_hh age_youngest_child marst1 marst2 marst3 marst4 marst5 num_65up_hh any_parent_in_hh hh_gross_income_t_cnef state_res1 state_res2 state_res3 state_res4 state_res5 state_res6 state_res7 state_res8 state_res9 state_res10 state_res11 state_res12 state_res13 state_res14 state_res15 state_res16 state_res17 urban_region house1 house2 house3 house4 religion1 religion2 religion3 religion4 religion5 religion6 religion7 religion8 religion9 religion10 religion11 disability_yn retired_yn health1 health2 health3 health4 health5 state_birth1 state_birth2 state_birth3 state_birth4 state_birth5 state_birth6 state_birth7 state_birth8 state_birth9 state_birth10 state_birth11 state_birth12 state_birth13 state_birth14 state_birth15 state_birth16 state_birth17 dad_educ1 dad_educ2 dad_educ3 mom_educ1 mom_educ2 mom_educ3 yrs_bio_parent yrs_live_mom yrs_live_dad yrs_live_other" // 103
-
-** All durations
-// Not imputed
-forvalues w=1/103{
-	local row=`w'+2
-	local var: word `w' of `desc_vars'
-	mean `var' if imputed==0
-	matrix t`var'= e(b)
-	putexcel B`row' = matrix(t`var'), nformat(#.#%)
-}
-
-// Imputed
-forvalues w=1/103{
-	local row=`w'+2
-	local var: word `w' of `desc_vars'
-	mean `var' if imputed==1
-	matrix t`var'= e(b)
-	putexcel C`row' = matrix(t`var'), nformat(#.#%)
-}
-
-** Duration 0
-// Not imputed
-forvalues w=1/103{
-	local row=`w'+2
-	local var: word `w' of `desc_vars'
-	mean `var' if imputed==0 & relative_duration==0
-	matrix t`var'= e(b)
-	putexcel D`row' = matrix(t`var'), nformat(#.#%)
-}
-
-// Imputed
-forvalues w=1/103{
-	local row=`w'+2
-	local var: word `w' of `desc_vars'
-	mean `var' if imputed==1  & relative_duration==0
-	matrix t`var'= e(b)
-	putexcel E`row' = matrix(t`var'), nformat(#.#%)
-}
-
-** Duration 5
-// Not imputed
-forvalues w=1/103{
-	local row=`w'+2
-	local var: word `w' of `desc_vars'
-	mean `var' if imputed==0 & relative_duration==5
-	matrix t`var'= e(b)
-	putexcel F`row' = matrix(t`var'), nformat(#.#%)
-}
-
-// Imputed
-forvalues w=1/103{
-	local row=`w'+2
-	local var: word `w' of `desc_vars'
-	mean `var' if imputed==1  & relative_duration==5
-	matrix t`var'= e(b)
-	putexcel G`row' = matrix(t`var'), nformat(#.#%)
-}
-
-** Duration 10
-// Not imputed
-forvalues w=1/103{
-	local row=`w'+2
-	local var: word `w' of `desc_vars'
-	mean `var' if imputed==0 & relative_duration==10
-	matrix t`var'= e(b)
-	putexcel H`row' = matrix(t`var'), nformat(#.#%)
-}
-
-// Imputed
-forvalues w=1/103{
-	local row=`w'+2
-	local var: word `w' of `desc_vars'
-	mean `var' if imputed==1  & relative_duration==10
-	matrix t`var'= e(b)
-	putexcel I`row' = matrix(t`var'), nformat(#.#%)
-}
-
-********************************************************************************
-********************************************************************************
-**# * Troubleshooting area
-********************************************************************************
-********************************************************************************
+save "created data/stata/gsoep_individs_imputed_wide_bysex.dta", replace

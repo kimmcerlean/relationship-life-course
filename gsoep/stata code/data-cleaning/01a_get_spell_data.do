@@ -93,6 +93,13 @@ label values how_end how_end
 
 tab rel_type how_end, m
 
+// add flag for left censored specifically
+gen left_censored = 0
+replace left_censored = 1 if inlist(censor,1,2)
+replace left_censored = 1 if inrange(censor,7,13)
+
+tab censor left_censored, m
+
 // need to rerank relationships
 bysort pid: egen rel_no = rank(spellnr) if rel_type!=0
 tab rel_no rel_type, m
@@ -114,7 +121,7 @@ tab end_yr rel_type , m
 
 // make wide (instead of by spell)
 * only keep certain variables
-keep pid rel_no rel_type how_end start_yr end_yr begin end censor
+keep pid rel_no rel_type how_end start_yr end_yr begin end censor left_censored
 
 * only keep the single record if they are only EVER single
 bysort pid: egen ever_rel = max(rel_type)
@@ -131,16 +138,16 @@ rename begin begin_age
 rename end end_age
 
 * rename so I know where they came from (relationship history, by year)
-foreach var in rel_no rel_type how_end start_yr end_yr begin_age end_age censor{
+foreach var in rel_no rel_type how_end start_yr end_yr begin_age end_age censor left_censored{
 	rename `var' rhy_`var'
 }
 
 * Okay finally actually reshape
-reshape wide rhy_rel_type rhy_how_end rhy_start_yr rhy_end_yr rhy_begin_age rhy_end_age rhy_censor, j(rhy_rel_no) i(pid)
+reshape wide rhy_rel_type rhy_how_end rhy_start_yr rhy_end_yr rhy_begin_age rhy_end_age rhy_censor rhy_left_censored, j(rhy_rel_no) i(pid)
 unique pid
 
 * drop the variables that just correspond to single status (wanted to keep these observations so we knew they were captured in the rel history file)
-drop rhy_begin_age0 rhy_end_age0 rhy_censor0 rhy_rel_type0 rhy_how_end0 rhy_start_yr0 rhy_end_yr0
+drop rhy_begin_age0 rhy_end_age0 rhy_censor0 rhy_rel_type0 rhy_how_end0 rhy_start_yr0 rhy_end_yr0 rhy_left_censored0
 
 save "$temp/biocouply_wide.dta", replace
 
@@ -211,7 +218,11 @@ tab censor, m // so mostly of these are covered in non-censored, last spell (RC)
 	tab spellnr if inlist(censor,1,7,8,9,10) // just LC missing (not afer gap)
 	
 	gen left_censored=0
-	replace left_censored=1 if inlist(censor,1,7,8,9,10)
+	replace left_censored=1 if inlist(censor,1,7,8,9,10) // okay so HERE i was just flagging the missing, NOT the after gap ones. Let's leave this as is and create alt with the more in-depth one? Because I agree that the after gap ones are different. should I change that everywhere? I guess I retain the detailed variable. also, MOST are missing, not after gap
+	
+	gen left_censored_alt=0
+	replace left_censored_alt = 1 if inlist(censor,1,2)
+	replace left_censored_alt = 1 if inrange(censor,7,14)
 
 	gen intact=0
 	replace intact=1 if inlist(censor,5,6,9,10,13) // this is based on last spell
@@ -280,15 +291,15 @@ drop if keep_flag==0 & spellnr!=1
 unique pid // still matches
 
 * First, just keep relevant variables
-keep pid coupid partnr rel_no rel_type how_end censor events left_censored intact ended beginy endy
+keep pid coupid partnr rel_no rel_type how_end censor events left_censored left_censored_alt intact ended beginy endy
 
 * Rename so I know where came from (relationship history, by month)
-foreach var in coupid partnr rel_no rel_type how_end censor events left_censored intact ended beginy endy{
+foreach var in coupid partnr rel_no rel_type how_end censor events left_censored left_censored_alt intact ended beginy endy{
 	rename `var' rhm_`var'
 }
 
 * Actually reshape
-reshape wide rhm_coupid rhm_partnr rhm_beginy rhm_endy rhm_censor rhm_events rhm_rel_type rhm_left_censored rhm_intact rhm_ended rhm_how_end, j(rhm_rel_no) i(pid)
+reshape wide rhm_coupid rhm_partnr rhm_beginy rhm_endy rhm_censor rhm_events rhm_rel_type rhm_left_censored rhm_left_censored_alt rhm_intact rhm_ended rhm_how_end, j(rhm_rel_no) i(pid)
 
 unique pid // and number of pid still matches
 browse
@@ -296,7 +307,12 @@ tab rhm_rel_type0, m
 tab rhm_rel_type0 rhm_rel_type1, m // want to make sure there is perfect non-overlap and there is (so that everyone with missing on rel1 info had rel0 info before I drop)
 
 * non-eligible records
-drop rhm_coupid0 rhm_partnr0 rhm_beginy0 rhm_endy0 rhm_censor0 rhm_events0 rhm_rel_type0 rhm_left_censored0 rhm_intact0 rhm_ended0 rhm_how_end0
+drop rhm_coupid0 rhm_partnr0 rhm_beginy0 rhm_endy0 rhm_censor0 rhm_events0 rhm_rel_type0 rhm_left_censored0 rhm_left_censored_alt0 rhm_intact0 rhm_ended0 rhm_how_end0
+
+tab rhm_left_censored1, m
+tab rhm_left_censored_alt1, m
+
+tab rhm_left_censored1 rhm_left_censored_alt1, m // okay, once I clean this file up with records I don't want, the overlap is nearly perfect. Those "after gap" really disappear (<400 / 78000), so this actually doesn't matter
 
 save "$temp/biocouplm_wide.dta", replace
 
@@ -315,7 +331,16 @@ sort pid spellnr
 // browse if inlist(pid,601,5303,30561901)
 
 unique pid // 125156, 259916
-unique pid, by(spelltyp) // 77385 married in HH,  coupled in HH - duh doesn't track coupled
+unique pid, by(spelltyp) // 79024 married in HH,  coupled in HH - duh doesn't track coupled
+
+// before I drop, attempt to create variable designating how ended based on next state post marriage. This is from marriage paper, need to figure this out as I go once I get below...
+browse
+gen how_end_est = .
+replace how_end_est = spelltyp[_n+1] if spelltyp==2 & pid==pid[_n+1]
+label values how_end_est spelltyp_EN
+
+tab spelltyp how_end_est, m
+browse pid spellnr spelltyp how_end_est beginy endy
 
 // here I think I can just keep married records?
 // oh I should also keep the first single record, as i did before, to retain records for people never married (also - should make sure that info matches across my three files)
@@ -353,22 +378,40 @@ gen ended=0
 replace ended=1 if inlist(censor,0,1,2,4,8,12) // basically if not right censored by last spell or missing
 replace ended=1 if inlist(censor,3,7,11) & max_rel != spellnr // if missing and other records follow, then ended)
 
+tab ended how_end_est, m
+
 gen intact=0
 replace intact=1 if inlist(censor,5,6,9,10,13,14) // if last spell or death 
 replace intact=1 if inlist(censor,3,7,11) & max_rel == spellnr // if missing but last record, then intact
 
 browse pid spellnr married max_rel censor ended intact
 
+gen breakup = .
+replace breakup = 0 if intact==1 & married==1
+replace breakup = 1 if ended==1 & married==1
+
+tab married breakup, m row // is this too many intact? idk...
+tab breakup how_end_est, m // possibly fill in with estimated how end based on below row? see what looks like. bc the how_end est perfectly congruent for breakup (e.g. all breakups have a how_end_est) then some intacts do so not sure I should fill in 
+
+browse pid spellnr married how_end how_end_est censor beginy endy
+
 gen how_end = .
-replace how_end = 0 if intact==1 & married==1
-replace how_end = 1 if ended==1 & married==1
+replace how_end = 0 if breakup==0 &  how_end_est==.
+replace how_end = 1 if inlist(how_end_est, 5,6,9) // will make THIS be separation, or UNKNOWN end type
+replace how_end = 2 if how_end_est ==3
+replace how_end = 3 if how_end_est ==4
 
 capture label define how_end 0 "intact" 1 "break-up" 2 "divorce" 3 "widowhood"
 label values how_end how_end
 
-tab married how_end, m row // is this too many intact? idk...
+tab married how_end, m
+tab how_end how_end_est, m
+tab how_end breakup, m
 
-browse pid spellnr married how_end censor beginy endy
+// indicator of left censored specifically
+gen left_censored = 0
+replace left_censored = 1 if inlist(censor,1,2)
+replace left_censored = 1 if inrange(censor,7,14)
 
 // need to rerank relationships and update dates for single folks
 bysort pid: egen marr_no = rank(spellnr) if married==1
@@ -377,6 +420,7 @@ replace marr_no = 0 if marr_no==. // single states
 browse pid spellnr marr_no married beginy endy
 
 tab beginy married, m
+tab beginy left_censored if married==1, m
 tab endy married, m
 
 gen start_yr = beginy
@@ -392,7 +436,7 @@ tab end_yr how_end, m
 
 // make wide (instead of by spell)
 * only keep certain variables
-keep pid marr_no married how_end start_yr end_yr begin end censor remark
+keep pid marr_no married how_end start_yr end_yr begin end censor left_censored  remark
 
 * only keep the single record if they are only EVER single
 bysort pid: egen ever_marr = max(married)
@@ -409,12 +453,12 @@ rename begin begin_age
 rename end end_age
 
 * rename so I know where they came from (marital history, by year)
-foreach var in begin_age end_age censor married how_end marr_no start_yr end_yr ever_marr remark{
+foreach var in begin_age end_age censor left_censored  married how_end marr_no start_yr end_yr ever_marr remark{
 	rename `var' mhy_`var'
 }
 
 * Okay finally actually reshape
-reshape wide mhy_begin_age mhy_end_age mhy_censor mhy_married mhy_how_end mhy_start_yr mhy_end_yr mhy_remark, j(mhy_marr_no) i(pid mhy_ever_marr) // retain ever married status for reference (oh I probably could have done this for other files oops)
+reshape wide mhy_begin_age mhy_end_age mhy_censor mhy_left_censored  mhy_married mhy_how_end mhy_start_yr mhy_end_yr mhy_remark, j(mhy_marr_no) i(pid mhy_ever_marr) // retain ever married status for reference (oh I probably could have done this for other files oops)
 unique pid
 
 tab mhy_married0, m
@@ -423,7 +467,10 @@ tab mhy_ever_marr mhy_married1, m
 tab mhy_married0 mhy_married1, m
 
 * drop the variables that just correspond to single status (wanted to keep these observations so we knew they were captured in the marital history file)
-drop mhy_begin_age0 mhy_end_age0 mhy_censor0 mhy_married0 mhy_how_end0 mhy_start_yr0 mhy_end_yr0 mhy_remark0
+drop mhy_begin_age0 mhy_end_age0 mhy_censor0 mhy_married0 mhy_how_end0 mhy_start_yr0 mhy_end_yr0 mhy_remark0 mhy_left_censored0
+
+tab mhy_left_censored1,m
+tab mhy_censor1,m 
 
 save "$temp/biomarsy_wide.dta", replace
 
@@ -459,7 +506,7 @@ use "$temp/ppathl_cleaned.dta", clear
 label language EN
 
 unique pid
-unique pid firstyr_survey_pl lastyr_survey_pl firstyr_contact_pl lastyr_contact_pl // are these unique? yes okay
+unique pid firstyr_survey_pl lastyr_survey_pl firstyr_contact_pl lastyr_contact_pl psample_pl  // are these unique? yes okay
 browse pid firstyr_survey_pl lastyr_survey_pl firstyr_contact_pl lastyr_contact_pl status_pl // some people have missing for survey yr (not contact yr) - those people never gave a full pl interview
 gen ever_int = 0
 replace ever_int = 1 if inrange(firstyr_survey_pl,1984,2023)
@@ -467,8 +514,31 @@ replace ever_int = 1 if inrange(firstyr_survey_pl,1984,2023)
 tab ever_int, m 
 tab firstyr_survey_pl ever_int, m 
 
+browse pid syear firstyr_survey_pl lastyr_survey_pl  partnered_pl
+bysort pid: egen ever_partner = max(partnered_pl)
+replace ever_partner = 1 if inrange(ever_partner,1,5)
+tab partnered_pl ever_partner, m
+
+// let's actually retain the sample info and create that smaller variable
+label values psample_pl psample
+ 
+gen sample_type = .
+replace sample_type = 1 if inrange(psample_pl,1,14)
+replace sample_type = 1 if inrange(psample_pl,20,23)
+replace sample_type = 1 if inlist(psample_pl,27,31)
+replace sample_type = 2 if inlist(psample_pl,15,16,25,26,28,29,32,33)
+replace sample_type = 3 if inlist(psample_pl,17,18,19,24,30)
+
+label define sample_type 1 "core" 2 "migrant" 3 "refugee"
+label values sample_type sample_type
+
+tab psample_pl sample_type, m
+
 // collapse to get just a list of pids
-collapse (lastnm) ever_int firstyr_survey_pl lastyr_survey_pl firstyr_contact_pl lastyr_contact_pl, by(pid)
+collapse (lastnm) ever_int firstyr_survey_pl lastyr_survey_pl firstyr_contact_pl lastyr_contact_pl psample_pl sample_type, by(pid ever_partner)
+
+label values psample_pl psample 
+label values sample_type sample_type 
 
 save "$temp/all_pids.dta", replace
 
@@ -482,6 +552,9 @@ drop _merge
 
 // okay coverage is QUITE BAD
 tab ever_int in_couply, m row // about half when I restrict to those who ever had a pl interview (because we will obviously need those people)
+tab ever_partner in_couply if ever_int==1
+tab sample_type in_couply if ever_int==1 // does THIS explain in recent years? Not solely. Few refugees in couply, but still only about half of core.
+tab firstyr_survey_pl in_couply if ever_partner==1 & ever_int==1 & sample_type==3 // I think actually refugees explain most of the problems, so life course is fine for that reason and reaffirms I need to exclude. BUT still need this info
 
 // now merge on couple month - next in order of hierarchy bc at least contains COHAB (but not HISTORY)
 merge 1:1 pid using "$temp/biocouplm_wide.dta" // shocking amount of not matched? is it bc of never interviews??
@@ -509,7 +582,11 @@ tab in_marsy in_couplm // there are a decently high number of people in either c
 tab in_marsy in_couply // only 120 people in cohab history but not marital
 
 // get a sense of the data for now
-browse pid in_couply in_couplm in_marsy rhy_rel_type1 rhy_how_end1 rhy_start_yr1 rhy_end_yr1 rhm_rel_type1 rhm_how_end1 rhm_beginy1 rhm_endy1 rhm_left_censored1 mhy_married1 mhy_how_end1 mhy_start_yr1 mhy_end_yr1 if ever_int==1
+browse pid firstyr_survey_pl psample_pl in_couply in_couplm in_marsy rhy_rel_type1 rhy_how_end1 rhy_start_yr1 rhy_end_yr1 rhy_left_censored1 rhm_rel_type1 rhm_how_end1 rhm_beginy1 rhm_endy1 rhm_left_censored1 mhy_married1 mhy_how_end1 mhy_start_yr1 mhy_end_yr1 mhy_left_censored1 if ever_int==1
+
+tab rhm_left_censored1, m // highest
+tab rhy_left_censored1, m // lowest (but least comprehensive)
+tab mhy_left_censored1, m // mid
 
 save "$temp/all_rel_history.dta", replace
 
@@ -521,7 +598,7 @@ use "$temp/all_rel_history.dta", clear
 // so this is currently wide. do I want to make long? to compare aCROSS numbers. bc if the relationships in rhy and rhm match (aka they didn't have any relationships PRE survey), then I can just use rhm? BUT if rhm rel#1 is left-censored, I need to use information to fill it in
 // max rels in rhy: 10 | rhm: 9 | mhy: 6
 
-reshape long rhy_begin_age rhy_end_age rhy_censor rhy_rel_type rhy_how_end rhy_start_yr rhy_end_yr rhm_coupid rhm_partnr rhm_beginy rhm_endy rhm_censor rhm_events rhm_rel_type rhm_left_censored rhm_intact rhm_ended rhm_how_end mhy_begin_age mhy_end_age mhy_censor mhy_married mhy_how_end mhy_start_yr mhy_end_yr mhy_remark, i(pid) j(rel_no)
+reshape long rhy_begin_age rhy_end_age rhy_censor rhy_left_censored rhy_rel_type rhy_how_end rhy_start_yr rhy_end_yr rhm_coupid rhm_partnr rhm_beginy rhm_endy rhm_censor rhm_events rhm_rel_type rhm_left_censored rhm_left_censored_alt rhm_intact rhm_ended rhm_how_end mhy_begin_age mhy_end_age mhy_censor mhy_left_censored mhy_married mhy_how_end mhy_start_yr mhy_end_yr mhy_remark, i(pid) j(rel_no)
 
 capture label define rel_type 0 "single" 1 "cohab" 2 "married" 3 "non-elig rel"
 label values rhy_rel_type rhm_rel_type rel_type
@@ -533,7 +610,7 @@ browse pid in_couply rel_no rhy_rel_type rhy_start_yr rhy_end_yr rhm_rel_type rh
 // okay no, trying some other hacks. because really couplm is also fine, we just need two other pieces of supplemental info from marital history (if not in cohab history)
 	*-- true relationship start date
 	*-- any relationships prior to the one first observed in SOEP
-browse pid in_couply rel_no rhm_rel_type rhm_beginy rhm_endy rhm_partnr mhy_married mhy_start_yr mhy_end_yr if ever_int==1 & in_couply==0
+browse pid in_couply rel_no rhm_rel_type rhm_beginy rhm_endy rhm_partnr rhm_left_censored mhy_married mhy_start_yr mhy_end_yr mhy_left_censored if ever_int==1 & in_couply==0
 
 // one way to get the true relationship start date of the union they entered soep in (aka first rel in couplm)
 gen couplm_rel1_type = rhm_rel_type if rel_no==1
@@ -546,25 +623,48 @@ foreach var in couplm_rel1_type couplm_rel1_start couplm_rel1_end{
 }
 
 sort pid rel_no
-browse pid in_couply rel_no couplm_rel1_type couplm_rel1_start couplm_rel1_end rhy_rel_type rhy_start_yr rhy_end_yr rhm_rel_type rhm_beginy rhm_endy rhm_partnr mhy_married mhy_start_yr mhy_end_yr if ever_int==1
+browse pid in_couply rel_no couplm_rel1_type couplm_rel1_start couplm_rel1_end rhy_rel_type rhy_start_yr rhy_end_yr rhy_left_censored rhm_rel_type rhm_beginy rhm_endy rhm_partnr rhm_left_censored mhy_married mhy_start_yr mhy_end_yr mhy_left_censored if ever_int==1
 
 gen couplem_rel1_start_real = .
-replace couplem_rel1_start_real = rhy_start_yr if in_couply==1 & rhy_end_yr == couplm_rel1_end
-replace couplem_rel1_start_real = mhy_start_yr if in_couply==0 & mhy_end_yr == couplm_rel1_end & couplm_rel1_type==2
-bysort pid (couplem_rel1_start_real): replace couplem_rel1_start_real = couplem_rel1_start_real[1]
+gen couplem_rel1_start_lc = .
 
-browse pid in_couply rel_no couplm_rel1_type couplem_rel1_start_real couplm_rel1_start couplm_rel1_end rhy_rel_type rhy_start_yr rhy_end_yr rhm_rel_type rhm_beginy rhm_endy rhm_partnr mhy_married mhy_start_yr mhy_end_yr if ever_int==1
+replace couplem_rel1_start_real = rhy_start_yr if in_couply==1 & rhy_end_yr == couplm_rel1_end // One first problem: I denote this as REAL, but that isn't always true, because THESE could be left censored. I think this is a core piece of info I was lacking. so I guess I can still update it here, but then I also want to flag that it is censored...although the WHOLE POINT is that I am trying to leave these as missing because THAT is my signal. Maybe I create two versions for now? so need to also flag that left censoring = no. Because I am sort of trying not to rock the boat of what I did earlier. so let's create this one, keep as is, add flag for left censor. Create new variable wherE ONLY fill in if not left censored
+replace couplem_rel1_start_lc = rhy_left_censored if in_couply==1 & rhy_end_yr == couplm_rel1_end
+
+replace couplem_rel1_start_real = mhy_start_yr if in_couply==0 & mhy_end_yr == couplm_rel1_end & couplm_rel1_type==2
+replace couplem_rel1_start_lc = mhy_left_censored if in_couply==0 & mhy_end_yr == couplm_rel1_end & couplm_rel1_type==2
+
+bysort pid (couplem_rel1_start_real): replace couplem_rel1_start_real = couplem_rel1_start_real[1]
+bysort pid (couplem_rel1_start_lc): replace couplem_rel1_start_lc = couplem_rel1_start_lc[1]
+
+// now create the alt version where ONLY filled in if not left censored
+gen couplem_rel1_start_real_x = .
+replace couplem_rel1_start_real_x = rhy_start_yr if in_couply==1 & rhy_end_yr == couplm_rel1_end & rhy_left_censored==0
+replace couplem_rel1_start_real_x = mhy_start_yr if in_couply==0 & mhy_end_yr == couplm_rel1_end & couplm_rel1_type==2 & mhy_left_censored==0
+
+bysort pid (couplem_rel1_start_real_x): replace couplem_rel1_start_real_x = couplem_rel1_start_real_x[1]
+
+// checks
+sort pid rel_no
+browse pid in_couply rel_no couplm_rel1_type couplem_rel1_start_real couplem_rel1_start_real_x couplem_rel1_start_lc couplm_rel1_start couplm_rel1_end rhy_rel_type rhy_start_yr rhy_end_yr rhy_left_censored rhm_rel_type rhm_beginy rhm_endy rhm_partnr rhm_left_censored mhy_married mhy_start_yr mhy_end_yr mhy_left_censored if ever_int==1
 
 tab couplm_rel1_type if in_couply==0 // so how many of these are cohab and therefore we will not know? okay like just under 20%
 inspect couplem_rel1_start_real if couplm_rel1_type!=.
-tab couplem_rel1_start_real couplm_rel1_type, m col // okay so about 5% of marriages missing real start date, but about 50% of cohab are
+inspect couplem_rel1_start_real_x if couplm_rel1_type!=. // will have MORE missing. okay it's SO many more [but these are rows and i have many not useful rows]
 
+tab couplem_rel1_start_real couplem_rel1_start_lc if couplm_rel1_type!=., m // and how many are left censored from the other files?
+tab couplem_rel1_start_real couplm_rel1_type, m col // okay so about 5% of marriages missing real start date, but about 50% of cohab are
+tab couplem_rel1_start_real_x couplm_rel1_type, m col // cohab doesn't change a ton bc already high but marriage increases to 31%
+	// tab couplem_rel1_start_real_x couplm_rel1_type if sample_type==1, m col // still high
+	// tab psample_pl couplem_rel1_start_lc, row
+	
 // now, flag if other marriages prior to this relationship
 gen add_to_history = .
-replace add_to_history = 1 if mhy_end_yr < couplem_rel1_start_real & couplem_rel1_start_real!=. // so use the real date if it exists
+replace add_to_history = 1 if mhy_end_yr < couplem_rel1_start_real & couplem_rel1_start_real!=. // so use the real date if it exists. I think this works for these purposes. theoretically, sohuldn't matter because if left censored, they probably don't have a prior relationship? But just in case, let's use the more comprehensive one to create this flag.
 replace add_to_history = 1 if mhy_end_yr < couplm_rel1_start & couplem_rel1_start_real==. & couplm_rel1_type!=. // if it doesn't use the estimated start date (but restrict to at least those with a first relationship)
 replace add_to_history = 1 if rel_no==1 & mhy_married==1 & couplm_rel1_type==. // some people have no relationships in SOEP and ONLY have prior rels, so need to keep those as well
 // tab couplm_rel1_type mhy_married if rel_no==1, m
+// tab add_to_history couplem_rel1_start_lc, m // yeah it's so small (<5%) 
 
 browse pid in_couply rel_no couplm_rel1_type couplem_rel1_start_real couplm_rel1_start couplm_rel1_end rhy_rel_type rhy_start_yr rhy_end_yr rhm_rel_type rhm_beginy rhm_endy rhm_partnr mhy_married mhy_start_yr mhy_end_yr add_to_history if ever_int==1
 
@@ -583,37 +683,52 @@ replace num_history = 0 if num_history==.
 
 // now, trying to create a "real rank" aggregating between the monthly couple and marital history
 gen rel_no_adjusted = rel_no + num_history
-browse pid in_couply rel_no rel_no_adjusted num_history couplm_rel1_type couplem_rel1_start_real couplm_rel1_start couplm_rel1_end rhy_rel_type rhy_start_yr rhy_end_yr rhm_rel_type rhm_beginy rhm_endy rhm_partnr mhy_married mhy_start_yr mhy_end_yr marr_history_rank if ever_int==1
+browse pid in_couply rel_no rel_no_adjusted num_history couplm_rel1_type couplem_rel1_start_real couplem_rel1_start_real_x couplm_rel1_start couplm_rel1_end rhy_rel_type rhy_start_yr rhy_end_yr rhm_rel_type rhm_beginy rhm_endy rhm_partnr mhy_married mhy_start_yr mhy_end_yr marr_history_rank if ever_int==1
 
 forvalues m=1/4{
 	gen marr`m'_type = 2 if marr_history_rank==`m'
 	gen marr`m'_start = mhy_start_yr if marr_history_rank==`m'
 	gen marr`m'_end = mhy_end_yr if marr_history_rank==`m'
 	gen marr`m'_how_end = mhy_how_end if marr_history_rank==`m'
+	gen marr`m'_lc = mhy_left_censored if marr_history_rank==`m' // shouldn't be left censored if this is what I need to do, but let's add jic
+	gen marr`m'_censor = mhy_censor if marr_history_rank==`m' // same here but for posterity
 	
 	label values marr`m'_type rel_type
 	label values marr`m'_how_end how_end
+	label values marr`m'_censor censor_EN
 	
-	foreach var in marr`m'_type marr`m'_start marr`m'_end marr`m'_how_end{
+	foreach var in marr`m'_type marr`m'_start marr`m'_end marr`m'_how_end marr`m'_lc marr`m'_censor{
 		bysort pid (`var'): replace `var' = `var'[1]
 	}
 }
 
 sort pid rel_no
-browse pid rel_no rel_no_adjusted marr_history_rank marr1_type marr1_start marr1_end marr1_how_end marr2_type marr2_start marr2_end marr2_how_end mhy_married mhy_start_yr mhy_end_yr mhy_how_end
+browse pid rel_no rel_no_adjusted marr_history_rank marr1_type marr1_start marr1_end marr1_how_end marr1_lc marr2_type marr2_start marr2_end marr2_how_end mhy_married mhy_start_yr mhy_end_yr mhy_how_end mhy_left_censored
 
-// actually if no marital history, I can just the coupm data, right? just need to adjust the start date?
+tab marr1_lc // okay it is like 5%, intriguing
+tab marr1_start if marr1_lc == 1, m // AH okay, it's really mostly that it's MISSING. so they didn't fill it in really and say LC, its just...missing. THAT IS IDEAL BEHAVIOR TBH
+tab marr2_lc
+tab marr3_lc
+
+// actually if no marital history, I can just the coupm data, right? just need to adjust the start date? AND ensure I maintain info about CENSORING.
+// browse pid rel_no in_couply in_couplm num_history rhy_start_yr rhy_end_yr rhy_left_censored rhy_censor  rhm_rel_type rhm_how_end rhm_beginy rhm_left_censored couplem_rel1_start_real couplem_rel1_start_real_x couplem_rel1_start_lc rhm_endy mhy_start_yr mhy_end_yr mhy_left_censored
+
 * create new blank variables to fill in
 gen master_rel_type=.
 gen master_how_end=.
 gen master_start_yr=.
 gen master_end_yr=.
+gen master_left_censored=.
+gen master_censor=. // honestly, let's just do it all
+label values master_censor censor_EN
 
 * fill in with couply if in there
 replace master_rel_type = rhy_rel_type if in_couply==1
 replace master_how_end = rhy_how_end if in_couply==1
 replace master_start_yr = rhy_start_yr if in_couply==1
 replace master_end_yr = rhy_end_yr if in_couply==1
+replace master_left_censored = rhy_left_censored if in_couply==1
+replace master_censor = rhy_censor if in_couply==1
 
 * fill in with couplm if num_history==0
 // browse pid rel_no in_couply num_history rhm_rel_type rhm_how_end rhm_beginy rhm_left_censored couplem_rel1_start_real rhm_endy rhy_start_yr rhy_end_yr mhy_start_yr mhy_end_yr 
@@ -625,27 +740,38 @@ replace master_start_yr = rhm_beginy if in_couply==0 & num_history==0 & rel_no!=
 	replace master_start_yr = rhm_beginy if in_couply==0 & num_history==0 & rel_no==1 & rhm_left_censored==0
 	replace master_start_yr = couplem_rel1_start_real if in_couply==0 & num_history==0 & rel_no==1 & rhm_left_censored==1
 replace master_end_yr = rhm_endy if in_couply==0 & num_history==0
+replace master_left_censored = rhm_left_censored if in_couply==0 & num_history==0 // looking at the above code, this doesn't necessarily work, because I try to update if left censored, so want to use the other version when I fill in with real? so let's do this to start, but overwrite if the below conditions are met
+replace master_left_censored = couplem_rel1_start_lc if in_couply==0 & num_history==0 & couplem_rel1_start_real!=. & rel_no==1 // confirmed watching pid: 8176302 and 8176501. this WORKS as intended
+replace master_censor = rhm_censor if in_couply==0 & num_history==0 // note: This won't account for above, so is less good here. really want to rely on left_censored only, tbh, adn these are backups
 
 * then, need to do a piecemeal process if there are marriages to add
 replace master_rel_type = marr1_type if rel_no==1 & in_couply==0 & num_history!=0 // if you have at least one in history, then you def have a marriage 1
 replace master_how_end = marr1_how_end if rel_no==1 & in_couply==0 & num_history!=0
 replace master_start_yr = marr1_start if rel_no==1 & in_couply==0 & num_history!=0
 replace master_end_yr = marr1_end if rel_no==1 & in_couply==0 & num_history!=0
+replace master_left_censored = marr1_lc  if rel_no==1 & in_couply==0 & num_history!=0
+replace master_censor = marr1_censor  if rel_no==1 & in_couply==0 & num_history!=0
 
 replace master_rel_type = marr2_type if rel_no==2 & in_couply==0 & inlist(num_history,2,3,4) // but only have a marriage2 if more than 1 in history
 replace master_how_end = marr2_how_end if rel_no==2 & in_couply==0 & inlist(num_history,2,3,4)
 replace master_start_yr = marr2_start if rel_no==2 & in_couply==0 & inlist(num_history,2,3,4)
 replace master_end_yr = marr2_end if rel_no==2 & in_couply==0 & inlist(num_history,2,3,4)
+replace master_left_censored = marr2_lc  if rel_no==2 & in_couply==0 & inlist(num_history,2,3,4)
+replace master_censor = marr2_censor  if rel_no==2 & in_couply==0 & inlist(num_history,2,3,4)
 
 replace master_rel_type = marr3_type if rel_no==3 & in_couply==0 & inlist(num_history,3,4)
 replace master_how_end = marr3_how_end if rel_no==3 & in_couply==0 & inlist(num_history,3,4)
 replace master_start_yr = marr3_start if rel_no==3 & in_couply==0 & inlist(num_history,3,4)
 replace master_end_yr = marr3_end if rel_no==3 & in_couply==0 & inlist(num_history,3,4)
+replace master_left_censored = marr3_lc  if rel_no==3 & in_couply==0 & inlist(num_history,3,4)
+replace master_censor = marr3_censor  if rel_no==3 & in_couply==0 & inlist(num_history,3,4)
 
 replace master_rel_type = marr4_type if rel_no==4 & in_couply==0 & num_history==4
 replace master_how_end = marr4_how_end if rel_no==4 & in_couply==0 & num_history==4
 replace master_start_yr = marr4_start if rel_no==4 & in_couply==0 & num_history==4
 replace master_end_yr = marr4_end if rel_no==4 & in_couply==0 & num_history==4
+replace master_left_censored = marr4_lc  if rel_no==4 & in_couply==0 & num_history==4
+replace master_censor = marr4_censor  if rel_no==4 & in_couply==0 & num_history==4
 
 // gah struggling how to now get the cohab info on. I think I just need this to be populated in all columns AGAIN (should I have just left this wide?)
 // I think I need to merge back on this history omg
@@ -658,7 +784,7 @@ gen first_chm_lc = rhm_left_censored if rel_no==1
 bysort pid (first_chm_lc): replace first_chm_lc = first_chm_lc[1]
 sort pid rel_no
 
-browse pid rel_no rel_no_adjusted in_couply num_history master_rel_type master_how_end master_start_yr master_end_yr rhm_beginy couplem_rel1_start_real rhm_endy rhm_partnr mhy_married mhy_start_yr mhy_end_yr rhm_beginy1 rhm_endy1 if num_history!=0 & in_couply==0
+browse pid rel_no rel_no_adjusted in_couply num_history master_rel_type master_how_end master_start_yr master_end_yr rhm_beginy couplem_rel1_start_real couplem_rel1_start_real_x couplem_rel1_start_lc rhm_endy rhm_partnr mhy_married mhy_start_yr mhy_end_yr rhm_beginy1 rhm_endy1 if num_history!=0 & in_couply==0
 
 forvalues r=1/7{
 	local s=`r' + 1
@@ -667,6 +793,8 @@ forvalues r=1/7{
 	replace master_how_end = rhm_how_end`r' if rel_no==`s' & in_couply==0 & num_history==1 
 	replace master_start_yr = rhm_beginy`r' if rel_no==`s' & in_couply==0 & num_history==1 
 	replace master_end_yr = rhm_endy`r' if rel_no==`s' & in_couply==0 & num_history==1 
+	replace master_left_censored = rhm_left_censored`r' if rel_no==`s' & in_couply==0 & num_history==1 
+	replace master_censor = rhm_censor`r' if rel_no==`s' & in_couply==0 & num_history==1 
 }
 
 forvalues r=1/7{
@@ -676,6 +804,8 @@ forvalues r=1/7{
 	replace master_how_end = rhm_how_end`r' if rel_no==`s' & in_couply==0 & num_history==2 
 	replace master_start_yr = rhm_beginy`r' if rel_no==`s' & in_couply==0 & num_history==2 
 	replace master_end_yr = rhm_endy`r' if rel_no==`s' & in_couply==0 & num_history==2
+	replace master_left_censored = rhm_left_censored`r' if rel_no==`s' & in_couply==0 & num_history==2
+	replace master_censor = rhm_censor`r' if rel_no==`s' & in_couply==0 & num_history==2
 }
 
 forvalues r=1/7{
@@ -685,6 +815,8 @@ forvalues r=1/7{
 	replace master_how_end = rhm_how_end`r' if rel_no==`s' & in_couply==0 & num_history==3
 	replace master_start_yr = rhm_beginy`r' if rel_no==`s' & in_couply==0 & num_history==3 
 	replace master_end_yr = rhm_endy`r' if rel_no==`s' & in_couply==0 & num_history==3
+	replace master_left_censored = rhm_left_censored`r' if rel_no==`s' & in_couply==0 & num_history==3
+	replace master_censor = rhm_censor`r' if rel_no==`s' & in_couply==0 & num_history==3
 }
 
 forvalues r=1/7{
@@ -694,26 +826,40 @@ forvalues r=1/7{
 	replace master_how_end = rhm_how_end`r' if rel_no==`s' & in_couply==0 & num_history==4
 	replace master_start_yr = rhm_beginy`r' if rel_no==`s' & in_couply==0 & num_history==4 
 	replace master_end_yr = rhm_endy`r' if rel_no==`s' & in_couply==0 & num_history==4
+	replace master_left_censored = rhm_left_censored`r' if rel_no==`s' & in_couply==0 & num_history==4
+	replace master_censor = rhm_censor`r' if rel_no==`s' & in_couply==0 & num_history==4
 }
 
-// now need to adjust all start dates gah
-replace master_start_yr = couplem_rel1_start_real if rel_no==2 & in_couply==0 & num_history==1 & first_chm_lc ==1
+// now need to adjust all start dates gah AND update the left censor info
+replace master_start_yr = couplem_rel1_start_real if rel_no==2 & in_couply==0 & num_history==1 & first_chm_lc ==1 // good ID to confirm worked: 2305
 replace master_start_yr = couplem_rel1_start_real if rel_no==3 & in_couply==0 & num_history==2 & first_chm_lc ==1
 replace master_start_yr = couplem_rel1_start_real if rel_no==4 & in_couply==0 & num_history==3 & first_chm_lc ==1
 replace master_start_yr = couplem_rel1_start_real if rel_no==5 & in_couply==0 & num_history==4 & first_chm_lc ==1
 
+replace master_left_censored = couplem_rel1_start_lc if rel_no==2 & in_couply==0 & num_history==1 & first_chm_lc ==1 // good ID to confirm worked: 2305
+replace master_left_censored = couplem_rel1_start_lc if rel_no==3 & in_couply==0 & num_history==2 & first_chm_lc ==1
+replace master_left_censored = couplem_rel1_start_lc if rel_no==4 & in_couply==0 & num_history==3 & first_chm_lc ==1
+replace master_left_censored = couplem_rel1_start_lc if rel_no==5 & in_couply==0 & num_history==4 & first_chm_lc ==1
+
 * Oh, need to figure out how to add partner_id ESPECIALLY if not using couplm. do I need this? let's come back to this, think I can add on later based on matching information from the wide files...
 
-browse pid rel_no rel_no_adjusted first_chm_lc in_couply num_history master_rel_type master_how_end master_start_yr master_end_yr rhy_rel_type rhy_start_yr rhy_end_yr rhm_rel_type rhm_beginy couplem_rel1_start_real rhm_endy rhm_partnr mhy_married mhy_start_yr mhy_end_yr 
+browse pid rel_no rel_no_adjusted first_chm_lc in_couply num_history master_rel_type master_how_end master_start_yr master_end_yr master_left_censored master_censor rhy_rel_type rhy_start_yr rhy_end_yr rhy_left_censored rhm_rel_type rhm_beginy couplem_rel1_start_real couplem_rel1_start_real_x couplem_rel1_start_lc rhm_endy rhm_partnr mhy_married mhy_start_yr mhy_end_yr mhy_left_censored
 
 label values master_rel_type rel_type
 label values master_how_end how_end
+label values master_censor censor_EN
 
+tab master_start_yr master_left_censored, m // honestly ASTONISHED that this seemed to work (aka no start years DON'T Have censor info). a point worth noting here, there are many indicated as left censored where start year is missing. I think this is previously what I was relying on  but now realizing that was INCORRECT. AND when LC = 0, then I have 100% of the start years. WILD. WILD KIM THIS IS WHAT WAS MISSING ALONG
+tab master_rel_type master_left_censored, m // bc yeah this confirms I sometimes have the rel info but not the start date info, so those are also confirmed PROPER missing start dates
+tab master_start_yr master_rel_type, m // further confirmation
+
+	// tab sample_type master_left_censored, row
+	
 * now create a file to save
-keep pid rel_no ever_int firstyr_survey_pl lastyr_survey_pl firstyr_contact_pl lastyr_contact_pl in_couply in_couplm mhy_ever_marr in_marsy couplm_rel1_start couplem_rel1_start_real couplm_rel1_end master_rel_type master_how_end master_start_yr master_end_yr first_chm_lc
+keep pid rel_no ever_int firstyr_survey_pl lastyr_survey_pl firstyr_contact_pl lastyr_contact_pl in_couply in_couplm mhy_ever_marr in_marsy couplm_rel1_start couplem_rel1_start_real couplem_rel1_start_real_x couplem_rel1_start_lc couplm_rel1_end master_rel_type master_how_end master_start_yr master_end_yr master_censor master_left_censored first_chm_lc
 
-reshape wide master_rel_type master_how_end master_start_yr master_end_yr, j(rel_no) i(pid)
-browse pid mhy_ever_marr master_rel_type* master_how_end* master_start_yr* master_end_yr*
+reshape wide master_rel_type master_how_end master_start_yr master_end_yr  master_censor master_left_censored, j(rel_no) i(pid)
+browse pid mhy_ever_marr master_rel_type* master_how_end* master_start_yr* master_end_yr*  master_left_censored*
 
 tab mhy_ever_marr master_rel_type1 if ever_int==1, m
 
@@ -776,6 +922,7 @@ keep if ever_int==1 | (ever_int==0 & master_rel_type1!=.)
 
 tab master_start_yr1 master_rel_type1, m col // okay so there is info missing, especially cohab (about 12%)
 tab master_start_yr1 master_rel_type1 if first_chm_lc==0, m col // yes this is way better
+tab master_start_yr1 master_rel_type1 if master_left_censored1==0, m col // with THIS, there are NO MISSING AND i recover way more info
 tab master_end_yr1 master_rel_type1, m col // end date is much more reliable. should I *just* use end date?
 
 // think I need to create new versions of the start yr that include these that might be right censored
@@ -786,7 +933,9 @@ browse pid syear master_rel_type1 master_start_yr1 master_end_yr1 master_start_y
 // inspect couplm_rel1_start if master_rel_type1!=.
 // inspect couplem_rel1_start_real if master_rel_type1!=.
 // inspect couplem_rel1_start_real if couplm_rel1_start!=.
+tab master_start_yr1 master_left_censored1, m // compare to below once complete bc struggling to follow
 
+// Note from 7/28/26. This is old code. Doing for posterity, but going to proceed with my plan of using created master_left_censored
 gen couplm_rel1_miss = .
 replace couplm_rel1_miss = 0 if couplm_rel1_start!=. & couplem_rel1_start_real!=.
 replace couplm_rel1_miss = 1 if couplm_rel1_start!=. & couplem_rel1_start_real==.
@@ -796,15 +945,19 @@ forvalues m=1/10{
 	gen master_start_yr`m'_miss = 0
 	replace master_start_yr`m'_miss = 1 if master_start_yr`m'==. & master_rel_type`m'!=.
 	
-	gen master_start_yr`m'_lc = master_start_yr`m' // first make a copy of existing variable
+	gen master_start_yr`m'_lc = master_start_yr`m' // first make a copy of existing variable. so I LEAVE THIS as having mssing and below I update? 
 	
-	replace master_start_yr`m' = couplm_rel1_start if first_chm_lc==1 & master_start_yr`m'==. & master_end_yr`m' == couplm_rel1_end & master_end_yr`m'!=.
+	replace master_start_yr`m' = couplm_rel1_start if first_chm_lc==1 & master_start_yr`m'==. & master_end_yr`m' == couplm_rel1_end & master_end_yr`m'!=. // basically if missing (aka that means it was unrecoverable from elsewhere), it fills it in. why do I do this?
 }
 
 // might need to add a flag - like is this rel left censored? come back to this (7/3/25) - bc also possible I can fill this in once I match couples - one might have real info and the other may not - so all hope is not YET lost. only do this if BOTH PARTNERS have left censoring - but we might be able to recover info this way
+// this adjustment happens in Step 2 (July 2026)
 
 tab master_start_yr1 master_rel_type1, m col // k yes this is way better
 tab master_start_yr1_lc master_rel_type1, m col
+
+tab master_start_yr1 master_left_censored1, m // confirm the 0s match in both (aka the not left censored). CAN USE THIS FLAG (basically, the above code ONLY FILLED IN those wtih left censored info, so this variable works as long as I restrict in next step to not censored, once I try to match across partners)
+tab master_start_yr1_lc master_left_censored1, m // confirm the 0s match in both. CAN USE THIS FLAG
 
 // now attempt to match on current rel number
 gen current_rel_number=.
@@ -823,21 +976,30 @@ browse pid syear current_rel_number partnered_pl master_rel_type1 master_start_y
 gen current_rel_type=.
 gen current_rel_how_end=.
 gen current_rel_start_yr=.
+gen current_rel_start_yr_lc=.
 gen current_rel_end_yr=.
 gen current_rel_start_miss=.
+gen current_rel_left_censored=.
+gen current_rel_censor=.
 
 forvalues r=1/10{
 	replace current_rel_type = master_rel_type`r' if current_rel_number==`r'
 	replace current_rel_how_end = master_how_end`r' if current_rel_number==`r'
 	replace current_rel_start_yr = master_start_yr`r' if current_rel_number==`r'
+	replace current_rel_start_yr_lc = master_start_yr`r'_lc if current_rel_number==`r' // new July 2026	
 	replace current_rel_end_yr = master_end_yr`r' if current_rel_number==`r'
 	replace current_rel_start_miss = master_start_yr`r'_miss if current_rel_number==`r'
+	replace current_rel_left_censored = master_left_censored`r' if current_rel_number==`r' // new July 2026
+	replace current_rel_censor = master_censor`r' if current_rel_number==`r' // new July 2026
 }
 
 label values current_rel_type rel_type
 label values current_rel_how_end how_end
+label values current_rel_censor censor_EN
 
-browse pid syear current_rel_number partnered_pl partner_id_pl current_rel_type current_rel_how_end current_rel_start_yr current_rel_end_yr full_status_pl // master_rel_type1 master_start_yr1 master_end_yr1 master_start_yr2 master_end_yr2
+egen in_any_rel_history = rowmax(in_couply in_couplm in_marsy)
+
+browse pid syear current_rel_number partnered_pl partner_id_pl current_rel_type current_rel_how_end current_rel_start_yr current_rel_end_yr current_rel_left_censored current_rel_censor full_status_pl in_any_rel_history // master_rel_type1 master_start_yr1 master_end_yr1 master_start_yr2 master_end_yr2
 	// browse pid syear current_rel_number partnered_pl partner_id_pl current_rel_type current_rel_how_end current_rel_start_yr current_rel_end_yr full_status_pl master_rel_type1 master_start_yr1 master_end_yr1 master_start_yr2 master_end_yr2 ///
 	// if inrange(partnered_pl,1,4) & current_rel_number==.
 	tab partnered_pl if inrange(partnered_pl,1,4) & current_rel_number==. & full_status_pl==1, m
@@ -845,6 +1007,10 @@ browse pid syear current_rel_number partnered_pl partner_id_pl current_rel_type 
 	// some it just feels like i am lacking this info from the history. others, it seems like year right before or after the relationship, so maybe that is just a move in / relationship recording issue? let's see what happens when I match partners here as well because some of this may resolve itself...
 	
 inspect partner_id_pl if inlist(partnered_pl,1,2)
+
+// did the left censor seem to work?
+tab current_rel_start_yr current_rel_left_censored, m
+tab psample_pl current_rel_left_censored, row
 
 // merge on biocoupm as well and attempt to fill in partner_id? (especially where me and ppathl diverge in terms of being in a relationship)
 merge m:1 pid using "$temp/biocouplm_wide.dta", keepusing(rhm_partnr* rhm_beginy* rhm_endy* rhm_rel_type*)
@@ -909,18 +1075,54 @@ bysort pid partner_id_pl (current_rel_start_est): replace current_rel_start_est=
 gen current_rel_end_est = syear if rel_end_pre==1
 bysort pid partner_id_pl (current_rel_end_est): replace current_rel_end_est=current_rel_end_est[1]  if partner_id_pl!=. 
 
-gen transition_year = syear if marr_trans==1
-bysort pid partner_id_pl (transition_year): replace transition_year=transition_year[1]  if partner_id_pl!=. 
-
-bysort pid partner_id_pl: egen ever_transition = max(marr_trans) if inrange(partnered_pl,1,4)
-
 sort pid syear
 
 gen current_rel_start_yr_v0 = current_rel_start_yr // I like to retain original copies
 gen current_rel_end_yr_v0 = current_rel_end_yr // I like to retain original copies
 
+	// before updating, let's create a flag denoting I am using this estimated date
+	gen rel_start_est_flag = 0
+	replace rel_start_est_flag = 1 if current_rel_start_yr==. & current_rel_start_est!=. & partner_id_pl!=. & syear>=current_rel_start_est
+	
+	gen rel_end_est_flag = 0
+	replace rel_end_est_flag = 1 if current_rel_end_yr==. & current_rel_end_est!=. & partner_id_pl!=. & syear<=current_rel_end_est
+
 replace current_rel_start_yr = current_rel_start_est if current_rel_start_yr==. & current_rel_start_est!=. & partner_id_pl!=. & syear>=current_rel_start_est
 replace current_rel_end_yr = current_rel_end_est if current_rel_end_yr==. & current_rel_end_est!=. & partner_id_pl!=. & syear<=current_rel_end_est
+
+// tab sex_pl if current_rel_start_yr_v0==. & current_rel_start_yr!=.
+// tab rel_start_est_flag
+
+* And cohab transition info. Also add other transition info
+browse pid partner_id_pl partnered_pl syear current_rel_type firstyr_survey_pl lastyr_survey_pl full_status_pl marr_trans
+
+gen transition_year = syear if marr_trans==1
+bysort pid partner_id_pl (transition_year): replace transition_year=transition_year[1]  if partner_id_pl!=. 
+
+bysort pid partner_id_pl: egen ever_transition = max(marr_trans) if inrange(partnered_pl,1,4)
+
+	// but how many people does this miss if not observed in consecutive years?.
+	bysort pid partner_id_pl: egen first_couple_year = min(syear) if partner_id_pl!=. & full_status_pl==1
+	bysort pid partner_id_pl: egen last_couple_year = max(syear) if partner_id_pl!=. & full_status_pl==1
+	
+	gen first_rel_type = partnered_pl if syear==first_couple_year & inrange(partnered_pl,1,4)
+	gen last_rel_type = partnered_pl if syear==last_couple_year & inrange(partnered_pl,1,4)
+	
+	bysort pid partner_id_pl (first_rel_type): replace first_rel_type = first_rel_type[1]
+	bysort pid partner_id_pl (last_rel_type): replace last_rel_type = last_rel_type[1]
+	
+	label values first_rel_type last_rel_type partnered
+		
+	tab first_rel_type last_rel_type, m
+	tab first_rel_type last_rel_type if inrange(partnered_pl,1,4), m 
+
+	gen transition_est = 0
+	replace transition_est = 1 if inlist(first_rel_type,2,4) & inlist(last_rel_type,1,3)
+
+	tab transition_est ever_transition, m
+	tab transition_est ever_transition if full_status_pl==1, m // okay some of this comes from THEM tracking partner info when not in sample. but I use both, so this is fine. Really the takeaway is that this adds very little here (I think specifically BECAUSE they track this info)
+	
+	// browse pid partner_id_pl partnered_pl syear current_rel_type firstyr_survey_pl lastyr_survey_pl full_status_pl marr_trans first_couple_year last_couple_year first_rel_type last_rel_type transition_est ever_transition // if ever_transition!=transition_est & transition_est!=. & ever_transition!=.
 
 * Can I also figure out the relationship number?
 tab current_rel_number if inrange(partnered_pl,1,4), m
@@ -947,7 +1149,17 @@ browse pid syear status_pl partnered_pl partner_id_pl current_rel_number current
 browse pid syear status_pl partnered_pl partner_id_pl current_rel_number current_rel_number_v0 current_rel_start_yr current_rel_start_est current_rel_end_yr master_start_yr1 master_end_yr1 master_start_yr2 master_end_yr2 rhm_beginy1 rhm_endy1 rhm_beginy2 rhm_endy2 if inlist(pid,103,6301, 25821002,26223302)
 
 // clean up file to make it smaller
-drop rhm_partnr* rhm_beginy* rhm_endy* rhm_rel_type* master_rel_type* master_how_end* master_start_yr* master_end_yr* // couplm_rel1_start couplem_rel1_start_real first_chm_lc
+drop rhm_partnr* rhm_beginy* rhm_endy* rhm_rel_type* master_rel_type* master_how_end* master_start_yr* master_end_yr* master_censor* master_left_censored* // couplm_rel1_start couplem_rel1_start_real first_chm_lc
+
+// make these flags here actually so have for next step
+gen start_yr_missing_flag = 0
+replace start_yr_missing_flag = 1 if current_rel_start_yr==. & inrange(partnered_pl,1,4)
+	
+gen end_yr_missing_flag = 0
+replace end_yr_missing_flag = 1 if current_rel_end_yr==. & inrange(partnered_pl,1,4)
+
+tab current_rel_start_miss current_rel_left_censored, m // so yeah the left censored version covers the previous miss i created. These NEW missing are still missing
+tab start_yr_missing_flag current_rel_left_censored, m // all of the 1s are missing on left censored, so these are DIFFERENT problems
 
 save "$created_data/ppathl_partnership_history.dta", replace
 
