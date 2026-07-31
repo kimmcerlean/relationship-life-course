@@ -233,6 +233,10 @@ bysort unique_id partner_id: egen last_yr_observed = max(survey_yr)
 browse unique_id partner_id survey_yr SEQ_NUMBER_ main_fam_id FAMILY_INTERVIEW_NUM_ min_dur max_dur rel_start_all rel_start_yr_couple rel_start_yr RELATION_ MARITAL_PAIRS_   if inlist(unique_id, 16032, 16170, 16176)
 browse unique_id partner_id survey_yr rel_start_all rel_end_all last_yr_observed relationship_duration min_dur max_dur 
 
+// sort unique_id survey_yr
+// browse unique_id partner_id survey_yr SEQ_NUMBER_ main_fam_id FAMILY_INTERVIEW_NUM_ min_dur max_dur rel_start_all rel_start_yr_couple rel_start_yr RELATION_ MARITAL_PAIRS_ if inlist(unique_id, 4006,4034,16032,40193,89182,2004179,2801198,6064196,6111178,9103002) // July 2026 comparing
+
+
 keep if rel_start_all >= 1990 & inlist(min_dur,0,1) // keeping up to two, because if got married in 2001, say, might not appear in survey until 2003, which is a problem. 
 // keep if rel_start_all <= 2011 // had 2011 when we had 10 year cutoff.
 // keep if rel_start_all <=2018 // now will be 2018 because 3 year cutoff (and assume 1st year of full data is 2019, so that's three years)

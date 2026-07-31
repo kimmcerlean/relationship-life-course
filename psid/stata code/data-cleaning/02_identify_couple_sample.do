@@ -89,8 +89,30 @@ gen in_relationship=.
 replace in_relationship=0 if in_sample==1 & MARITAL_PAIRS_==0
 replace in_relationship=1 if in_sample==1 & inrange(MARITAL_PAIRS_,1,4)
 
+// age
+browse unique_id survey_yr in_sample BIRTH_YR_INDV_ AGE_INDV
+tabstat BIRTH_YR_INDV_ AGE_INDV, by(survey_yr)
+
+replace BIRTH_YR_INDV_ = . if in_sample==0
+replace AGE_INDV = . if in_sample==0
+
+tab BIRTH_YR_INDV_, m
+replace BIRTH_YR_INDV_ = . if BIRTH_YR_INDV_==9999
+replace AGE_INDV = . if AGE_INDV == 999
+
+bysort unique_id: egen birth_yr = min(BIRTH_YR_INDV_)
+
+replace birth_yr = survey_yr - AGE_INDV if birth_yr==. & AGE_INDV !=. & in_sample==1
+
+rename birth_yr birth_yr_helper
+bysort unique_id: egen birth_yr = min(birth_yr_helper) // because of survey dates and ages, birth year can be a year off, use min
+replace AGE_INDV_ = survey_yr - birth_yr if AGE_INDV_==. & birth_yr!=.  & in_sample==1
+
+browse unique_id survey_yr birth_yr BIRTH_YR_INDV_ AGE_INDV
+rename AGE_INDV_ age
+
 // Just keep a few variables to make smaller (kim - update this list once you get to other computer)
-keep unique_id main_fam_id FAMILY_INTERVIEW_NUM_ survey_yr wave SEX  has_psid_gene sample_type in_sample ever_in_sample hh_status_ SEQ_NUMBER_ SAMPLE first_survey_yr last_survey_yr relationship in_relationship YR_NONRESPONSE_RECENT YR_NONRESPONSE_FIRST permanent_attrit PERMANENT_ATTRITION ANY_ATTRITION RELATION_ PSID_COHORT MARITAL_PAIRS_
+keep unique_id main_fam_id FAMILY_INTERVIEW_NUM_ survey_yr wave SEX  has_psid_gene sample_type in_sample ever_in_sample hh_status_ SEQ_NUMBER_ SAMPLE first_survey_yr last_survey_yr relationship in_relationship YR_NONRESPONSE_RECENT YR_NONRESPONSE_FIRST permanent_attrit PERMANENT_ATTRITION ANY_ATTRITION RELATION_ PSID_COHORT MARITAL_PAIRS_ birth_yr age
 
 ********************************************************************************
 * Then fill in relationship info from history
@@ -249,6 +271,7 @@ tab current_rel_end_year current_rel_status_est, m
 	replace current_rel_end_year=last_survey_yr if permanent_attrit == 2 & current_rel_end_year==. & partnered==1
 	replace current_rel_status=2 if permanent_attrit == 2 & current_rel_status==. & partnered==1
 	
+	replace current_rel_end_year = . if current_rel_end_year==9998
 	* Let's hold off on these for now. I don't really use end date anyway. My other file created separate code for attrition also, so need to revisit this. We no longer distinguish attrition frm divorce so this also doesn't really matter...revisit in couple match code as well?
 	// replace rel_end_all=last_survey_yr if permanent_attrit == 1 & rel_end_all==.
 	// replace rel_status=6 if permanent_attrit == 1 & rel_status==.
@@ -338,7 +361,7 @@ save "$created_data/PSID_long_partnership_history.dta", replace
 
 use "$created_data/PSID_long_partnership_history.dta", clear 
 
-local partnervars "in_sample sample_type hh_status has_psid_gene partnered in_relationship relationship rel_type current_rel_type current_rel_start_year current_rel_end_year current_rel_number current_rel_status current_rel_status_est first_survey_yr last_survey_yr current_rel_left_censored start_yr_missing_flag  end_yr_missing_flag rel_start_est_flag rel_end_est_flag ever_transition transition_est transition_year history_flag in_relationship_history permanent_attrit RELATION_"
+local partnervars "in_sample sample_type hh_status has_psid_gene partnered in_relationship relationship rel_type current_rel_type current_rel_start_year current_rel_end_year current_rel_number current_rel_status current_rel_status_est first_survey_yr last_survey_yr current_rel_left_censored start_yr_missing_flag  end_yr_missing_flag rel_start_est_flag rel_end_est_flag ever_transition transition_est transition_year history_flag in_relationship_history permanent_attrit RELATION_ age"
 
 keep unique_id survey_yr `partnervars'
 
@@ -481,8 +504,6 @@ replace both_end_missing = 1 if current_rel_end_year==. & current_rel_end_year_s
 gen rel_end_9999 = .
 replace rel_end_9999 = 0 if current_rel_end!=9999
 replace rel_end_9999 = 1 if current_rel_end==9999
-
-inspect current_rel_end current_rel_end_year current_rel_end_year_sp
 
 inspect current_rel_end current_rel_end_year current_rel_end_year_sp
 
@@ -703,6 +724,32 @@ browse unique_id partner_unique_id survey_yr rel_type ever_transition all_transi
 
 inspect rel_start_all rel_end_all
 
+// can I update rel number info as well?
+bysort unique_id partner_unique_id: egen rel_number_all = min(current_rel_number) if partner_unique_id!=. // think it is as simple as this? I just use the first rel number because it's a continuous relationship from that point?
+
+sort unique_id partner_unique_id survey_yr
+// browse unique_id partner_unique_id survey_yr rel_type all_transitions current_rel_number rel_number_all
+inspect rel_number_all current_rel_number // no missing
+tab  rel_number_all current_rel_number // behaves as expected (some alls are earlier than current)
+
+// probably need to also update rel status - because we want info from the LAST partnership not the first (like cohab will probably say break up but married will say intact)
+browse unique_id partner_unique_id survey_yr rel_type all_transitions current_rel_status_master current_rel_number rel_number_all last_couple_year last_survey_yr last_survey_yr_sp // I actaully htink this got fixed above
+tab all_transitions current_rel_status_master, row
+unique unique_id partner_unique_id
+unique unique_id partner_unique_id current_rel_status_master // though it's not 100% perfect
+
+gen status_all = current_rel_status_master if survey_yr==rel_end_all
+replace status_all = current_rel_status_master if status_all==. & survey_yr==last_couple_year
+bysort unique_id partner_unique_id  (status_all): replace status_all = status_all[1]
+
+label values status_all how_rel_end 
+
+inspect current_rel_status_master status_all 
+
+tab status_all, m
+tab current_rel_status_master, m
+tab status_all current_rel_status_master, m
+
 // let's save this just in case
 save "$temp/psid_long_partners_matched_cleaned.dta", replace
 // save "$created_data/PSID_partners.dta", replace // old partner file, not really using
@@ -717,9 +764,23 @@ save "$temp/psid_long_partners_matched_cleaned.dta", replace
 
 gen dur=survey_yr - rel_start_all
 
-bysort unique_id partner_id: egen min_dur = min(dur)
-bysort unique_id partner_id: egen max_dur = max(dur)
-bysort unique_id partner_id: egen last_yr_observed = max(survey_yr)
+bysort unique_id partner_unique_id: egen min_dur = min(dur)
+bysort unique_id partner_unique_id: egen max_dur = max(dur)
+
+sort unique_id survey_yr
+browse  unique_id partner_unique_id survey_yr dur min_dur max_dur rel_start_all rel_end_all first_survey_yr first_couple_year last_survey_yr last_couple_year
+
+// want to create at time-constant indicator of relationship type
+tab first_rel_type rel_type if all_transitions==0,m 
+
+gen rel_type_constant=.
+replace rel_type_constant = 1 if all_transitions==0 & first_rel_type==20
+replace rel_type_constant = 2 if all_transitions==0 & first_rel_type==22
+replace rel_type_constant = 3 if all_transitions==1
+
+label define rel_type_constant 1 "Married" 2 "Cohab" 3 "Transitioned"
+label values rel_type_constant rel_type_constant
+tab rel_type_constant,m 
 
 ********************************
 * Actual restrictions
@@ -729,13 +790,64 @@ keep if rel_start_all >= 1990 & inlist(min_dur,0,1) // keeping up to two, becaus
 // keep if rel_start_all <= 2011 // had 2011 when we had 10 year cutoff.
 // keep if rel_start_all <=2018 // now will be 2018 because 3 year cutoff (and assume 1st year of full data is 2019, so that's three years)
 keep if rel_start_all <=2020 // now will be 2020 because updated to 2023 (and assume 1st year of full data is 2021, so that's three years)
-keep if exclusion_couples==0
+// keep if exclusion_couples==0
+
+unique unique_id partner_unique_id if (age>=18 & age<=60) &  (age_sp>=18 & age_sp<=60) 
+// keep if (AGE_HEAD_>=18 & AGE_HEAD_<=60) &  (AGE_WIFE_>=18 & AGE_WIFE_<=60)  // do AFTER imputation actually? or is it fine. I removed before previously, but I changed for UK and DE. AH i actually don't have age in this file...
+unique unique_id partner_unique_id if exclusion_couples==0
 
 tab rel_end_all, m // I adjusted this above, "both_end_missing" is the flag (<1%)
-tab status_all, m // <1% missing so prob fine?
+tab status_all, m
 tab rel_end_all status_all, m // the ongoing all already mostly have an end date of last survey year
 
 tab both_left_censored, m // no 1s
 tab both_start_missing, m // gone
-tab both_start_est, m // this is 71 people
+tab both_start_est, m // this is 2 people
 tab both_end_missing, m // <1 %
+
+********************************************************************************
+**# Create list of individuals in eligible couples to match on to main file
+********************************************************************************
+// Temp retaining left censored to match to previous version
+gen long partner_1 = cond(unique_id < partner_unique_id, unique_id, partner_unique_id)
+gen long partner_2 = cond(unique_id < partner_unique_id, partner_unique_id, unique_id)
+
+egen long couple_id = group(partner_1 partner_2)
+
+// confirm this info is truly unique
+unique unique_id partner_unique_id 
+unique unique_id partner_unique_id couple_id  rel_start_all rel_end_all status_all rel_number_all rel_type_constant transition_year min_dur max_dur first_couple_year last_couple_year all_transitions rel_start_all_unadj rel_end_all_9999 //  current_rel_left_censored current_rel_left_censored_sp both_left_censored both_start_missing both_end_missing both_start_est // do max for the latter
+       
+preserve
+
+collapse (first) rel_start_all rel_end_all status_all rel_number_all transition_year min_dur max_dur first_couple_year last_couple_year rel_type_constant rel_start_all_unadj rel_end_all_9999 ///
+(max) all_transitions current_rel_left_censored current_rel_left_censored_sp both_left_censored both_start_missing both_end_missing both_start_est exclusion_couples relationship ever_first_yr_cohabitor ///
+, by(unique_id partner_unique_id couple_id )
+
+label values status_all how_rel_end
+label values relationship relationship
+
+capture label define rel_type_constant 1 "Married" 2 "Cohab" 3 "Transitioned"
+label values rel_type_constant rel_type_constant
+
+gen eligible_couple=1
+rename couple_id eligible_couple_id
+rename rel_start_all eligible_rel_start_year
+rename rel_end_all eligible_rel_end_year
+rename status_all eligible_rel_status
+rename rel_number_all eligible_rel_no
+rename both_left_censored eligible_rel_lc_flag
+rename both_start_missing eligible_rel_miss_flag
+rename both_start_est eligible_rel_est_flag
+rename all_transitions eligible_transition_status
+rename transition_year eligible_transition_year
+
+gen long eligible_partner = partner_unique_id
+by unique_id: egen num_rel = count(partner_unique_id) // this is how many relationships in this time frame they are contributing, so not quite the same as relationship order
+
+browse if num_rel > 1
+tab eligible_transition_year eligible_transition_status, m
+
+save "$created_data/couple_list_individ.dta", replace
+
+restore
