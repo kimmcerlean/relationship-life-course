@@ -529,16 +529,14 @@ mi passive: replace couple_hw_weekday = 3 if woman_weekday_hw_share >= 0.40 & wo
 mi passive: replace couple_hw_weekday = 4 if woman_weekday_hw_share < 0.40
 mi passive: replace couple_hw_weekday = 3 if housework_weekdays_woman==0 & housework_weekdays_man==0  // neither is so small, just put in equal
 
-label define couple_hw 1 "Woman All" 2 "Woman Most" 3 "Equal" 4 "Man Most" 5 "Neither HW"
+capture label define couple_hw 1 "Woman All" 2 "Woman Most" 3 "Equal" 4 "Man Most" 5 "Neither HW"
 label values couple_hw_weekday couple_hw
 
 mi estimate: proportion couple_hw_weekday
-
+	
 	// Cutpoints: within equal HW
 	sum couple_weekday_hw_total, detail
 	sum couple_weekday_hw_total if couple_weekday_hw_total!=0, detail
-	sum couple_weekday_hw_total if couple_weekday_hw_total!=0 & 
-	- okay so , detail
 	sum couple_weekday_hw_total if couple_hw_weekday==3, detail // I put the 0s in here, so actually, I think I should *not* remove 0s
 	mi passive: egen hw_weekday_hilow_equal = cut(couple_weekday_hw_total) if couple_hw_weekday==3, group(2) // couple_weekday_hw_total!=0 & 
 	// is this not working because it's impossible to split into two groups? Now, it is just splitting 0 into low. why isn't it splitting at like...3

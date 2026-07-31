@@ -3,6 +3,7 @@ set maxvar 10000
 
 cd "/home/kmcerlea/stage/Life Course"
 
+/*
 use "created data/stata/gsoep_couples_imputed_long.dta", clear
 
 ********************************************************************************
@@ -463,7 +464,7 @@ mi passive: replace couple_hw_weekday = 3 if woman_weekday_hw_share >= 0.40 & wo
 mi passive: replace couple_hw_weekday = 4 if woman_weekday_hw_share < 0.40
 mi passive: replace couple_hw_weekday = 3 if housework_weekdays_woman==0 & housework_weekdays_man==0  // neither is so small, just put in equal
 
-label define couple_hw 1 "Woman All" 2 "Woman Most" 3 "Equal" 4 "Man Most" 5 "Neither HW"
+capture label define couple_hw 1 "Woman All" 2 "Woman Most" 3 "Equal" 4 "Man Most" 5 "Neither HW"
 label values couple_hw_weekday couple_hw
 
 mi estimate: proportion couple_hw_weekday
@@ -471,9 +472,18 @@ mi estimate: proportion couple_hw_weekday
 	// Cutpoints: within equal HW
 	sum couple_weekday_hw_total, detail
 	sum couple_weekday_hw_total if couple_weekday_hw_total!=0, detail
-	mi passive: egen hw_weekday_hilow_equal = cut(couple_weekday_hw_total) if couple_weekday_hw_total!=0 & couple_hw_weekday==3, group(2) // why is this only generating one variable?
+	// mi passive: egen hw_weekday_hilow_equal = cut(couple_weekday_hw_total) if couple_weekday_hw_total!=0 & couple_hw_weekday==3, group(2) // why is this only generating one variable?
+	mi passive: egen hw_weekday_hilow_equal = cut(couple_weekday_hw_total) if couple_hw_weekday==3, group(2)
 	tab hw_weekday_hilow_equal if couple_hw_weekday==3
 	tabstat couple_weekday_hw_total, by(hw_weekday_hilow_equal)
+	mi passive: egen hw_weekday_hilow_test = cut(couple_weekday_hw_total), group(2)
+	
+	// let's try to split at 2
+	mi passive: gen hw_weekday_equal = 0 if couple_weekday_hw_total <=2
+	mi passive: replace hw_weekday_equal = 1 if couple_weekday_hw_total > 2 & couple_weekday_hw_total < 50
+	tab hw_weekday_equal if couple_hw_weekday==3, m
+	tab hw_weekday_equal, m
+	tab hw_weekday_hilow_test  hw_weekday_equal if couple_hw_weekday==3
 	
 	// Cutpoints: within she does most OR all
 	sum housework_weekdays_woman, detail
@@ -524,12 +534,12 @@ mi estimate: proportion couple_hw couple_hw_hrs couple_hw_hrs_alt
 mi passive: gen couple_hw_hrs_weekday=.
 mi passive: replace couple_hw_hrs_weekday = 1 if inlist(couple_hw_weekday,1,2) & hw_weekday_hilow_woman==1 // 1 = high, 0 = low
 mi passive: replace couple_hw_hrs_weekday = 2 if inlist(couple_hw_weekday,1,2) & hw_weekday_hilow_woman==0 
-mi passive: replace couple_hw_hrs_weekday = 3 if couple_hw_weekday==3 & hw_weekday_hilow_equal==1 // 1 = high, 0 = low
-mi passive: replace couple_hw_hrs_weekday = 4 if couple_hw_weekday==3 & hw_weekday_hilow_equal==0 
+mi passive: replace couple_hw_hrs_weekday = 3 if couple_hw_weekday==3 & hw_weekday_equal==1 // 1 = high, 0 = low
+mi passive: replace couple_hw_hrs_weekday = 4 if couple_hw_weekday==3 & hw_weekday_equal==0 
 mi passive: replace couple_hw_hrs_weekday = 5 if couple_hw_weekday==4
 mi passive: replace couple_hw_hrs_weekday = 4 if housework_weekdays_woman==0 & housework_weekdays_man==0  // neither is so small, just put in equal low
 
-label define couple_hw_hrs_combo 1 "Woman Most: High" 2 "Woman Most: Low" 3 "Equal: High" 4 "Equal: Low" 5 "Man Most: All"
+capture label define couple_hw_hrs_combo 1 "Woman Most: High" 2 "Woman Most: Low" 3 "Equal: High" 4 "Equal: Low" 5 "Man Most: All"
 label values couple_hw_hrs_weekday couple_hw_hrs_combo
 
 mi estimate: proportion couple_hw_weekday couple_hw_hrs_weekday
@@ -548,7 +558,7 @@ mi passive: gen housework_weekdays_5_man = housework_weekdays_man * 5
 mi passive: egen housework_weekly_est_man = rowtotal(housework_weekdays_5_man housework_saturdays_man housework_sundays_man), missing
 
 mi passive: egen couple_weekly_hw_total = rowtotal(housework_weekly_est_woman housework_weekly_est_man)
-mi passive: gen woman_weekly_hw_share = housework_weekly_est_man / couple_weekly_hw_total // this does have missing I think is couple HW total is 0
+mi passive: gen woman_weekly_hw_share = housework_weekly_est_woman / couple_weekly_hw_total // this does have missing I think is couple HW total is 0
 
 sum housework_weekly_est_woman, det
 sum housework_weekly_est_woman if housework_weekly_est_woman!=0, det
@@ -570,7 +580,7 @@ mi estimate: proportion couple_hw_weekly
 	// Cutpoints: within equal HW
 	sum couple_weekly_hw_total, detail
 	sum couple_weekly_hw_total if couple_weekly_hw_total!=0, detail
-	mi passive: egen hw_weekly_hilow_equal = cut(couple_weekly_hw_total) if couple_weekly_hw_total!=0 & couple_hw_weekly==3, group(2)
+	mi passive: egen hw_weekly_hilow_equal = cut(couple_weekly_hw_total) if couple_hw_weekly==3, group(2) // need to think about if I should keep 0 here as well, because 0 hours of housework also goes in category 3 // couple_weekly_hw_total!=0 -- yeah remove this, because 0s included in the PSID / UKHLS versions
 	tab hw_weekly_hilow_equal if couple_hw_weekly==3
 	tabstat couple_weekly_hw_total, by(hw_weekly_hilow_equal)
 	
@@ -623,7 +633,7 @@ mi estimate: proportion couple_hw_combined
 	// Cutpoints: within equal HW
 	sum couple_combined_hw_total, detail
 	sum couple_combined_hw_total if couple_combined_hw_total!=0, detail
-	mi passive: egen hw_combined_hilow_equal = cut(couple_combined_hw_total) if couple_combined_hw_total!=0 & couple_hw_combined==3, group(2)
+	mi passive: egen hw_combined_hilow_equal = cut(couple_combined_hw_total) if couple_hw_combined==3, group(2) // couple_combined_hw_total!=0 
 	tab hw_combined_hilow_equal if couple_hw_combined==3
 	tabstat couple_combined_hw_total, by(hw_combined_hilow_equal)
 	
@@ -633,7 +643,7 @@ mi estimate: proportion couple_hw_combined
 	mi passive: egen hw_combined_hilow_woman = cut(housework_combined_woman) if housework_combined_woman!=0 & inlist(couple_hw_combined,1,2), group(2)
 	tab hw_combined_hilow_woman if inlist(couple_hw_combined,1,2)
 	tabstat housework_combined_woman, by(hw_combined_hilow_woman)
-
+	
 * Consolidated housework + hours variable
 mi passive: gen couple_hw_hrs_combined=.
 mi passive: replace couple_hw_hrs_combined = 1 if inlist(couple_hw_combined,1,2) & hw_combined_hilow_woman==1 // 1 = high, 0 = low
@@ -651,6 +661,10 @@ mi estimate: proportion couple_hw_combined couple_hw_hrs_combined
 **# Bookmark #1
 // temp save
 save "created data/stata/gsoep_couples_imputed_long_recoded.dta", replace
+
+*/
+
+use "created data/stata/gsoep_couples_imputed_long_recoded.dta", clear
 
 ********************
 * Family
@@ -791,8 +805,8 @@ save "created data/stata/gsoep_couples_imputed_long_recoded.dta", replace
 ********************
 // check
 inspect woman_weekday_hw_share if couple_weekday_hw_total == 0 & imputed==1 // so yes, these are missing when couple HW total is 0 because can't divide by 0, will remove from below
-inspect woman_weekly_hw_share if couple_weekday_hw_total == 0 & imputed==1 // so yes, these are missing when couple HW total is 0 because can't divide by 0, will remove from below
-inspect woman_combined_hw_share if couple_weekday_hw_total == 0 & imputed==1 // so yes, these are missing when couple HW total is 0 because can't divide by 0, will remove from below
+inspect woman_weekly_hw_share if couple_weekly_hw_total == 0 & imputed==1 // so yes, these are missing when couple HW total is 0 because can't divide by 0, will remove from below
+inspect woman_combined_hw_share if couple_combined_hw_total == 0 & imputed==1 // so yes, these are missing when couple HW total is 0 because can't divide by 0, will remove from below
 
 inspect hw_weekday_hilow_woman if housework_weekdays_woman == 0 & imputed==1 // I only did for women with hW hours. so these missings also make sense
 inspect hw_weekly_hilow_woman if housework_weekly_est_woman == 0 & imputed==1 // I only did for women with hW hours. so these missings also make sense
