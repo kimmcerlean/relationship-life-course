@@ -278,12 +278,7 @@ forvalues y=1998(2)2022{
 
 browse in_sample_1986 in_sample_1987 in_sample_1988 in_sample_2001 in_sample_2003 yrs_non_sample1986 yrs_non_sample1987 yrs_non_sample1988 yrs_non_sample2001 yrs_non_sample2003
 
-// before reshaping, get last race observed to use for later
-egen last_race_focal=rowlast(raceth_focal*) // tie break with last reported
-browse last_race_focal raceth_focal*
-label values last_race_focal raceth
-
-// and first observed educational
+// before reshaping, get first observed educational
 egen first_educ_focal=rowfirst(educ_focal*)
 browse first_educ_focal educ_focal*
 label values first_educ_focal educ
@@ -309,13 +304,6 @@ browse unique_id survey_yr rel_start_all duration min_dur max_dur relationship_ 
 
 browse unique_id survey_yr age_focal birth_yr
 replace age_focal = survey_yr - birth_yr if age_focal==.
-
-drop raceth_fixed_focal
-bysort unique_id: egen raceth_fixed_focal = median(raceth_focal) // majority
-tab raceth_fixed_focal, m
-browse unique_id survey_yr last_race_focal raceth_focal raceth_fixed_focal
-replace raceth_fixed_focal=last_race_focal if inlist(raceth_fixed_focal,1.5,2.5,3.5,4.5) // tie break with last observed (from above)
-replace raceth_fixed_focal=last_race_focal if raceth_fixed_focal==. // if any other gaps, use last observed
 
 *******************************************************************
 * try to fill in partnership status using various history measures
