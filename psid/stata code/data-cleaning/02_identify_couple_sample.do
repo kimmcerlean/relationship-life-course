@@ -111,7 +111,7 @@ replace AGE_INDV_ = survey_yr - birth_yr if AGE_INDV_==. & birth_yr!=.  & in_sam
 browse unique_id survey_yr birth_yr BIRTH_YR_INDV_ AGE_INDV
 rename AGE_INDV_ age
 
-// Just keep a few variables to make smaller (kim - update this list once you get to other computer)
+// Just keep a few variables to make smaller
 keep unique_id main_fam_id FAMILY_INTERVIEW_NUM_ survey_yr wave SEX  has_psid_gene sample_type in_sample ever_in_sample hh_status_ SEQ_NUMBER_ SAMPLE first_survey_yr last_survey_yr relationship in_relationship YR_NONRESPONSE_RECENT YR_NONRESPONSE_FIRST permanent_attrit PERMANENT_ATTRITION ANY_ATTRITION RELATION_ PSID_COHORT MARITAL_PAIRS_ birth_yr age
 
 ********************************************************************************
@@ -389,7 +389,7 @@ inspect partner_unique_id if inlist(current_rel_type,20,22)
 inspect partner_unique_id if inlist(rel_type,20,22)
 
 keep if inlist(rel_type,20,22)
-// drop if partner_unique_id==.W
+// drop if partner_unique_id==.
 
 merge m:1 partner_unique_id survey_yr using "$temp/psid_partner_rel_info.dta"
 drop if _merge==2
@@ -782,6 +782,10 @@ label define rel_type_constant 1 "Married" 2 "Cohab" 3 "Transitioned"
 label values rel_type_constant rel_type_constant
 tab rel_type_constant,m 
 
+// did i observe it end? (aka I flagged transition out of rel.)
+bysort unique_id partner_unique_id: egen ended = max(rel_end_pre)
+sort unique_id partner_unique_id survey_yr
+
 ********************************
 * Actual restrictions
 ********************************
@@ -790,17 +794,29 @@ keep if rel_start_all >= 1990 & inlist(min_dur,0,1) // keeping up to two, becaus
 // keep if rel_start_all <= 2011 // had 2011 when we had 10 year cutoff.
 // keep if rel_start_all <=2018 // now will be 2018 because 3 year cutoff (and assume 1st year of full data is 2019, so that's three years)
 keep if rel_start_all <=2020 // now will be 2020 because updated to 2023 (and assume 1st year of full data is 2021, so that's three years)
-// keep if exclusion_couples==0
+keep if exclusion_couples==0
 
+unique unique_id partner_unique_id 
 unique unique_id partner_unique_id if (age>=18 & age<=60) &  (age_sp>=18 & age_sp<=60) 
-// keep if (AGE_HEAD_>=18 & AGE_HEAD_<=60) &  (AGE_WIFE_>=18 & AGE_WIFE_<=60)  // do AFTER imputation actually? or is it fine. I removed before previously, but I changed for UK and DE. AH i actually don't have age in this file...
-unique unique_id partner_unique_id if exclusion_couples==0
+// keep if (age>=18 & age<=60) &  (age_sp>=18 & age_sp<=60) // do AFTER imputation actually? or is it fine. I removed before previously, but I changed for UK and DE. AH i actually don't have age in this file... I think I can do what i do AFTER imputation, but do it here? let's try this
+gen age_flag = 0
+replace age_flag = 1 if (age>=18 & age<=60) &  (age_sp>=18 & age_sp<=60) 
 
+bysort unique_id partner_unique_id: egen age_eligible=total(age_flag)
+tab age_eligible, m // 0 means never within age range
+
+sort unique_id partner_unique_id survey_yr 
+browse unique_id partner_unique_id survey_yr  age age_sp age_flag age_eligible
+drop if age_eligible==0
+
+unique unique_id partner_unique_id
+ 
 tab rel_end_all, m // I adjusted this above, "both_end_missing" is the flag (<1%)
 tab status_all, m
 tab rel_end_all status_all, m // the ongoing all already mostly have an end date of last survey year
 
-tab both_left_censored, m // no 1s
+tab both_left_censored, m // 
+tab both_left_censored ever_first_yr_cohabitor, m // small ones (< 0.5%) are the first year cohabitors so I technically can say observed (because I know it was the first year)
 tab both_start_missing, m // gone
 tab both_start_est, m // this is 2 people
 tab both_end_missing, m // <1 %
@@ -816,11 +832,11 @@ egen long couple_id = group(partner_1 partner_2)
 
 // confirm this info is truly unique
 unique unique_id partner_unique_id 
-unique unique_id partner_unique_id couple_id  rel_start_all rel_end_all status_all rel_number_all rel_type_constant transition_year min_dur max_dur first_couple_year last_couple_year all_transitions rel_start_all_unadj rel_end_all_9999 //  current_rel_left_censored current_rel_left_censored_sp both_left_censored both_start_missing both_end_missing both_start_est // do max for the latter
+unique unique_id partner_unique_id couple_id  rel_start_all rel_end_all status_all rel_number_all rel_type_constant transition_year min_dur max_dur first_couple_year last_couple_year all_transitions rel_start_all_unadj rel_end_all_9999 ended //  current_rel_left_censored current_rel_left_censored_sp both_left_censored both_start_missing both_end_missing both_start_est // do max for the latter
        
 preserve
 
-collapse (first) rel_start_all rel_end_all status_all rel_number_all transition_year min_dur max_dur first_couple_year last_couple_year rel_type_constant rel_start_all_unadj rel_end_all_9999 ///
+collapse (first) rel_start_all rel_end_all status_all rel_number_all transition_year min_dur max_dur first_couple_year last_couple_year rel_type_constant rel_start_all_unadj rel_end_all_9999 ended ///
 (max) all_transitions current_rel_left_censored current_rel_left_censored_sp both_left_censored both_start_missing both_end_missing both_start_est exclusion_couples relationship ever_first_yr_cohabitor ///
 , by(unique_id partner_unique_id couple_id )
 
@@ -841,12 +857,15 @@ rename both_start_missing eligible_rel_miss_flag
 rename both_start_est eligible_rel_est_flag
 rename all_transitions eligible_transition_status
 rename transition_year eligible_transition_year
+rename ever_first_yr_cohabitor eligible_rel_ever_fyc
+rename relationship eligible_rel_max_relation
 
 gen long eligible_partner = partner_unique_id
 by unique_id: egen num_rel = count(partner_unique_id) // this is how many relationships in this time frame they are contributing, so not quite the same as relationship order
 
-browse if num_rel > 1
+// browse if num_rel > 1
 tab eligible_transition_year eligible_transition_status, m
+tab exclusion_couples, m
 
 save "$created_data/couple_list_individ.dta", replace
 

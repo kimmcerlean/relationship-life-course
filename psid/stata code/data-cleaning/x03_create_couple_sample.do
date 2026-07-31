@@ -10,6 +10,7 @@
 // OLD CREATE COUPLE FILE. Brought back July 2026 for troubleshooting.
 // I identified 60% of new couples in the partners file created here and can understand why I have them and this fle did not (namely min_dur)
 // However, trying to identify the remaining 40%-  are they not labeled as head / wife? did I recover extra info from the family matrix I should have used? etc.
+// confirmed: combo of first year cohabitors (not classified in marital pairs or marital status defacto, even for head - considered SINGLE) and non head wives
 
 ********************************************************************************
 * Description

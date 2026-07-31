@@ -13,6 +13,14 @@
 * This files gets the individual level data from partners in the couples to
 * recode and assign to focal person.
 
+// KIM noting this here before you start - some things to look at in this file as you go through old codes:
+/*
+If you create marital status variable here, enusre you update so first year cohab included. I need to look at code to see how I do - not sure I do based on rel_type or some other info (actually - i might need to add that rel_type info here because I don't know that i do) but the current cdoe DOES NOT count first year cohabitors prooperly i don't think.
+
+ALSO - the one thing I did do in step (03 - clean (that used to be called recode)) is merge on some info. need to check if i do this below or can easily incorporate here anyway. Okay, yes this is all below
+
+ALSO - i am changing things a bit to what i did for UK / DE and not doing age restrictions in previous step the way i did before. COnfirm later on that age worked as expected [following UK/DE]
+*/
 
 ********************************************************************************
 **# First get survey responses for each individual in couple from main file
