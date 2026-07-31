@@ -283,6 +283,7 @@ egen first_educ_focal=rowfirst(educ_focal*)
 browse first_educ_focal educ_focal*
 label values first_educ_focal educ
 
+// do I try to recover race again actually one more time while wide?
 
 ********************************************************************************
 * BACK to long so can recenter on duration and fill in some missings
