@@ -18,7 +18,7 @@
 ********************************************************************************
 use "$temp/inidividual_vars_imputation_long.dta", clear
 
-drop *_head* *_HEAD* *_wife* *_WIFE* *_INDV* *_indv* educ_completed wave MOVED_ MOVED_MONTH_  SPLITOFF_MONTH_ FAMILY_ID_SO_ MOVED_sp_ edulevelrp_match edulevelmaxrp_match edulevelsp_match edulevelmaxsp_match father_educ_focal mother_educ_focal family_structure_focal OFUM*_ID_ OFUM*_REL_ father_check mother_check year cah_mom_wanted* cah_mom_timing* cah_dad_wanted* cah_dad_timing* cah_child_hispanicity* cah_child_race1* cah_child_race2* cah_child_race3* cah_child_birth_mon* cah_birth_order* cah_child_int_number* cah_child_per_num* cah_parent_marst* cah_child_sex* cah_event_type* cah_num_children*
+drop *_head* *_HEAD* *_wife* *_WIFE* *_INDV* *_indv* educ_completed wave MOVED_ MOVED_MONTH_  SPLITOFF_MONTH_ FAMILY_ID_SO_ MOVED_sp_ edulevelrp_match edulevelmaxrp_match edulevelsp_match edulevelmaxsp_match father_educ_focal mother_educ_focal family_structure_focal OFUM*_ID_ OFUM*_REL_ father_check mother_check year // cah_mom_wanted* cah_mom_timing* cah_dad_wanted* cah_dad_timing* cah_child_hispanicity* cah_child_race1* cah_child_race2* cah_child_race3* cah_child_birth_mon* cah_birth_order* cah_child_int_number* cah_child_per_num* cah_parent_marst* cah_child_sex* cah_event_type* cah_num_children*
 
 bysort unique_id: egen birth_yr_all = min(birth_yr)
 drop birth_yr
@@ -404,6 +404,11 @@ browse unique_id survey_yr in_sample_ first_survey_year last_survey_year last_co
 
 gen in_rel_flag = 0 // this is how I did below previously (to distinguish from the top row that fills in existing variable)
 
+/*
+okay i was trying to recover more, but let's do it the conservative way
+
+tab master_rel_end1, m // I forget the intact are labeled as 9999 but this doesn't mean like STILL partnered if attrited. how do I update these? and it's not necessarily current rel so I can't say for sure based on last couple year. i guess that is the last rel, so if they are in that rel, it's irrelevant bc I WILL restrict to last observed duration later on (I mean some minor cases are missing, but if break up and start new, they try to get end date)
+
 forvalues y=1/9{
 	local z=`y'+1 // if `y' <= 9
 		
@@ -413,21 +418,38 @@ forvalues y=1/9{
 	
 	replace marst_imp = 1 if marst_imp==. & survey_yr >= master_rel_start`y' & survey_yr <= master_rel_end`y' & master_rel_type`y'==20 & survey_yr <= last_couple_year  & (survey_yr < master_rel_start`z') // marriage. 9999s also causing problems in this way, so need to also make sure end doesn't overlap with next relationship
 	replace marst_imp = 2 if marst_imp==. & survey_yr >= master_rel_start`y' & survey_yr <= master_rel_end`y' & master_rel_type`y'==22 & survey_yr <= last_couple_year & (survey_yr < master_rel_start`z')  // cohab
+	
 }
 
 	replace partnered_imp = 1 if partnered_imp==. & survey_yr >= master_rel_start10 & survey_yr <= master_rel_end10 & survey_yr <= last_couple_year
 	replace in_rel_flag = 1 if survey_yr >= master_rel_start10 & survey_yr <= master_rel_end10 & survey_yr <= last_survey_year
 	replace marst_imp = 1 if marst_imp==. & survey_yr >= master_rel_start10 & survey_yr <= master_rel_end10 & master_rel_type10==20 & survey_yr <= last_couple_year
 	replace marst_imp = 2 if marst_imp==. & survey_yr >= master_rel_start10 & survey_yr <= master_rel_end10 & master_rel_type10==22 & survey_yr <= last_couple_year
+*/
+
+
+forvalues y=1/10{
+	replace partnered_imp = 1 if partnered_imp==. & survey_yr >= master_rel_start`y' & survey_yr <= master_rel_end`y' & master_rel_end`y'<9000
 	
+	replace in_rel_flag = 1 if survey_yr >= master_rel_start`y' & survey_yr <= master_rel_end`y' & (master_rel_end`y'<9000 | (master_rel_end`y'==9999 & survey_yr <= last_survey_year))
+	
+	replace marst_imp = 1 if marst_imp==. & survey_yr >= master_rel_start`y' & survey_yr <= master_rel_end`y' & master_rel_end`y'<9000 & master_rel_type`y'==20 // marriage
+	replace marst_imp = 2 if marst_imp==. & survey_yr >= master_rel_start`y' & survey_yr <= master_rel_end`y' & master_rel_end`y'<9000 & master_rel_type`y'==22 // cohab
+
+}
+
+browse unique_id partner_unique_id in_sample_ marst_imp duration min_dur max_dur rel_type rel_type_constant
+tab marst_imp if survey_yr>= eligible_rel_start_year & survey_yr <=eligible_rel_end_year , m
+	replace marst_imp = 1 if marst_imp==. & survey_yr>= eligible_rel_start_year & survey_yr <=eligible_rel_end_year & rel_type_constant==1
+	replace marst_imp = 2 if marst_imp==. & survey_yr>= eligible_rel_start_year & survey_yr <=eligible_rel_end_year & rel_type_constant==2
 	replace marst_imp = 2 if rel_type==22 & marst_imp!=2
 	
 replace partnered_imp=0 if partnered_imp==. & survey_yr < master_rel_start1 & master_rel_start1!=. // not partnered if prior to first rel date
-replace marst_imp=3 if marst_imp==. & survey_yr < master_rel_start1 & master_rel_start1!=. // & master_rel_type1==1 // this is never partnered so is fine to be either partner
+replace marst_imp=3 if marst_imp==. & survey_yr < master_rel_start1 & master_rel_start1!=. // & master_rel_type1==20 // do I need to restrict on marriage? bc I combine histories, if it's before your first relationship, you are never married? because it you were married and then cohab, then marriage would be first relationshop/ if cohab then marriage, you are still never married at this point...
 
 tab partnered_imp in_rel_flag, m
 tab partnered_imp in_rel_flag if in_sample_==1, m
-replace partnered_imp = 0 if in_sample_==1 & in_rel_flag==0
+replace partnered_imp = 0 if partnered_imp ==. & in_sample_==1 & in_rel_flag==0
 
 // can I fill in POST rel info? well, if intact, that doesn't work if they dropped out (bc we don't know when actually ended). also we generally don't know after they dropped out because could enter another rel
 browse unique_id survey_yr marst_imp marital_status_focal first_survey_year last_survey_year last_couple_year eligible_rel_start_year eligible_rel_end_year eligible_rel_status master_rel_start1 master_rel_end1 master_rel_how_end1 master_rel_start2 master_rel_end2 master_rel_how_end2 master_rel_start3 master_rel_end3 master_rel_how_end3
@@ -613,13 +635,12 @@ foreach var in unique_id partner_unique_id SEX couple_id eligible_couple eligibl
 	bysort couple_id (`var'): replace `var'=`var'[1] if `var'==.
 }
 
-browse unique_id survey_yr eligible_rel_start_year birth_yr_all age_focal duration if inlist(unique_id,4039,4180,4201,4202,5004,5004,5183,5183,6032,6177,7032)
+* Some variables to create
+browse unique_id survey_yr eligible_rel_start_year birth_yr_all age_focal duration if inlist(unique_id,4039,4180,4201,4202,5004,5004,5183,5183,6032,6177,7032)  // illustrate below post-last-survey problem
 sort unique_id partner_unique_id duration
 
-* Some variables to create
 // replace survey_yr = survey_yr[_n-1]+1 if survey_yr==.
 replace survey_yr = eligible_rel_start_year + duration if survey_yr==. // what i use elsewhere
-
 replace age_focal=survey_yr - birth_yr_all if age_focal==.
 
 // while here, add that indicator I want of first birth relative to this rel start
@@ -679,6 +700,13 @@ replace house_status_all = 2 if house_status_all_v0==1 // owns
 
 label define house_status 0 "Neither" 1 "Rents" 2 "Owns"
 label values house_status_all house_status
+
+// also - create binary home ownership because I think "neither" are causing problems...
+tab house_status_all, m
+
+gen home_owner=.
+replace home_owner=0 if inlist(house_status_all,0,1)
+replace home_owner=1 if house_status_all==2
 
 // update employment status based on weekly hours at t (except, I use a more detailed indicator of this later but let's retain for posterity)
 tab weekly_hrs_t_focal employed_focal, m
@@ -765,7 +793,7 @@ replace partnered=0 if MARITAL_PAIRS_==0
 replace partnered=1 if inrange(MARITAL_PAIRS_,1,3)
 */
 
-tabstat weekly_hrs_t_focal housework_focal childcare_focal adultcare_focal employed_focal earnings_t_focal age_focal birth_yr_all educ_focal college_focal raceth_focal raceth_fixed_focal ever_parent_focal children num_children_imp_focal num_children_imp_hh num_births_focal rolling_births FIRST_BIRTH_YR AGE_YOUNG_CHILD_ birth_timing_rel relationship_ partnered_imp eligible_rel_no mpf_focal TOTAL_INCOME_T_FAMILY sample_type num_parent_in_hh num_65up_hh disabled_focal sr_health_focal retired_est_focal, stats(mean sd p50) columns(statistics)
+tabstat weekly_hrs_t_focal housework_focal childcare_focal adultcare_focal employed_focal earnings_t_focal age_focal birth_yr_all educ_focal college_focal fixed_education home_owner raceth_focal raceth_fixed_focal ever_parent_focal children num_children_imp_focal num_children_imp_hh num_births_focal rolling_births FIRST_BIRTH_YR AGE_YOUNG_CHILD_ birth_timing_rel relationship_ partnered_imp marst_imp eligible_rel_no mpf_focal TOTAL_INCOME_T_FAMILY sample_type num_parent_in_hh num_65up_hh disabled_focal sr_health_focal retired_est_focal, stats(mean sd p50) columns(statistics)
 
 ********************************************************************************
 ********************************************************************************
@@ -776,7 +804,7 @@ tabstat weekly_hrs_t_focal housework_focal childcare_focal adultcare_focal emplo
 
 drop survey_yr duration _fillin MARITAL_PAIRS_ *_sp *_sp* cah_* master_* MOVED_YEAR_ MOVED_YEAR_sp_ moved_focal moved_sp any_births_t1_focal any_births_t1_hh any_births_t2_focal any_births_t2_hh *_est SPLITOFF* COMPOSITION_CHANGE_ NUM_IN_HH_ DATA_RECORD_TYPE_  SAMPLE_STATUS_TYPE PERMANENT_ATTRITION ANY_ATTRITION permanent_attrit lt_attrit YR_NONRESPONSE_RECENT YR_NONRESPONSE_FIRST yrs_non_sample change_yr int_number per_num INTERVIEW_NUM_1968 individ_birth_ NUM_BIRTHS first_birth_yr_calc first_birth_yr_calc_dedup  first_birth_yr_alt father_fam_id father_in_sample father_moved father_change_yr mother_fam_id mother_in_sample mother_moved mother_change_yr parent_in_ofum house_status_all_v0 MARITAL_STATUS FIRST_MARRIAGE_YR_START FIRST_MARRIAGE_YR_END FIRST_MARRIAGE_STATUS FIRST_SEPARATE_YR NUM_MARRIED RECENT_MARRIAGE_YR_START RECENT_MARRIAGE_STATUS RECENT_MARRIAGE_YR_END RECENT_SEPARATE_YR partner_id // hh_births_pre1968
 
-reshape wide in_sample_ hh_status_ relationship_  partnered weekly_hrs_t1_focal earnings_t1_focal housework_focal employed_focal employed_focal_rec max_educ_focal educ_focal educ_focal_imp college_focal age_focal weekly_hrs_t2_focal earnings_t2_focal employed_t2_focal start_yr_employer_focal yrs_employer_focal children FAMILY_INTERVIEW_NUM_ NUM_CHILDREN_ AGE_YOUNG_CHILD_ TOTAL_INCOME_T1_FAMILY_ hours_type_t1_focal hw_hours_gp raceth_focal weekly_hrs_t_focal earnings_t_focal TOTAL_INCOME_T_FAMILY childcare_focal adultcare_focal TOTAL_INCOME_T2_FAMILY_ has_hours_t1 has_earnings_t1 has_hours_t2 has_earnings_t2 employed_t1_hrs_focal employed_t1_earn_focal partnered_imp marst_imp num_children_imp_focal num_children_imp_hh rolling_births had_birth hh_births* increment_birth under18 edulevel_match edulevelmax_match new_in_hh disabled_focal empstat_disabled_focal disabled_scale_focal sr_health_focal yr_retired_focal empstat_retired_focal retired_est_focal num_65up_hh age65up house_status_all moved_in_lastyr moved_mo_lastyr moved_yr_lastyr religion_focal lives_family_focal RESPONDENT_WHO_ REGION_ employment_status_focal current_parent_status num_parent_in_hh father_in_hh mother_in_hh RELATION_ relationship_type_ is_respondent_focal is_first_yr_cohabitor has_first_yr_cohabitor rel_type marital_status_focal in_rel_flag ///
+reshape wide in_sample_ hh_status_ relationship_  partnered weekly_hrs_t1_focal earnings_t1_focal housework_focal employed_focal employed_focal_rec max_educ_focal educ_focal educ_focal_imp college_focal age_focal weekly_hrs_t2_focal earnings_t2_focal employed_t2_focal start_yr_employer_focal yrs_employer_focal children FAMILY_INTERVIEW_NUM_ NUM_CHILDREN_ AGE_YOUNG_CHILD_ TOTAL_INCOME_T1_FAMILY_ hours_type_t1_focal hw_hours_gp raceth_focal weekly_hrs_t_focal earnings_t_focal TOTAL_INCOME_T_FAMILY childcare_focal adultcare_focal TOTAL_INCOME_T2_FAMILY_ has_hours_t1 has_earnings_t1 has_hours_t2 has_earnings_t2 employed_t1_hrs_focal employed_t1_earn_focal partnered_imp marst_imp num_children_imp_focal num_children_imp_hh rolling_births had_birth hh_births* increment_birth under18 edulevel_match edulevelmax_match new_in_hh disabled_focal empstat_disabled_focal disabled_scale_focal sr_health_focal yr_retired_focal empstat_retired_focal retired_est_focal num_65up_hh age65up house_status_all home_owner moved_in_lastyr moved_mo_lastyr moved_yr_lastyr religion_focal lives_family_focal RESPONDENT_WHO_ REGION_ employment_status_focal current_parent_status num_parent_in_hh father_in_hh mother_in_hh RELATION_ relationship_type_ is_respondent_focal is_first_yr_cohabitor has_first_yr_cohabitor rel_type marital_status_focal in_rel_flag ///
 , i(couple_id unique_id partner_unique_id eligible_rel_start_year min_dur max_dur eligible_rel_end_year ended SEX) j(duration_rec)
 
 // might need to attempt to fill in more disabled status - causing problems with imputation. 

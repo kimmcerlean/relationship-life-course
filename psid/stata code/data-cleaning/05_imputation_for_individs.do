@@ -8,15 +8,15 @@
 ********************************************************************************
 
 // Notes before starting (8/6/26)
-0. PUSH GITHUB before this step so pre-imputation updates are distinct from these imputation updates
-1. def need to update the rel # variable name (current_rel_number_main to eligible_rel_no). Check other variable names because added many more variables in the fixed file re: relationship. Not sure I need to use any
-2. TRY to do disability again? I feel like a reviewer asked about that.
-3. Generally, bc I had to do so much finagling with the PSID, do I want to revisit ORIGINAL code and try with more leads / lags / variables? or is that risky and I should just do what I know worked? I am just not sure if adding 5000 more couples will make some code run that didn't before? (not sure if will help or hurt problem lol)
-4. do I want to update respondent who to is respondent focal?
-5. Replace partnered_imp with marst_imP???
-6. probably need to actually revisit entire PSID Imputation code don't I? - are these the right variables and rigth predictors (per also point 3?)
-7. I am going to TRY to impute all, but I might need to drop those people who were NEVER HH heads - their % missing is quite high
-8. ALSO - do I add that as a predictor variable?! or is adding variables too chaos? also except for "other", highly correlated with gender because heads always men. 
+*x 0. PUSH GITHUB before this step so pre-imputation updates are distinct from these imputation updates
+*x 1. def need to update the rel # variable name (current_rel_number_main to eligible_rel_no). Check other variable names because added many more variables in the fixed file re: relationship. Not sure I need to use any
+*x 2. TRY to do disability again? I feel like a reviewer asked about that. I removed some of the previous code and am going to try to impute as is.
+*x 3. Generally, bc I had to do so much finagling with the PSID, do I want to revisit ORIGINAL code and try with more leads / lags / variables? or is that risky and I should just do what I know worked? I am just not sure if adding 5000 more couples will make some code run that didn't before? (not sure if will help or hurt problem lol). except, I don't remember as many problems with the marriage code and I am not sure why. Let's at least TRY
+*x 4. do I want to update respondent who to is respondent focal? Yes
+*x 5. Replace partnered_imp with marst_imP??? Yes
+*x 6. probably need to actually revisit entire PSID Imputation code don't I? - are these the right variables and rigth predictors (per also point 3?)
+*7. I am going to TRY to impute all, but I might need to drop those people who were NEVER HH heads - their % missing is quite high
+*8. ALSO - do I add that as a predictor variable?! or is adding variables too chaos? also except for "other", highly correlated with gender because heads always men. 
 
 ********************************************************************************
 * Description
@@ -27,6 +27,7 @@
 * Stata MI Impute
 ********************************************************************************
 use "$created_data/individs_by_duration_wide.dta", clear
+
 capture label define rel_status 1 "Intact" 3 "Widow" 4 "Divorce" 5 "Separated" 6 "Attrited"
 label values rel_status rel_status
 
@@ -34,7 +35,7 @@ browse if inlist(unique_id, 16032, 16176)
 browse unique_id partner_id rel_start_all rel_end_all ended rel_status last_yr_observed min_dur max_dur partnered_imp*
 browse unique_id partner_id RESPONDENT_WHO_*
 
-misstable summarize FIRST_BIRTH_YR age_focal* birth_yr_all SEX raceth_fixed_focal fixed_education sample_type rel_start_all birth_timing_rel rel_type_constant current_rel_number_main current_parent_status* RESPONDENT_WHO_* retired_est_focal*, all
+misstable summarize FIRST_BIRTH_YR age_focal* birth_yr_all SEX raceth_fixed_focal fixed_education sample_type rel_start_all birth_timing_rel rel_type_constant eligible_rel_no current_parent_status* RESPONDENT_WHO_* retired_est_focal*, all
 
 egen nmis_workhrs = rmiss(weekly_hrs_t1_focal*)
 tab nmis_workhrs, m
@@ -552,12 +553,12 @@ forvalues d=0/14{
 	drop if RESPONDENT_WHO_`d'==.
 }
 
-misstable summarize FIRST_BIRTH_YR age_focal* birth_yr_all SEX raceth_fixed_focal fixed_education sample_type rel_start_all birth_timing_rel rel_type_constant current_rel_number_main current_parent_status* RESPONDENT_WHO_* retired_est_focal*, all
+misstable summarize FIRST_BIRTH_YR age_focal* birth_yr_all SEX raceth_fixed_focal fixed_education sample_type rel_start_all birth_timing_rel rel_type_constant eligible_rel_no current_parent_status* RESPONDENT_WHO_* retired_est_focal*, all
 
 // prep work - imputation
 mi set wide
 mi register imputed weekly_hrs_t_focal* housework_focal* employment_status_focal* earnings_t_focal* AGE_YOUNG_CHILD_* partnered* TOTAL_INCOME_T_FAMILY* num_children_imp_hh* house_status_all* REGION_* religion_focal* sr_health_focal* num_65up_hh* num_parent_in_hh* lives_family_focal* father_max_educ_focal mother_max_educ_focal family_structure_cons_focal // disabled_focal* disabled_imp_focal* children* NUM_CHILDREN_* relationship_* - maybe I can't register them?
-mi register regular FIRST_BIRTH_YR birth_yr_all rel_start_all SEX raceth_fixed_focal sample_type rel_type_constant fixed_education birth_timing_rel current_rel_number_main current_parent_status* RESPONDENT_WHO_* retired_est_focal*
+mi register regular FIRST_BIRTH_YR birth_yr_all rel_start_all SEX raceth_fixed_focal sample_type rel_type_constant fixed_education birth_timing_rel eligible_rel_no current_parent_status* RESPONDENT_WHO_* retired_est_focal*
 // swap rel_status for rel_type_constant?
 
 // log using "$logs\mi_help_$date.log", replace
@@ -679,8 +680,8 @@ mi impute chained
 (pmm, knn(5) include (         i.house_status_all6 i.house_status_all7 i.house_status_all9 i.house_status_all10                             )) house_status_all8
 (pmm, knn(5) include (         i.house_status_all7 i.house_status_all8 i.house_status_all10 i.house_status_all11                             )) house_status_all9
 (pmm, knn(5) include (         i.house_status_all8 i.house_status_all9 i.house_status_all11 i.house_status_all12                             )) house_status_all10
-(pmm, knn(5) include (         i.house_status_all9 i.house_status_all10 i.house_status_all12                              ) omit (birth_yr_all i.raceth_fixed_focal i.fixed_education  i.sample_type birth_timing_rel current_rel_number_main)) house_status_all11
-(pmm, knn(5) include (         i.house_status_all10 i.house_status_all11                               ) omit (birth_yr_all i.raceth_fixed_focal i.fixed_education i.sample_type birth_timing_rel current_rel_number_main)) house_status_all12
+(pmm, knn(5) include (         i.house_status_all9 i.house_status_all10 i.house_status_all12                              ) omit (birth_yr_all i.raceth_fixed_focal i.fixed_education  i.sample_type birth_timing_rel eligible_rel_no)) house_status_all11
+(pmm, knn(5) include (         i.house_status_all10 i.house_status_all11                               ) omit (birth_yr_all i.raceth_fixed_focal i.fixed_education i.sample_type birth_timing_rel eligible_rel_no)) house_status_all12
 
 
 /* Region*/
@@ -722,8 +723,8 @@ mi impute chained
 (pmm, knn(5) include (     i.religion_focal2 i.religion_focal3 i.religion_focal4 i.religion_focal5 i.religion_focal6 i.religion_focal7 i.religion_focal9 i.religion_focal10 i.religion_focal11 i.religion_focal12       weekly_hrs_t_focal8 i.employment_status_focal8 housework_focal8 earnings_t_focal8 i.REGION_8 num_children_imp_hh8 AGE_YOUNG_CHILD_8 i.house_status_all8 i.partnered_imp8 TOTAL_INCOME_T_FAMILY8  i.sr_health_focal8 i.num_65up_hh8 i.num_parent_in_hh8 i.lives_family_focal8 i.father_max_educ_focal i.mother_max_educ_focal i.family_structure_cons_focal i.current_parent_status8 i.RESPONDENT_WHO_8 i.retired_est_focal8)) religion_focal8
 (pmm, knn(5) include (    i.religion_focal2 i.religion_focal3 i.religion_focal4 i.religion_focal5 i.religion_focal6 i.religion_focal7 i.religion_focal8 i.religion_focal10 i.religion_focal11 i.religion_focal12        weekly_hrs_t_focal9 i.employment_status_focal9 housework_focal9 earnings_t_focal9 i.REGION_9 num_children_imp_hh9 AGE_YOUNG_CHILD_9 i.house_status_all9 i.partnered_imp9 TOTAL_INCOME_T_FAMILY9  i.sr_health_focal9 i.num_65up_hh9 i.num_parent_in_hh9 i.lives_family_focal9 i.father_max_educ_focal i.mother_max_educ_focal i.family_structure_cons_focal i.current_parent_status9 i.RESPONDENT_WHO_9 i.retired_est_focal9)) religion_focal9
 (pmm, knn(5) include (   i.religion_focal2 i.religion_focal3 i.religion_focal4 i.religion_focal5 i.religion_focal6 i.religion_focal7 i.religion_focal8 i.religion_focal9 i.religion_focal11 i.religion_focal12         weekly_hrs_t_focal10 i.employment_status_focal10 housework_focal10 earnings_t_focal10 i.REGION_10 num_children_imp_hh10 AGE_YOUNG_CHILD_10 i.house_status_all10 i.partnered_imp10 TOTAL_INCOME_T_FAMILY10  i.sr_health_focal10 i.num_65up_hh10 i.num_parent_in_hh10 i.lives_family_focal10 i.father_max_educ_focal i.mother_max_educ_focal i.family_structure_cons_focal i.current_parent_status10 i.RESPONDENT_WHO_10 i.retired_est_focal10)) religion_focal10
-(pmm, knn(5) include (         i.religion_focal9 i.religion_focal10 i.religion_focal12                              ) omit (birth_yr_all i.raceth_fixed_focal i.fixed_education i.sample_type birth_timing_rel current_rel_number_main)) religion_focal11
-(pmm, knn(5) include (         i.religion_focal10 i.religion_focal11                               ) omit (birth_yr_all i.raceth_fixed_focal i.fixed_education i.sample_type birth_timing_rel current_rel_number_main)) religion_focal12
+(pmm, knn(5) include (         i.religion_focal9 i.religion_focal10 i.religion_focal12                              ) omit (birth_yr_all i.raceth_fixed_focal i.fixed_education i.sample_type birth_timing_rel eligible_rel_no)) religion_focal11
+(pmm, knn(5) include (         i.religion_focal10 i.religion_focal11                               ) omit (birth_yr_all i.raceth_fixed_focal i.fixed_education i.sample_type birth_timing_rel eligible_rel_no)) religion_focal12
 
 
 /* Disability Status */
@@ -736,9 +737,9 @@ mi impute chained
 (pmm, knn(5) include (         i.disabled_imp_focal5 i.disabled_imp_focal6 i.disabled_imp_focal8 i.disabled_imp_focal9                             )) disabled_imp_focal7
 (pmm, knn(5) include (         i.disabled_imp_focal6 i.disabled_imp_focal7 i.disabled_imp_focal9 i.disabled_imp_focal10                             )) disabled_imp_focal8
 (pmm, knn(5) include (         i.disabled_imp_focal7 i.disabled_imp_focal8 i.disabled_imp_focal10 i.disabled_imp_focal11                             )) disabled_imp_focal9
-(pmm, knn(5) include (         i.disabled_imp_focal8 i.disabled_imp_focal9 i.disabled_imp_focal11 i.disabled_imp_focal12                             ) omit (birth_yr_all i.raceth_fixed_focal i.fixed_education i.sample_type birth_timing_rel current_rel_number_main)) disabled_imp_focal10
-(pmm, knn(5) include (         i.disabled_imp_focal9 i.disabled_imp_focal10 i.disabled_imp_focal12                              ) omit (birth_yr_all i.raceth_fixed_focal i.fixed_education i.sample_type birth_timing_rel current_rel_number_main)) disabled_imp_focal11
-(pmm, knn(5) include (         i.disabled_imp_focal10 i.disabled_imp_focal11                               ) omit (birth_yr_all i.raceth_fixed_focal i.fixed_education i.sample_type birth_timing_rel current_rel_number_main)) disabled_imp_focal12
+(pmm, knn(5) include (         i.disabled_imp_focal8 i.disabled_imp_focal9 i.disabled_imp_focal11 i.disabled_imp_focal12                             ) omit (birth_yr_all i.raceth_fixed_focal i.fixed_education i.sample_type birth_timing_rel eligible_rel_no)) disabled_imp_focal10
+(pmm, knn(5) include (         i.disabled_imp_focal9 i.disabled_imp_focal10 i.disabled_imp_focal12                              ) omit (birth_yr_all i.raceth_fixed_focal i.fixed_education i.sample_type birth_timing_rel eligible_rel_no)) disabled_imp_focal11
+(pmm, knn(5) include (         i.disabled_imp_focal10 i.disabled_imp_focal11                               ) omit (birth_yr_all i.raceth_fixed_focal i.fixed_education i.sample_type birth_timing_rel eligible_rel_no)) disabled_imp_focal12
 */
 
 /* Self-rated Health */
@@ -777,10 +778,10 @@ mi impute chained
 (pmm, knn(5) include (         i.num_parent_in_hh4 i.num_parent_in_hh5 i.num_parent_in_hh7 i.num_parent_in_hh8                             )) num_parent_in_hh6
 (pmm, knn(5) include (         i.num_parent_in_hh5 i.num_parent_in_hh6 i.num_parent_in_hh8 i.num_parent_in_hh9                             )) num_parent_in_hh7
 (pmm, knn(5) include (         i.num_parent_in_hh6 i.num_parent_in_hh7 i.num_parent_in_hh9 i.num_parent_in_hh10                             )) num_parent_in_hh8
-(pmm, knn(5) include (          i.num_parent_in_hh8 i.num_parent_in_hh10                              ) omit (birth_yr_all i.raceth_fixed_focal i.fixed_education i.sample_type birth_timing_rel current_rel_number_main)) num_parent_in_hh9
-(pmm, knn(5) include (          i.num_parent_in_hh9 i.num_parent_in_hh11                              ) omit (birth_yr_all i.raceth_fixed_focal i.fixed_education i.sample_type birth_timing_rel current_rel_number_main)) num_parent_in_hh10
-(pmm, knn(5) include (          i.num_parent_in_hh10 i.num_parent_in_hh12                              ) omit (birth_yr_all i.raceth_fixed_focal i.fixed_education i.sample_type birth_timing_rel current_rel_number_main)) num_parent_in_hh11
-(pmm, knn(5) include (          i.num_parent_in_hh11                               ) omit (birth_yr_all i.raceth_fixed_focal i.fixed_education i.sample_type birth_timing_rel current_rel_number_main)) num_parent_in_hh12
+(pmm, knn(5) include (          i.num_parent_in_hh8 i.num_parent_in_hh10                              ) omit (birth_yr_all i.raceth_fixed_focal i.fixed_education i.sample_type birth_timing_rel eligible_rel_no)) num_parent_in_hh9
+(pmm, knn(5) include (          i.num_parent_in_hh9 i.num_parent_in_hh11                              ) omit (birth_yr_all i.raceth_fixed_focal i.fixed_education i.sample_type birth_timing_rel eligible_rel_no)) num_parent_in_hh10
+(pmm, knn(5) include (          i.num_parent_in_hh10 i.num_parent_in_hh12                              ) omit (birth_yr_all i.raceth_fixed_focal i.fixed_education i.sample_type birth_timing_rel eligible_rel_no)) num_parent_in_hh11
+(pmm, knn(5) include (          i.num_parent_in_hh11                               ) omit (birth_yr_all i.raceth_fixed_focal i.fixed_education i.sample_type birth_timing_rel eligible_rel_no)) num_parent_in_hh12
 
 
 /* Live in same region as childhood home */
@@ -803,7 +804,7 @@ mi impute chained
 (pmm, knn(5) include (                                           i.father_max_educ_focal i.mother_max_educ_focal  )) family_structure_cons_focal
 
 
-= birth_yr_all i.raceth_fixed_focal i.sample_type i.fixed_education birth_timing_rel current_rel_number_main, by(SEX) chaindots add(10) rseed(12345) noimputed augment force showcommand noisily // skipnonconvergence(2)  //  dryrun i.rel_type_constant i.rel_start_all  FIRST_BIRTH_YR 
+= birth_yr_all i.raceth_fixed_focal i.sample_type i.fixed_education birth_timing_rel eligible_rel_no, by(SEX) chaindots add(10) rseed(12345) noimputed augment force showcommand noisily // skipnonconvergence(2)  //  dryrun i.rel_type_constant i.rel_start_all  FIRST_BIRTH_YR 
 
 ;
 #delimit cr
