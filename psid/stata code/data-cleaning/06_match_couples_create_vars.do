@@ -509,6 +509,7 @@ mi estimate: proportion couple_hw couple_hw_hrs_alt couple_hw_hrs_combo
 
 // family channel
 * relationship type
+// Note for 2026 - update following others with new names
 mi passive: gen dur_transitioned=.
 mi passive: replace dur_transitioned = transition_yr - rel_start_all
 
@@ -516,6 +517,12 @@ browse unique_id partner_id duration min_dur max_dur rel_start_all transition_yr
 
 label define rel_status 1 "Intact" 3 "Widow" 4 "Divorce" 5 "Separated" 6 "Attrited"
 label values rel_status rel_status
+
+// KIM: note for 2026 - you changed the rel status variables a bit, so ensure this is updated to reflect that.
+// Also change coding following others - particularly when duration == dur transitioned
+
+// tab rel_type_constant rel_type if duration >= min_dur & duration <=max_dur, m
+// browse unique_id partner_unique_id survey_yr in_sample_ rel_type_constant rel_type eligible_rel_start_year duration min_dur max_dur
 
 mi passive: gen rel_type=.
 mi passive: replace rel_type = 1 if rel_type_constant== 1

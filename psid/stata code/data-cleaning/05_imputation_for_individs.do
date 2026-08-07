@@ -7,6 +7,17 @@
 ********************************************************************************
 ********************************************************************************
 
+// Notes before starting (8/6/26)
+0. PUSH GITHUB before this step so pre-imputation updates are distinct from these imputation updates
+1. def need to update the rel # variable name (current_rel_number_main to eligible_rel_no). Check other variable names because added many more variables in the fixed file re: relationship. Not sure I need to use any
+2. TRY to do disability again? I feel like a reviewer asked about that.
+3. Generally, bc I had to do so much finagling with the PSID, do I want to revisit ORIGINAL code and try with more leads / lags / variables? or is that risky and I should just do what I know worked? I am just not sure if adding 5000 more couples will make some code run that didn't before? (not sure if will help or hurt problem lol)
+4. do I want to update respondent who to is respondent focal?
+5. Replace partnered_imp with marst_imP???
+6. probably need to actually revisit entire PSID Imputation code don't I? - are these the right variables and rigth predictors (per also point 3?)
+7. I am going to TRY to impute all, but I might need to drop those people who were NEVER HH heads - their % missing is quite high
+8. ALSO - do I add that as a predictor variable?! or is adding variables too chaos? also except for "other", highly correlated with gender because heads always men. 
+
 ********************************************************************************
 * Description
 ********************************************************************************
