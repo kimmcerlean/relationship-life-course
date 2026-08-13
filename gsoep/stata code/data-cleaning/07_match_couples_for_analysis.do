@@ -1035,10 +1035,10 @@ tab family_type SEX if imputed==1, col
 tab per_id SEX // I guess let's just keep women? that's what I do for UK (but PSID does per id) the outcomes are all the same
 
 // keep if per_id==1
-unique pid eligible_partner // 20856
-unique couple_id // 10428
+unique pid eligible_partner // 15806 (prev 20856)
+unique couple_id //  7903 (prev 10428)
 keep if SEX==2
-unique pid eligible_partner // 10428
+unique pid eligible_partner //  7903
 
 // need to do age restrictions (18-60)
 // keep if age_all>=18 & age_all<=60 // wait, if I drop these now, won't be rectangular anymore...
@@ -1053,7 +1053,7 @@ drop if age_eligible==0
 
 mi update
 
-unique pid eligible_partner // now 9776
+unique pid eligible_partner // now 7677
 
 save "$created_data/gsoep_couples_imputed_long_deduped.dta", replace
 
@@ -1111,7 +1111,7 @@ tab _mi_m, m
 browse pid eligible_partner max_dur _mi_m couple_work_end* couple_work_ow_end* couple_hw_weekday_end*
 browse pid eligible_partner max_dur _mi_m couple_work_end* couple_work_ow_end* couple_hw_weekday_end* if inrange(_mi_m,1,10)
 
-unique pid eligible_partner // so now there are 9776 uniques and 11 observations for each (base + 10 imputations) - so 107536 observations
+unique pid eligible_partner // so now there are  7677 uniques and 11 observations for each (base + 10 imputations) - so 84447 observations
 unique pid eligible_partner, by(_mi_m)
 
 // create indicator of complete sequences
@@ -1182,7 +1182,7 @@ tab family_type_end10 if _mi_m!=0, m
 
 mi update
 
-unique couple_id // 2372
+unique couple_id // 2303 (old: 2372)
 
 // per below, do I need to remove the refugee sample here? (to do the sequence length robustness?)
 gen sample_type = .
