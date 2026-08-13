@@ -251,7 +251,7 @@ colspace.fam <- c(col1, col2)
 
 # Couple Paid Work - OW
 seq.work.ow <- seqdef(data[,col_work.ow], cpal = colspace.work.ow, labels=longlab.work.ow, states= shortlab.work.ow,right=NA)
-seqlength(seq.work.ow)
+seqlength(seq.work.ow, with.missing = FALSE)
 seq.len.work<-seqlength(seq.work.ow, with.missing = FALSE)
 
 ggseqdplot(seq.work.ow) +

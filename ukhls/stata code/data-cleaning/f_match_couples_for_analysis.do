@@ -683,6 +683,8 @@ save "$created_data/ukhls_couples_imputed_long_recoded.dta", replace
 ********************************************************************************
 **# Deduplicate
 ********************************************************************************
+// use "$created_data/ukhls_couples_imputed_long_recoded.dta", clear
+
 drop if duration < 0 | duration > 10
 drop duration_rec
 
@@ -734,9 +736,9 @@ tab family_type if imputed==1
 tab family_type SEX if imputed==1, col
 
 // keep if inlist(per_id,1,3,5,7,9,11)
-unique pidp eligible_partner // 14126 / 16522 new
+unique pidp eligible_partner // 14126 / 16522 new / 13094 2026 updates
 keep if SEX==2
-unique pidp eligible_partner // 7063 / 8261 new
+unique pidp eligible_partner // 7063 / 8261 new / 6547
 
 // need to do age restrictions (18-60)
 // keep if age_all>=18 & age_all<=60 // wait, if I drop these now, won't be rectangular anymore...
@@ -751,7 +753,7 @@ drop if age_eligible==0
 
 mi update
 
-unique pidp eligible_partner // now 6271 / 7410 new
+unique pidp eligible_partner // now 6271 / 7410 new / 6330
 
 save "$created_data/ukhls_couples_imputed_long_deduped.dta", replace
 
@@ -777,6 +779,7 @@ mi estimate: proportion couple_work_ow_end family_type_end // validate that this
 
 // should I just loop through durations while long? should I confirm the numbers are the same either way? - so here, try to loop through durations
 ** Note 6/6/25: have not done this yet for updated sequences (with more rel start dates included)** (takes a while - possibly send to HPC)
+** Still true 8/11/26
 forvalues d=0/10{
 	desctable i.ft_pt_woman_end i.overwork_woman_end i.ft_pt_det_woman_end i.ft_pt_man_end i.overwork_man_end i.ft_pt_det_man_end i.couple_work_end i.couple_work_ow_end i.couple_work_ow_detailed_end i.couple_hw_end i.couple_hw_hrs_end i.couple_hw_hrs_alt_end i.couple_hw_hrs_combo_end i.rel_type i.couple_num_children_gp_end i.family_type_end if duration==`d', filename("$results/ukhls_mi_desc_`d'") stats(mimean) decimals(4)
 }
@@ -813,7 +816,7 @@ tab _mi_m, m
 browse pidp eligible_partner max_dur _mi_id _mi_miss _mi_m couple_work_end* couple_work_ow_end* couple_hw_hrs_combo_end*
 browse pidp eligible_partner max_dur _mi_id _mi_miss _mi_m couple_work_end* couple_work_ow_end* couple_hw_hrs_combo_end* if inrange(_mi_m,1,10)
 
-unique pidp eligible_partner // so now there are 7410 uniques and 11 observations for each (base + 10 imputations) - so 81510 observations
+unique pidp eligible_partner // so now there are 6330 uniques and 11 observations for each (base + 10 imputations) - so 69630 observations
 unique pidp eligible_partner, by(_mi_m)
 
 // create indicator of complete sequences
@@ -843,9 +846,9 @@ replace complete_seq=0 if complete_seq==1 & sequence_length < 10
 drop if sequence_length==0
 
 tab sequence_length complete_seq, m
-tab sequence_length sequence_length_alt, m
+tab sequence_length sequence_length_alt, m //these are the same now
 
-replace sequence_length = sequence_length_alt if sequence_length==. & complete_seq==0
+replace sequence_length = sequence_length_alt if sequence_length==. & complete_seq==0 //  leaving but no changes needed
 // replace sequence_length = sequence_length_alt if sequence_length==0 & complete_seq==0
 replace sequence_length = 10 if complete_seq==1
 
@@ -862,7 +865,7 @@ forvalues d=1/10{
 }
 
 label values status_end rel_type
-tab status_end complete_seq, m
+tab status_end complete_seq, m // I think because people can end AFTER duration 10, hence why not 100% perfect
 
 browse pidp eligible_partner  min_dur max_dur sequence_length status_end eligible_rel_status rel_type* couple_work_end* if complete_seq==0 // & inlist(status_end,1,2)
 
@@ -896,7 +899,7 @@ keep if complete_seq==1
 
 mi update
 
-unique pidp eligible_partner // 2730
+unique pidp eligible_partner // 2237
 
 save "$created_data/ukhls_couples_imputed_wide_complete.dta", replace 
 
