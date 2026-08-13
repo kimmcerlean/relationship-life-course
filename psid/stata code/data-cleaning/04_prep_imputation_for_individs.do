@@ -137,7 +137,7 @@ forvalues y=1998(2)2022{
 
 // do the same for disability status
 browse unique_id disabled_focal* disabled_scale_focal* sr_health_focal* // think really can only do this for main disabled; others change quite a bit
-
+/* I don't do this for SOEP and I wonder if I introduce too much collinearity by doing it myself and should let imputation handle? Like I am doing this based on leads and lags and that is literally also what the imputation is doing but also considering other variables and maybe that is better?
 forvalues y=1998(2)2022{
 	local z=`y'+1
 	local x=`y'-1
@@ -155,7 +155,7 @@ forvalues y=1998(2)2022{
 	replace religion_focal`y' = religion_focal`x' if religion_focal`x' == religion_focal`z'
 	label values religion_focal`y' religion 
 }
-
+*/
 
 // fill in region based on mover status
 browse unique_id REGION_* moved_in_lastyr* moved_yr_lastyr*
@@ -170,6 +170,7 @@ forvalues y=1998(2)2022{
 }
 
 // Other residence things
+/*
 browse unique_id house_status_all*
 
 forvalues y=1998(2)2022{
@@ -179,6 +180,7 @@ forvalues y=1998(2)2022{
 	replace house_status_all`y' = house_status_all`x' if house_status_all`x' == house_status_all`z'
 	label values house_status_all`y' house 
 }
+*/
 
 browse unique_id lives_family_focal*
 
@@ -596,6 +598,12 @@ replace num_parent_in_hh = 1 if father_in_hh==1 & mother_in_hh==0
 replace num_parent_in_hh = 1 if father_in_hh==0 & mother_in_hh==1
 replace num_parent_in_hh = 2 if father_in_hh==1 & mother_in_hh==1
 
+gen any_parent_in_hh = .
+replace any_parent_in_hh = 0 if num_parent_in_hh==0
+replace any_parent_in_hh = 1 if inlist(num_parent_in_hh,1,2)
+
+tab num_parent_in_hh any_parent_in_hh, m
+
 ********************************************************************************
 ********************************************************************************
 **# CHECKPOINT: Here the data is now long, by duration - only the durations I want.
@@ -793,7 +801,7 @@ replace partnered=0 if MARITAL_PAIRS_==0
 replace partnered=1 if inrange(MARITAL_PAIRS_,1,3)
 */
 
-tabstat weekly_hrs_t_focal housework_focal childcare_focal adultcare_focal employed_focal earnings_t_focal age_focal birth_yr_all educ_focal college_focal fixed_education home_owner raceth_focal raceth_fixed_focal ever_parent_focal children num_children_imp_focal num_children_imp_hh num_births_focal rolling_births FIRST_BIRTH_YR AGE_YOUNG_CHILD_ birth_timing_rel relationship_ partnered_imp marst_imp eligible_rel_no mpf_focal TOTAL_INCOME_T_FAMILY sample_type num_parent_in_hh num_65up_hh disabled_focal sr_health_focal retired_est_focal, stats(mean sd p50) columns(statistics)
+tabstat weekly_hrs_t_focal housework_focal childcare_focal adultcare_focal employed_focal earnings_t_focal age_focal birth_yr_all educ_focal college_focal fixed_education home_owner raceth_focal raceth_fixed_focal ever_parent_focal children num_children_imp_focal num_children_imp_hh num_births_focal rolling_births FIRST_BIRTH_YR AGE_YOUNG_CHILD_ birth_timing_rel relationship_ partnered_imp marst_imp eligible_rel_no mpf_focal TOTAL_INCOME_T_FAMILY sample_type num_parent_in_hh any_parent_in_hh num_65up_hh disabled_focal sr_health_focal retired_est_focal, stats(mean sd p50) columns(statistics)
 
 ********************************************************************************
 ********************************************************************************
@@ -804,7 +812,7 @@ tabstat weekly_hrs_t_focal housework_focal childcare_focal adultcare_focal emplo
 
 drop survey_yr duration _fillin MARITAL_PAIRS_ *_sp *_sp* cah_* master_* MOVED_YEAR_ MOVED_YEAR_sp_ moved_focal moved_sp any_births_t1_focal any_births_t1_hh any_births_t2_focal any_births_t2_hh *_est SPLITOFF* COMPOSITION_CHANGE_ NUM_IN_HH_ DATA_RECORD_TYPE_  SAMPLE_STATUS_TYPE PERMANENT_ATTRITION ANY_ATTRITION permanent_attrit lt_attrit YR_NONRESPONSE_RECENT YR_NONRESPONSE_FIRST yrs_non_sample change_yr int_number per_num INTERVIEW_NUM_1968 individ_birth_ NUM_BIRTHS first_birth_yr_calc first_birth_yr_calc_dedup  first_birth_yr_alt father_fam_id father_in_sample father_moved father_change_yr mother_fam_id mother_in_sample mother_moved mother_change_yr parent_in_ofum house_status_all_v0 MARITAL_STATUS FIRST_MARRIAGE_YR_START FIRST_MARRIAGE_YR_END FIRST_MARRIAGE_STATUS FIRST_SEPARATE_YR NUM_MARRIED RECENT_MARRIAGE_YR_START RECENT_MARRIAGE_STATUS RECENT_MARRIAGE_YR_END RECENT_SEPARATE_YR partner_id // hh_births_pre1968
 
-reshape wide in_sample_ hh_status_ relationship_  partnered weekly_hrs_t1_focal earnings_t1_focal housework_focal employed_focal employed_focal_rec max_educ_focal educ_focal educ_focal_imp college_focal age_focal weekly_hrs_t2_focal earnings_t2_focal employed_t2_focal start_yr_employer_focal yrs_employer_focal children FAMILY_INTERVIEW_NUM_ NUM_CHILDREN_ AGE_YOUNG_CHILD_ TOTAL_INCOME_T1_FAMILY_ hours_type_t1_focal hw_hours_gp raceth_focal weekly_hrs_t_focal earnings_t_focal TOTAL_INCOME_T_FAMILY childcare_focal adultcare_focal TOTAL_INCOME_T2_FAMILY_ has_hours_t1 has_earnings_t1 has_hours_t2 has_earnings_t2 employed_t1_hrs_focal employed_t1_earn_focal partnered_imp marst_imp num_children_imp_focal num_children_imp_hh rolling_births had_birth hh_births* increment_birth under18 edulevel_match edulevelmax_match new_in_hh disabled_focal empstat_disabled_focal disabled_scale_focal sr_health_focal yr_retired_focal empstat_retired_focal retired_est_focal num_65up_hh age65up house_status_all home_owner moved_in_lastyr moved_mo_lastyr moved_yr_lastyr religion_focal lives_family_focal RESPONDENT_WHO_ REGION_ employment_status_focal current_parent_status num_parent_in_hh father_in_hh mother_in_hh RELATION_ relationship_type_ is_respondent_focal is_first_yr_cohabitor has_first_yr_cohabitor rel_type marital_status_focal in_rel_flag ///
+reshape wide in_sample_ hh_status_ relationship_  partnered weekly_hrs_t1_focal earnings_t1_focal housework_focal employed_focal employed_focal_rec max_educ_focal educ_focal educ_focal_imp college_focal age_focal weekly_hrs_t2_focal earnings_t2_focal employed_t2_focal start_yr_employer_focal yrs_employer_focal children FAMILY_INTERVIEW_NUM_ NUM_CHILDREN_ AGE_YOUNG_CHILD_ TOTAL_INCOME_T1_FAMILY_ hours_type_t1_focal hw_hours_gp raceth_focal weekly_hrs_t_focal earnings_t_focal TOTAL_INCOME_T_FAMILY childcare_focal adultcare_focal TOTAL_INCOME_T2_FAMILY_ has_hours_t1 has_earnings_t1 has_hours_t2 has_earnings_t2 employed_t1_hrs_focal employed_t1_earn_focal partnered_imp marst_imp num_children_imp_focal num_children_imp_hh rolling_births had_birth hh_births* increment_birth under18 edulevel_match edulevelmax_match new_in_hh disabled_focal empstat_disabled_focal disabled_scale_focal sr_health_focal yr_retired_focal empstat_retired_focal retired_est_focal num_65up_hh age65up house_status_all home_owner moved_in_lastyr moved_mo_lastyr moved_yr_lastyr religion_focal lives_family_focal RESPONDENT_WHO_ REGION_ employment_status_focal current_parent_status num_parent_in_hh any_parent_in_hh father_in_hh mother_in_hh RELATION_ relationship_type_ is_respondent_focal is_first_yr_cohabitor has_first_yr_cohabitor rel_type marital_status_focal in_rel_flag ///
 , i(couple_id unique_id partner_unique_id eligible_rel_start_year min_dur max_dur eligible_rel_end_year ended SEX) j(duration_rec)
 
 // might need to attempt to fill in more disabled status - causing problems with imputation. 
