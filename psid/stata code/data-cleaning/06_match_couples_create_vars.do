@@ -21,16 +21,16 @@ mi rename family_structure_cons_focal family_structure_focal // too long
 ********************************************************************************
 * Match couples
 ********************************************************************************
-// browse unique_id partner_id duration_rec _mi_miss _mi_m _mi_id imputed
+// browse unique_id partner_unique_id duration_rec _mi_miss _mi_m _mi_id imputed
 
 // just keep necessary variables
 
-local partnervars "weekly_hrs_t_focal housework_focal employment_status_focal earnings_t_focal age_young_child num_children_imp_hh partnered_imp family_income_t relationship in_sample hh_status FIRST_BIRTH_YR LAST_BIRTH_YR age_focal birth_yr_all SEX raceth_fixed_focal sample_type SAMPLE has_psid_gene fixed_education max_educ_focal childcare_focal adultcare_focal new_in_hh rolling_births had_birth first_survey_yr_focal last_survey_yr_focal imputed num_65up_hh num_parent_in_hh REGION lives_family_focal house_status_all religion_focal disabled_focal sr_health_focal retired_est_focal father_max_educ_focal mother_max_educ_focal family_structure_focal ever_parent_focal current_parent_status birth_timing_rel current_rel_number_main RESPONDENT_WHO mpf_focal"
+local partnervars "weekly_hrs_t_focal housework_focal employment_status_focal earnings_t_focal age_young_child num_children_imp_hh partnered_imp marst_imp family_income_t relationship in_sample hh_status FIRST_BIRTH_YR LAST_BIRTH_YR age_focal birth_yr_all SEX raceth_fixed_focal sample_type SAMPLE has_psid_gene fixed_education max_educ_focal childcare_focal adultcare_focal new_in_hh rolling_births had_birth first_survey_year last_survey_year imputed num_65up_hh any_parent_in_hh REGION lives_family_focal home_owner house_status_all religion_focal disabled_focal sr_health_focal retired_est_focal father_max_educ_focal mother_max_educ_focal family_structure_focal ever_parent_focal current_parent_status birth_timing_rel eligible_rel_no RESPONDENT_WHO is_respondent_focal mpf_focal"
 
-keep unique_id partner_id rel_start_all rel_end_all duration_rec _mi_miss _mi_m _mi_id  `partnervars'
-mi rename partner_id x
-mi rename unique_id partner_id
-mi rename x unique_id // sp swap unique and partner to match (bc need to know it's the same couple / duration). I guess I could merge on rel_start_all as well
+keep unique_id partner_unique_id eligible_rel_start_year eligible_rel_end_year duration_rec _mi_miss _mi_m _mi_id  `partnervars'
+mi rename partner_unique_id x
+mi rename unique_id partner_unique_id
+mi rename x unique_id // sp swap unique and partner to match (bc need to know it's the same couple / duration). I guess I could merge on eligible_rel_start_year as well
 
 // rename them to indicate they are for spouse
 foreach var in `partnervars'{
@@ -40,27 +40,28 @@ foreach var in `partnervars'{
 mi update
 
 save "$temp/partner_data_imputed.dta", replace
-unique unique_id partner_id
-browse unique_id partner_id rel_start_all rel_end_all duration_rec weekly_hrs_t_focal if inlist(unique_id, 16032, 16176, 18037, 18197) | inlist(partner_id, 16032, 16176, 18037, 18197)
+
+unique unique_id partner_unique_id
+browse unique_id partner_unique_id eligible_rel_start_year eligible_rel_end_year duration_rec weekly_hrs_t_focal if inlist(unique_id, 16032, 16176, 18037, 18197) | inlist(partner_unique_id, 16032, 16176, 18037, 18197)
 
 // match on partner id and duration_rec
 use "$created_data/psid_individs_imputed_long_bysex", clear
 mi rename family_structure_cons_focal family_structure_focal // too long
 
-// browse unique_id partner_id rel_start_all rel_end_all duration_rec weekly_hrs_t_focal if inlist(unique_id, 16032, 16176, 18037, 18197) | inlist(partner_id, 16032, 16176, 18037, 18197)
+// browse unique_id partner_unique_id eligible_rel_start_year eligible_rel_end_year duration_rec weekly_hrs_t_focal if inlist(unique_id, 16032, 16176, 18037, 18197) | inlist(partner_unique_id, 16032, 16176, 18037, 18197)
 
-mi merge 1:1 unique_id partner_id duration_rec using "$temp/partner_data_imputed.dta", keep(match) //gen(howmatch) // rel_start_all rel_end_all 
+mi merge 1:1 unique_id partner_unique_id duration_rec using "$temp/partner_data_imputed.dta", keep(match) //gen(howmatch) // eligible_rel_start_year eligible_rel_end_year 
 
-// browse unique_id partner_id rel_start_all rel_end_all duration_rec weekly_hrs_t_focal weekly_hrs_t_focal_sp if howmatch!=3
-// browse unique_id partner_id rel_start_all rel_end_all duration_rec howmatch weekly_hrs_t_focal weekly_hrs_t_focal_sp if inlist(unique_id, 16032, 18037, 5579003) | inlist(partner_id, 16032, 18037, 5579003)
+// browse unique_id partner_unique_id eligible_rel_start_year eligible_rel_end_year duration_rec weekly_hrs_t_focal weekly_hrs_t_focal_sp if howmatch!=3
+// browse unique_id partner_unique_id eligible_rel_start_year eligible_rel_end_year duration_rec howmatch weekly_hrs_t_focal weekly_hrs_t_focal_sp if inlist(unique_id, 16032, 18037, 5579003) | inlist(partner_unique_id, 16032, 18037, 5579003)
 
 mi update
 
 save "$created_data/psid_couples_imputed_long.dta", replace
-unique unique_id partner_id
+unique unique_id partner_unique_id
 
 label values duration_rec .
-browse unique_id partner_id duration_rec SEX SEX_sp weekly_hrs_t_focal weekly_hrs_t_focal_sp _mi_m
+browse unique_id partner_unique_id duration_rec SEX SEX_sp weekly_hrs_t_focal weekly_hrs_t_focal_sp housework_focal housework_focal_sp _mi_m
 
 drop if SEX==2 & SEX_sp==2
 drop if SEX==1 & SEX_sp==1
@@ -110,23 +111,26 @@ mi passive: gen housework_man=housework_focal if SEX==1
 mi passive: replace housework_man=housework_focal_sp if SEX==2
 
 *relationship status
-tab partnered_imp partnered_imp_sp 
+// tab partnered_imp partnered_imp_sp 
+tab marst_imp marst_imp_sp
 
-mi passive: gen partnered_woman=partnered_imp if SEX==2
-mi passive: replace partnered_woman=partnered_imp_sp if SEX==1
+mi passive: gen marst_woman=marst_imp if SEX==2
+mi passive: replace marst_woman=marst_imp_sp if SEX==1
 
-mi passive: gen partnered_man=partnered_imp if SEX==1
-mi passive: replace partnered_man=partnered_imp_sp if SEX==2
+mi passive: gen marst_man=marst_imp if SEX==1
+mi passive: replace marst_man=marst_imp_sp if SEX==2
 
-gen rel_no_woman=current_rel_number_main if SEX==2
-replace rel_no_woman=current_rel_number_main_sp if SEX==1
+label values marst_woman marst_man marital_status_updated
 
-gen rel_no_man=current_rel_number_main if SEX==1
-replace rel_no_man=current_rel_number_main_sp if SEX==2
+gen rel_no_woman=eligible_rel_no if SEX==2
+replace rel_no_woman=eligible_rel_no_sp if SEX==1
+
+gen rel_no_man=eligible_rel_no if SEX==1
+replace rel_no_man=eligible_rel_no_sp if SEX==2
 
 *number of children
-tab num_children_imp_hh num_children_imp_hh_sp if partnered_imp==1 & partnered_imp_sp==1 // hmm - so they don't always have the same number of children...
-tab num_children_imp_hh num_children_imp_hh_sp if partnered_imp==1 & partnered_imp_sp==1 & imputed==0 // much closer for non-imputed, so some of this is the imputation
+tab num_children_imp_hh num_children_imp_hh_sp if inlist(marst_imp,1,2) & inlist(marst_imp_sp,1,2) // hmm - so they don't always have the same number of children...
+tab num_children_imp_hh num_children_imp_hh_sp if inlist(marst_imp,1,2) & inlist(marst_imp_sp,1,2) & imputed==0 // much closer for non-imputed, so some of this is the imputation
 tab NUM_CHILDREN_ num_children_imp_hh, m
 
 mi passive: gen num_children_woman=num_children_imp_hh if SEX==2
@@ -171,11 +175,11 @@ mi passive: gen region_man=REGION_ if SEX==1
 mi passive: replace region_man=REGION_sp if SEX==2
 
 * Housing status
-mi passive: gen housing_woman=house_status_all if SEX==2
-mi passive: replace housing_woman=house_status_all_sp if SEX==1
+mi passive: gen housing_woman=home_owner if SEX==2 // house_status_all
+mi passive: replace housing_woman=home_owner_sp if SEX==1
 
-mi passive: gen housing_man=house_status_all if SEX==1
-mi passive: replace housing_man=house_status_all_sp if SEX==2
+mi passive: gen housing_man=home_owner if SEX==1
+mi passive: replace housing_man=home_owner_sp if SEX==2
 
 * Religion
 mi passive: gen religion_woman=religion_focal if SEX==2
@@ -241,7 +245,7 @@ gen dob_man=birth_yr_all if SEX==1
 replace dob_man=birth_yr_all_sp if SEX==2
 
 // Stata assert command to check new variables created from imputed  
-foreach var in weekly_hrs_woman weekly_hrs_man employment_status_woman employment_status_man annual_earnings_woman annual_earnings_man housework_woman housework_man partnered_woman partnered_man rel_no_woman rel_no_man num_children_woman num_children_man age_youngest_woman age_youngest_man yr_first_birth_woman yr_first_birth_man is_parent_woman is_parent_man ever_parent_woman ever_parent_man region_woman region_man housing_woman housing_man religion_woman religion_man disabled_woman disabled_man sr_health_woman sr_health_man retired_woman retired_man father_educ_woman father_educ_man mother_educ_woman mother_educ_man family_structure_woman family_structure_man lives_near_fam_woman lives_near_fam_man dob_woman dob_man{  
+foreach var in weekly_hrs_woman weekly_hrs_man employment_status_woman employment_status_man annual_earnings_woman annual_earnings_man housework_woman housework_man marst_woman marst_man rel_no_woman rel_no_man num_children_woman num_children_man age_youngest_woman age_youngest_man yr_first_birth_woman yr_first_birth_man is_parent_woman is_parent_man ever_parent_woman ever_parent_man region_woman region_man housing_woman housing_man religion_woman religion_man disabled_woman disabled_man sr_health_woman sr_health_man retired_woman retired_man father_educ_woman father_educ_man mother_educ_woman mother_educ_man family_structure_woman family_structure_man lives_near_fam_woman lives_near_fam_man dob_woman dob_man{  
 	inspect `var' if _mi_m != 0  
 	assert `var' != . if _mi_m != 0  
 } 
@@ -507,47 +511,71 @@ mi estimate: proportion couple_hw couple_hw_hrs_alt couple_hw_hrs_combo
 //	mi passive: gen couple_hw_hrs_end = couple_hw_hrs
 //	mi passive: replace couple_hw_hrs_end = 99 if rel_type==0
 
+**# Bookmark #2
+// temp save 2
+save "$created_data/psid_couples_imputed_long_recoded.dta", replace
+
+// use "$created_data/psid_couples_imputed_long_recoded.dta", clear
+
 // family channel
 * relationship type
-// Note for 2026 - update following others with new names
+tab eligible_transition_year eligible_transition_status, m
+tab rel_type_constant eligible_transition_status, m
+
 mi passive: gen dur_transitioned=.
-mi passive: replace dur_transitioned = transition_yr - rel_start_all
+mi passive: replace dur_transitioned = eligible_transition_year - eligible_rel_start_year
 
-browse unique_id partner_id duration min_dur max_dur rel_start_all transition_yr dur_transitioned
+gen survey_yr = eligible_rel_start_year + duration
+browse unique_id partner_unique_id survey_yr duration min_dur max_dur eligible_rel_start_year eligible_transition_year dur_transitioned
 
-label define rel_status 1 "Intact" 3 "Widow" 4 "Divorce" 5 "Separated" 6 "Attrited"
-label values rel_status rel_status
+tab marst_imp if survey_yr >= eligible_rel_start_year & survey_yr < = eligible_rel_end_year, m // so generally already fine
+tab marst_imp if duration >= min_dur & duration < = max_dur, m // this is better
+tab marst_imp if duration >= dur_transitioned & duration < = max_dur, m // so generally already fine
+tab marst_imp if duration > dur_transitioned & duration < = max_dur, m // better when not equal because can be either in transition year
+tab marst_imp if duration == dur_transitioned, m
+tab rel_type if duration == dur_transitioned, m
+tab marst_imp if survey_yr < eligible_transition_year & survey_yr > = eligible_rel_start_year & eligible_transition_status==1, m 
+tab marst_imp if duration < dur_transitioned & duration >= min_dur & eligible_transition_status==1, m 
 
-// KIM: note for 2026 - you changed the rel status variables a bit, so ensure this is updated to reflect that.
-// Also change coding following others - particularly when duration == dur transitioned
+// label define rel_status 1 "Intact" 3 "Widow" 4 "Divorce" 5 "Separated" 6 "Attrited"
+// label values rel_status rel_status
+fre eligible_rel_status
 
 // tab rel_type_constant rel_type if duration >= min_dur & duration <=max_dur, m
-// browse unique_id partner_unique_id survey_yr in_sample_ rel_type_constant rel_type eligible_rel_start_year duration min_dur max_dur
+// tab rel_type_constant marst_imp if duration >= min_dur & duration <=max_dur, m
+// browse unique_id partner_unique_id survey_yr in_sample_ rel_type_constant rel_type marst_imp eligible_rel_start_year duration min_dur max_dur dur_transitioned eligible_rel_status
+
+rename rel_type current_rel_type // will cause problems with below, this is not imputed rel_type from the family matrix
 
 mi passive: gen rel_type=.
-mi passive: replace rel_type = 1 if rel_type_constant== 1
-mi passive: replace rel_type = 1 if rel_type_constant== 3 & duration >= dur_transitioned
-mi passive: replace rel_type = 2 if rel_type_constant== 2
-mi passive: replace rel_type = 2 if rel_type_constant== 3 & duration < dur_transitioned
-mi passive: replace rel_type = 3 if duration > max_dur & rel_status==1 // intact but past end of relationship
-mi passive: replace rel_type = 3 if duration > max_dur & rel_status==6 & in_sample!=1 & in_sample_sp!=1 // attrited and both partners not in sample
-mi passive: replace rel_type = 4 if duration > max_dur & inlist(rel_status,3,4,5) // observed end
-mi passive: replace rel_type = 4 if duration > max_dur & rel_status==6 & (in_sample==1 & in_sample_sp!=1) // marked as attrit, but one still in sample, so presume broken up (largely cohab where it's less clear)
-mi passive: replace rel_type = 4 if duration > max_dur & rel_status==6 & (in_sample!=1 & in_sample_sp==1) // marked as attrit, but one still in sample, so presume broken up (largely cohab where it's less clear)
+mi passive: replace rel_type = 1 if rel_type_constant== 1  // married, never transitioned 
+mi passive: replace rel_type = 1 if rel_type_constant== 3 & duration == dur_transitioned & marst_imp==1 // if observed married in year of transition, mark as married
+mi passive: replace rel_type = 1 if rel_type_constant== 3 & duration > dur_transitioned & duration <= max_dur // married, post transition
+
+mi passive: replace rel_type = 2 if rel_type_constant== 2 // cohab, never transitioned
+mi passive: replace rel_type = 2 if rel_type_constant== 3 & duration == dur_transitioned & marst_imp==2 // if observed partnered in year of transition, mark as partnered
+mi passive: replace rel_type = 2 if rel_type_constant== 3 & duration == dur_transitioned & inrange(marst_imp,3,6) // if any other status besides married, say cohab
+mi passive: replace rel_type = 2 if rel_type_constant== 3 & duration < dur_transitioned  // pre transition, has to be cohab
+
+mi passive: replace rel_type = 3 if duration > max_dur & eligible_rel_status==0 // intact but past end of relationship, will consider attrited
+mi passive: replace rel_type = 4 if duration > max_dur & inlist(eligible_rel_status,1,2) // past end of relationship and designated ended - including widowhood here for these purposes - bc it is an observed end...
+
 // mi passive: replace rel_type = 0 if duration > max_dur
 // mi passive: replace rel_type = 0 if duration < min_dur
 
 // label define rel_type 0 "Not together" 1 "Married" 2 "Cohab"
-label define rel_type 1 "Married" 2 "Cohab" 3 "Attrited" 4 "Broke Up"
-label values rel_type rel_type
+label define formal_rel_type 1 "Married" 2 "Cohab" 3 "Attrited" 4 "Broke Up"
+label values rel_type formal_rel_type
 
 tab rel_type, m
 mi estimate: proportion rel_type
 
-tab rel_type rel_status, row
-tab rel_type duration if _mi_m!=0, m
+tab rel_type eligible_rel_status, row
+tab duration rel_type if _mi_m!=0, m
+tab rel_type if duration > max_dur, m
+tab rel_type if duration == max_dur, m
 
-browse unique_id partner_id duration rel_start_all rel_end_all min_dur max_dur rel_type dur_transitioned transition_yr rel_status last_yr_observed last_survey_yr_focal* in_sample in_sample_sp weekly_hrs_woman weekly_hrs_man 
+browse unique_id partner_unique_id duration eligible_rel_start_year eligible_rel_end_year min_dur max_dur rel_type_constant rel_type dur_transitioned eligible_transition_year eligible_rel_status last_couple_year in_sample in_sample_sp weekly_hrs_woman weekly_hrs_man 
 
 * number of children
 tab num_children_woman num_children_man if inlist(rel_type,1,2) & duration>=0, m
@@ -586,14 +614,15 @@ label values family_type family_type
 mi estimate: proportion family_type
 
 tab family_type rel_type
-tab family_type duration, m
-tab family_type duration if _mi_m!=0, m // just validating that everyone has a family type at dur 0
-tab family_type duration if _mi_m!=0 & max_dur >0 , m
+tab duration family_type, m
+tab duration family_type if _mi_m!=0, m // just validating that everyone has a family type at dur 0
+tab duration family_type if _mi_m!=0 & max_dur >0 , m
+tab family_type if duration <= max_dur, m
 
-browse unique_id partner_id duration rel_start_all rel_end_all min_dur max_dur family_type rel_type rel_status couple_num_children_gp in_sample in_sample_sp
+browse unique_id partner_unique_id duration eligible_rel_start_year eligible_rel_end_year min_dur max_dur family_type rel_type eligible_rel_status couple_num_children_gp in_sample in_sample_sp
 
-**# Bookmark #2
-// temp save 2
+**# Bookmark #3
+// temp save 3
 save "$created_data/psid_couples_imputed_long_recoded.dta", replace
 
 // use "$created_data/psid_couples_imputed_long_recoded.dta", clear
@@ -653,35 +682,70 @@ tab ft_pt_det_man_end ft_pt_det_woman_end if couple_work_ow_end==8, cell
 ********************************************************************************
 use "$created_data/psid_couples_imputed_long_recoded.dta", clear
 
-// need to get rid of one record per couple; currently deduplicated
-browse unique_id partner_id couple_id duration FAMILY_INTERVIEW_NUM_ main_fam_id if inlist(duration,0,1) // ah, okay, will not always have fam interview number because some of these are off years and imputed. Use fam interview number at either time 0 / 1 and use that to indicate same couple? will main fam id work? or only when in same HH? because there are many couples that come from same 1968 id...
+// need to get rid of one record per couple; currently two. Using the updated way of created shared partner ID
+gen long partner_1 = cond(unique_id < partner_unique_id, unique_id, partner_unique_id)
+gen long partner_2 = cond(unique_id < partner_unique_id, partner_unique_id, unique_id)
+egen long shared_couple_id = group(partner_1 partner_2)
+unique shared_couple_id
+unique couple_id
+unique unique_id partner_unique_id
+
+browse couple_id unique_id partner_unique_id duration partner_1  partner_2 shared_couple_id eligible_couple_id
+
+bysort shared_couple_id duration _mi_m : egen per_id = rank(unique_id)
+tab per_id, m
+tab SEX per_id
+
+sort unique_id partner_unique_id imputed _mi_m duration
+// browse unique_id partner_unique_id shared_couple_id SEX duration per_id
+
+tab couple_work_ow if imputed==1
+tab couple_work_ow per_id if imputed==1, col
+tab couple_work_ow SEX if imputed==1, col
+
+tab couple_hw_hrs_combo if imputed==1
+tab couple_hw_hrs_combo per_id if imputed==1, col
+tab couple_hw_hrs_combo SEX if imputed==1, col
+
+tab family_type if imputed==1
+tab family_type per_id if imputed==1, col
+tab family_type SEX if imputed==1, col
+
+unique unique_id partner_unique_id // 14348
+unique shared_couple_id // 7174
+keep if per_id==1
+unique unique_id partner_unique_id // 7174 (original was: 5828, 11644)
+
+unique unique_id partner_unique_id, by(eligible_rel_start_year) // this makes sense as well
+
+/*
+browse unique_id partner_unique_id couple_id duration FAMILY_INTERVIEW_NUM_ main_fam_id if inlist(duration,0,1) // ah, okay, will not always have fam interview number because some of these are off years and imputed. Use fam interview number at either time 0 / 1 and use that to indicate same couple? will main fam id work? or only when in same HH? because there are many couples that come from same 1968 id...
 inspect FAMILY_INTERVIEW_NUM_ if duration==0
 inspect FAMILY_INTERVIEW_NUM_ if duration==1
 
 mi passive: gen fam_id =  FAMILY_INTERVIEW_NUM_ if duration==1
 mi passive: replace fam_id = FAMILY_INTERVIEW_NUM_ if fam_id==. & duration==0
-bysort unique_id partner_id (fam_id): replace fam_id = fam_id[1]
-sort unique_id partner_id imputed _mi_m duration
+bysort unique_id partner_unique_id (fam_id): replace fam_id = fam_id[1]
+sort unique_id partner_unique_id imputed _mi_m duration
 inspect fam_id
 
-browse unique_id partner_id couple_id duration fam_id FAMILY_INTERVIEW_NUM_ main_fam_id
-unique unique_id partner_id
+browse unique_id partner_unique_id couple_id duration fam_id FAMILY_INTERVIEW_NUM_ main_fam_id
+unique unique_id partner_unique_id
 unique fam_id
-unique unique_id partner_id fam_id
+unique unique_id partner_unique_id fam_id
 
 bysort fam_id duration _mi_m : egen per_id = rank(couple_id)
 tab per_id, m
 bysort fam_id duration _mi_m : egen num_couples = max(per_id)
 
-sort unique_id partner_id imputed _mi_m duration
-browse unique_id partner_id couple_id duration fam_id per_id FAMILY_INTERVIEW_NUM_ main_fam_id if imputed==0
-browse unique_id partner_id couple_id duration fam_id per_id FAMILY_INTERVIEW_NUM_ main_fam_id if imputed==0 & num_couples > 4
-browse unique_id partner_id couple_id duration fam_id per_id FAMILY_INTERVIEW_NUM_ main_fam_id if imputed==0 & inlist(fam_id, 1602,6443,6978)
-browse unique_id partner_id couple_id duration fam_id per_id FAMILY_INTERVIEW_NUM_ main_fam_id if imputed==0 & fam_id==3448 // 7255 3448
+sort unique_id partner_unique_id imputed _mi_m duration
+browse unique_id partner_unique_id couple_id duration fam_id per_id FAMILY_INTERVIEW_NUM_ main_fam_id if imputed==0
+browse unique_id partner_unique_id couple_id duration fam_id per_id FAMILY_INTERVIEW_NUM_ main_fam_id if imputed==0 & num_couples > 4
+browse unique_id partner_unique_id couple_id duration fam_id per_id FAMILY_INTERVIEW_NUM_ main_fam_id if imputed==0 & inlist(fam_id, 1602,6443,6978)
+browse unique_id partner_unique_id couple_id duration fam_id per_id FAMILY_INTERVIEW_NUM_ main_fam_id if imputed==0 & fam_id==3448 // 7255 3448
 
 keep if inlist(per_id,1,3,5,7,9,11,13)
-unique unique_id partner_id //4363, was 8714 (this was previous -10 sample) // 5828, was 11644 (with previous -3 sample + 2023 data)
-unique unique_id partner_id, by(rel_start_all) // this makes sense as well
+*/
 
 mi update
 
@@ -717,7 +781,7 @@ gen duration_v0 = duration
 replace duration = duration + 1
 
 // use "$created_data/psid_couples_imputed_long_deduped.dta", clear
-// keep ft_pt_woman_end overwork_woman_end ft_pt_man_end overwork_man_end couple_work_end couple_work_ow_detailed_end couple_work_ow_end couple_hw_end couple_hw_hrs_end couple_hw_hrs_alt_end couple_hw_hrs_combo_end rel_type couple_num_children_gp_end family_type_end unique_id partner_id rel_start_all rel_end_all duration  min_dur max_dur last_yr_observed ended _mi_miss _mi_id _mi_m SEX in_sample hh_status relationship housework_focal age_focal weekly_hrs_t_focal earnings_t_focal family_income_t partnered_imp educ_focal_imp num_children_imp_hh weekly_hrs_woman weekly_hrs_man housework_woman housework_man partnered_woman partnered_man num_children_woman num_children_man ft_pt_woman overwork_woman ft_pt_man overwork_man ft_pt_det_woman ft_pt_det_man rel_status rel_type_constant transition_yr FIRST_BIRTH_YR sample_type has_psid_gene birth_yr_all raceth_fixed_focal fixed_education SEX_sp in_sample_sp hh_status_sp relationship_sp housework_focal_sp age_focal_sp weekly_hrs_t_focal_sp earnings_t_focal_sp family_income_t_sp partnered_imp_sp num_children_imp_hh_sp  FIRST_BIRTH_YR_sp sample_type_sp has_psid_gene_sp birth_yr_all_sp raceth_fixed_focal_sp fixed_education_sp couple_work_ow_detailed couple_work_ow couple_hw_hrs_combo // think I need to keep the base variables the passive variables I created are based off of, otherwise, they are reset back to missing I think, which causes problems when I reshape.
+// keep ft_pt_woman_end overwork_woman_end ft_pt_man_end overwork_man_end couple_work_end couple_work_ow_detailed_end couple_work_ow_end couple_hw_end couple_hw_hrs_end couple_hw_hrs_alt_end couple_hw_hrs_combo_end rel_type couple_num_children_gp_end family_type_end unique_id partner_unique_id eligible_rel_start_year eligible_rel_end_year duration  min_dur max_dur last_yr_observed ended _mi_miss _mi_id _mi_m SEX in_sample hh_status relationship housework_focal age_focal weekly_hrs_t_focal earnings_t_focal family_income_t partnered_imp educ_focal_imp num_children_imp_hh weekly_hrs_woman weekly_hrs_man housework_woman housework_man partnered_woman partnered_man num_children_woman num_children_man ft_pt_woman overwork_woman ft_pt_man overwork_man ft_pt_det_woman ft_pt_det_man rel_status rel_type_constant transition_yr FIRST_BIRTH_YR sample_type has_psid_gene birth_yr_all raceth_fixed_focal fixed_education SEX_sp in_sample_sp hh_status_sp relationship_sp housework_focal_sp age_focal_sp weekly_hrs_t_focal_sp earnings_t_focal_sp family_income_t_sp partnered_imp_sp num_children_imp_hh_sp  FIRST_BIRTH_YR_sp sample_type_sp has_psid_gene_sp birth_yr_all_sp raceth_fixed_focal_sp fixed_education_sp couple_work_ow_detailed couple_work_ow couple_hw_hrs_combo // think I need to keep the base variables the passive variables I created are based off of, otherwise, they are reset back to missing I think, which causes problems when I reshape.
 
 drop FAMILY_INTERVIEW_NUM_ NUM_CHILDREN_ TOTAL_INCOME_T1_FAMILY_ TOTAL_INCOME_T2_FAMILY_ under18 edulevel_match edulevelmax_match children moved_in_lastyr moved_mo_lastyr moved_yr_lastyr partnered weekly_hrs_t1_focal earnings_t1_focal employed_t1_earn_focal childcare_focal adultcare_focal employed_focal educ_focal max_educ_focal college_focal raceth_focal empstat_disabled_focal empstat_retired_focal age65up weekly_hrs_t2_focal earnings_t2_focal employed_t2_focal start_yr_employer_focal yrs_employer_focal has_hours_t1 has_earnings_t1 employed_t1_hrs_focal has_hours_t2 has_earnings_t2 new_in_hh hh_births_ had_birth increment_birth num_children_imp_focal hours_type_t1_focal hw_hours_gp main_fam_id SAMPLE last_race_focal first_educ_focal first_survey_yr_focal last_survey_yr_focal employed_focal_rec min_educ max_educ max_disabled_focal min_disabled_focal nmis_age imputed childcare_focal_sp adultcare_focal_sp max_educ_focal_sp new_in_hh_sp had_birth_sp SAMPLE_sp first_survey_yr_focal_sp last_survey_yr_focal_sp imputed_sp couple_hw_total woman_hw_share hw_terc_woman hw_hilow_woman hw_hilow_man hw_hilow_woman_gp1 hw_hilow_woman_gp2 hw_hilow_woman_combo hw_hilow_man_gp4 _Unique fam_id per_id num_couples duration_v0
 
@@ -727,13 +791,13 @@ mi update
 **# Reshape back to wide to see the data by duration and compare to long estimates
 ********************************************************************************
 mi reshape wide ft_pt_woman_end overwork_woman_end ft_pt_man_end overwork_man_end couple_work_end couple_work_ow_detailed_end couple_work_ow_end couple_hw_end couple_hw_hrs_end couple_hw_hrs_alt_end couple_hw_hrs_combo_end rel_type couple_num_children_gp_end family_type_end in_sample hh_status relationship housework_focal age_focal weekly_hrs_t_focal earnings_t_focal family_income_t partnered_imp educ_focal_imp num_children_imp_hh weekly_hrs_woman weekly_hrs_man housework_woman housework_man partnered_woman partnered_man num_children_woman num_children_man ft_pt_woman overwork_woman ft_pt_man overwork_man ft_pt_det_woman ft_pt_det_man  in_sample_sp hh_status_sp relationship_sp housework_focal_sp age_focal_sp weekly_hrs_t_focal_sp earnings_t_focal_sp family_income_t_sp partnered_imp_sp num_children_imp_hh_sp couple_work_ow_detailed couple_work_ow couple_hw_hrs_combo age_young_child RESPONDENT_WHO_ REGION_ employment_status_focal religion_focal lives_family_focal disabled_focal disabled_scale_focal sr_health_focal yr_retired_focal father_in_hh mother_in_hh num_parent_in_hh num_65up_hh rolling_births current_parent_status retired_est_focal house_status_all disabled_imp_focal age_young_child_sp RESPONDENT_WHO_sp REGION_sp employment_status_focal_sp religion_focal_sp lives_family_focal_sp disabled_focal_sp sr_health_focal_sp num_parent_in_hh_sp num_65up_hh_sp rolling_births_sp current_parent_status_sp retired_est_focal_sp house_status_all_sp employment_status_woman employment_status_man annual_earnings_woman annual_earnings_man age_youngest_woman age_youngest_man is_parent_woman is_parent_man region_woman region_man housing_woman housing_man religion_woman religion_man disabled_woman disabled_man sr_health_woman sr_health_man retired_woman retired_man lives_near_fam_woman lives_near_fam_man couple_work couple_hw couple_hw_hrs couple_hw_hrs_alt couple_num_children couple_num_children_gp family_type ft_pt_det_woman_end ft_pt_det_man_end ///
-, i(unique_id partner_id rel_start_all rel_end_all) j(duration) // SEX SEX_sp rel_status rel_type_constant transition_yr FIRST_BIRTH_YR FIRST_BIRTH_YR_sp sample_type sample_type_sp has_psid_gene has_psid_gene_sp birth_yr_all birth_yr_all_sp raceth_fixed_focal raceth_fixed_focal_sp fixed_education fixed_education_sp
+, i(unique_id partner_unique_id eligible_rel_start_year eligible_rel_end_year) j(duration) // SEX SEX_sp rel_status rel_type_constant transition_yr FIRST_BIRTH_YR FIRST_BIRTH_YR_sp sample_type sample_type_sp has_psid_gene has_psid_gene_sp birth_yr_all birth_yr_all_sp raceth_fixed_focal raceth_fixed_focal_sp fixed_education fixed_education_sp
 
 
 tab _mi_miss, m // see what happens if I reshape but DON'T convert
 tab _mi_m, m
-browse unique unique_id partner_id _mi_id _mi_miss _mi_m couple_work_end* couple_work_ow_end* couple_hw_hrs_combo_end*
-browse unique unique_id partner_id _mi_id _mi_miss _mi_m couple_work_end* couple_work_ow_end* couple_hw_hrs_combo_end* if inrange(_mi_id,1,10)
+browse unique unique_id partner_unique_id _mi_id _mi_miss _mi_m couple_work_end* couple_work_ow_end* couple_hw_hrs_combo_end*
+browse unique unique_id partner_unique_id _mi_id _mi_miss _mi_m couple_work_end* couple_work_ow_end* couple_hw_hrs_combo_end* if inrange(_mi_id,1,10)
 
 foreach var in couple_work_ow_end couple_hw_hrs_combo_end family_type_end{
 	forvalues d=1/11{
@@ -742,19 +806,19 @@ foreach var in couple_work_ow_end couple_hw_hrs_combo_end family_type_end{
 	}
 }
 
-unique unique_id partner_id // so now there are 4363 uniques and 11 observations for each (base + 10 imputations). 5828 with updated sample
+unique unique_id partner_unique_id // so now there are 4363 uniques and 11 observations for each (base + 10 imputations). 5828 with updated sample
 
 // okay, want to briefly look at the pre-marital birth indicators. Currently create in step 1 but let's temprarily move here
-browse unique_id partner_id SEX rel_start_all FIRST_BIRTH_YR birth_timing_rel FIRST_BIRTH_YR_sp birth_timing_rel_sp yr_first_birth_woman yr_first_birth_man
+browse unique_id partner_unique_id SEX eligible_rel_start_year FIRST_BIRTH_YR birth_timing_rel FIRST_BIRTH_YR_sp birth_timing_rel_sp yr_first_birth_woman yr_first_birth_man
 
-gen first_birth_timing_man = yr_first_birth_man - rel_start_all
+gen first_birth_timing_man = yr_first_birth_man - eligible_rel_start_year
 replace first_birth_timing_man = . if yr_first_birth_man==9999
 
-gen first_birth_timing_woman = yr_first_birth_woman - rel_start_all
+gen first_birth_timing_woman = yr_first_birth_woman - eligible_rel_start_year
 replace first_birth_timing_woman = . if yr_first_birth_woman==9999
 
 // create a binary of pre / post
-	// browse unique_id partner_id SEX rel_start_all first_birth_timing_woman yr_first_birth_woman first_birth_timing_man yr_first_birth_man
+	// browse unique_id partner_unique_id SEX eligible_rel_start_year first_birth_timing_woman yr_first_birth_woman first_birth_timing_man yr_first_birth_man
 mi passive: gen first_birth_pre_rel_man = .
 mi passive: replace first_birth_pre_rel_man = 0 if first_birth_timing_man >=0 & first_birth_timing_man!=.
 mi passive: replace first_birth_pre_rel_man = 0 if yr_first_birth_man==9999 // can actually put 9999 here because is, theoretically, 0 if no births
@@ -783,7 +847,7 @@ replace complete_seq = 0 if max_dur < 9
 replace complete_seq = 1 if max_dur >= 9 // so 9 is really 10 (because 0-9 = 1-10)
 
 tab rel_type10 if complete_seq==1, m
-browse unique_id partner_id min_dur max_dur complete_seq rel_type* // okay, so max_dur is based on start of 0, but I changed it, so now need it to be +1
+browse unique_id partner_unique_id min_dur max_dur complete_seq rel_type* // okay, so max_dur is based on start of 0, but I changed it, so now need it to be +1
 
 // then create indicator of length of complete sequence
 gen sequence_length_alt=max_dur + 1
@@ -806,7 +870,7 @@ replace sequence_length = 10 if complete_seq==1
 
 // note how ended (attrit or dissolve)
 tab rel_status complete_seq, m
-browse unique_id partner_id min_dur max_dur rel_status complete_seq rel_type*
+browse unique_id partner_unique_id min_dur max_dur rel_status complete_seq rel_type*
 
 gen status_end = .
 forvalues d=1/10{
@@ -817,7 +881,7 @@ forvalues d=1/10{
 label values status_end rel_type
 tab status_end complete_seq, m
 
-browse unique_id partner_id min_dur max_dur sequence_length status_end rel_status rel_type* couple_work_end* if complete_seq==0 & inlist(status_end,1,2)
+browse unique_id partner_unique_id min_dur max_dur sequence_length status_end rel_status rel_type* couple_work_end* if complete_seq==0 & inlist(status_end,1,2)
 tab rel_type10 if complete_seq==0 & inlist(status_end,1,2)
 tab couple_work_end10 if complete_seq==0 & inlist(status_end,1,2), m
 
@@ -854,7 +918,7 @@ save "$created_data/psid_couples_imputed_wide_complete.dta", replace
 // truncated data (so not attrit or dissolve - set to missing instead)
 use "$created_data/psid_couples_imputed_wide.dta", clear
 
-browse unique_id partner_id complete_seq sequence_length couple_work_ow_end* couple_hw_hrs_combo_end* family_type_end*
+browse unique_id partner_unique_id complete_seq sequence_length couple_work_ow_end* couple_hw_hrs_combo_end* family_type_end*
 fre couple_work_ow_end5
 fre couple_hw_hrs_combo_end5
 fre family_type_end5
@@ -878,15 +942,15 @@ fre family_type_trunc5
 save "$created_data/psid_couples_wide_truncated.dta", replace 
 
 // get counts of unique couples by length for appendix
-unique unique_id partner_id if sequence_length>=2
-unique unique_id partner_id if sequence_length>=3
-unique unique_id partner_id if sequence_length>=4
-unique unique_id partner_id if sequence_length>=5
-unique unique_id partner_id if sequence_length>=6
-unique unique_id partner_id if sequence_length>=7
-unique unique_id partner_id if sequence_length>=8
-unique unique_id partner_id if sequence_length>=9
-unique unique_id partner_id if sequence_length>=10
+unique unique_id partner_unique_id if sequence_length>=2
+unique unique_id partner_unique_id if sequence_length>=3
+unique unique_id partner_unique_id if sequence_length>=4
+unique unique_id partner_unique_id if sequence_length>=5
+unique unique_id partner_unique_id if sequence_length>=6
+unique unique_id partner_unique_id if sequence_length>=7
+unique unique_id partner_unique_id if sequence_length>=8
+unique unique_id partner_unique_id if sequence_length>=9
+unique unique_id partner_unique_id if sequence_length>=10
 
 
 /*
@@ -913,11 +977,11 @@ mi convert wide, clear
 
 save "$created_data/psid_couples_imputed_fully_wide.dta", replace // this seems to mess up some observations, so I might have done something wrong in the reshape. will revisit this, but I think getting via long format is fine for now. I wonder if this is because of the category things? okay it was because I dropped the imputed variables the passive ones were based off of; I fixed this.
 
-unique unique_id partner_id // so, I think to what Lea said - the imputations are also wide, need to be long
+unique unique_id partner_unique_id // so, I think to what Lea said - the imputations are also wide, need to be long
 tab _mi_miss, m
 
-browse unique_id partner_id min_dur max_dur rel_type* *rel_*
-browse unique_id partner_id couple_work_end1 _*_couple_work_end1 _mi_miss
+browse unique_id partner_unique_id min_dur max_dur rel_type* *rel_*
+browse unique_id partner_unique_id couple_work_end1 _*_couple_work_end1 _mi_miss
 
 mi estimate: proportion rel_type0 couple_work_ow_end0 family_type_end0 // okay NOW there are the right number of couples AND they match what I did when long
 mi estimate: proportion rel_type5 couple_work_ow_end5 family_type_end5 // same here

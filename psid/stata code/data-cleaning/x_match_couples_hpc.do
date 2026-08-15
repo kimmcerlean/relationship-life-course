@@ -18,7 +18,7 @@ cd "/home/kmcerlea/stage/Life Course"
 * matches the corresponding imputed partner data.
 * It also creates couple-level variables.
 * This is the HPC version
-/*
+
 use "created data/stata/psid_couples_imputed_long.dta", clear
 
 // unique unique_id partner_id
@@ -74,23 +74,26 @@ mi passive: gen housework_man=housework_focal if SEX==1
 mi passive: replace housework_man=housework_focal_sp if SEX==2
 
 *relationship status
-tab partnered_imp partnered_imp_sp 
+// tab partnered_imp partnered_imp_sp 
+tab marst_imp marst_imp_sp
 
-mi passive: gen partnered_woman=partnered_imp if SEX==2
-mi passive: replace partnered_woman=partnered_imp_sp if SEX==1
+mi passive: gen marst_woman=marst_imp if SEX==2
+mi passive: replace marst_woman=marst_imp_sp if SEX==1
 
-mi passive: gen partnered_man=partnered_imp if SEX==1
-mi passive: replace partnered_man=partnered_imp_sp if SEX==2
+mi passive: gen marst_man=marst_imp if SEX==1
+mi passive: replace marst_man=marst_imp_sp if SEX==2
 
-gen rel_no_woman=current_rel_number_main if SEX==2
-replace rel_no_woman=current_rel_number_main_sp if SEX==1
+label values marst_woman marst_man marital_status_updated
 
-gen rel_no_man=current_rel_number_main if SEX==1
-replace rel_no_man=current_rel_number_main_sp if SEX==2
+gen rel_no_woman=eligible_rel_no if SEX==2
+replace rel_no_woman=eligible_rel_no_sp if SEX==1
+
+gen rel_no_man=eligible_rel_no if SEX==1
+replace rel_no_man=eligible_rel_no_sp if SEX==2
 
 *number of children
-tab num_children_imp_hh num_children_imp_hh_sp if partnered_imp==1 & partnered_imp_sp==1 // hmm - so they don't always have the same number of children...
-tab num_children_imp_hh num_children_imp_hh_sp if partnered_imp==1 & partnered_imp_sp==1 & imputed==0 // much closer for non-imputed, so some of this is the imputation
+tab num_children_imp_hh num_children_imp_hh_sp if inlist(marst_imp,1,2) & inlist(marst_imp_sp,1,2) // hmm - so they don't always have the same number of children...
+tab num_children_imp_hh num_children_imp_hh_sp if inlist(marst_imp,1,2) & inlist(marst_imp_sp,1,2) & imputed==0 // much closer for non-imputed, so some of this is the imputation
 tab NUM_CHILDREN_ num_children_imp_hh, m
 
 mi passive: gen num_children_woman=num_children_imp_hh if SEX==2
@@ -135,11 +138,11 @@ mi passive: gen region_man=REGION_ if SEX==1
 mi passive: replace region_man=REGION_sp if SEX==2
 
 * Housing status
-mi passive: gen housing_woman=house_status_all if SEX==2
-mi passive: replace housing_woman=house_status_all_sp if SEX==1
+mi passive: gen housing_woman=home_owner if SEX==2 // house_status_all
+mi passive: replace housing_woman=home_owner_sp if SEX==1
 
-mi passive: gen housing_man=house_status_all if SEX==1
-mi passive: replace housing_man=house_status_all_sp if SEX==2
+mi passive: gen housing_man=home_owner if SEX==1
+mi passive: replace housing_man=home_owner_sp if SEX==2
 
 * Religion
 mi passive: gen religion_woman=religion_focal if SEX==2
@@ -148,7 +151,7 @@ mi passive: replace religion_woman=religion_focal_sp if SEX==1
 mi passive: gen religion_man=religion_focal if SEX==1
 mi passive: replace religion_man=religion_focal_sp if SEX==2
 
-*Disability status // duh I didn't actually impute this I am so dumb
+*Disability status
 mi passive: gen disabled_woman=disabled_focal if SEX==2
 mi passive: replace disabled_woman=disabled_focal_sp if SEX==1
 
@@ -210,7 +213,7 @@ save "created data/stata/psid_couples_imputed_long_recoded.dta", replace
 
 // Stata assert command to check new variables created from imputed  
 // disabled_woman disabled_man -- will not be true bc I did not impute
-foreach var in weekly_hrs_woman weekly_hrs_man employment_status_woman employment_status_man annual_earnings_woman annual_earnings_man housework_woman housework_man partnered_woman partnered_man rel_no_woman rel_no_man num_children_woman num_children_man age_youngest_woman age_youngest_man yr_first_birth_woman yr_first_birth_man is_parent_woman is_parent_man ever_parent_woman ever_parent_man region_woman region_man housing_woman housing_man religion_woman religion_man sr_health_woman sr_health_man retired_woman retired_man father_educ_woman father_educ_man mother_educ_woman mother_educ_man family_structure_woman family_structure_man lives_near_fam_woman lives_near_fam_man dob_woman dob_man{  
+foreach var in weekly_hrs_woman weekly_hrs_man employment_status_woman employment_status_man annual_earnings_woman annual_earnings_man housework_woman housework_man marst_woman marst_man rel_no_woman rel_no_man num_children_woman num_children_man age_youngest_woman age_youngest_man yr_first_birth_woman yr_first_birth_man is_parent_woman is_parent_man ever_parent_woman ever_parent_man region_woman region_man housing_woman housing_man religion_woman religion_man disabled_woman disabled_man sr_health_woman sr_health_man retired_woman retired_man father_educ_woman father_educ_man mother_educ_woman mother_educ_man family_structure_woman family_structure_man lives_near_fam_woman lives_near_fam_man dob_woman dob_man{  
 	inspect `var' if _mi_m != 0  
 	assert `var' != . if _mi_m != 0  
 } 
@@ -478,6 +481,7 @@ mi estimate: proportion couple_hw couple_hw_hrs_alt couple_hw_hrs_combo
 // temp save 2 - I am so dumb it failed here because one of these labels already existed...
 save "created data/stata/psid_couples_imputed_long_recoded.dta", replace
 
+/*
 // family channel
 * relationship type
 mi passive: gen dur_transitioned=.
@@ -555,7 +559,7 @@ tab family_type rel_type
 **# Bookmark #3
 // temp save 3
 save "created data/stata/psid_couples_imputed_long_recoded.dta", replace
-*/
+
 
 use "created data/stata/psid_couples_imputed_long_recoded.dta", clear
 
