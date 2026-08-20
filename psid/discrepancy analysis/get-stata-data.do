@@ -9,7 +9,7 @@ label values fixed_educ* educ
 
 tab fixed_education fixed_education_sp, m
 
-* need gendered versions kim wtf
+* need gendered versions kim
 gen education_woman=fixed_education if SEX==2
 replace education_woman=fixed_education_sp if SEX==1
 
@@ -70,7 +70,7 @@ label values parent_info parent_info
 
 tab parent_info, m
 
-save "$temp/psid_couples_wide_truncated_tmp.dta", replace
+save "$temp/psid_couples_wide_truncated_educ.dta", replace
 
 /// complete - might be needed for this to be effective
 
@@ -103,4 +103,4 @@ gen one_college=.
 replace one_college = 0 if couple_educ_type==1 
 replace one_college = 1 if inrange(couple_educ_type,2,4)
 
-save "$temp/psid_couples_imputed_wide_complete_tmp.dta", replace
+save "$temp/psid_couples_imputed_wide_complete_educ.dta", replace
