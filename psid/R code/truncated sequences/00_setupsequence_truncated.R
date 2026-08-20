@@ -96,7 +96,7 @@ table(data$sequence_length)
 data <- data%>%filter(sequence_length>=3)
 
 ## testing with 5 imputations for now to avoid using unique sequences
-## it's 2^31-1, so currently too many couples (5828, but 4685 with min seq length)
+## it's 2^31-1, so currently too many couples
 ## so close, we could have 46340 max
 data <- data%>%filter(`_mi_m`==1 | `_mi_m`==2 | `_mi_m`==3 | `_mi_m`==4 | `_mi_m`==5)
 table(data$`_mi_m`)

@@ -2,7 +2,7 @@
 #    Program: typology-comparison-MCSA_truncated
 #    Author: Kim McErlean & Lea Pessin 
 #    Date: January 2025
-#    Modified: June 16 2025
+#    Modified: August 16 2026
 #    Goal: compare different cluster solutions of MCSA, based on truncated sequences
 # --------------------------------------------------------------------
 # --------------------------------------------------------------------
@@ -110,6 +110,62 @@ mc.det.ward1 <- hclust(as.dist(mcdist.det.min),
 
 mcdist.om.pam.ward <- wcKMedRange(mcdist.det.min, kvals = 2:10,
                                       initialclust = mc.det.ward1)
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Prep work for 5 cluster solution
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+# Cut tree at cluster==5
+
+mc5 <- mcdist.om.pam.ward$clustering$cluster5 # these are sub"folders" in ward output
+
+# Label the clusters from 1 to 5
+labels5<-unique(mc5)
+sort(labels5)
+
+mc5.factor <- factor(mc5, levels = sort(labels5),
+                     c("1", "2", "3", "4", "5"))
+
+# Separate objects for each channel and for each cluster
+
+data$mc5.factor <- as.numeric(mc5.factor)
+
+# Identify position of variables indicating start and end of sequences
+
+mc5.work.ow1.seq <- seq.work.ow[data$mc5.factor == "1", ]
+mc5.work.ow2.seq <- seq.work.ow[data$mc5.factor == "2", ]
+mc5.work.ow3.seq <- seq.work.ow[data$mc5.factor == "3", ]
+mc5.work.ow4.seq <- seq.work.ow[data$mc5.factor == "4", ]
+mc5.work.ow5.seq <- seq.work.ow[data$mc5.factor == "5", ]
+
+mc5.hw.hrs1.seq <- seq.hw.hrs[data$mc5.factor == "1", ]
+mc5.hw.hrs2.seq <- seq.hw.hrs[data$mc5.factor == "2", ]
+mc5.hw.hrs3.seq <- seq.hw.hrs[data$mc5.factor == "3", ]
+mc5.hw.hrs4.seq <- seq.hw.hrs[data$mc5.factor == "4", ]
+mc5.hw.hrs5.seq <- seq.hw.hrs[data$mc5.factor == "5", ]
+
+mc5.fam1.seq <- seq.fam[data$mc5.factor == "1", ]
+mc5.fam2.seq <- seq.fam[data$mc5.factor == "2", ]
+mc5.fam3.seq <- seq.fam[data$mc5.factor == "3", ]
+mc5.fam4.seq <- seq.fam[data$mc5.factor == "4", ]
+mc5.fam5.seq <- seq.fam[data$mc5.factor == "5", ]
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+# Obtain relative frequencies of the five clusters
+
+relfreq5 <- data %>% 
+  count(mc5.factor) %>% 
+  mutate(share = n/ sum(n)) %>%
+  arrange(share)
+
+# Convert relative frequencies to percentages (will be used for labeling the y-axes)
+share <- round(as.numeric(relfreq5$share)*100, 1)
+
+# display frequencies of each cluster.
+print(relfreq5)
+
+write.csv(relfreq5,("results/PSID/truncated_cluster_freq_mc5.csv"))
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Prep work for 6 cluster solution

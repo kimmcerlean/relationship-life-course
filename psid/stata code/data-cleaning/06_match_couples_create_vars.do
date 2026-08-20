@@ -10,7 +10,7 @@
 ********************************************************************************
 * Description
 ********************************************************************************
-* This files takes the imputed data from step 3 at an individual level and
+* This files takes the imputed data from step 5 at an individual level and
 * matches the corresponding imputed partner data.
 * It also creates couple-level variables.
 
@@ -783,16 +783,16 @@ replace duration = duration + 1
 // use "$created_data/psid_couples_imputed_long_deduped.dta", clear
 // keep ft_pt_woman_end overwork_woman_end ft_pt_man_end overwork_man_end couple_work_end couple_work_ow_detailed_end couple_work_ow_end couple_hw_end couple_hw_hrs_end couple_hw_hrs_alt_end couple_hw_hrs_combo_end rel_type couple_num_children_gp_end family_type_end unique_id partner_unique_id eligible_rel_start_year eligible_rel_end_year duration  min_dur max_dur last_yr_observed ended _mi_miss _mi_id _mi_m SEX in_sample hh_status relationship housework_focal age_focal weekly_hrs_t_focal earnings_t_focal family_income_t partnered_imp educ_focal_imp num_children_imp_hh weekly_hrs_woman weekly_hrs_man housework_woman housework_man partnered_woman partnered_man num_children_woman num_children_man ft_pt_woman overwork_woman ft_pt_man overwork_man ft_pt_det_woman ft_pt_det_man rel_status rel_type_constant transition_yr FIRST_BIRTH_YR sample_type has_psid_gene birth_yr_all raceth_fixed_focal fixed_education SEX_sp in_sample_sp hh_status_sp relationship_sp housework_focal_sp age_focal_sp weekly_hrs_t_focal_sp earnings_t_focal_sp family_income_t_sp partnered_imp_sp num_children_imp_hh_sp  FIRST_BIRTH_YR_sp sample_type_sp has_psid_gene_sp birth_yr_all_sp raceth_fixed_focal_sp fixed_education_sp couple_work_ow_detailed couple_work_ow couple_hw_hrs_combo // think I need to keep the base variables the passive variables I created are based off of, otherwise, they are reset back to missing I think, which causes problems when I reshape.
 
-drop FAMILY_INTERVIEW_NUM_ NUM_CHILDREN_ TOTAL_INCOME_T1_FAMILY_ TOTAL_INCOME_T2_FAMILY_ under18 edulevel_match edulevelmax_match children moved_in_lastyr moved_mo_lastyr moved_yr_lastyr partnered weekly_hrs_t1_focal earnings_t1_focal employed_t1_earn_focal childcare_focal adultcare_focal employed_focal educ_focal max_educ_focal college_focal raceth_focal empstat_disabled_focal empstat_retired_focal age65up weekly_hrs_t2_focal earnings_t2_focal employed_t2_focal start_yr_employer_focal yrs_employer_focal has_hours_t1 has_earnings_t1 employed_t1_hrs_focal has_hours_t2 has_earnings_t2 new_in_hh hh_births_ had_birth increment_birth num_children_imp_focal hours_type_t1_focal hw_hours_gp main_fam_id SAMPLE last_race_focal first_educ_focal first_survey_yr_focal last_survey_yr_focal employed_focal_rec min_educ max_educ max_disabled_focal min_disabled_focal nmis_age imputed childcare_focal_sp adultcare_focal_sp max_educ_focal_sp new_in_hh_sp had_birth_sp SAMPLE_sp first_survey_yr_focal_sp last_survey_yr_focal_sp imputed_sp couple_hw_total woman_hw_share hw_terc_woman hw_hilow_woman hw_hilow_man hw_hilow_woman_gp1 hw_hilow_woman_gp2 hw_hilow_woman_combo hw_hilow_man_gp4 _Unique fam_id per_id num_couples duration_v0
+drop FAMILY_INTERVIEW_NUM_ NUM_CHILDREN_ TOTAL_INCOME_T1_FAMILY_ TOTAL_INCOME_T2_FAMILY_ under18 edulevel_match edulevelmax_match children moved_in_lastyr moved_mo_lastyr moved_yr_lastyr partnered weekly_hrs_t1_focal earnings_t1_focal employed_t1_earn_focal childcare_focal adultcare_focal employed_focal educ_focal max_educ_focal college_focal raceth_focal empstat_disabled_focal empstat_retired_focal age65up weekly_hrs_t2_focal earnings_t2_focal employed_t2_focal start_yr_employer_focal yrs_employer_focal has_hours_t1 has_earnings_t1 employed_t1_hrs_focal has_hours_t2 has_earnings_t2 new_in_hh hh_births_ had_birth increment_birth num_children_imp_focal hours_type_t1_focal hw_hours_gp main_fam_id SAMPLE last_race_focal first_educ_focal first_survey_year last_survey_year employed_focal_rec  nmis_age imputed childcare_focal_sp adultcare_focal_sp max_educ_focal_sp new_in_hh_sp had_birth_sp SAMPLE_sp first_survey_year_sp last_survey_year_sp imputed_sp couple_hw_total woman_hw_share hw_terc_woman hw_hilow_woman hw_hilow_man hw_hilow_woman_gp1 hw_hilow_woman_gp2 hw_hilow_woman_combo hw_hilow_man_gp4 _Unique per_id duration_v0
 
 mi update
 
 ********************************************************************************
 **# Reshape back to wide to see the data by duration and compare to long estimates
 ********************************************************************************
-mi reshape wide ft_pt_woman_end overwork_woman_end ft_pt_man_end overwork_man_end couple_work_end couple_work_ow_detailed_end couple_work_ow_end couple_hw_end couple_hw_hrs_end couple_hw_hrs_alt_end couple_hw_hrs_combo_end rel_type couple_num_children_gp_end family_type_end in_sample hh_status relationship housework_focal age_focal weekly_hrs_t_focal earnings_t_focal family_income_t partnered_imp educ_focal_imp num_children_imp_hh weekly_hrs_woman weekly_hrs_man housework_woman housework_man partnered_woman partnered_man num_children_woman num_children_man ft_pt_woman overwork_woman ft_pt_man overwork_man ft_pt_det_woman ft_pt_det_man  in_sample_sp hh_status_sp relationship_sp housework_focal_sp age_focal_sp weekly_hrs_t_focal_sp earnings_t_focal_sp family_income_t_sp partnered_imp_sp num_children_imp_hh_sp couple_work_ow_detailed couple_work_ow couple_hw_hrs_combo age_young_child RESPONDENT_WHO_ REGION_ employment_status_focal religion_focal lives_family_focal disabled_focal disabled_scale_focal sr_health_focal yr_retired_focal father_in_hh mother_in_hh num_parent_in_hh num_65up_hh rolling_births current_parent_status retired_est_focal house_status_all disabled_imp_focal age_young_child_sp RESPONDENT_WHO_sp REGION_sp employment_status_focal_sp religion_focal_sp lives_family_focal_sp disabled_focal_sp sr_health_focal_sp num_parent_in_hh_sp num_65up_hh_sp rolling_births_sp current_parent_status_sp retired_est_focal_sp house_status_all_sp employment_status_woman employment_status_man annual_earnings_woman annual_earnings_man age_youngest_woman age_youngest_man is_parent_woman is_parent_man region_woman region_man housing_woman housing_man religion_woman religion_man disabled_woman disabled_man sr_health_woman sr_health_man retired_woman retired_man lives_near_fam_woman lives_near_fam_man couple_work couple_hw couple_hw_hrs couple_hw_hrs_alt couple_num_children couple_num_children_gp family_type ft_pt_det_woman_end ft_pt_det_man_end ///
+mi reshape wide ft_pt_woman_end overwork_woman_end ft_pt_man_end overwork_man_end couple_work_end couple_work_ow_detailed_end couple_work_ow_end couple_hw_end couple_hw_hrs_end couple_hw_hrs_alt_end couple_hw_hrs_combo_end rel_type couple_num_children_gp_end family_type_end in_sample hh_status relationship housework_focal age_focal weekly_hrs_t_focal earnings_t_focal family_income_t partnered_imp educ_focal_imp num_children_imp_hh weekly_hrs_woman weekly_hrs_man housework_woman housework_man num_children_woman num_children_man ft_pt_woman overwork_woman ft_pt_man overwork_man ft_pt_det_woman ft_pt_det_man  in_sample_sp hh_status_sp relationship_sp housework_focal_sp age_focal_sp weekly_hrs_t_focal_sp earnings_t_focal_sp family_income_t_sp partnered_imp_sp marst_imp marst_imp_sp marst_woman marst_man num_children_imp_hh_sp couple_work_ow_detailed couple_work_ow couple_hw_hrs_combo age_young_child RESPONDENT_WHO_ REGION_ employment_status_focal religion_focal lives_family_focal disabled_focal disabled_scale_focal sr_health_focal yr_retired_focal father_in_hh mother_in_hh num_parent_in_hh num_65up_hh rolling_births current_parent_status retired_est_focal house_status_all age_young_child_sp RESPONDENT_WHO_sp REGION_sp employment_status_focal_sp religion_focal_sp lives_family_focal_sp disabled_focal_sp sr_health_focal_sp num_65up_hh_sp rolling_births_sp current_parent_status_sp retired_est_focal_sp house_status_all_sp home_owner home_owner_sp employment_status_woman employment_status_man annual_earnings_woman annual_earnings_man age_youngest_woman age_youngest_man is_parent_woman is_parent_man region_woman region_man housing_woman housing_man religion_woman religion_man disabled_woman disabled_man sr_health_woman sr_health_man retired_woman retired_man lives_near_fam_woman lives_near_fam_man couple_work couple_hw couple_hw_hrs couple_hw_hrs_alt couple_num_children couple_num_children_gp family_type ft_pt_det_woman_end ft_pt_det_man_end is_respondent_focal is_respondent_focal_sp any_parent_in_hh any_parent_in_hh_sp RELATION_ relationship_type_ is_first_yr_cohabitor has_first_yr_cohabitor current_rel_type marital_status_focal in_rel_flag survey_yr ///
 , i(unique_id partner_unique_id eligible_rel_start_year eligible_rel_end_year) j(duration) // SEX SEX_sp rel_status rel_type_constant transition_yr FIRST_BIRTH_YR FIRST_BIRTH_YR_sp sample_type sample_type_sp has_psid_gene has_psid_gene_sp birth_yr_all birth_yr_all_sp raceth_fixed_focal raceth_fixed_focal_sp fixed_education fixed_education_sp
-
+// old vars: partnered_woman partnered_man 
 
 tab _mi_miss, m // see what happens if I reshape but DON'T convert
 tab _mi_m, m
@@ -806,7 +806,7 @@ foreach var in couple_work_ow_end couple_hw_hrs_combo_end family_type_end{
 	}
 }
 
-unique unique_id partner_unique_id // so now there are 4363 uniques and 11 observations for each (base + 10 imputations). 5828 with updated sample
+unique unique_id partner_unique_id // 7174 * 11 (old: so now there are 4363 uniques and 11 observations for each (base + 10 imputations). 5828 with updated sample)
 
 // okay, want to briefly look at the pre-marital birth indicators. Currently create in step 1 but let's temprarily move here
 browse unique_id partner_unique_id SEX eligible_rel_start_year FIRST_BIRTH_YR birth_timing_rel FIRST_BIRTH_YR_sp birth_timing_rel_sp yr_first_birth_woman yr_first_birth_man
@@ -869,7 +869,7 @@ replace sequence_length = sequence_length_alt if sequence_length==. & complete_s
 replace sequence_length = 10 if complete_seq==1
 
 // note how ended (attrit or dissolve)
-tab rel_status complete_seq, m
+tab eligible_rel_status complete_seq, m
 browse unique_id partner_unique_id min_dur max_dur rel_status complete_seq rel_type*
 
 gen status_end = .
@@ -878,14 +878,14 @@ forvalues d=1/10{
 	replace status_end = rel_type`e' if sequence_length == `d'
 }
 
-label values status_end rel_type
+label values status_end formal_rel_type
 tab status_end complete_seq, m
 
 browse unique_id partner_unique_id min_dur max_dur sequence_length status_end rel_status rel_type* couple_work_end* if complete_seq==0 & inlist(status_end,1,2)
 tab rel_type10 if complete_seq==0 & inlist(status_end,1,2)
 tab couple_work_end10 if complete_seq==0 & inlist(status_end,1,2), m
 
-replace complete_seq = 1 if complete_seq == 0 & inlist(status_end,1,2)
+replace complete_seq = 1 if complete_seq == 0 & inlist(status_end,1,2) // this isn't a problem anymore
 
 gen how_end=.
 replace how_end = 0 if complete_seq==1 // intact
@@ -896,6 +896,7 @@ label define how_end 0 "Intact" 1 "Dissolved" 2 "Attrited"
 label values how_end how_end
 
 tab how_end complete_seq, m
+tab how_end eligible_rel_status, m
 
 mi update
 

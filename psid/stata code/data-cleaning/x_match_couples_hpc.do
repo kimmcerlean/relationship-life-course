@@ -14,7 +14,7 @@ cd "/home/kmcerlea/stage/Life Course"
 ********************************************************************************
 * Description
 ********************************************************************************
-* This files takes the imputed data from step 3 at an individual level and
+* This files takes the imputed data from step 5 at an individual level and
 * matches the corresponding imputed partner data.
 * It also creates couple-level variables.
 * This is the HPC version
@@ -481,40 +481,65 @@ mi estimate: proportion couple_hw couple_hw_hrs_alt couple_hw_hrs_combo
 // temp save 2 - I am so dumb it failed here because one of these labels already existed...
 save "created data/stata/psid_couples_imputed_long_recoded.dta", replace
 
-/*
 // family channel
 * relationship type
+tab eligible_transition_year eligible_transition_status, m
+tab rel_type_constant eligible_transition_status, m
+
 mi passive: gen dur_transitioned=.
-mi passive: replace dur_transitioned = transition_yr - rel_start_all
+mi passive: replace dur_transitioned = eligible_transition_year - eligible_rel_start_year
 
-// browse unique_id partner_id duration min_dur max_dur rel_start_all transition_yr dur_transitioned
+gen survey_yr = eligible_rel_start_year + duration
+// browse unique_id partner_unique_id survey_yr duration min_dur max_dur eligible_rel_start_year eligible_transition_year dur_transitioned
 
-capture label define rel_status 1 "Intact" 3 "Widow" 4 "Divorce" 5 "Separated" 6 "Attrited"
-label values rel_status rel_status
+tab marst_imp if survey_yr >= eligible_rel_start_year & survey_yr < = eligible_rel_end_year, m // so generally already fine
+tab marst_imp if duration >= min_dur & duration < = max_dur, m // this is better
+tab marst_imp if duration >= dur_transitioned & duration < = max_dur, m // so generally already fine
+tab marst_imp if duration > dur_transitioned & duration < = max_dur, m // better when not equal because can be either in transition year
+tab marst_imp if duration == dur_transitioned, m
+tab rel_type if duration == dur_transitioned, m
+tab marst_imp if survey_yr < eligible_transition_year & survey_yr > = eligible_rel_start_year & eligible_transition_status==1, m 
+tab marst_imp if duration < dur_transitioned & duration >= min_dur & eligible_transition_status==1, m 
+
+// label define rel_status 1 "Intact" 3 "Widow" 4 "Divorce" 5 "Separated" 6 "Attrited"
+// label values rel_status rel_status
+fre eligible_rel_status
+
+// tab rel_type_constant rel_type if duration >= min_dur & duration <=max_dur, m
+// tab rel_type_constant marst_imp if duration >= min_dur & duration <=max_dur, m
+// browse unique_id partner_unique_id survey_yr in_sample_ rel_type_constant rel_type marst_imp eligible_rel_start_year duration min_dur max_dur dur_transitioned eligible_rel_status
+
+rename rel_type current_rel_type // will cause problems with below, this is not imputed rel_type from the family matrix
 
 mi passive: gen rel_type=.
-mi passive: replace rel_type = 1 if rel_type_constant== 1
-mi passive: replace rel_type = 1 if rel_type_constant== 3 & duration >= dur_transitioned
-mi passive: replace rel_type = 2 if rel_type_constant== 2
-mi passive: replace rel_type = 2 if rel_type_constant== 3 & duration < dur_transitioned
-mi passive: replace rel_type = 3 if duration > max_dur & rel_status==1 // intact but past end of relationship
-mi passive: replace rel_type = 3 if duration > max_dur & rel_status==6 & in_sample!=1 & in_sample_sp!=1 // attrited and both partners not in sample
-mi passive: replace rel_type = 4 if duration > max_dur & inlist(rel_status,3,4,5) // observed end
-mi passive: replace rel_type = 4 if duration > max_dur & rel_status==6 & (in_sample==1 & in_sample_sp!=1) // marked as attrit, but one still in sample, so presume broken up (largely cohab where it's less clear)
-mi passive: replace rel_type = 4 if duration > max_dur & rel_status==6 & (in_sample!=1 & in_sample_sp==1) // marked as attrit, but one still in sample, so presume broken up (largely cohab where it's less clear)
+mi passive: replace rel_type = 1 if rel_type_constant== 1  // married, never transitioned 
+mi passive: replace rel_type = 1 if rel_type_constant== 3 & duration == dur_transitioned & marst_imp==1 // if observed married in year of transition, mark as married
+mi passive: replace rel_type = 1 if rel_type_constant== 3 & duration > dur_transitioned & duration <= max_dur // married, post transition
+
+mi passive: replace rel_type = 2 if rel_type_constant== 2 // cohab, never transitioned
+mi passive: replace rel_type = 2 if rel_type_constant== 3 & duration == dur_transitioned & marst_imp==2 // if observed partnered in year of transition, mark as partnered
+mi passive: replace rel_type = 2 if rel_type_constant== 3 & duration == dur_transitioned & inrange(marst_imp,3,6) // if any other status besides married, say cohab
+mi passive: replace rel_type = 2 if rel_type_constant== 3 & duration < dur_transitioned  // pre transition, has to be cohab
+
+mi passive: replace rel_type = 3 if duration > max_dur & eligible_rel_status==0 // intact but past end of relationship, will consider attrited
+mi passive: replace rel_type = 4 if duration > max_dur & inlist(eligible_rel_status,1,2) // past end of relationship and designated ended - including widowhood here for these purposes - bc it is an observed end...
+
 // mi passive: replace rel_type = 0 if duration > max_dur
 // mi passive: replace rel_type = 0 if duration < min_dur
 
 // label define rel_type 0 "Not together" 1 "Married" 2 "Cohab"
-capture label define rel_type 1 "Married" 2 "Cohab" 3 "Attrited" 4 "Broke Up"
-label values rel_type rel_type
+label define formal_rel_type 1 "Married" 2 "Cohab" 3 "Attrited" 4 "Broke Up"
+label values rel_type formal_rel_type
 
 tab rel_type, m
 mi estimate: proportion rel_type
 
-tab rel_type rel_status, row
+tab rel_type eligible_rel_status, row
+tab duration rel_type if _mi_m!=0, m
+tab rel_type if duration > max_dur, m
+tab rel_type if duration == max_dur, m
 
-// browse unique_id partner_id duration rel_start_all rel_end_all min_dur max_dur rel_type dur_transitioned transition_yr rel_status last_yr_observed last_survey_yr_focal* in_sample in_sample_sp weekly_hrs_woman weekly_hrs_man 
+// browse unique_id partner_unique_id duration eligible_rel_start_year eligible_rel_end_year min_dur max_dur rel_type_constant rel_type dur_transitioned eligible_transition_year eligible_rel_status last_couple_year in_sample in_sample_sp weekly_hrs_woman weekly_hrs_man 
 
 * number of children
 tab num_children_woman num_children_man if inlist(rel_type,1,2) & duration>=0, m
@@ -546,22 +571,25 @@ mi passive: replace family_type=6 if rel_type==2 & couple_num_children_gp==1
 mi passive: replace family_type=7 if rel_type==2 & couple_num_children_gp==2
 mi passive: replace family_type=8 if rel_type==2 & couple_num_children_gp==3
 
-capture label define family_type 0 "Not together" 1 "Married, 0 Ch" 2 "Married, 1 Ch" 3 "Married, 2 Ch" 4 "Married, 3+ Ch" ///
+label define family_type 0 "Not together" 1 "Married, 0 Ch" 2 "Married, 1 Ch" 3 "Married, 2 Ch" 4 "Married, 3+ Ch" ///
 						5 "Cohab, 0 Ch" 6 "Cohab, 1 Ch" 7 "Cohab, 2 Ch" 8 "Cohab, 3+ Ch"
 label values family_type family_type
 
 mi estimate: proportion family_type
 
 tab family_type rel_type
+tab duration family_type, m
+tab duration family_type if _mi_m!=0, m // just validating that everyone has a family type at dur 0
+tab duration family_type if _mi_m!=0 & max_dur >0 , m
+tab family_type if duration <= max_dur, m
 
-// browse unique_id partner_id duration rel_start_all rel_end_all min_dur max_dur family_type rel_type rel_status couple_num_children_gp in_sample in_sample_sp
+// browse unique_id partner_unique_id duration eligible_rel_start_year eligible_rel_end_year min_dur max_dur family_type rel_type eligible_rel_status couple_num_children_gp in_sample in_sample_sp
 
 **# Bookmark #3
 // temp save 3
 save "created data/stata/psid_couples_imputed_long_recoded.dta", replace
 
-
-use "created data/stata/psid_couples_imputed_long_recoded.dta", clear
+// use "created data/stata/psid_couples_imputed_long_recoded.dta", clear
 
 // designate that relationship dissolved and create versions of all variables that stop at this point
 foreach var in ft_pt_woman overwork_woman ft_pt_man overwork_man ft_pt_det_woman ft_pt_det_man couple_work couple_work_ow_detailed couple_work_ow couple_hw couple_hw_hrs couple_hw_hrs_alt couple_hw_hrs_combo couple_num_children_gp family_type{

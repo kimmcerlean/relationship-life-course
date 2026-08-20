@@ -918,13 +918,17 @@ gen housework_head = HOUSEWORK_HEAD_
 replace housework_head = (HOUSEWORK_HEAD_/52) if inrange(survey_yr,1968,1974)
 replace housework_head = HOUSEWORK_INDV_ if relationship_==1 & inrange(survey_yr,1968,1974) & HOUSEWORK_INDV_!=.
 replace housework_head=. if inlist(housework_head,998,999)
+replace housework_head=. if housework_head==99 & survey_yr<=1993 // 99 was NA/DK until 1994
 
 gen housework_wife = HOUSEWORK_WIFE_
 replace housework_wife = (HOUSEWORK_WIFE_/52) if inrange(survey_yr,1968,1974)
 replace housework_wife = HOUSEWORK_INDV_ if relationship_==2 & inrange(survey_yr,1968,1974) & HOUSEWORK_INDV_!=.
 replace housework_wife=. if inlist(housework_wife,998,999)
+replace housework_wife=. if housework_wife==99 & survey_yr<=1993 // 99 was NA/DK until 1994
 
 gen total_housework_weekly = TOTAL_HOUSEWORK_T1_HW / 52
+
+replace HOUSEWORK_INDV_ = . if HOUSEWORK_INDV_ == 99
 
 replace CHILDCARE_HEAD = . if inlist(CHILDCARE_HEAD,998,999)
 replace CHILDCARE_WIFE = . if inlist(CHILDCARE_WIFE,998,999)

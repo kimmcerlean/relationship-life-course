@@ -560,6 +560,7 @@ mantel.df.mi5 <- data.frame(mantel.col, mantel.df.work.hw.ci.mi5,
 
 write.xlsx(mantel.df.mi5, "results/PSID/psid_mantel_truncated_100p_mi5.xlsx")
 
+save.image("created data/psid_pooled_mantels.RData") # moving up frm below bc need to use HPC now
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Attempting to pool
@@ -616,9 +617,9 @@ results # I am ~stunned~ this worked as expected
 # Save
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-save.image("created data/psid_pooled_mantels.RData")
+# save.image("created data/psid_pooled_mantels.RData")
 # let's see if this will save on my computer, might need to run in HPC to get it to save pre-Excel step
-# it worked!
+# it worked!(my computer is no longer happy so doing in HPC)
 
 ###### Reference code for visualizing across imputations
 ###### (currently based on manual input)
