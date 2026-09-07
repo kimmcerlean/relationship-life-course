@@ -153,7 +153,7 @@ select(couple_educ_type,
 # desctable$educ <- as.character(desctable$couple_educ_type)
 
 sumtable(desctable, digits = 4, fixed.digits = TRUE, numformat = NA, group = 'couple_educ_type', group.test = TRUE, 
-         out='csv', file="G:/Other computers/My Laptop/Documents/Research Projects/Relationship Life Course (with LP)/discrepancy analysis exploration/psid_educ_desctable_truncated.csv")
+         out='csv', file="educational differences/results/psid/psid_educ_desctable_truncated.csv")
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Age at relationship transitions
