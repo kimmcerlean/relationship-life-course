@@ -6,7 +6,8 @@ options(repos=c(CRAN="https://cran.r-project.org"))
 
 # set WD for whomever is running the script
 lea <- 'C:/Users/lpessin/OneDrive - Istituto Universitario Europeo/1. WeEqualize - Team Folder/Papers/Relationship Life Course' #leas folder
-kim <- 'C:/Users/mcerl/Istituto Universitario Europeo/Pessin, Lea - 1. WeEqualize - Team Folder/Papers/Relationship Life Course' # Kim
+kim <- 'G:/My Drive/WeEqualize Papers/Relationship Life Course' # Kim
+# kim <- 'C:/Users/mcerl/Istituto Universitario Europeo/Pessin, Lea - 1. WeEqualize - Team Folder/Papers/Relationship Life Course' # Kim
 lea.server <- '/home/lpessin/stage/Life Course'
 kim.server <- '/home/kmcerlea/stage/Life Course'
 
@@ -77,7 +78,7 @@ if (Sys.getenv(c("USERNAME")) == "lpessin") {
 # Import data and small things needed ----
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-load("G:/Other computers/My Laptop/Documents/Research Projects/Relationship Life Course (with LP)/discrepancy analysis exploration/psid-setupsequence-truncated.RData")
+load("educational differences/R data/psid-setupsequence-truncated.RData")
 
 data$couple_educ_type <- factor(
   data$couple_educ_type,
@@ -334,7 +335,7 @@ educ_metric_table <- subset(data,
 )
 
 sumtable(educ_metric_table, digits = 4, numformat = NA, group = 'couple_educ_type', group.test = TRUE, 
-         out='csv', file="G:/Other computers/My Laptop/Documents/Research Projects/Relationship Life Course (with LP)/discrepancy analysis exploration/psid_educ_metrics_truncated.csv")
+         out='csv', file="educational differences/results/psid/psid_educ_metrics_truncated.csv")
 
 
 #overall_metrics <- subset(data,

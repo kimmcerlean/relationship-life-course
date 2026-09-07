@@ -6,7 +6,8 @@ options(repos=c(CRAN="https://cran.r-project.org"))
 
 # set WD for whomever is running the script
 lea <- 'C:/Users/lpessin/OneDrive - Istituto Universitario Europeo/1. WeEqualize - Team Folder/Papers/Relationship Life Course' #leas folder
-kim <- 'C:/Users/mcerl/Istituto Universitario Europeo/Pessin, Lea - 1. WeEqualize - Team Folder/Papers/Relationship Life Course' # Kim
+kim <- 'G:/My Drive/WeEqualize Papers/Relationship Life Course' # Kim
+# kim <- 'C:/Users/mcerl/Istituto Universitario Europeo/Pessin, Lea - 1. WeEqualize - Team Folder/Papers/Relationship Life Course' # Kim
 lea.server <- '/home/lpessin/stage/Life Course'
 kim.server <- '/home/kmcerlea/stage/Life Course'
 
@@ -77,7 +78,8 @@ if (Sys.getenv(c("USERNAME")) == "lpessin") {
 # Import data and small things needed ----
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-load("G:/Other computers/My Laptop/Documents/Research Projects/Relationship Life Course (with LP)/discrepancy analysis exploration/psid-setupsequence-truncated.RData")
+# load("G:/Other computers/My Laptop/Documents/Research Projects/Relationship Life Course (with LP)/discrepancy analysis exploration/psid-setupsequence-truncated.RData")
+load("educational differences/R data/psid-setupsequence-truncated.RData")
 
 data$couple_educ_type <- factor(
   data$couple_educ_type,
@@ -203,7 +205,7 @@ seqplotMD(channels=list('Paid Work'=seq.work.ow,Housework=seq.hw.hrs,Family=seq.
           dom.byrow=FALSE,k=100,sortv="from.start",dom.crit=3,
           cex.legend=0.7)
 
-pdf("G:/Other computers/My Laptop/Documents/Research Projects/Relationship Life Course (with LP)/discrepancy analysis exploration/results/PSID_MCIndex_4Groups.pdf",
+pdf("educational differences/results/psid/PSID_MCIndex_4Groups.pdf",
     width=8,
     height=11)
 
@@ -215,7 +217,7 @@ seqplotMD(channels=list('Paid Work'=seq.work.ow,Housework=seq.hw.hrs,Family=seq.
 
 dev.off()
 
-pdf("G:/Other computers/My Laptop/Documents/Research Projects/Relationship Life Course (with LP)/discrepancy analysis exploration/results/PSID_MCIndex_Childfree.pdf",
+pdf("educational differences/results/psid/PSID_MCIndex_Childfree.pdf",
     width=8,
     height=11)
 
@@ -230,7 +232,7 @@ seqplotMD(channels=list('Paid Work'=seq.work.ow[subset.cf, ],
 
 dev.off()
 
-pdf("G:/Other computers/My Laptop/Documents/Research Projects/Relationship Life Course (with LP)/discrepancy analysis exploration/results/PSID_MCIndex_BecomeParents.pdf",
+pdf("educational differences/results/psid/PSID_MCIndex_BecomeParents.pdf",
     width=8,
     height=11)
 
@@ -245,7 +247,7 @@ seqplotMD(channels=list('Paid Work'=seq.work.ow[subset.trans, ],
 
 dev.off()
 
-pdf("G:/Other computers/My Laptop/Documents/Research Projects/Relationship Life Course (with LP)/discrepancy analysis exploration/results/PSID_MCIndex_AlwaysParents.pdf",
+pdf("educational differences/results/psid/PSID_MCIndex_AlwaysParents.pdf",
     width=8,
     height=11)
 
@@ -260,7 +262,7 @@ seqplotMD(channels=list('Paid Work'=seq.work.ow[subset.par, ],
 
 dev.off()
 
-pdf("G:/Other computers/My Laptop/Documents/Research Projects/Relationship Life Course (with LP)/discrepancy analysis exploration/results/PSID_MCIndex_Childfree_alt.pdf",
+pdf("educational differences/results/psid/PSID_MCIndex_Childfree_alt.pdf",
     width=12,
     height=8)
 
@@ -275,7 +277,7 @@ seqplotMD(channels=list('Paid Work'=seq.work.ow[subset.cf, ],
 
 dev.off()
 
-pdf("G:/Other computers/My Laptop/Documents/Research Projects/Relationship Life Course (with LP)/discrepancy analysis exploration/results/PSID_MCIndex_BecomeParents_alt.pdf",
+pdf("educational differences/results/psid/PSID_MCIndex_BecomeParents_alt.pdf",
     width=12,
     height=8)
 
@@ -290,7 +292,7 @@ seqplotMD(channels=list('Paid Work'=seq.work.ow[subset.trans, ],
 
 dev.off()
 
-pdf("G:/Other computers/My Laptop/Documents/Research Projects/Relationship Life Course (with LP)/discrepancy analysis exploration/results/PSID_MCIndex_AlwaysParents_alt.pdf",
+pdf("educational differences/results/psid/PSID_MCIndex_AlwaysParents_alt.pdf",
     width=12,
     height=8)
 
@@ -311,8 +313,17 @@ dev.off()
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # neither college is def distinct; it really depends on channel if three colleges are.
 
-dissassoc(mcdist.det.min, group = data$couple_educ_type)
-dissassoc(mcdist.det.min, group = data$one_college)
+da.mcsa.4gp<-dissassoc(mcdist.det.min, group = data$couple_educ_type)
+view(da.mcsa.4gp$groups)
+view(da.mcsa.4gp$stat)
+
+da.mcsa.stat<-data.frame(da.mcsa.4gp$stat)
+da.mcsa.stat$channel<-c("mcsa","mcsa","mcsa","mcsa","mcsa")
+
+da.mcsa.gp.discrep<-data.frame(da.mcsa.4gp$groups)
+da.mcsa.gp.discrep$channel<-c("mcsa","mcsa","mcsa","mcsa","mcsa")
+
+da.mcsa.2gp<-dissassoc(mcdist.det.min, group = data$one_college)
 
 # higher discrepancy = more internally diverse trajectories
 # lower discrepancy = more homogeneous trajectories
@@ -325,13 +336,47 @@ dissassoc(mcdist.det.min, group = data$one_college)
 # Wait this is prob MORE interesting, and I already have the diss matrices anyway?
 # R-squared is literally exp / total
 
-dissassoc(dist.fam.min, group = data$couple_educ_type)
-dissassoc(dist.work.min, group = data$couple_educ_type)
-dissassoc(dist.hw.min, group = data$couple_educ_type)
+# Four group education
+da.fam.4gp<-dissassoc(dist.fam.min, group = data$couple_educ_type)
+da.fam.stat<-data.frame(da.fam.4gp$stat)
+da.fam.stat$channel<-c("fam","fam","fam","fam","fam")
 
-dissassoc(dist.fam.min, group = data$one_college)
-dissassoc(dist.work.min, group = data$one_college)
-dissassoc(dist.hw.min, group = data$one_college)
+da.fam.gp.discrep<-data.frame(da.fam.4gp$groups)
+da.fam.gp.discrep$channel<-c("fam","fam","fam","fam","fam")
+
+da.work.4gp<-dissassoc(dist.work.min, group = data$couple_educ_type)
+da.work.stat<-data.frame(da.work.4gp$stat)
+da.work.stat$channel<-c("work","work","work","work","work")
+
+da.work.gp.discrep<-data.frame(da.work.4gp$groups)
+da.work.gp.discrep$channel<-c("work","work","work","work","work")
+
+da.hw.4gp<-dissassoc(dist.hw.min, group = data$couple_educ_type)
+da.hw.stat<-data.frame(da.hw.4gp$stat)
+da.hw.stat$channel<-c("hw","hw","hw","hw","hw")
+
+da.hw.gp.discrep<-data.frame(da.hw.4gp$groups)
+da.hw.gp.discrep$channel<-c("hw","hw","hw","hw","hw")
+
+  # export overall stats
+  da.stat.combined.x <- bind_rows(list(df1 = da.mcsa.stat, df2 = da.fam.stat, 
+                                     df3 = da.work.stat, df4 = da.hw.stat)) #, .id = "source")
+  da.stat.combined <- cbind(stat = row.names(da.stat.combined.x), da.stat.combined.x)
+  write_csv(da.stat.combined, "educational differences/results/psid/PSID_discrepancy_overall_stats.csv")
+  
+  #write.table(da.stat.combined, file="educational differences/results/psid/PSID_discrepancy_overall_stats.csv",
+  #            sep = ",", row.names = TRUE, col.names = TRUE)
+  
+  # export group-level discrepancies
+  da.gp.discrep.combined.x <- bind_rows(list(df1 = da.mcsa.gp.discrep, df2 = da.fam.gp.discrep,
+                                     df3 = da.work.gp.discrep, df4 = da.hw.gp.discrep)) # , .id = "source")
+  da.gp.discrep.combined <- cbind(stat = row.names(da.gp.discrep.combined.x), da.gp.discrep.combined.x)
+  write_csv(da.gp.discrep.combined, "educational differences/results/psid/PSID_discrepancy_by_group.csv")
+
+# Two  group education (not exporting for now)
+da.fam.2gp<-dissassoc(dist.fam.min, group = data$one_college)
+da.work.2gp<-dissassoc(dist.work.min, group = data$one_college)
+da.hw.2gp<-dissassoc(dist.hw.min, group = data$one_college)
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Oh yeah do I want to try the moving window thing?
@@ -343,27 +388,147 @@ dissassoc(dist.hw.min, group = data$one_college)
 # i think there are some nuances (esp HIM college) - let's see if emerge in other countries (think that is also a way to decide)
 # if it's a US-specific thing v. global - worth calling out if global. otherwise, maybe too much?
 
+### Four groups ###
+# Fam
 educ.diff.fam <- seqdiff(seq.fam, data$couple_educ_type)
 
-# this looks almost exactly the same as complete
-plot(educ.diff.fam, stat=c("Pseudo R2", "Levene"))
+plot(educ.diff.fam, stat=c("Pseudo R2", "Levene")) # this looks almost exactly the same as complete
 plot(educ.diff.fam, stat="discrepancy")
-educ.diff.fam$discrepancy # just displays the whole table
+educ.diff.fam$discrepancy # just displays the whole table (educ x duration)
+educ.diff.fam$stat
 
+fam.diff.dur<-data.frame(educ.diff.fam$stat)
+fam.diff.dur$channel<-c("fam")
+fam.diff.dur$duration<-c(1,2,3,4,5,6,7,8,9)
+
+# Work
 educ.diff.work <- seqdiff(seq.work.ow, data$couple_educ_type)
 plot(educ.diff.work, stat=c("Pseudo R2", "Levene")) # this is quite different to complete?
 plot(educ.diff.work, stat="discrepancy")
 
-#this also seems similar to complete
+work.diff.dur<-data.frame(educ.diff.work$stat)
+work.diff.dur$channel<-c("work")
+work.diff.dur$duration<-c(1,2,3,4,5,6,7,8,9)
+
+# HW
 educ.diff.hw <- seqdiff(seq.hw.hrs, data$couple_educ_type)
-plot(educ.diff.hw, stat=c("Pseudo R2", "Levene"))
+plot(educ.diff.hw, stat=c("Pseudo R2", "Levene")) #this also seems similar to complete
 plot(educ.diff.hw, stat="discrepancy")
+
+hw.diff.dur<-data.frame(educ.diff.hw$stat)
+hw.diff.dur$channel<-c("hw")
+hw.diff.dur$duration<-c(1,2,3,4,5,6,7,8,9)
 
 # Does this work in MC approach?
 educ.diff.mcsa <- seqdiff(mcsa, data$couple_educ_type)
 plot(educ.diff.mcsa, stat=c("Pseudo R2", "Levene"))
+plot(educ.diff.mcsa, stat="discrepancy")
 
-# Two groups
+mcsa.diff.dur<-data.frame(educ.diff.mcsa$stat)
+mcsa.diff.dur$channel<-c("mcsa")
+mcsa.diff.dur$duration<-c(1,2,3,4,5,6,7,8,9)
+
+# export channel x duration
+diff.dur.combined <- bind_rows(list(df1 = mcsa.diff.dur, df2 = fam.diff.dur, 
+                                     df3 = work.diff.dur, df4 = hw.diff.dur)) #, .id = "source")
+write_csv(diff.dur.combined, "educational differences/results/psid/PSID_discrepancy_by_duration.csv")
+
+# Want to combine all plots
+  # See: https://r-charts.com/base-r/axes/
+
+pdf("educational differences/results/psid/PSID_R2_by_duration.pdf",
+    width=20,
+    height=8)
+
+layout.fig1 <- layout(matrix(c(1,2,3,4), nrow=1, ncol=4, byrow = TRUE)) #,
+                      #heights = c(1,1,1,1,1))
+layout.show(layout.fig1)
+
+# par(mar = c(5, 5, 3, 3))
+par(mar = c(4, 4, 3, 1))
+
+# MCSA
+#plot(educ.diff.mcsa, stat=c("Pseudo R2"),
+#     xaxis=FALSE)
+#axis(1, at = c(1,2,3,4,5,6,7,8,9))
+#axis(side=2, at = c(0,0.005,0.010,0.015,0.020,0.025,0.030))
+
+plot(educ.diff.mcsa$stat[, "Pseudo R2"],
+     type = "l",
+     ylim = c(0, 0.030),
+     xaxt = "n",
+     xlab = "",
+     ylab = "Pseudo R2",,
+     main = "Multi-Channel")
+
+axis(1, at = 1:9)
+axis(2, at = seq(0, 0.030, 0.005))
+
+# Paid Work Channel: With Overwork
+plot(educ.diff.work$stat[, "Pseudo R2"],
+     type = "l",
+     ylim = c(0, 0.030),
+     xaxt = "n",
+     xlab = "",
+     ylab = "Pseudo R2",
+     main = "Paid Work")
+
+axis(1, at = 1:9)
+axis(2, at = seq(0, 0.030, 0.005))
+
+# Housework Channel: Hours with Group-specific thresholds
+plot(educ.diff.hw$stat[, "Pseudo R2"],
+     type = "l",
+     ylim = c(0, 0.030),
+     xaxt = "n",
+     xlab = "",
+     ylab = "Pseudo R2",
+     main = "Housework")
+
+axis(1, at = 1:9)
+axis(2, at = seq(0, 0.030, 0.005))
+
+# Family channel
+plot(educ.diff.fam$stat[, "Pseudo R2"],
+     type = "l",
+     ylim = c(0, 0.030),
+     xaxt = "n",
+     xlab = "",
+     ylab = "Pseudo R2",
+     main = "Family")
+
+axis(1, at = 1:9)
+axis(2, at = seq(0, 0.030, 0.005))
+
+dev.off()
+
+## Alt: just put on 1 figure
+pdf("educational differences/results/psid/PSID_R2_by_duration_combined.pdf")
+
+plot(educ.diff.mcsa$stat[, "Pseudo R2"],
+     type = "l",
+     lwd = 2,
+     ylim = c(0, 0.030),
+     xaxt = "n",
+     xlab = "Relationship duration",
+     ylab = "Pseudo R2")
+
+lines(educ.diff.work$stat[, "Pseudo R2"], lwd = 2, col="seagreen3") # lty = 2)
+lines(educ.diff.hw$stat[, "Pseudo R2"], lwd = 2, col="mediumpurple1") # lty = 3)
+lines(educ.diff.fam$stat[, "Pseudo R2"], lwd = 2, col="steelblue1") # lty = 4)
+
+axis(1, at = 1:9)
+axis(2, at = seq(0, 0.030, 0.005))
+
+legend("topright",
+       legend = c("Multi-channel", "Paid work", "Housework", "Family"),
+       col = c("black", "seagreen3", "mediumpurple1", "steelblue1"),
+       lwd = 2,
+       bty = "n")
+
+dev.off()
+
+### Two groups ###
 coll.diff.fam <- seqdiff(seq.fam, data$one_college)
 plot(coll.diff.fam, stat=c("Pseudo R2", "Levene"))
 plot(coll.diff.fam, stat="discrepancy")
@@ -377,7 +542,8 @@ plot(coll.diff.hw, stat=c("Pseudo R2", "Levene"))
 plot(coll.diff.hw, stat="discrepancy") # also interesting - do these all decline because everyone ends up in specialized?
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# I want to change the colors on these discrepancy plots and it's chaos so making separate section
+# I want to change the colors on these discrepancy plots by education
+# and it's chaos so making separate section (not actually sure using atm)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # Family
@@ -493,6 +659,7 @@ legend(
 # Is it education or parenthood?
 # Here is where you can see which covariates matter [could even do more]
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Not exporting these for now.
 
 dissmfacw(
   dist.fam.min ~ couple_educ_type + first_birth_pre_rel_man + first_birth_pre_rel_woman, 

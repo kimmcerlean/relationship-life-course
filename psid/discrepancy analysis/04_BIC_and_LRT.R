@@ -6,7 +6,8 @@ options(repos=c(CRAN="https://cran.r-project.org"))
 
 # set WD for whomever is running the script
 lea <- 'C:/Users/lpessin/OneDrive - Istituto Universitario Europeo/1. WeEqualize - Team Folder/Papers/Relationship Life Course' #leas folder
-kim <- 'C:/Users/mcerl/Istituto Universitario Europeo/Pessin, Lea - 1. WeEqualize - Team Folder/Papers/Relationship Life Course' # Kim
+kim <- 'G:/My Drive/WeEqualize Papers/Relationship Life Course' # Kim
+# kim <- 'C:/Users/mcerl/Istituto Universitario Europeo/Pessin, Lea - 1. WeEqualize - Team Folder/Papers/Relationship Life Course' # Kim
 lea.server <- '/home/lpessin/stage/Life Course'
 kim.server <- '/home/kmcerlea/stage/Life Course'
 
@@ -77,7 +78,7 @@ if (Sys.getenv(c("USERNAME")) == "lpessin") {
 # Import data and small things needed ----
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-load("G:/Other computers/My Laptop/Documents/Research Projects/Relationship Life Course (with LP)/discrepancy analysis exploration/psid-setupsequence-truncated.RData")
+load("educational differences/R data/psid-setupsequence-truncated.RData")
 
 data$couple_educ_type <- factor(
   data$couple_educ_type,
@@ -303,4 +304,4 @@ combined_results <- cbind(comparison = c("Fam: Neither v. Him", "Fam: Neither v.
                                          "One College: Fam", "One College:Work", 
                                          "One College: HW"), combined_results)
 
-write_xlsx(combined_results, "G:/Other computers/My Laptop/Documents/Research Projects/Relationship Life Course (with LP)/discrepancy analysis exploration/PSID_BIC_LRT_tests.xlsx")
+write_xlsx(combined_results, "educational differences/results/psid/PSID_BIC_LRT_tests.xlsx")

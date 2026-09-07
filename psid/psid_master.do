@@ -61,7 +61,8 @@ net get st0445 // these go into working directory (the ancillary files); pwd sho
 
 /*Setting directories based on ${comp}*/
 	if ("${comp}"=="kim") {
-		if `"`c(hostname)'"' == "LAPTOP-TP2VHI6B" global root `"C:/Users/mcerl/Istituto Universitario Europeo/Pessin, Lea - 1. WeEqualize - Team Folder/Papers/Relationship Life Course"' // Shared One Drive on Kim's PC
+		if `"`c(hostname)'"' == "LAPTOP-TP2VHI6B" global root `"G:\My Drive\WeEqualize Papers\Relationship Life Course"' // Shared Google Drive (updated Aug 2026)
+		// if `"`c(hostname)'"' == "LAPTOP-TP2VHI6B" global root `"C:/Users/mcerl/Istituto Universitario Europeo/Pessin, Lea - 1. WeEqualize - Team Folder/Papers/Relationship Life Course"' // Shared One Drive on Kim's PC
 		// if `"`c(hostname)'"' == "LAPTOP-TP2VHI6B" global root `"G:/Other computers/My Laptop/Documents/Research Projects/Relationship Life Course (with LP)"' // Kim's Personal Computer
 		if `"`c(hostname)'"' == "PPRC-STATS-P01" global root `"T:/Research Projects/Relationship Life Course (with LP)"' // PRC Stats Server
 		if `"`c(hostname)'"' == "PPRC-STATS-P01" global code `"T:/github/relationship-life-course/psid"'

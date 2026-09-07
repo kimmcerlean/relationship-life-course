@@ -16,7 +16,8 @@ options(repos=c(CRAN="https://cran.r-project.org"))
 
 # set WD for whomever is running the script
 lea <- 'C:/Users/lpessin/OneDrive - Istituto Universitario Europeo/1. WeEqualize - Team Folder/Papers/Relationship Life Course' #leas folder
-kim <- 'C:/Users/mcerl/Istituto Universitario Europeo/Pessin, Lea - 1. WeEqualize - Team Folder/Papers/Relationship Life Course' # Kim
+kim <- 'G:/My Drive/WeEqualize Papers/Relationship Life Course' # Kim
+# kim <- 'C:/Users/mcerl/Istituto Universitario Europeo/Pessin, Lea - 1. WeEqualize - Team Folder/Papers/Relationship Life Course' # Kim
 lea.server <- '/home/lpessin/stage/Life Course'
 kim.server <- '/home/kmcerlea/stage/Life Course'
 
@@ -378,6 +379,7 @@ mcdist.det.min <- mcdist.det.om / fam.min.len
 mcdist.work.min <- mcdist.work.om / fam.min.len
 
 # Save locally to make easier to use later
-save.image("G:/Other computers/My Laptop/Documents/Research Projects/Relationship Life Course (with LP)/discrepancy analysis exploration/data/psid-setupsequence-truncated.RData")
+save.image("educational differences/R data/psid-setupsequence-truncated.RData")
+# save.image("G:/Other computers/My Laptop/Documents/Research Projects/Relationship Life Course (with LP)/discrepancy analysis exploration/data/psid-setupsequence-truncated.RData")
 # save.image("created data/setupsequence-truncated_tmp.RData")
 
