@@ -92,7 +92,7 @@ label values parent_info parent_info
 
 tab parent_info, m
 
-save "$temp/gsoep_couples_wide_truncated_tmp.dta", replace
+save "$temp/gsoep_couples_wide_truncated_educ.dta", replace
 
 /// complete - might be needed for this to be effective
 
@@ -113,4 +113,4 @@ gen one_college=.
 replace one_college = 0 if couple_educ_type==1 
 replace one_college = 1 if inrange(couple_educ_type,2,4)
 
-save "$temp/gsoep_couples_imputed_wide_complete_tmp.dta", replace
+save "$temp/gsoep_couples_imputed_wide_complete_educ.dta", replace
