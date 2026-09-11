@@ -659,8 +659,11 @@ legend(
 # Is it education or parenthood?
 # Here is where you can see which covariates matter [could even do more]
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Not exporting these for now.
 
+# For now, just copying and pasting, but that isn't super sustainable...
+# Note also this takes very long time to run
+
+# Fam
 dissmfacw(
   dist.fam.min ~ couple_educ_type + first_birth_pre_rel_man + first_birth_pre_rel_woman, 
   data = data, R = 100)
@@ -669,6 +672,7 @@ dissmfacw(
   dist.fam.min ~ couple_educ_type + parent_info, # oh, family is kind of stupid because this is literally defined by family states. This is why this would be not a domain but a stratifier
   data = data, R = 100)
 
+# Paid Work
 dissmfacw(
   dist.work.min ~ couple_educ_type + first_birth_pre_rel_man + first_birth_pre_rel_woman, 
   data = data, R = 100)
@@ -681,6 +685,7 @@ dissmfacw(
   dist.work.min ~ couple_educ_type + parent_info, 
   data = data, R = 100)
 
+# Housework
 dissmfacw(
   dist.hw.min ~ couple_educ_type + first_birth_pre_rel_man + first_birth_pre_rel_woman, 
   data = data, R = 100)
@@ -689,7 +694,11 @@ dissmfacw(
   dist.hw.min ~ couple_educ_type + parent_info, 
   data = data, R = 100)
 
-#
+dissmfacw(
+  dist.hw.min ~ couple_educ_type + either_birth_pre_rel, 
+  data = data, R = 100)
+
+# Then there are some interesting visualizations but think hard for a general journal
 work.tree <- seqtree(
   seq.work.ow ~ couple_educ_type + either_birth_pre_rel,
   data = data, R = 100, diss = dist.work.min, pval= 0.01) ## , min.size = 30, maxdepth = 5

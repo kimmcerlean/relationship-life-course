@@ -116,7 +116,7 @@ subset.par1 <- data$either_birth_pre_rel %in% c(1)
 
 subset.cf <- data$parent_info %in% c("Always CF")
 subset.trans <- data$parent_info %in% c("Become Parent")
-subset.par <- data$parent_info %in% c("Always Parent")+
+subset.par <- data$parent_info %in% c("Always Parent")
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # First look at descriptive details about the sequences by education
@@ -579,7 +579,8 @@ legend(
 # Is it education or parenthood?
 # Here is where you can see which covariates matter [could even do more]
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Not exporting these for now.
+
+# Family
 
 dissmfacw(
   dist.fam.min ~ couple_educ_type + first_birth_pre_rel_man + first_birth_pre_rel_woman, 
@@ -589,19 +590,28 @@ dissmfacw(
   dist.fam.min ~ couple_educ_type + parent_info, # oh, family is kind of stupid because this is literally defined by family states. This is why this would be not a domain but a stratifier
   data = data, R = 100)
 
-dissmfacw(
-  dist.work.min ~ couple_educ_type + first_birth_pre_rel_man + first_birth_pre_rel_woman, 
-  data = data, R = 100)
+# Work
+#dissmfacw(
+#  dist.work.min ~ couple_educ_type + first_birth_pre_rel_man + first_birth_pre_rel_woman, 
+#  data = data, R = 100)
 
 dissmfacw(
   dist.work.min ~ couple_educ_type + parent_info, 
   data = data, R = 100)
 
 dissmfacw(
-  dist.hw.min ~ couple_educ_type + first_birth_pre_rel_man + first_birth_pre_rel_woman, 
+  dist.work.min ~ couple_educ_type + either_birth_pre_rel, 
   data = data, R = 100)
+
+# Housework
+#dissmfacw(
+  #dist.hw.min ~ couple_educ_type + first_birth_pre_rel_man + first_birth_pre_rel_woman, 
+  #data = data, R = 100)
 
 dissmfacw(
   dist.hw.min ~ couple_educ_type + parent_info, 
   data = data, R = 100)
 
+dissmfacw(
+  dist.hw.min ~ couple_educ_type + either_birth_pre_rel, 
+  data = data, R = 100)
