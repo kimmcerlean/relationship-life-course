@@ -84,10 +84,10 @@ data$couple_educ_type <- factor(
   data$couple_educ_type,
   levels = c(1,2,3,4),
   labels = c(
-    "Neither College",
-    "Him College",
-    "Her College",
-    "Both College"
+    "Low-educated homogamous",
+    "Hypergamous",
+    "Homogamous",
+    "College-educated homogamous"
   )
 )
 
