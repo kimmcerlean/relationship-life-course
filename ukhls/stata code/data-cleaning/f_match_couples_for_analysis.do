@@ -755,6 +755,78 @@ mi update
 
 unique pidp eligible_partner // now 6271 / 7410 new / 6330
 
+// for exploration, let's create some manual combined egalitarian indicators.
+*1. Three category: true egalitarian, male-BW / traditional, female-BW / counter-traditional
+	* decide if dual FT only or both. Let's explore.
+	* dual PT is SO SMALL (like 10,000 v. 185,000 for dual FT) and think my goal is MORE LIBERAL aka give more potential for egalitarian, so let's combine? though in work_end version, they are elsewhere, so harder if I want to use that
+tab ft_pt_man_end ft_pt_woman_end
+tab couple_work_end
+tab couple_work_ow_end
+tab couple_work_ow_end couple_work_end
+
+mi passive: gen dual_work_end = .
+mi passive: replace dual_work_end = 0 if ft_pt_woman_end==0 & ft_pt_man_end==0
+mi passive: replace dual_work_end = 0 if ft_pt_woman_end==0 & ft_pt_man_end==1
+mi passive: replace dual_work_end = 0 if ft_pt_woman_end==0 & ft_pt_man_end==2
+mi passive: replace dual_work_end = 0 if ft_pt_woman_end==1 & ft_pt_man_end==0
+mi passive: replace dual_work_end = 0 if ft_pt_woman_end==2 & ft_pt_man_end==0
+mi passive: replace dual_work_end = 0 if ft_pt_woman_end==1 & ft_pt_man_end==2
+mi passive: replace dual_work_end = 0 if ft_pt_woman_end==2 & ft_pt_man_end==1
+mi passive: replace dual_work_end = 1 if ft_pt_woman_end==1 & ft_pt_man_end==1
+mi passive: replace dual_work_end = 1 if ft_pt_woman_end==2 & ft_pt_man_end==2
+mi passive: replace dual_work_end = 98 if ft_pt_woman_end==98 & ft_pt_man_end==98
+mi passive: replace dual_work_end = 99 if ft_pt_woman_end==99 & ft_pt_man_end==99
+
+tab couple_work_end dual_work_end
+
+tab couple_hw_end 
+tab couple_hw_hrs_combo_end
+tab couple_hw_hrs_combo_end couple_hw_end
+
+tab couple_work_end couple_hw_end
+tab couple_work_end couple_hw_end if dual_work_end==1
+tab dual_work_end couple_hw_end if couple_work_end==5
+
+mi passive: gen division_of_labor_end = .
+mi passive: replace division_of_labor_end = 1 if couple_work_end==3 & couple_hw_end==3 // dual ft + egal HW
+mi passive: replace division_of_labor_end = 1 if couple_work_end==5 & dual_work_end==1 & couple_hw_end==3 // dual PT + egal HW
+mi passive: replace division_of_labor_end = 2 if inlist(couple_work_end, 1,2) & inlist(couple_hw_end,1,2) // male BW / she does more HW
+mi passive: replace division_of_labor_end = 3 if couple_work_end==4 & couple_hw_end==4
+mi passive: replace division_of_labor_end = 4 if couple_work_end==3 & inlist(couple_hw_end,1,2,4) // dual FT + all other HW from above
+mi passive: replace division_of_labor_end = 4 if inlist(couple_work_end, 1,2) & inlist(couple_hw_end,3,4) // male BW + all other HW from above
+mi passive: replace division_of_labor_end = 4 if couple_work_end==4 & inlist(couple_hw_end,1,2,3) // female BW + all other HW
+mi passive: replace division_of_labor_end = 4 if couple_work_end==5 & dual_work_end==0 // all other underwork
+mi passive: replace division_of_labor_end = 4 if couple_work_end==5 & dual_work_end==1 & inlist(couple_hw_end,1,2,4) // dual PT + all other HW
+mi passive: replace division_of_labor_end = 98 if couple_work_end==98
+mi passive: replace division_of_labor_end = 99 if couple_work_end==99
+
+label define dol 1 "Egalitarian" 2 "Traditional" 3 "Counter-traditional" 4 "Other"
+label values division_of_labor_end dol
+
+tab division_of_labor_end, m
+
+	* BUT, make a binary version to use later when i want to COUNT states
+	mi passive: gen egal_dol_yn_end = .
+	mi passive: replace egal_dol_yn_end = 0 if inlist(division_of_labor_end,2,3,4)
+	mi passive: replace egal_dol_yn_end = 1 if division_of_labor_end==1
+	mi passive: replace egal_dol_yn_end = 98 if division_of_labor_end==98
+	mi passive: replace egal_dol_yn_end = 99 if division_of_labor_end==99
+	
+	tab division_of_labor_end egal_dol_yn_end, m
+
+*2. Binary - "egalitarian" + all other. This will include all dual full-time + part-time and those where they share HW equally or he does more. 
+tab dual_work_end couple_hw_end 
+
+mi passive: gen egalitarian_end = .
+mi passive: replace egalitarian_end = 0 if dual_work_end==0
+mi passive: replace egalitarian_end = 0 if dual_work_end==1 & inlist(couple_hw_end,1,2)
+mi passive: replace egalitarian_end = 1 if dual_work_end==1 & inlist(couple_hw_end,3,4)
+mi passive: replace egalitarian_end = 98 if couple_hw_end==98
+mi passive: replace egalitarian_end = 99 if couple_hw_end==99
+
+tab egalitarian_end, m
+tab egalitarian_end egal_dol_yn_end, m
+
 save "$created_data/ukhls_couples_imputed_long_deduped.dta", replace
 
 
@@ -780,9 +852,11 @@ mi estimate: proportion couple_work_ow_end family_type_end // validate that this
 // should I just loop through durations while long? should I confirm the numbers are the same either way? - so here, try to loop through durations
 ** Note 6/6/25: have not done this yet for updated sequences (with more rel start dates included)** (takes a while - possibly send to HPC)
 ** Still true 8/11/26
+/*
 forvalues d=0/10{
 	desctable i.ft_pt_woman_end i.overwork_woman_end i.ft_pt_det_woman_end i.ft_pt_man_end i.overwork_man_end i.ft_pt_det_man_end i.couple_work_end i.couple_work_ow_end i.couple_work_ow_detailed_end i.couple_hw_end i.couple_hw_hrs_end i.couple_hw_hrs_alt_end i.couple_hw_hrs_combo_end i.rel_type i.couple_num_children_gp_end i.family_type_end if duration==`d', filename("$results/ukhls_mi_desc_`d'") stats(mimean) decimals(4)
 }
+*/
 
 // mi xeq: proportion couple_hw_end if duration==5 // troubleshooting bc this is where the code stalled. I think this is because some have "neither HW" and some don't. okay, yes that is the problem
 
@@ -807,7 +881,7 @@ mi update
 **# Reshape back to wide to see the data by duration and compare to long estimates
 ********************************************************************************
 
-mi reshape wide age_all fihhmngrs_dv gor_dv nkids_dv jbstat aidhh aidxhh aidhrs howlng work_hours jbhrs fimnlabgrs_dv nchild_dv hiqual_dv country_all employed total_hours age_youngest_child partnered_imp marital_status_imp int_year orig_record age_all_sp fihhmngrs_dv_sp gor_dv_sp nkids_dv_sp jbstat_sp aidhrs_sp howlng_sp work_hours_sp jbhrs_sp fimnlabgrs_dv_sp employed_sp total_hours_sp age_youngest_child_sp partnered_imp_sp marital_status_imp_sp weekly_hrs_woman weekly_hrs_man housework_woman housework_man marital_status_woman marital_status_man partnered_woman partnered_man num_children_woman num_children_man ft_pt_woman overwork_woman ft_pt_man overwork_man ft_pt_det_woman ft_pt_det_man couple_work couple_work_ow couple_work_ow_detailed  couple_hw_total woman_hw_share hw_terc_woman hw_hilow_woman hw_hilow_man couple_hw hw_hilow_woman_gp1 hw_hilow_woman_gp2 hw_hilow_man_gp4 hw_hilow_woman_combo couple_hw_hrs couple_hw_hrs_alt couple_hw_hrs_combo rel_type couple_num_children couple_num_children_gp family_type ft_pt_woman_end overwork_woman_end ft_pt_man_end overwork_man_end ft_pt_det_woman_end ft_pt_det_man_end couple_work_end couple_work_ow_detailed_end couple_work_ow_end couple_hw_end couple_hw_hrs_end couple_hw_hrs_alt_end couple_hw_hrs_combo_end couple_num_children_gp_end family_type_end npens_dv tenure_dv jshrs employment_status disabled_est sr_health aid_hours num_parents_hh master_religion respondent_info npens_dv_sp tenure_dv_sp employment_status_sp disabled_est_sp sr_health_sp aid_hours_sp num_parents_hh_sp master_religion_sp respondent_info_sp employment_status_woman employment_status_man monthly_earnings_woman monthly_earnings_man carework_woman carework_man region_woman region_man housing_woman housing_man religion_woman religion_man disabled_woman disabled_man sr_health_woman sr_health_man any_aid any_aid_sp current_parent_status current_parent_status_sp ///
+mi reshape wide age_all fihhmngrs_dv gor_dv nkids_dv jbstat aidhh aidxhh aidhrs howlng work_hours jbhrs fimnlabgrs_dv nchild_dv hiqual_dv country_all employed total_hours age_youngest_child partnered_imp marital_status_imp int_year orig_record age_all_sp fihhmngrs_dv_sp gor_dv_sp nkids_dv_sp jbstat_sp aidhrs_sp howlng_sp work_hours_sp jbhrs_sp fimnlabgrs_dv_sp employed_sp total_hours_sp age_youngest_child_sp partnered_imp_sp marital_status_imp_sp weekly_hrs_woman weekly_hrs_man housework_woman housework_man marital_status_woman marital_status_man partnered_woman partnered_man num_children_woman num_children_man ft_pt_woman overwork_woman ft_pt_man overwork_man ft_pt_det_woman ft_pt_det_man couple_work couple_work_ow couple_work_ow_detailed  couple_hw_total woman_hw_share hw_terc_woman hw_hilow_woman hw_hilow_man couple_hw hw_hilow_woman_gp1 hw_hilow_woman_gp2 hw_hilow_man_gp4 hw_hilow_woman_combo couple_hw_hrs couple_hw_hrs_alt couple_hw_hrs_combo rel_type couple_num_children couple_num_children_gp family_type ft_pt_woman_end overwork_woman_end ft_pt_man_end overwork_man_end ft_pt_det_woman_end ft_pt_det_man_end couple_work_end couple_work_ow_detailed_end couple_work_ow_end couple_hw_end couple_hw_hrs_end couple_hw_hrs_alt_end couple_hw_hrs_combo_end couple_num_children_gp_end family_type_end npens_dv tenure_dv jshrs employment_status disabled_est sr_health aid_hours num_parents_hh master_religion respondent_info npens_dv_sp tenure_dv_sp employment_status_sp disabled_est_sp sr_health_sp aid_hours_sp num_parents_hh_sp master_religion_sp respondent_info_sp employment_status_woman employment_status_man monthly_earnings_woman monthly_earnings_man carework_woman carework_man region_woman region_man housing_woman housing_man religion_woman religion_man disabled_woman disabled_man sr_health_woman sr_health_man any_aid any_aid_sp current_parent_status current_parent_status_sp dual_work_end egalitarian_end division_of_labor_end egal_dol_yn_end ///
 , i(pidp eligible_partner eligible_rel_start_year eligible_rel_end_year eligible_rel_status) j(duration)
 
 tab _mi_miss, m // see what happens if I reshape but DON'T convert
@@ -921,6 +995,13 @@ forvalues d=1/11{
 	capture gen family_type_trunc`d' = family_type_end`d'
 	replace family_type_trunc`d' = . if inlist(family_type_end`d',98,99)
 	label values family_type_trunc`d' family_type
+	capture gen division_of_labor_trunc`d' = division_of_labor_end`d'
+	replace division_of_labor_trunc`d' = . if inlist(division_of_labor_end`d',98,99)
+	label values division_of_labor_trunc`d' dol
+	capture gen egalitarian_trunc`d' = egalitarian_end`d'
+	replace egalitarian_trunc`d' = . if inlist(egalitarian_end`d',98,99)
+	capture gen egal_dol_yn_trunc`d' = egal_dol_yn_end`d'
+	replace egal_dol_yn_trunc`d' = . if inlist(egal_dol_yn_end`d',98,99)
 }
 
 fre couple_work_ow_trunc5
