@@ -85,3 +85,36 @@ tab sequence_length modified_egal, row nofreq
 
 tabstat true_egal true_egal_flag true_egal_percent modified_egal modified_egal_flag modified_egal_percent, by(sequence_length)
 tabstat true_egal_percent modified_egal_percent
+
+
+********************************************************************************
+**# Ideal is actually do R steps FIRST - get this output, then use for above and do all in one go
+********************************************************************************
+* One maybe challenge because R doesn't use MI framework, but Stata does. so we remove MI = 0 from R.
+* Whereas in Stata, I retain. should I .... handle this differently?
+* FOr these purposes, should I remove MI = 0? Right now it's JUST 1-5. if I ever try to do anything with MI, i think it will be unhappy. let's leave as separate for NOW, though this isn't a great model....
+
+use "$created_data/ukhls_wide_truncated_Rdurs.dta", clear
+
+tab _mi_m
+
+egen true_egal = rowtotal(egal_dol_yn_trunc1 egal_dol_yn_trunc2 egal_dol_yn_trunc3 egal_dol_yn_trunc4 egal_dol_yn_trunc5 egal_dol_yn_trunc6 egal_dol_yn_trunc7 egal_dol_yn_trunc8 egal_dol_yn_trunc9 egal_dol_yn_trunc10 ), missing
+egen modified_egal = rowtotal(egalitarian_trunc1 egalitarian_trunc2 egalitarian_trunc3 egalitarian_trunc4 egalitarian_trunc5 egalitarian_trunc6 egalitarian_trunc7 egalitarian_trunc8 egalitarian_trunc9 egalitarian_trunc10), missing
+
+browse max_dur_mod_egal modified_egal egalitarian_trunc* mod_egal_spell_*
+browse max_dur_dol_egal true_egal division_of_labor_trunc* dol_egal_spell_*
+
+tab max_dur_mod_egal // this is MAX CONSECUTIVE
+tab modified_egal // this is TOTAL, not consecutive - BUT 0s should match
+tab sequence_length max_dur_mod_egal // good sense check
+
+tab max_dur_dol_egal // this is MAX CONSECUTIVE
+tab true_egal  // this is TOTAL, not consecutive - BUT 0s should match. so makes sense THIS is higher
+tab sequence_length max_dur_dol_egal
+
+tabstat max_dur_mod_egal max_dur_dol_egal modified_egal true_egal
+tabstat max_dur_mod_egal max_dur_dol_egal, by(sequence_length) // this is ALL
+tabstat max_dur_mod_egal if max_dur_mod_egal!=0, by(sequence_length) // if at least ONE SPELL egal
+tabstat max_dur_dol_egal if max_dur_dol_egal!=0, by(sequence_length) 
+
+// also want to figure out how to do this JUST for people who experienced state. think that is where some of above helpful because can use code that exists (like at least one in the rowtotal I do). actually, I can just do if MAX DUR > 0? but then again will be helpful to compare that that matches what I did above... okay, so did all of this...
