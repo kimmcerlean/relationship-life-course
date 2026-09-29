@@ -330,6 +330,20 @@ work.diff.dur<-data.frame(educ.diff.work$stat)
 work.diff.dur$channel<-c("work")
 work.diff.dur$duration<-c(1,2,3,4,5,6,7,8,9)
 
+  ### What is default window? (I did not change). https://traminer.unige.ch/doc/seqdiff.html
+  ##educ.diff.work <- seqdiff(seq.work.ow, data$couple_educ_type)
+  ##plot(educ.diff.work, stat=c("Pseudo R2", "Levene"))
+  
+  ##educ.diff.work0 <- seqdiff(seq.work.ow, data$couple_educ_type, cmprange=c(0,1))
+  ##plot(educ.diff.work0, stat=c("Pseudo R2", "Levene"))
+  ## This is default window.
+  
+  ##educ.diff.work1 <- seqdiff(seq.work.ow, data$couple_educ_type, cmprange=c(-1,1))
+  ##plot(educ.diff.work1, stat=c("Pseudo R2", "Levene"))
+  
+  ##educ.diff.work2 <- seqdiff(seq.work.ow, data$couple_educ_type, cmprange=c(-2,2))
+  ##plot(educ.diff.work2, stat=c("Pseudo R2", "Levene"))
+
 # HW
 educ.diff.hw <- seqdiff(seq.hw.hrs, data$couple_educ_type)
 plot(educ.diff.hw, stat=c("Pseudo R2", "Levene"))

@@ -561,5 +561,39 @@ legend(
 # Is it education or parenthood?
 # Here is where you can see which covariates matter [could even do more]
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Not exporting these for now in other countries and never added here, so just noting in case, but can add later
+# Family
+
+dissmfacw(
+  dist.fam.min ~ couple_educ_type + first_birth_pre_rel_man + first_birth_pre_rel_woman, 
+  data = data, R = 100)
+
+dissmfacw(
+  dist.fam.min ~ couple_educ_type + parent_info, # oh, family is kind of stupid because this is literally defined by family states. This is why this would be not a domain but a stratifier
+  data = data, R = 100)
+
+# Work
+#dissmfacw(
+#  dist.work.min ~ couple_educ_type + first_birth_pre_rel_man + first_birth_pre_rel_woman, 
+#  data = data, R = 100)
+
+dissmfacw(
+  dist.work.min ~ couple_educ_type + parent_info, 
+  data = data, R = 100)
+
+dissmfacw(
+  dist.work.min ~ couple_educ_type + either_birth_pre_rel, 
+  data = data, R = 100)
+
+# Housework
+#dissmfacw(
+#dist.hw.min ~ couple_educ_type + first_birth_pre_rel_man + first_birth_pre_rel_woman, 
+#data = data, R = 100)
+
+dissmfacw(
+  dist.hw.min ~ couple_educ_type + parent_info, 
+  data = data, R = 100)
+
+dissmfacw(
+  dist.hw.min ~ couple_educ_type + either_birth_pre_rel, 
+  data = data, R = 100)
 
