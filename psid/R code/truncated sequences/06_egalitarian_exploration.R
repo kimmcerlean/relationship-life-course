@@ -108,6 +108,7 @@ table(data$`_mi_m`)
 table(data$division_of_labor_trunc1)
 table(data$egal_dol_yn_trunc1)
 table(data$egal_dol_yn_trunc5)
+table(data$hw_egal_trunc5)
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Setting up the data ----------------------------------------------------------
@@ -127,6 +128,10 @@ table(data$egal_dol_yn_trunc5)
 ## division_of_labor_trunc: categorical egal, male BW, female BW, other
 ## egal_dol_yn_trunc: the binary version of above
 ## egalitarian_trunc: modified egalitarian - dual FT, equal OR he does more HW
+## dual_work_trunc: Dual FT or Dual PT
+## dual_ft_trunc: Dual FT only
+## hw_mod_egal_trunc: equal OR he does more HW
+## hw_egal_trunc: Just equal HW
 
 
 # ------------------------------------------------------------------------------
@@ -161,6 +166,42 @@ for (i in 1:10){
 }
 col_mod_egal =which(colnames(data)%in%lab_t) 
 
+# ------------------------------------------------------------------------------
+# Paid work: dual FT or PT
+
+lab_t=c()
+for (i in 1:10){
+  lab_t[i]=paste("dual_work_trunc",i, sep="")
+}
+col_dual_work =which(colnames(data)%in%lab_t) 
+
+# ------------------------------------------------------------------------------
+# Paid work: Just Dual FT
+
+lab_t=c()
+for (i in 1:10){
+  lab_t[i]=paste("dual_ft_trunc",i, sep="")
+}
+col_dual_ft =which(colnames(data)%in%lab_t) 
+
+# ------------------------------------------------------------------------------
+# Housework: Egal or he does more
+
+lab_t=c()
+for (i in 1:10){
+  lab_t[i]=paste("hw_mod_egal_trunc",i, sep="")
+}
+col_hw_mod_egal =which(colnames(data)%in%lab_t) 
+
+# ------------------------------------------------------------------------------
+# Housework: Just egal
+lab_t=c()
+for (i in 1:10){
+  lab_t[i]=paste("hw_egal_trunc",i, sep="")
+}
+col_hw_egal =which(colnames(data)%in%lab_t) 
+
+
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -179,6 +220,14 @@ lab.dol.egal <- c("Not Egalitarian", "Classic Egalitarian")
 
 lab.mod.egal <- c("Not Egalitarian", "Modified Egalitarian")
 
+lab.dual.work <- c("Not Dual Work", "Dual FT or PT")
+
+lab.dual.ft <- c("Not Dual FT", "Dual FT")
+
+lab.hw.mod.egal <- c("Not Egalitarian", "Egal or He Does More HW")
+
+lab.hw.egal <- c("Not Egalitarian", "Egalitarian HW")
+
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -192,7 +241,7 @@ lab.mod.egal <- c("Not Egalitarian", "Modified Egalitarian")
 # Division of Labor
 colspace.dol <- sequential_hcl(5, palette = "Hawaii") [1:4]
 
-# Classic Egal & Modified Egal
+# Binary Egalitarian Variables
 col1 <- sequential_hcl(5, palette = "Grays")[c(3)] #Not Egal
 col2 <- sequential_hcl(5, palette = "Hawaii")[c(1)]  #Egal
 colspace.egal <- c(col1, col2)
@@ -234,6 +283,40 @@ ggseqdplot(seq.mod.egal) +
   scale_x_discrete(labels = 1:10) +
   labs(x = "Year")
 
+
+# Dual FT or PT Paid Work
+seq.dual.work <- seqdef(data[,col_dual_work], cpal = colspace.egal, labels=lab.dual.work, 
+                       states= lab.dual.work,right=NA)
+
+ggseqdplot(seq.dual.work) +
+  scale_x_discrete(labels = 1:10) +
+  labs(x = "Year")
+
+# Just Dual FT Paid Work
+seq.dual.ft <- seqdef(data[,col_dual_ft], cpal = colspace.egal, labels=lab.dual.ft, 
+                        states= lab.dual.ft,right=NA)
+
+ggseqdplot(seq.dual.ft) +
+  scale_x_discrete(labels = 1:10) +
+  labs(x = "Year")
+
+
+# Housework: Egal or He Does More
+seq.hw.mod.egal <- seqdef(data[,col_hw_mod_egal], cpal = colspace.egal, labels=lab.hw.mod.egal, 
+                        states= lab.hw.mod.egal,right=NA)
+
+ggseqdplot(seq.hw.mod.egal) +
+  scale_x_discrete(labels = 1:10) +
+  labs(x = "Year")
+
+# Housework: JUst Egal
+seq.hw.egal <- seqdef(data[,col_hw_egal], cpal = colspace.egal, labels=lab.hw.egal, 
+                      states= lab.hw.egal,right=NA)
+
+ggseqdplot(seq.hw.egal) +
+  scale_x_discrete(labels = 1:10) +
+  labs(x = "Year")
+
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Exploring possibilities of extracting max time spent egal
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -253,7 +336,10 @@ seqistatd(seq.dol)
 seqdss(seq.dol)
 # I guess this technically adds cateogries to above? Can I merge in some way?
 
-# I think this works. this is CLASSIC egalitarian
+# I think this works
+#~~~~~~~~~~~~~~~~~~~~~~
+# this is CLASSIC egalitarian
+#~~~~~~~~~~~~~~~~~~~~~~
 dur.dol.egal<-seqdur(seq.dol.egal, with.missing=FALSE)
 dss.dol.egal<-seqdss(seq.dol.egal)
 
@@ -287,7 +373,9 @@ print(max_consecutive_dol_egal)
   
   print(dol_egal_avg_by_sequence_length)
   
-# I think this works. this is MODIFIED egalitarian
+#~~~~~~~~~~~~~~~~~~~~~~
+# MODIFIED egalitarian
+#~~~~~~~~~~~~~~~~~~~~~~
 dur.mod.egal<-seqdur(seq.mod.egal, with.missing=FALSE)
 dss.mod.egal<-seqdss(seq.mod.egal)
 
@@ -319,5 +407,137 @@ print(max_consecutive_mod_egal)
                                                FUN = mean)
   
   print(mod_egal_avg_by_sequence_length)
+
+#~~~~~~~~~~~~~~~~~~~~~~
+# Dual FT OR Dual PT
+#~~~~~~~~~~~~~~~~~~~~~~
+dur.dual.work<-seqdur(seq.dual.work, with.missing=FALSE)
+dss.dual.work<-seqdss(seq.dual.work)
+
+dual_work_state <- "Dual FT or PT"
+dual_work_durations <- as.matrix(dur.dual.work) * (as.matrix(dss.dual.work) == dual_work_state)
+max_consecutive_dual_work <- rowMaxs(dual_work_durations, na.rm = TRUE)
+print(max_consecutive_dual_work)
+
+# Can i add this back on to data?
+data$max_dur_dual_work <- max_consecutive_dual_work
+colnames(dual_work_durations) <- paste0("dual_work_spell_", 1:ncol(dual_work_durations))
+data <- cbind(data, dual_work_durations)
+
+# And calculate averages?
+# Include people who did not enter egal
+avg_all.dual.work <- mean(max_consecutive_dual_work, na.rm = TRUE)
+print(avg_all.dual.work)
+
+# ONLY people who entered egal
+avg_experienced.dual.work <- mean(max_consecutive_dual_work[max_consecutive_dual_work > 0], na.rm = TRUE)
+print(avg_experienced.dual.work)
+
+#
+dual_work_avg_by_sequence_length <- aggregate(max_dur_dual_work ~ sequence_length, 
+                                             data = data, 
+                                             FUN = mean)
+
+print(dual_work_avg_by_sequence_length)
+
+#~~~~~~~~~~~~~~~~~~~~~~
+# Dual FT
+#~~~~~~~~~~~~~~~~~~~~~~
+dur.dual.ft<-seqdur(seq.dual.ft, with.missing=FALSE)
+dss.dual.ft<-seqdss(seq.dual.ft)
+
+dual_ft_state <- "Dual FT"
+dual_ft_durations <- as.matrix(dur.dual.ft) * (as.matrix(dss.dual.ft) == dual_ft_state)
+max_consecutive_dual_ft <- rowMaxs(dual_ft_durations, na.rm = TRUE)
+print(max_consecutive_dual_ft)
+
+# Can i add this back on to data?
+data$max_dur_dual_ft <- max_consecutive_dual_ft
+colnames(dual_ft_durations) <- paste0("dual_ft_spell_", 1:ncol(dual_ft_durations))
+data <- cbind(data, dual_ft_durations)
+
+# And calculate averages?
+# Include people who did not enter egal
+avg_all.dual.ft <- mean(max_consecutive_dual_ft, na.rm = TRUE)
+print(avg_all.dual.ft)
+
+# ONLY people who entered egal
+avg_experienced.dual.ft <- mean(max_consecutive_dual_ft[max_consecutive_dual_ft > 0], na.rm = TRUE)
+print(avg_experienced.dual.ft)
+
+#
+dual_ft_avg_by_sequence_length <- aggregate(max_dur_dual_ft ~ sequence_length, 
+                                            data = data, 
+                                            FUN = mean)
+
+print(dual_ft_avg_by_sequence_length)
+
+#~~~~~~~~~~~~~~~~~~~~~~
+# HW: Egal or He Does More
+#~~~~~~~~~~~~~~~~~~~~~~
+dur.hw.mod.egal<-seqdur(seq.hw.mod.egal, with.missing=FALSE)
+dss.hw.mod.egal<-seqdss(seq.hw.mod.egal)
+
+hw_mod_egal_state <- "Egal or He Does More HW"
+hw_mod_egal_durations <- as.matrix(dur.hw.mod.egal) * (as.matrix(dss.hw.mod.egal) == hw_mod_egal_state)
+max_consecutive_hw_mod_egal <- rowMaxs(hw_mod_egal_durations, na.rm = TRUE)
+print(max_consecutive_hw_mod_egal)
+
+# Can i add this back on to data?
+data$max_dur_hw_mod_egal <- max_consecutive_hw_mod_egal
+colnames(hw_mod_egal_durations) <- paste0("hw_mod_egal_spell_", 1:ncol(hw_mod_egal_durations))
+data <- cbind(data, hw_mod_egal_durations)
+
+# And calculate averages?
+# Include people who did not enter egal
+avg_all.hw.mod.egal <- mean(max_consecutive_hw_mod_egal, na.rm = TRUE)
+print(avg_all.hw.mod.egal)
+
+# ONLY people who entered egal
+avg_experienced.hw.mod.egal <- mean(max_consecutive_hw_mod_egal[max_consecutive_hw_mod_egal > 0], na.rm = TRUE)
+print(avg_experienced.hw.mod.egal)
+
+#
+hw_mod_egal_avg_by_sequence_length <- aggregate(max_dur_hw_mod_egal ~ sequence_length, 
+                                                data = data, 
+                                                FUN = mean)
+
+print(hw_mod_egal_avg_by_sequence_length)
+
+#~~~~~~~~~~~~~~~~~~~~~~
+# HW: Just Egal
+#~~~~~~~~~~~~~~~~~~~~~~
+dur.hw.egal<-seqdur(seq.hw.egal, with.missing=FALSE)
+dss.hw.egal<-seqdss(seq.hw.egal)
+
+hw_egal_state <- "Egalitarian HW"
+hw_egal_durations <- as.matrix(dur.hw.egal) * (as.matrix(dss.hw.egal) == hw_egal_state)
+max_consecutive_hw_egal <- rowMaxs(hw_egal_durations, na.rm = TRUE)
+print(max_consecutive_hw_egal)
+
+# Can i add this back on to data?
+data$max_dur_hw_egal <- max_consecutive_hw_egal
+colnames(hw_egal_durations) <- paste0("hw_egal_spell_", 1:ncol(hw_egal_durations))
+data <- cbind(data, hw_egal_durations)
+
+# And calculate averages?
+# Include people who did not enter egal
+avg_all.hw.egal <- mean(max_consecutive_hw_egal, na.rm = TRUE)
+print(avg_all.hw.egal)
+
+# ONLY people who entered egal
+avg_experienced.hw.egal <- mean(max_consecutive_hw_egal[max_consecutive_hw_egal > 0], na.rm = TRUE)
+print(avg_experienced.hw.egal)
+
+#
+hw_egal_avg_by_sequence_length <- aggregate(max_dur_hw_egal ~ sequence_length, 
+                                            data = data, 
+                                            FUN = mean)
+
+print(hw_egal_avg_by_sequence_length)
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Export for Stata
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 write_dta(data, "created data/psid_wide_truncated_Rdurs.dta")

@@ -819,6 +819,39 @@ mi passive: replace egalitarian_end = 99 if couple_hw_end==99
 tab egalitarian_end, m
 tab egalitarian_end egal_dol_yn_end, m
 
+*3. Already made binary paid work only earlier (the dual_work)
+// let's make dual ft binary
+tab couple_work_end
+tab ft_pt_woman_end ft_pt_man_end
+
+mi passive: gen dual_ft_end = .
+mi passive: replace dual_ft_end = 0 if inlist(couple_work_end,1,2,4,5)
+mi passive: replace dual_ft_end = 1 if couple_work_end==3
+mi passive: replace dual_ft_end = 98 if couple_work_end==98
+mi passive: replace dual_ft_end = 99 if couple_work_end==99
+
+tab couple_work_end dual_ft_end
+
+// egal HW binary
+tab couple_hw_end
+tab couple_hw_hrs_combo_end
+
+mi passive: gen hw_egal_end = .
+mi passive: replace hw_egal_end = 0 if inlist(couple_hw_end,1,2,4)
+mi passive: replace hw_egal_end = 1 if couple_hw_end==3
+mi passive: replace hw_egal_end = 98 if couple_hw_end==98
+mi passive: replace hw_egal_end = 99 if couple_hw_end==99
+
+// egal + he does more
+mi passive: gen hw_mod_egal_end = .
+mi passive: replace hw_mod_egal_end = 0 if inlist(couple_hw_end,1,2)
+mi passive: replace hw_mod_egal_end = 1 if inlist(couple_hw_end,3,4)
+mi passive: replace hw_mod_egal_end = 98 if couple_hw_end==98
+mi passive: replace hw_mod_egal_end = 99 if couple_hw_end==99
+
+tab couple_hw_end hw_egal_end 
+tab couple_hw_end hw_mod_egal_end 
+
 mi update
 
 save "$created_data/psid_couples_imputed_long_deduped.dta", replace
@@ -864,7 +897,7 @@ mi update
 ********************************************************************************
 **# Reshape back to wide to see the data by duration and compare to long estimates
 ********************************************************************************
-mi reshape wide ft_pt_woman_end overwork_woman_end ft_pt_man_end overwork_man_end couple_work_end couple_work_ow_detailed_end couple_work_ow_end couple_hw_end couple_hw_hrs_end couple_hw_hrs_alt_end couple_hw_hrs_combo_end rel_type couple_num_children_gp_end family_type_end in_sample hh_status relationship housework_focal age_focal weekly_hrs_t_focal earnings_t_focal family_income_t partnered_imp educ_focal_imp num_children_imp_hh weekly_hrs_woman weekly_hrs_man housework_woman housework_man num_children_woman num_children_man ft_pt_woman overwork_woman ft_pt_man overwork_man ft_pt_det_woman ft_pt_det_man  in_sample_sp hh_status_sp relationship_sp housework_focal_sp age_focal_sp weekly_hrs_t_focal_sp earnings_t_focal_sp family_income_t_sp partnered_imp_sp marst_imp marst_imp_sp marst_woman marst_man num_children_imp_hh_sp couple_work_ow_detailed couple_work_ow couple_hw_hrs_combo age_young_child RESPONDENT_WHO_ REGION_ employment_status_focal religion_focal lives_family_focal disabled_focal disabled_scale_focal sr_health_focal yr_retired_focal father_in_hh mother_in_hh num_parent_in_hh num_65up_hh rolling_births current_parent_status retired_est_focal house_status_all age_young_child_sp RESPONDENT_WHO_sp REGION_sp employment_status_focal_sp religion_focal_sp lives_family_focal_sp disabled_focal_sp sr_health_focal_sp num_65up_hh_sp rolling_births_sp current_parent_status_sp retired_est_focal_sp house_status_all_sp home_owner home_owner_sp employment_status_woman employment_status_man annual_earnings_woman annual_earnings_man age_youngest_woman age_youngest_man is_parent_woman is_parent_man region_woman region_man housing_woman housing_man religion_woman religion_man disabled_woman disabled_man sr_health_woman sr_health_man retired_woman retired_man lives_near_fam_woman lives_near_fam_man couple_work couple_hw couple_hw_hrs couple_hw_hrs_alt couple_num_children couple_num_children_gp family_type ft_pt_det_woman_end ft_pt_det_man_end is_respondent_focal is_respondent_focal_sp any_parent_in_hh any_parent_in_hh_sp RELATION_ relationship_type_ is_first_yr_cohabitor has_first_yr_cohabitor current_rel_type marital_status_focal in_rel_flag survey_yr dual_work_end division_of_labor_end egalitarian_end egal_dol_yn_end ///
+mi reshape wide ft_pt_woman_end overwork_woman_end ft_pt_man_end overwork_man_end couple_work_end couple_work_ow_detailed_end couple_work_ow_end couple_hw_end couple_hw_hrs_end couple_hw_hrs_alt_end couple_hw_hrs_combo_end rel_type couple_num_children_gp_end family_type_end in_sample hh_status relationship housework_focal age_focal weekly_hrs_t_focal earnings_t_focal family_income_t partnered_imp educ_focal_imp num_children_imp_hh weekly_hrs_woman weekly_hrs_man housework_woman housework_man num_children_woman num_children_man ft_pt_woman overwork_woman ft_pt_man overwork_man ft_pt_det_woman ft_pt_det_man  in_sample_sp hh_status_sp relationship_sp housework_focal_sp age_focal_sp weekly_hrs_t_focal_sp earnings_t_focal_sp family_income_t_sp partnered_imp_sp marst_imp marst_imp_sp marst_woman marst_man num_children_imp_hh_sp couple_work_ow_detailed couple_work_ow couple_hw_hrs_combo age_young_child RESPONDENT_WHO_ REGION_ employment_status_focal religion_focal lives_family_focal disabled_focal disabled_scale_focal sr_health_focal yr_retired_focal father_in_hh mother_in_hh num_parent_in_hh num_65up_hh rolling_births current_parent_status retired_est_focal house_status_all age_young_child_sp RESPONDENT_WHO_sp REGION_sp employment_status_focal_sp religion_focal_sp lives_family_focal_sp disabled_focal_sp sr_health_focal_sp num_65up_hh_sp rolling_births_sp current_parent_status_sp retired_est_focal_sp house_status_all_sp home_owner home_owner_sp employment_status_woman employment_status_man annual_earnings_woman annual_earnings_man age_youngest_woman age_youngest_man is_parent_woman is_parent_man region_woman region_man housing_woman housing_man religion_woman religion_man disabled_woman disabled_man sr_health_woman sr_health_man retired_woman retired_man lives_near_fam_woman lives_near_fam_man couple_work couple_hw couple_hw_hrs couple_hw_hrs_alt couple_num_children couple_num_children_gp family_type ft_pt_det_woman_end ft_pt_det_man_end is_respondent_focal is_respondent_focal_sp any_parent_in_hh any_parent_in_hh_sp RELATION_ relationship_type_ is_first_yr_cohabitor has_first_yr_cohabitor current_rel_type marital_status_focal in_rel_flag survey_yr dual_work_end division_of_labor_end egalitarian_end egal_dol_yn_end dual_ft_end hw_egal_end hw_mod_egal_end ///
 , i(unique_id partner_unique_id eligible_rel_start_year eligible_rel_end_year) j(duration) // SEX SEX_sp rel_status rel_type_constant transition_yr FIRST_BIRTH_YR FIRST_BIRTH_YR_sp sample_type sample_type_sp has_psid_gene has_psid_gene_sp birth_yr_all birth_yr_all_sp raceth_fixed_focal raceth_fixed_focal_sp fixed_education fixed_education_sp
 // old vars: partnered_woman partnered_man 
 
@@ -873,7 +906,7 @@ tab _mi_m, m
 browse unique unique_id partner_unique_id _mi_id _mi_miss _mi_m couple_work_end* couple_work_ow_end* couple_hw_hrs_combo_end*
 browse unique unique_id partner_unique_id _mi_id _mi_miss _mi_m couple_work_end* couple_work_ow_end* couple_hw_hrs_combo_end* if inrange(_mi_id,1,10)
 
-foreach var in couple_work_ow_end couple_hw_hrs_combo_end family_type_end division_of_labor_end egalitarian_end egal_dol_yn_end{
+foreach var in couple_work_ow_end couple_hw_hrs_combo_end family_type_end division_of_labor_end egalitarian_end egal_dol_yn_end dual_work_end dual_ft_end hw_egal_end hw_mod_egal_end{
 	forvalues d=1/11{
 		inspect `var'`d' if inrange(_mi_m,1,10)
 		assert `var'`d' !=. if inrange(_mi_m,1,10)
@@ -1015,11 +1048,23 @@ forvalues d=1/11{
 	replace egalitarian_trunc`d' = . if inlist(egalitarian_end`d',98,99)
 	capture gen egal_dol_yn_trunc`d' = egal_dol_yn_end`d'
 	replace egal_dol_yn_trunc`d' = . if inlist(egal_dol_yn_end`d',98,99)
+	
+	capture gen dual_work_trunc`d' = dual_work_end`d'
+	replace dual_work_trunc`d' = . if inlist(dual_work_end`d',98,99)
+	capture gen dual_ft_trunc`d' = dual_ft_end`d'
+	replace dual_ft_trunc`d' = . if inlist(dual_ft_end`d',98,99)
+	capture gen hw_egal_trunc`d' = hw_egal_end`d'
+	replace hw_egal_trunc`d' = . if inlist(hw_egal_end`d',98,99)
+	capture gen hw_mod_egal_trunc`d' = hw_mod_egal_end`d'
+	replace hw_mod_egal_trunc`d' = . if inlist(hw_mod_egal_end`d',98,99)
 }
 
 fre couple_work_ow_trunc5
 fre couple_hw_hrs_combo_trunc5
 fre family_type_trunc5
+
+fre hw_mod_egal_end5
+fre hw_mod_egal_trunc5
 
 save "$created_data/psid_couples_wide_truncated.dta", replace 
 

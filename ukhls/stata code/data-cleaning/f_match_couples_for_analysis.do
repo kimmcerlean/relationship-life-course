@@ -827,6 +827,39 @@ mi passive: replace egalitarian_end = 99 if couple_hw_end==99
 tab egalitarian_end, m
 tab egalitarian_end egal_dol_yn_end, m
 
+*3. Already made binary paid work only earlier (the dual_work)
+// let's make dual ft binary
+tab couple_work_end
+tab ft_pt_woman_end ft_pt_man_end
+
+mi passive: gen dual_ft_end = .
+mi passive: replace dual_ft_end = 0 if inlist(couple_work_end,1,2,4,5)
+mi passive: replace dual_ft_end = 1 if couple_work_end==3
+mi passive: replace dual_ft_end = 98 if couple_work_end==98
+mi passive: replace dual_ft_end = 99 if couple_work_end==99
+
+tab couple_work_end dual_ft_end
+
+// egal HW binary
+tab couple_hw_end
+tab couple_hw_hrs_combo_end
+
+mi passive: gen hw_egal_end = .
+mi passive: replace hw_egal_end = 0 if inlist(couple_hw_end,1,2,4)
+mi passive: replace hw_egal_end = 1 if couple_hw_end==3
+mi passive: replace hw_egal_end = 98 if couple_hw_end==98
+mi passive: replace hw_egal_end = 99 if couple_hw_end==99
+
+// egal + he does more
+mi passive: gen hw_mod_egal_end = .
+mi passive: replace hw_mod_egal_end = 0 if inlist(couple_hw_end,1,2)
+mi passive: replace hw_mod_egal_end = 1 if inlist(couple_hw_end,3,4)
+mi passive: replace hw_mod_egal_end = 98 if couple_hw_end==98
+mi passive: replace hw_mod_egal_end = 99 if couple_hw_end==99
+
+tab couple_hw_end hw_egal_end 
+tab couple_hw_end hw_mod_egal_end 
+
 save "$created_data/ukhls_couples_imputed_long_deduped.dta", replace
 
 
@@ -881,7 +914,7 @@ mi update
 **# Reshape back to wide to see the data by duration and compare to long estimates
 ********************************************************************************
 
-mi reshape wide age_all fihhmngrs_dv gor_dv nkids_dv jbstat aidhh aidxhh aidhrs howlng work_hours jbhrs fimnlabgrs_dv nchild_dv hiqual_dv country_all employed total_hours age_youngest_child partnered_imp marital_status_imp int_year orig_record age_all_sp fihhmngrs_dv_sp gor_dv_sp nkids_dv_sp jbstat_sp aidhrs_sp howlng_sp work_hours_sp jbhrs_sp fimnlabgrs_dv_sp employed_sp total_hours_sp age_youngest_child_sp partnered_imp_sp marital_status_imp_sp weekly_hrs_woman weekly_hrs_man housework_woman housework_man marital_status_woman marital_status_man partnered_woman partnered_man num_children_woman num_children_man ft_pt_woman overwork_woman ft_pt_man overwork_man ft_pt_det_woman ft_pt_det_man couple_work couple_work_ow couple_work_ow_detailed  couple_hw_total woman_hw_share hw_terc_woman hw_hilow_woman hw_hilow_man couple_hw hw_hilow_woman_gp1 hw_hilow_woman_gp2 hw_hilow_man_gp4 hw_hilow_woman_combo couple_hw_hrs couple_hw_hrs_alt couple_hw_hrs_combo rel_type couple_num_children couple_num_children_gp family_type ft_pt_woman_end overwork_woman_end ft_pt_man_end overwork_man_end ft_pt_det_woman_end ft_pt_det_man_end couple_work_end couple_work_ow_detailed_end couple_work_ow_end couple_hw_end couple_hw_hrs_end couple_hw_hrs_alt_end couple_hw_hrs_combo_end couple_num_children_gp_end family_type_end npens_dv tenure_dv jshrs employment_status disabled_est sr_health aid_hours num_parents_hh master_religion respondent_info npens_dv_sp tenure_dv_sp employment_status_sp disabled_est_sp sr_health_sp aid_hours_sp num_parents_hh_sp master_religion_sp respondent_info_sp employment_status_woman employment_status_man monthly_earnings_woman monthly_earnings_man carework_woman carework_man region_woman region_man housing_woman housing_man religion_woman religion_man disabled_woman disabled_man sr_health_woman sr_health_man any_aid any_aid_sp current_parent_status current_parent_status_sp dual_work_end egalitarian_end division_of_labor_end egal_dol_yn_end ///
+mi reshape wide age_all fihhmngrs_dv gor_dv nkids_dv jbstat aidhh aidxhh aidhrs howlng work_hours jbhrs fimnlabgrs_dv nchild_dv hiqual_dv country_all employed total_hours age_youngest_child partnered_imp marital_status_imp int_year orig_record age_all_sp fihhmngrs_dv_sp gor_dv_sp nkids_dv_sp jbstat_sp aidhrs_sp howlng_sp work_hours_sp jbhrs_sp fimnlabgrs_dv_sp employed_sp total_hours_sp age_youngest_child_sp partnered_imp_sp marital_status_imp_sp weekly_hrs_woman weekly_hrs_man housework_woman housework_man marital_status_woman marital_status_man partnered_woman partnered_man num_children_woman num_children_man ft_pt_woman overwork_woman ft_pt_man overwork_man ft_pt_det_woman ft_pt_det_man couple_work couple_work_ow couple_work_ow_detailed  couple_hw_total woman_hw_share hw_terc_woman hw_hilow_woman hw_hilow_man couple_hw hw_hilow_woman_gp1 hw_hilow_woman_gp2 hw_hilow_man_gp4 hw_hilow_woman_combo couple_hw_hrs couple_hw_hrs_alt couple_hw_hrs_combo rel_type couple_num_children couple_num_children_gp family_type ft_pt_woman_end overwork_woman_end ft_pt_man_end overwork_man_end ft_pt_det_woman_end ft_pt_det_man_end couple_work_end couple_work_ow_detailed_end couple_work_ow_end couple_hw_end couple_hw_hrs_end couple_hw_hrs_alt_end couple_hw_hrs_combo_end couple_num_children_gp_end family_type_end npens_dv tenure_dv jshrs employment_status disabled_est sr_health aid_hours num_parents_hh master_religion respondent_info npens_dv_sp tenure_dv_sp employment_status_sp disabled_est_sp sr_health_sp aid_hours_sp num_parents_hh_sp master_religion_sp respondent_info_sp employment_status_woman employment_status_man monthly_earnings_woman monthly_earnings_man carework_woman carework_man region_woman region_man housing_woman housing_man religion_woman religion_man disabled_woman disabled_man sr_health_woman sr_health_man any_aid any_aid_sp current_parent_status current_parent_status_sp dual_work_end egalitarian_end division_of_labor_end egal_dol_yn_end dual_ft_end hw_egal_end hw_mod_egal_end ///
 , i(pidp eligible_partner eligible_rel_start_year eligible_rel_end_year eligible_rel_status) j(duration)
 
 tab _mi_miss, m // see what happens if I reshape but DON'T convert
@@ -1002,6 +1035,15 @@ forvalues d=1/11{
 	replace egalitarian_trunc`d' = . if inlist(egalitarian_end`d',98,99)
 	capture gen egal_dol_yn_trunc`d' = egal_dol_yn_end`d'
 	replace egal_dol_yn_trunc`d' = . if inlist(egal_dol_yn_end`d',98,99)
+	
+	capture gen dual_work_trunc`d' = dual_work_end`d'
+	replace dual_work_trunc`d' = . if inlist(dual_work_end`d',98,99)
+	capture gen dual_ft_trunc`d' = dual_ft_end`d'
+	replace dual_ft_trunc`d' = . if inlist(dual_ft_end`d',98,99)
+	capture gen hw_egal_trunc`d' = hw_egal_end`d'
+	replace hw_egal_trunc`d' = . if inlist(hw_egal_end`d',98,99)
+	capture gen hw_mod_egal_trunc`d' = hw_mod_egal_end`d'
+	replace hw_mod_egal_trunc`d' = . if inlist(hw_mod_egal_end`d',98,99)
 }
 
 fre couple_work_ow_trunc5

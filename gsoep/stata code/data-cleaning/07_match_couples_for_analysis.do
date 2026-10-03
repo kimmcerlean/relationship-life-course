@@ -1123,6 +1123,39 @@ mi passive: replace egalitarian_end = 99 if couple_hw_weekly_end==99
 tab egalitarian_end, m
 tab egalitarian_end egal_dol_yn_end, m
 
+*3. Already made binary paid work only earlier (the dual_work)
+// let's make dual ft binary
+tab couple_work_end
+tab ft_pt_woman_end ft_pt_man_end
+
+mi passive: gen dual_ft_end = .
+mi passive: replace dual_ft_end = 0 if inlist(couple_work_end,1,2,4,5)
+mi passive: replace dual_ft_end = 1 if couple_work_end==3
+mi passive: replace dual_ft_end = 98 if couple_work_end==98
+mi passive: replace dual_ft_end = 99 if couple_work_end==99
+
+tab couple_work_end dual_ft_end
+
+// egal HW binary
+tab couple_hw_weekly_end
+fre couple_hw_weekly_end
+
+mi passive: gen hw_egal_end = .
+mi passive: replace hw_egal_end = 0 if inlist(couple_hw_weekly_end,1,2,4)
+mi passive: replace hw_egal_end = 1 if couple_hw_weekly_end==3
+mi passive: replace hw_egal_end = 98 if couple_hw_weekly_end==98
+mi passive: replace hw_egal_end = 99 if couple_hw_weekly_end==99
+
+// egal + he does more
+mi passive: gen hw_mod_egal_end = .
+mi passive: replace hw_mod_egal_end = 0 if inlist(couple_hw_weekly_end,1,2)
+mi passive: replace hw_mod_egal_end = 1 if inlist(couple_hw_weekly_end,3,4)
+mi passive: replace hw_mod_egal_end = 98 if couple_hw_weekly_end==98
+mi passive: replace hw_mod_egal_end = 99 if couple_hw_weekly_end==99
+
+tab couple_hw_weekly_end hw_egal_end 
+tab couple_hw_weekly_end hw_mod_egal_end 
+
 mi update
 
 unique pid eligible_partner // now 7677
@@ -1174,7 +1207,7 @@ mi update
 **# Reshape back to wide to see the data by duration and compare to long estimates
 ********************************************************************************
 
-mi reshape wide employment self_reported_health disability_yn religious_affiliation errands_sundays housework_saturdays housework_sundays childcare_saturdays childcare_sundays repair_saturdays errands_weekdays housework_weekdays childcare_weekdays repair_weekdays errands_saturdays aid_in_hh_hl kidsu18_hh num_65up_hh age_youngest_child age nationality_region federal_state housing_status weekly_work_hrs gross_income_lm net_income_lm hh_income_net_monthly earnings_gross_t_cnef hh_gross_income_t_cnef repair_sundays any_outside_help any_parent_in_hh current_parent_status marst_imp retired_yn full_status_pl duplicate_record urban_region employment_sp self_reported_health_sp disability_yn_sp religious_affiliation_sp errands_sundays_sp housework_saturdays_sp housework_sundays_sp childcare_saturdays_sp childcare_sundays_sp repair_saturdays_sp errands_weekdays_sp housework_weekdays_sp childcare_weekdays_sp repair_weekdays_sp errands_saturdays_sp nationality_pb_sp aid_in_hh_hl_sp kidsu18_hh_sp num_65up_hh_sp age_youngest_child_sp age_sp nationality_region_sp federal_state_sp housing_status_sp weekly_work_hrs_sp gross_income_lm_sp net_income_lm_sp hh_income_net_monthly_sp earnings_gross_t_cnef_sp hh_gross_income_t_cnef_sp repair_sundays_sp any_outside_help_sp any_parent_in_hh_sp current_parent_status_sp marst_imp_sp retired_yn_sp full_status_pl_sp urban_region_sp weekly_hrs_woman weekly_hrs_man employment_status_woman employment_status_man monthly_earnings_woman monthly_earnings_man annual_earnings_woman annual_earnings_man housework_weekdays_woman housework_weekdays_man housework_saturdays_woman housework_saturdays_man housework_sundays_woman housework_sundays_man repair_weekdays_woman repair_weekdays_man repair_saturdays_woman repair_saturdays_man repair_sundays_woman repair_sundays_man errands_weekdays_woman errands_weekdays_man errands_saturdays_woman errands_saturdays_man errands_sundays_woman errands_sundays_man aid_in_hh_woman aid_in_hh_man marital_status_woman marital_status_man partnered_woman partnered_man num_children_woman num_children_man age_youngest_woman age_youngest_man federal_state_woman federal_state_man where_ew_woman where_ew_man urban_region_woman urban_region_man housing_woman housing_man religion_woman religion_man disabled_woman disabled_man sr_health_woman sr_health_man retired_woman retired_man ft_pt_woman overwork_woman ft_pt_man overwork_man couple_work couple_work_ow_detailed couple_work_ow couple_weekday_hw_total woman_weekday_hw_share couple_hw_weekday housework_weekdays_5_woman housework_weekly_est_woman housework_weekdays_5_man housework_weekly_est_man couple_weekly_hw_total woman_weekly_hw_share couple_hw_weekly housework_combined_woman housework_combined_man couple_combined_hw_total woman_combined_hw_share couple_hw_combined syear rel_type couple_num_children couple_num_children_gp family_type hw_weekly_hilow_woman hw_weekly_hilow_equal couple_hw_hrs_weekly hw_combined_hilow_equal hw_combined_hilow_woman couple_hw_hrs_combined hw_weekday_hilow_woman hw_weekday_hilow_equal hw_weekday_hilow_test hw_weekday_equal couple_hw_hrs_weekday ft_pt_woman_end overwork_woman_end ft_pt_man_end overwork_man_end couple_work_end couple_work_ow_detailed_end couple_work_ow_end couple_hw_weekday_end couple_hw_hrs_weekday_end couple_hw_weekly_end couple_hw_hrs_weekly_end couple_hw_combined_end couple_hw_hrs_combined_end couple_num_children_gp_end family_type_end dual_work_end division_of_labor_end egalitarian_end egal_dol_yn_end ///
+mi reshape wide employment self_reported_health disability_yn religious_affiliation errands_sundays housework_saturdays housework_sundays childcare_saturdays childcare_sundays repair_saturdays errands_weekdays housework_weekdays childcare_weekdays repair_weekdays errands_saturdays aid_in_hh_hl kidsu18_hh num_65up_hh age_youngest_child age nationality_region federal_state housing_status weekly_work_hrs gross_income_lm net_income_lm hh_income_net_monthly earnings_gross_t_cnef hh_gross_income_t_cnef repair_sundays any_outside_help any_parent_in_hh current_parent_status marst_imp retired_yn full_status_pl duplicate_record urban_region employment_sp self_reported_health_sp disability_yn_sp religious_affiliation_sp errands_sundays_sp housework_saturdays_sp housework_sundays_sp childcare_saturdays_sp childcare_sundays_sp repair_saturdays_sp errands_weekdays_sp housework_weekdays_sp childcare_weekdays_sp repair_weekdays_sp errands_saturdays_sp nationality_pb_sp aid_in_hh_hl_sp kidsu18_hh_sp num_65up_hh_sp age_youngest_child_sp age_sp nationality_region_sp federal_state_sp housing_status_sp weekly_work_hrs_sp gross_income_lm_sp net_income_lm_sp hh_income_net_monthly_sp earnings_gross_t_cnef_sp hh_gross_income_t_cnef_sp repair_sundays_sp any_outside_help_sp any_parent_in_hh_sp current_parent_status_sp marst_imp_sp retired_yn_sp full_status_pl_sp urban_region_sp weekly_hrs_woman weekly_hrs_man employment_status_woman employment_status_man monthly_earnings_woman monthly_earnings_man annual_earnings_woman annual_earnings_man housework_weekdays_woman housework_weekdays_man housework_saturdays_woman housework_saturdays_man housework_sundays_woman housework_sundays_man repair_weekdays_woman repair_weekdays_man repair_saturdays_woman repair_saturdays_man repair_sundays_woman repair_sundays_man errands_weekdays_woman errands_weekdays_man errands_saturdays_woman errands_saturdays_man errands_sundays_woman errands_sundays_man aid_in_hh_woman aid_in_hh_man marital_status_woman marital_status_man partnered_woman partnered_man num_children_woman num_children_man age_youngest_woman age_youngest_man federal_state_woman federal_state_man where_ew_woman where_ew_man urban_region_woman urban_region_man housing_woman housing_man religion_woman religion_man disabled_woman disabled_man sr_health_woman sr_health_man retired_woman retired_man ft_pt_woman overwork_woman ft_pt_man overwork_man couple_work couple_work_ow_detailed couple_work_ow couple_weekday_hw_total woman_weekday_hw_share couple_hw_weekday housework_weekdays_5_woman housework_weekly_est_woman housework_weekdays_5_man housework_weekly_est_man couple_weekly_hw_total woman_weekly_hw_share couple_hw_weekly housework_combined_woman housework_combined_man couple_combined_hw_total woman_combined_hw_share couple_hw_combined syear rel_type couple_num_children couple_num_children_gp family_type hw_weekly_hilow_woman hw_weekly_hilow_equal couple_hw_hrs_weekly hw_combined_hilow_equal hw_combined_hilow_woman couple_hw_hrs_combined hw_weekday_hilow_woman hw_weekday_hilow_equal hw_weekday_hilow_test hw_weekday_equal couple_hw_hrs_weekday ft_pt_woman_end overwork_woman_end ft_pt_man_end overwork_man_end couple_work_end couple_work_ow_detailed_end couple_work_ow_end couple_hw_weekday_end couple_hw_hrs_weekday_end couple_hw_weekly_end couple_hw_hrs_weekly_end couple_hw_combined_end couple_hw_hrs_combined_end couple_num_children_gp_end family_type_end dual_work_end division_of_labor_end egalitarian_end egal_dol_yn_end dual_ft_end hw_egal_end hw_mod_egal_end ///
 , i(pid eligible_partner eligible_rel_start_year eligible_rel_end_year eligible_rel_status) j(duration)
 
 tab _mi_miss, m // see what happens if I reshape but DON'T convert
@@ -1318,6 +1351,15 @@ forvalues d=1/11{
 	replace egalitarian_trunc`d' = . if inlist(egalitarian_end`d',98,99)
 	capture gen egal_dol_yn_trunc`d' = egal_dol_yn_end`d'
 	replace egal_dol_yn_trunc`d' = . if inlist(egal_dol_yn_end`d',98,99)
+	
+	capture gen dual_work_trunc`d' = dual_work_end`d'
+	replace dual_work_trunc`d' = . if inlist(dual_work_end`d',98,99)
+	capture gen dual_ft_trunc`d' = dual_ft_end`d'
+	replace dual_ft_trunc`d' = . if inlist(dual_ft_end`d',98,99)
+	capture gen hw_egal_trunc`d' = hw_egal_end`d'
+	replace hw_egal_trunc`d' = . if inlist(hw_egal_end`d',98,99)
+	capture gen hw_mod_egal_trunc`d' = hw_mod_egal_end`d'
+	replace hw_mod_egal_trunc`d' = . if inlist(hw_mod_egal_end`d',98,99)
 }
 
 fre couple_work_ow_trunc5
