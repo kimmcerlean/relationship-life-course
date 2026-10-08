@@ -434,7 +434,7 @@ tab ft_pt_det_woman if age_all >=18 & age_all <=60 & imputed==0 // it's still qu
 * couple-level version
 tab ft_pt_woman ft_pt_man
 
-mi passive: gen couple_work=.
+mi passive: gen couple_work=. // going back to this as our main specification (10/26)
 mi passive: replace couple_work = 1 if ft_pt_man == 2 & ft_pt_woman == 0
 mi passive: replace couple_work = 2 if ft_pt_man == 2 & ft_pt_woman == 1
 mi passive: replace couple_work = 3 if ft_pt_man == 2 & ft_pt_woman == 2
@@ -683,6 +683,18 @@ label values couple_hw_hrs_weekly couple_hw_hrs_combo
 
 mi estimate: proportion couple_hw_weekly couple_hw_hrs_weekly
 
+* Combining the two equal (10/26) - this will be MAIN VARIABLE (just doing for weekly housework to avoid confusion also - not the weekday or combined measures I created before (aka 1 and 3 here))
+mi passive: gen couple_hw_hrs_4cat = .
+mi passive: replace couple_hw_hrs_4cat = 1 if couple_hw_hrs_weekly==1
+mi passive: replace couple_hw_hrs_4cat = 2 if couple_hw_hrs_weekly==2
+mi passive: replace couple_hw_hrs_4cat = 3 if inlist(couple_hw_hrs_weekly,3,4)
+mi passive: replace couple_hw_hrs_4cat = 4 if couple_hw_hrs_weekly==5
+
+label define couple_hw_hrs_4cat 1 "Woman Most: High" 2 "Woman Most: Low" 3 "Equal: All" 4 "Man Most: All"
+label values couple_hw_hrs_4cat couple_hw_hrs_4cat
+
+tab couple_hw_hrs_weekly couple_hw_hrs_4cat, m
+
 *****
 *3. Now see what happens if I use housework + repairs (just as a test)
 mi passive: egen housework_combined_woman = rowtotal(housework_weekdays_woman repair_weekdays_woman), missing
@@ -928,6 +940,24 @@ tab family_type relative_duration if _mi_m!=0, m
 
 browse pid eligible_partner _mi_m relative_duration dur_transitioned eligible_rel_start_year eligible_rel_end_year min_dur max_dur family_type rel_type marst_imp couple_num_children_gp eligible_rel_status 
 
+* Simpler version of family type, collapsing some of the higher #s of children (10/26)
+mi passive: gen family_type_5cat=.
+mi passive: replace family_type_5cat=0 if family_type == 0
+mi passive: replace family_type_5cat=1 if family_type == 1
+mi passive: replace family_type_5cat=2 if family_type == 2
+mi passive: replace family_type_5cat=3 if inlist(family_type,3,4)
+mi passive: replace family_type_5cat=4 if family_type == 5
+mi passive: replace family_type_5cat=5 if inlist(family_type,6,7,8)
+
+label define family_type_5cat 0 "Not together" 1 "Married, 0 Ch" 2 "Married, 1 Ch" 3 "Married, 2+ Ch" ///
+						4 "Cohab, 0 Ch" 5 "Cohab, Any Ch"
+label values family_type_5cat family_type_5cat
+
+tab family_type family_type_5cat, m
+
+tab duration family_type_5cat if _mi_m!=0, m // just validating that everyone has a family type at dur 0
+tab duration family_type_5cat if _mi_m!=0 & max_dur >0 , m
+
 **# Bookmark #1
 // temp save
 save "$created_data/gsoep_couples_imputed_long_recoded.dta", replace
@@ -945,13 +975,13 @@ inspect hw_weekday_hilow_woman if housework_weekdays_woman == 0 & imputed==1 // 
 inspect hw_weekly_hilow_woman if housework_weekly_est_woman == 0 & imputed==1 // I only did for women with hW hours. so these missings also make sense
 inspect hw_combined_hilow_woman if housework_combined_woman == 0 & imputed==1 // I only did for women with hW hours. so these missings also make sense
 
-foreach var in ft_pt_woman overwork_woman ft_pt_man overwork_man couple_work couple_work_ow_detailed couple_work_ow couple_hw_weekday couple_hw_hrs_weekday couple_hw_weekly couple_hw_hrs_weekly couple_hw_combined couple_hw_hrs_combined couple_num_children_gp rel_type family_type{  
+foreach var in ft_pt_woman overwork_woman ft_pt_man overwork_man couple_work couple_work_ow_detailed couple_work_ow couple_hw_weekday couple_hw_hrs_weekday couple_hw_weekly couple_hw_hrs_weekly couple_hw_combined couple_hw_hrs_combined couple_hw_hrs_4cat couple_num_children_gp rel_type family_type family_type_5cat{  
 	inspect `var' if _mi_m != 0  
 	assert `var' != . if _mi_m != 0  
 } 
 
 // designate that relationship dissolved and create versions of all variables that stop at this point
-foreach var in ft_pt_woman overwork_woman ft_pt_man overwork_man couple_work couple_work_ow_detailed couple_work_ow couple_hw_weekday couple_hw_hrs_weekday couple_hw_weekly couple_hw_hrs_weekly couple_hw_combined couple_hw_hrs_combined couple_num_children_gp family_type{
+foreach var in ft_pt_woman overwork_woman ft_pt_man overwork_man couple_work couple_work_ow_detailed couple_work_ow couple_hw_weekday couple_hw_hrs_weekday couple_hw_weekly couple_hw_hrs_weekly couple_hw_combined couple_hw_hrs_combined couple_hw_hrs_4cat couple_num_children_gp family_type family_type_5cat{
 	capture drop `var'_end
 	mi update
 	mi passive: gen `var'_end = `var'
@@ -961,7 +991,7 @@ foreach var in ft_pt_woman overwork_woman ft_pt_man overwork_man couple_work cou
 
 // save "$created_data/gsoep_couples_imputed_long_recoded.dta", replace
 
-foreach var in ft_pt_woman_end overwork_woman_end ft_pt_man_end overwork_man_end couple_work_end couple_work_ow_detailed_end couple_work_ow_end couple_hw_weekday_end couple_hw_hrs_weekday_end couple_hw_weekly_end couple_hw_hrs_weekly_end couple_hw_combined_end couple_hw_hrs_combined_end couple_num_children_gp_end family_type_end{
+foreach var in ft_pt_woman_end overwork_woman_end ft_pt_man_end overwork_man_end couple_work_end couple_work_ow_detailed_end couple_work_ow_end couple_hw_weekday_end couple_hw_hrs_weekday_end couple_hw_weekly_end couple_hw_hrs_weekly_end couple_hw_combined_end couple_hw_hrs_combined_end couple_hw_hrs_4cat_end couple_num_children_gp_end family_type_end family_type_5cat_end{
 	assert `var' !=. if _mi_m!=0
 }
 
@@ -974,8 +1004,10 @@ label values couple_hw_hrs_weekday_end couple_hw_hrs_combo
 label values couple_hw_weekly_end couple_hw
 label values couple_hw_hrs_weekly_end couple_hw_hrs_combo
 label values couple_hw_combined_end couple_hw
+label values couple_hw_hrs_4cat_end couple_hw_hrs_4cat
 label values couple_hw_hrs_combined_end couple_hw_hrs_combo
 label values family_type_end family_type
+label values family_type_5cat_end family_type_5cat
 
 // final update and save
 
@@ -1207,14 +1239,14 @@ mi update
 **# Reshape back to wide to see the data by duration and compare to long estimates
 ********************************************************************************
 
-mi reshape wide employment self_reported_health disability_yn religious_affiliation errands_sundays housework_saturdays housework_sundays childcare_saturdays childcare_sundays repair_saturdays errands_weekdays housework_weekdays childcare_weekdays repair_weekdays errands_saturdays aid_in_hh_hl kidsu18_hh num_65up_hh age_youngest_child age nationality_region federal_state housing_status weekly_work_hrs gross_income_lm net_income_lm hh_income_net_monthly earnings_gross_t_cnef hh_gross_income_t_cnef repair_sundays any_outside_help any_parent_in_hh current_parent_status marst_imp retired_yn full_status_pl duplicate_record urban_region employment_sp self_reported_health_sp disability_yn_sp religious_affiliation_sp errands_sundays_sp housework_saturdays_sp housework_sundays_sp childcare_saturdays_sp childcare_sundays_sp repair_saturdays_sp errands_weekdays_sp housework_weekdays_sp childcare_weekdays_sp repair_weekdays_sp errands_saturdays_sp nationality_pb_sp aid_in_hh_hl_sp kidsu18_hh_sp num_65up_hh_sp age_youngest_child_sp age_sp nationality_region_sp federal_state_sp housing_status_sp weekly_work_hrs_sp gross_income_lm_sp net_income_lm_sp hh_income_net_monthly_sp earnings_gross_t_cnef_sp hh_gross_income_t_cnef_sp repair_sundays_sp any_outside_help_sp any_parent_in_hh_sp current_parent_status_sp marst_imp_sp retired_yn_sp full_status_pl_sp urban_region_sp weekly_hrs_woman weekly_hrs_man employment_status_woman employment_status_man monthly_earnings_woman monthly_earnings_man annual_earnings_woman annual_earnings_man housework_weekdays_woman housework_weekdays_man housework_saturdays_woman housework_saturdays_man housework_sundays_woman housework_sundays_man repair_weekdays_woman repair_weekdays_man repair_saturdays_woman repair_saturdays_man repair_sundays_woman repair_sundays_man errands_weekdays_woman errands_weekdays_man errands_saturdays_woman errands_saturdays_man errands_sundays_woman errands_sundays_man aid_in_hh_woman aid_in_hh_man marital_status_woman marital_status_man partnered_woman partnered_man num_children_woman num_children_man age_youngest_woman age_youngest_man federal_state_woman federal_state_man where_ew_woman where_ew_man urban_region_woman urban_region_man housing_woman housing_man religion_woman religion_man disabled_woman disabled_man sr_health_woman sr_health_man retired_woman retired_man ft_pt_woman overwork_woman ft_pt_man overwork_man couple_work couple_work_ow_detailed couple_work_ow couple_weekday_hw_total woman_weekday_hw_share couple_hw_weekday housework_weekdays_5_woman housework_weekly_est_woman housework_weekdays_5_man housework_weekly_est_man couple_weekly_hw_total woman_weekly_hw_share couple_hw_weekly housework_combined_woman housework_combined_man couple_combined_hw_total woman_combined_hw_share couple_hw_combined syear rel_type couple_num_children couple_num_children_gp family_type hw_weekly_hilow_woman hw_weekly_hilow_equal couple_hw_hrs_weekly hw_combined_hilow_equal hw_combined_hilow_woman couple_hw_hrs_combined hw_weekday_hilow_woman hw_weekday_hilow_equal hw_weekday_hilow_test hw_weekday_equal couple_hw_hrs_weekday ft_pt_woman_end overwork_woman_end ft_pt_man_end overwork_man_end couple_work_end couple_work_ow_detailed_end couple_work_ow_end couple_hw_weekday_end couple_hw_hrs_weekday_end couple_hw_weekly_end couple_hw_hrs_weekly_end couple_hw_combined_end couple_hw_hrs_combined_end couple_num_children_gp_end family_type_end dual_work_end division_of_labor_end egalitarian_end egal_dol_yn_end dual_ft_end hw_egal_end hw_mod_egal_end ///
+mi reshape wide employment self_reported_health disability_yn religious_affiliation errands_sundays housework_saturdays housework_sundays childcare_saturdays childcare_sundays repair_saturdays errands_weekdays housework_weekdays childcare_weekdays repair_weekdays errands_saturdays aid_in_hh_hl kidsu18_hh num_65up_hh age_youngest_child age nationality_region federal_state housing_status weekly_work_hrs gross_income_lm net_income_lm hh_income_net_monthly earnings_gross_t_cnef hh_gross_income_t_cnef repair_sundays any_outside_help any_parent_in_hh current_parent_status marst_imp retired_yn full_status_pl duplicate_record urban_region employment_sp self_reported_health_sp disability_yn_sp religious_affiliation_sp errands_sundays_sp housework_saturdays_sp housework_sundays_sp childcare_saturdays_sp childcare_sundays_sp repair_saturdays_sp errands_weekdays_sp housework_weekdays_sp childcare_weekdays_sp repair_weekdays_sp errands_saturdays_sp nationality_pb_sp aid_in_hh_hl_sp kidsu18_hh_sp num_65up_hh_sp age_youngest_child_sp age_sp nationality_region_sp federal_state_sp housing_status_sp weekly_work_hrs_sp gross_income_lm_sp net_income_lm_sp hh_income_net_monthly_sp earnings_gross_t_cnef_sp hh_gross_income_t_cnef_sp repair_sundays_sp any_outside_help_sp any_parent_in_hh_sp current_parent_status_sp marst_imp_sp retired_yn_sp full_status_pl_sp urban_region_sp weekly_hrs_woman weekly_hrs_man employment_status_woman employment_status_man monthly_earnings_woman monthly_earnings_man annual_earnings_woman annual_earnings_man housework_weekdays_woman housework_weekdays_man housework_saturdays_woman housework_saturdays_man housework_sundays_woman housework_sundays_man repair_weekdays_woman repair_weekdays_man repair_saturdays_woman repair_saturdays_man repair_sundays_woman repair_sundays_man errands_weekdays_woman errands_weekdays_man errands_saturdays_woman errands_saturdays_man errands_sundays_woman errands_sundays_man aid_in_hh_woman aid_in_hh_man marital_status_woman marital_status_man partnered_woman partnered_man num_children_woman num_children_man age_youngest_woman age_youngest_man federal_state_woman federal_state_man where_ew_woman where_ew_man urban_region_woman urban_region_man housing_woman housing_man religion_woman religion_man disabled_woman disabled_man sr_health_woman sr_health_man retired_woman retired_man ft_pt_woman overwork_woman ft_pt_man overwork_man couple_work couple_work_ow_detailed couple_work_ow couple_weekday_hw_total woman_weekday_hw_share couple_hw_weekday housework_weekdays_5_woman housework_weekly_est_woman housework_weekdays_5_man housework_weekly_est_man couple_weekly_hw_total woman_weekly_hw_share couple_hw_weekly housework_combined_woman housework_combined_man couple_combined_hw_total woman_combined_hw_share couple_hw_combined syear rel_type couple_num_children couple_num_children_gp family_type hw_weekly_hilow_woman hw_weekly_hilow_equal couple_hw_hrs_weekly hw_combined_hilow_equal hw_combined_hilow_woman couple_hw_hrs_combined hw_weekday_hilow_woman hw_weekday_hilow_equal hw_weekday_hilow_test hw_weekday_equal couple_hw_hrs_weekday ft_pt_woman_end overwork_woman_end ft_pt_man_end overwork_man_end couple_work_end couple_work_ow_detailed_end couple_work_ow_end couple_hw_weekday_end couple_hw_hrs_weekday_end couple_hw_weekly_end couple_hw_hrs_weekly_end couple_hw_combined_end couple_hw_hrs_combined_end couple_num_children_gp_end family_type_end dual_work_end division_of_labor_end egalitarian_end egal_dol_yn_end dual_ft_end hw_egal_end hw_mod_egal_end couple_hw_hrs_4cat couple_hw_hrs_4cat_end family_type_5cat family_type_5cat_end  ///
 , i(pid eligible_partner eligible_rel_start_year eligible_rel_end_year eligible_rel_status) j(duration)
 
 tab _mi_miss, m // see what happens if I reshape but DON'T convert
 tab _mi_m, m
 
-browse pid eligible_partner max_dur _mi_m couple_work_end* couple_work_ow_end* couple_hw_weekday_end*
-browse pid eligible_partner max_dur _mi_m couple_work_end* couple_work_ow_end* couple_hw_weekday_end* if inrange(_mi_m,1,10)
+browse pid eligible_partner max_dur _mi_m couple_work_end* couple_work_ow_end* couple_hw_weekday_end* family_type_5cat_end*
+browse pid eligible_partner max_dur _mi_m couple_work_end* couple_work_ow_end* couple_hw_weekday_end* family_type_5cat_end* if inrange(_mi_m,1,10)
 
 unique pid eligible_partner // so now there are  7677 uniques and 11 observations for each (base + 10 imputations) - so 84447 observations
 unique pid eligible_partner, by(_mi_m)
@@ -1318,8 +1350,9 @@ use "$created_data/gsoep_couples_imputed_wide.dta", clear
 
 browse pid eligible_partner complete_seq sequence_length couple_work_ow_end* couple_hw_hrs_weekday_end* family_type_end*
 fre couple_work_ow_end5
-fre couple_hw_hrs_weekday_end5
-fre family_type_end5
+fre couple_work_end5
+fre couple_hw_hrs_4cat_end5
+fre family_type_5cat_end5
 
 tab couple_hw_hrs_weekday_end1 couple_hw_hrs_weekly_end1
 
@@ -1327,6 +1360,9 @@ forvalues d=1/11{
 	capture gen couple_work_ow_trunc`d' = couple_work_ow_end`d'
 	replace couple_work_ow_trunc`d' = . if inlist(couple_work_ow_end`d',98,99)
 	label values couple_work_ow_trunc`d' couple_work_ow
+	capture gen couple_work_trunc`d' = couple_work_end`d'
+	replace couple_work_trunc`d' = . if inlist(couple_work_end`d',98,99)
+	label values couple_work_trunc`d' couple_work
 	
 	capture gen couple_hw_hrs_weekday_trunc`d' = couple_hw_hrs_weekday_end`d'
 	replace couple_hw_hrs_weekday_trunc`d' = . if inlist(couple_hw_hrs_weekday_end`d',98,99)
@@ -1335,6 +1371,9 @@ forvalues d=1/11{
 	capture gen couple_hw_hrs_weekly_trunc`d' = couple_hw_hrs_weekly_end`d'
 	replace couple_hw_hrs_weekly_trunc`d' = . if inlist(couple_hw_hrs_weekly_end`d',98,99)
 	label values couple_hw_hrs_weekly_trunc`d' couple_hw_hrs_combo
+	capture gen couple_hw_hrs_4cat_trunc`d' = couple_hw_hrs_4cat_end`d'
+	replace couple_hw_hrs_4cat_trunc`d' = . if inlist(couple_hw_hrs_4cat_end`d',98,99)
+	label values couple_hw_hrs_4cat_trunc`d' couple_hw_hrs_4cat
 	
 	capture gen couple_hw_hrs_combined_trunc`d' = couple_hw_hrs_combined_end`d'
 	replace couple_hw_hrs_combined_trunc`d' = . if inlist(couple_hw_hrs_combined_end`d',98,99)
@@ -1343,6 +1382,9 @@ forvalues d=1/11{
 	capture gen family_type_trunc`d' = family_type_end`d'
 	replace family_type_trunc`d' = . if inlist(family_type_end`d',98,99)
 	label values family_type_trunc`d' family_type
+	capture gen family_type_5cat_trunc`d' = family_type_5cat_end`d'
+	replace family_type_5cat_trunc`d' = . if inlist(family_type_5cat_end`d',98,99)
+	label values family_type_5cat_trunc`d' family_type_5cat
 	
 	capture gen division_of_labor_trunc`d' = division_of_labor_end`d'
 	replace division_of_labor_trunc`d' = . if inlist(division_of_labor_end`d',98,99)
@@ -1363,15 +1405,19 @@ forvalues d=1/11{
 }
 
 fre couple_work_ow_trunc5
-fre couple_hw_hrs_weekday_trunc5
-fre family_type_trunc5
+fre couple_work_trunc5
+fre couple_hw_hrs_4cat_trunc5
+fre family_type_5cat_trunc5
 
 // should not have any missing at time 1
 tab couple_work_ow_trunc1 if _mi_m!=0, m
+tab couple_work_trunc1 if _mi_m!=0, m
 tab couple_hw_hrs_weekday_trunc1 if _mi_m!=0, m
 tab couple_hw_hrs_weekly_trunc1 if _mi_m!=0, m
+tab couple_hw_hrs_4cat_trunc1 if _mi_m!=0, m
 tab couple_hw_hrs_combined_trunc1 if _mi_m!=0, m
 tab family_type_trunc1 if _mi_m!=0, m
+tab family_type_5cat_trunc1 if _mi_m!=0, m
 tab division_of_labor_trunc1 if _mi_m!=0, m
 
 unique pid eligible_partner

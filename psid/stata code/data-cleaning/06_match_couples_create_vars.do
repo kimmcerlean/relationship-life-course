@@ -312,7 +312,7 @@ mi estimate: proportion ft_pt_det_woman ft_pt_det_man
 * couple-level version
 tab ft_pt_woman ft_pt_man
 
-mi passive: gen couple_work=.
+mi passive: gen couple_work=. // going back to this as our main specification (10/26)
 mi passive: replace couple_work = 1 if ft_pt_man == 2 & ft_pt_woman == 0
 mi passive: replace couple_work = 2 if ft_pt_man == 2 & ft_pt_woman == 1
 mi passive: replace couple_work = 3 if ft_pt_man == 2 & ft_pt_woman == 2
@@ -506,6 +506,18 @@ label values couple_hw_hrs_combo couple_hw_hrs_combo
 
 mi estimate: proportion couple_hw couple_hw_hrs_alt couple_hw_hrs_combo
 
+* Combining the two equal (10/26)
+mi passive: gen couple_hw_hrs_4cat = .
+mi passive: replace couple_hw_hrs_4cat = 1 if couple_hw_hrs_combo==1
+mi passive: replace couple_hw_hrs_4cat = 2 if couple_hw_hrs_combo==2
+mi passive: replace couple_hw_hrs_4cat = 3 if inlist(couple_hw_hrs_combo,3,4)
+mi passive: replace couple_hw_hrs_4cat = 4 if couple_hw_hrs_combo==5
+
+label define couple_hw_hrs_4cat 1 "Woman Most: High" 2 "Woman Most: Low" 3 "Equal: All" 4 "Man Most: All"
+label values couple_hw_hrs_4cat couple_hw_hrs_4cat
+
+tab couple_hw_hrs_combo couple_hw_hrs_4cat, m
+
 //	capture drop couple_hw_hrs_end
 //	mi update
 //	mi passive: gen couple_hw_hrs_end = couple_hw_hrs
@@ -621,6 +633,24 @@ tab family_type if duration <= max_dur, m
 
 browse unique_id partner_unique_id duration eligible_rel_start_year eligible_rel_end_year min_dur max_dur family_type rel_type eligible_rel_status couple_num_children_gp in_sample in_sample_sp
 
+* Simpler version of family type, collapsing some of the higher #s of children (10/26)
+mi passive: gen family_type_5cat=.
+mi passive: replace family_type_5cat=0 if family_type == 0
+mi passive: replace family_type_5cat=1 if family_type == 1
+mi passive: replace family_type_5cat=2 if family_type == 2
+mi passive: replace family_type_5cat=3 if inlist(family_type,3,4)
+mi passive: replace family_type_5cat=4 if family_type == 5
+mi passive: replace family_type_5cat=5 if inlist(family_type,6,7,8)
+
+label define family_type_5cat 0 "Not together" 1 "Married, 0 Ch" 2 "Married, 1 Ch" 3 "Married, 2+ Ch" ///
+						4 "Cohab, 0 Ch" 5 "Cohab, Any Ch"
+label values family_type_5cat family_type_5cat
+
+tab family_type family_type_5cat, m
+
+tab duration family_type_5cat if _mi_m!=0, m // just validating that everyone has a family type at dur 0
+tab duration family_type_5cat if _mi_m!=0 & max_dur >0 , m
+
 **# Bookmark #3
 // temp save 3
 save "$created_data/psid_couples_imputed_long_recoded.dta", replace
@@ -631,13 +661,13 @@ save "$created_data/psid_couples_imputed_long_recoded.dta", replace
 inspect woman_hw_share if couple_hw_total == 0 & imputed==1 // so yes, these are missing when couple HW total is 0 because can't divide by 0, will remove from below
 inspect hw_terc_woman if housework_woman == 0 & imputed==1 // I only did for women with hW hours. so these missings also make sense
 
-foreach var in ft_pt_woman overwork_woman ft_pt_man overwork_man couple_work couple_work_ow couple_hw_total couple_hw couple_hw_hrs couple_hw_hrs_alt couple_num_children couple_num_children_gp rel_type family_type{  
+foreach var in ft_pt_woman overwork_woman ft_pt_man overwork_man couple_work couple_work_ow couple_hw_total couple_hw couple_hw_hrs couple_hw_hrs_alt couple_hw_hrs_4cat couple_num_children couple_num_children_gp rel_type  family_type_5cat{  
 	inspect `var' if _mi_m != 0  
 	assert `var' != . if _mi_m != 0  
 } 
 
 // designate that relationship dissolved and create versions of all variables that stop at this point
-foreach var in ft_pt_woman overwork_woman ft_pt_man overwork_man ft_pt_det_woman ft_pt_det_man couple_work couple_work_ow_detailed couple_work_ow couple_hw couple_hw_hrs couple_hw_hrs_alt couple_hw_hrs_combo couple_num_children_gp family_type{
+foreach var in ft_pt_woman overwork_woman ft_pt_man overwork_man ft_pt_det_woman ft_pt_det_man couple_work couple_work_ow_detailed couple_work_ow couple_hw couple_hw_hrs couple_hw_hrs_alt couple_hw_hrs_combo couple_hw_hrs_4cat couple_num_children_gp family_type family_type_5cat{
 	capture drop `var'_end
 	mi update
 	mi passive: gen `var'_end = `var'
@@ -645,7 +675,7 @@ foreach var in ft_pt_woman overwork_woman ft_pt_man overwork_man ft_pt_det_woman
 	mi passive: replace `var'_end = 99 if rel_type==3 // attrit
 }
 
-foreach var in ft_pt_woman_end overwork_woman_end ft_pt_man_end ft_pt_det_woman_end ft_pt_det_man_end overwork_man_end couple_work_end couple_work_ow_detailed_end couple_work_ow_end couple_hw_end couple_hw_hrs_end couple_hw_hrs_alt_end couple_hw_hrs_combo_end couple_num_children_gp_end family_type_end{
+foreach var in ft_pt_woman_end overwork_woman_end ft_pt_man_end ft_pt_det_woman_end ft_pt_det_man_end overwork_man_end couple_work_end couple_work_ow_detailed_end couple_work_ow_end couple_hw_end couple_hw_hrs_end couple_hw_hrs_alt_end couple_hw_hrs_combo_end couple_hw_hrs_4cat_end couple_num_children_gp_end family_type_end family_type_5cat_end{
 	assert `var' !=. if _mi_m!=0
 }
 
@@ -658,7 +688,9 @@ label values couple_hw_end couple_hw
 label values couple_hw_hrs_end couple_hw_hrs
 label values couple_hw_hrs_alt_end couple_hw_hrs
 label values couple_hw_hrs_combo_end couple_hw_hrs_combo
+label values couple_hw_hrs_4cat_end couple_hw_hrs_4cat
 label values family_type_end family_type
+label values family_type_5cat_end family_type_5cat
 
 // cross-tabs to explore to figure out potential new variables
 tab ft_pt_man_end ft_pt_woman_end, cell
@@ -897,14 +929,14 @@ mi update
 ********************************************************************************
 **# Reshape back to wide to see the data by duration and compare to long estimates
 ********************************************************************************
-mi reshape wide ft_pt_woman_end overwork_woman_end ft_pt_man_end overwork_man_end couple_work_end couple_work_ow_detailed_end couple_work_ow_end couple_hw_end couple_hw_hrs_end couple_hw_hrs_alt_end couple_hw_hrs_combo_end rel_type couple_num_children_gp_end family_type_end in_sample hh_status relationship housework_focal age_focal weekly_hrs_t_focal earnings_t_focal family_income_t partnered_imp educ_focal_imp num_children_imp_hh weekly_hrs_woman weekly_hrs_man housework_woman housework_man num_children_woman num_children_man ft_pt_woman overwork_woman ft_pt_man overwork_man ft_pt_det_woman ft_pt_det_man  in_sample_sp hh_status_sp relationship_sp housework_focal_sp age_focal_sp weekly_hrs_t_focal_sp earnings_t_focal_sp family_income_t_sp partnered_imp_sp marst_imp marst_imp_sp marst_woman marst_man num_children_imp_hh_sp couple_work_ow_detailed couple_work_ow couple_hw_hrs_combo age_young_child RESPONDENT_WHO_ REGION_ employment_status_focal religion_focal lives_family_focal disabled_focal disabled_scale_focal sr_health_focal yr_retired_focal father_in_hh mother_in_hh num_parent_in_hh num_65up_hh rolling_births current_parent_status retired_est_focal house_status_all age_young_child_sp RESPONDENT_WHO_sp REGION_sp employment_status_focal_sp religion_focal_sp lives_family_focal_sp disabled_focal_sp sr_health_focal_sp num_65up_hh_sp rolling_births_sp current_parent_status_sp retired_est_focal_sp house_status_all_sp home_owner home_owner_sp employment_status_woman employment_status_man annual_earnings_woman annual_earnings_man age_youngest_woman age_youngest_man is_parent_woman is_parent_man region_woman region_man housing_woman housing_man religion_woman religion_man disabled_woman disabled_man sr_health_woman sr_health_man retired_woman retired_man lives_near_fam_woman lives_near_fam_man couple_work couple_hw couple_hw_hrs couple_hw_hrs_alt couple_num_children couple_num_children_gp family_type ft_pt_det_woman_end ft_pt_det_man_end is_respondent_focal is_respondent_focal_sp any_parent_in_hh any_parent_in_hh_sp RELATION_ relationship_type_ is_first_yr_cohabitor has_first_yr_cohabitor current_rel_type marital_status_focal in_rel_flag survey_yr dual_work_end division_of_labor_end egalitarian_end egal_dol_yn_end dual_ft_end hw_egal_end hw_mod_egal_end ///
+mi reshape wide ft_pt_woman_end overwork_woman_end ft_pt_man_end overwork_man_end couple_work_end couple_work_ow_detailed_end couple_work_ow_end couple_hw_end couple_hw_hrs_end couple_hw_hrs_alt_end couple_hw_hrs_combo_end rel_type couple_num_children_gp_end family_type_end in_sample hh_status relationship housework_focal age_focal weekly_hrs_t_focal earnings_t_focal family_income_t partnered_imp educ_focal_imp num_children_imp_hh weekly_hrs_woman weekly_hrs_man housework_woman housework_man num_children_woman num_children_man ft_pt_woman overwork_woman ft_pt_man overwork_man ft_pt_det_woman ft_pt_det_man  in_sample_sp hh_status_sp relationship_sp housework_focal_sp age_focal_sp weekly_hrs_t_focal_sp earnings_t_focal_sp family_income_t_sp partnered_imp_sp marst_imp marst_imp_sp marst_woman marst_man num_children_imp_hh_sp couple_work_ow_detailed couple_work_ow couple_hw_hrs_combo age_young_child RESPONDENT_WHO_ REGION_ employment_status_focal religion_focal lives_family_focal disabled_focal disabled_scale_focal sr_health_focal yr_retired_focal father_in_hh mother_in_hh num_parent_in_hh num_65up_hh rolling_births current_parent_status retired_est_focal house_status_all age_young_child_sp RESPONDENT_WHO_sp REGION_sp employment_status_focal_sp religion_focal_sp lives_family_focal_sp disabled_focal_sp sr_health_focal_sp num_65up_hh_sp rolling_births_sp current_parent_status_sp retired_est_focal_sp house_status_all_sp home_owner home_owner_sp employment_status_woman employment_status_man annual_earnings_woman annual_earnings_man age_youngest_woman age_youngest_man is_parent_woman is_parent_man region_woman region_man housing_woman housing_man religion_woman religion_man disabled_woman disabled_man sr_health_woman sr_health_man retired_woman retired_man lives_near_fam_woman lives_near_fam_man couple_work couple_hw couple_hw_hrs couple_hw_hrs_alt couple_num_children couple_num_children_gp family_type ft_pt_det_woman_end ft_pt_det_man_end is_respondent_focal is_respondent_focal_sp any_parent_in_hh any_parent_in_hh_sp RELATION_ relationship_type_ is_first_yr_cohabitor has_first_yr_cohabitor current_rel_type marital_status_focal in_rel_flag survey_yr dual_work_end division_of_labor_end egalitarian_end egal_dol_yn_end dual_ft_end hw_egal_end hw_mod_egal_end couple_hw_hrs_4cat couple_hw_hrs_4cat_end family_type_5cat family_type_5cat_end  ///
 , i(unique_id partner_unique_id eligible_rel_start_year eligible_rel_end_year) j(duration) // SEX SEX_sp rel_status rel_type_constant transition_yr FIRST_BIRTH_YR FIRST_BIRTH_YR_sp sample_type sample_type_sp has_psid_gene has_psid_gene_sp birth_yr_all birth_yr_all_sp raceth_fixed_focal raceth_fixed_focal_sp fixed_education fixed_education_sp
 // old vars: partnered_woman partnered_man 
 
 tab _mi_miss, m // see what happens if I reshape but DON'T convert
 tab _mi_m, m
-browse unique unique_id partner_unique_id _mi_id _mi_miss _mi_m couple_work_end* couple_work_ow_end* couple_hw_hrs_combo_end*
-browse unique unique_id partner_unique_id _mi_id _mi_miss _mi_m couple_work_end* couple_work_ow_end* couple_hw_hrs_combo_end* if inrange(_mi_id,1,10)
+browse unique unique_id partner_unique_id _mi_id _mi_miss _mi_m couple_work_end* couple_work_ow_end* couple_hw_hrs_combo_end* family_type_5cat_end*
+browse unique unique_id partner_unique_id _mi_id _mi_miss _mi_m couple_work_end* couple_work_ow_end* couple_hw_hrs_combo_end* family_type_5cat_end* if inrange(_mi_m,1,10)
 
 foreach var in couple_work_ow_end couple_hw_hrs_combo_end family_type_end division_of_labor_end egalitarian_end egal_dol_yn_end dual_work_end dual_ft_end hw_egal_end hw_mod_egal_end{
 	forvalues d=1/11{
@@ -1028,19 +1060,32 @@ use "$created_data/psid_couples_imputed_wide.dta", clear
 
 browse unique_id partner_unique_id complete_seq sequence_length couple_work_ow_end* couple_hw_hrs_combo_end* family_type_end*
 fre couple_work_ow_end5
-fre couple_hw_hrs_combo_end5
-fre family_type_end5
+fre couple_work_end5
+fre couple_hw_hrs_4cat_end5
+fre family_type_5cat_end5
 
 forvalues d=1/11{
 	capture gen couple_work_ow_trunc`d' = couple_work_ow_end`d'
 	replace couple_work_ow_trunc`d' = . if inlist(couple_work_ow_end`d',98,99)
 	label values couple_work_ow_trunc`d' couple_work_ow
+	capture gen couple_work_trunc`d' = couple_work_end`d'
+	replace couple_work_trunc`d' = . if inlist(couple_work_end`d',98,99)
+	label values couple_work_trunc`d' couple_work
+	
 	capture gen couple_hw_hrs_combo_trunc`d' = couple_hw_hrs_combo_end`d'
 	replace couple_hw_hrs_combo_trunc`d' = . if inlist(couple_hw_hrs_combo_end`d',98,99)
 	label values couple_hw_hrs_combo_trunc`d' couple_hw_hrs_combo
+	capture gen couple_hw_hrs_4cat_trunc`d' = couple_hw_hrs_4cat_end`d'
+	replace couple_hw_hrs_4cat_trunc`d' = . if inlist(couple_hw_hrs_4cat_end`d',98,99)
+	label values couple_hw_hrs_4cat_trunc`d' couple_hw_hrs_4cat
+	
 	capture gen family_type_trunc`d' = family_type_end`d'
 	replace family_type_trunc`d' = . if inlist(family_type_end`d',98,99)
-	label values family_type_trunc`d' family_type	
+	label values family_type_trunc`d' family_type
+	capture gen family_type_5cat_trunc`d' = family_type_5cat_end`d'
+	replace family_type_5cat_trunc`d' = . if inlist(family_type_5cat_end`d',98,99)
+	label values family_type_5cat_trunc`d' family_type_5cat
+	
 	capture gen division_of_labor_trunc`d' = division_of_labor_end`d'
 	replace division_of_labor_trunc`d' = . if inlist(division_of_labor_end`d',98,99)
 	label values division_of_labor_trunc`d' dol
@@ -1060,8 +1105,14 @@ forvalues d=1/11{
 }
 
 fre couple_work_ow_trunc5
-fre couple_hw_hrs_combo_trunc5
-fre family_type_trunc5
+fre couple_work_trunc5
+fre couple_hw_hrs_4cat_trunc5
+fre family_type_5cat_trunc5
+
+tab couple_work_ow_trunc1 if _mi_m!=0, m
+tab couple_work_trunc1 if _mi_m!=0, m
+tab couple_hw_hrs_4cat_trunc1 if _mi_m!=0, m
+tab family_type_5cat_trunc1 if _mi_m!=0, m
 
 fre hw_mod_egal_end5
 fre hw_mod_egal_trunc5

@@ -24,7 +24,7 @@ set maxvar 10000
 
 set seed 8675309
 
-// net install cleanplots, from("https://tdmize.github.io/data/cleanplots")
+// net install cleanplots, from("https://tdmize.github.io/data") replace
 set scheme cleanplots
 
 // net install soephelp,from("https://git.soep.de/mpetrenz/soephelp/-/raw/master/") replace
@@ -54,6 +54,8 @@ set scheme cleanplots
 		// if `"`c(hostname)'"' == "LAPTOP-TP2VHI6B" global root `"C:/Users/mcerl/Istituto Universitario Europeo/Pessin, Lea - 1. WeEqualize - Team Folder/Papers/Relationship Life Course"' // Shared One Drive on Kim's PC
 		if `"`c(hostname)'"' == "LAPTOP-TP2VHI6B" global code    "G:/Other computers/My Laptop/Documents/GitHub/relationship-life-course/gsoep" // I am actually not sure if having the code on a shared directory will work. I am a bit worried about version control if the code can be updated in OneDrive but not yet pushed to github; I am worried about accidental changes. putting code into my own folder for now
 		// if `"`c(hostname)'"' == "LAPTOP-TP2VHI6B" global root `"G:/Other computers/My Laptop/Documents/Research Projects/Relationship Life Course (with LP)"' // Kim's Personal Computer
+		if `"`c(hostname)'"' == "DMH210-C1081W" global root `"G:\My Drive\WeEqualize Papers\Relationship Life Course"'
+		if `"`c(hostname)'"' == "DMH210-C1081W" global code "G:/Other computers/My Laptop/Documents/GitHub/relationship-life-course/gsoep"
 		if `"`c(hostname)'"' == "PPRC-STATS-P01" global root `"T:/Research Projects/Relationship Life Course (with LP)"' // PRC Stats Server
 		if `"`c(hostname)'"' == "PPRC-STATS-P01" global code `"T:/github/relationship-life-course/gsoep"'
 		if `"`c(hostname)'"' == "PC008964" global root `"C:/Users/kmcerlea/Istituto Universitario Europeo/Pessin, Lea - 1. WeEqualize - Team Folder/Papers/Relationship Life Course"' // Team folder on EUI Computer

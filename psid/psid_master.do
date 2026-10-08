@@ -24,7 +24,7 @@ set seed 8675309
 
 set maxvar 10000
 
-// net install cleanplots, from("https://tdmize.github.io/data/cleanplots") replace
+net install cleanplots, from("https://tdmize.github.io/data") replace
 set scheme cleanplots
 
 net install desctable, from("https://tdmize.github.io/data") replace
@@ -64,6 +64,8 @@ net get st0445 // these go into working directory (the ancillary files); pwd sho
 		if `"`c(hostname)'"' == "LAPTOP-TP2VHI6B" global root `"G:\My Drive\WeEqualize Papers\Relationship Life Course"' // Shared Google Drive (updated Aug 2026)
 		// if `"`c(hostname)'"' == "LAPTOP-TP2VHI6B" global root `"C:/Users/mcerl/Istituto Universitario Europeo/Pessin, Lea - 1. WeEqualize - Team Folder/Papers/Relationship Life Course"' // Shared One Drive on Kim's PC
 		// if `"`c(hostname)'"' == "LAPTOP-TP2VHI6B" global root `"G:/Other computers/My Laptop/Documents/Research Projects/Relationship Life Course (with LP)"' // Kim's Personal Computer
+		if `"`c(hostname)'"' == "DMH210-C1081W" global root `"G:\My Drive\WeEqualize Papers\Relationship Life Course"'
+		if `"`c(hostname)'"' == "DMH210-C1081W" global code "G:/Other computers/My Laptop/Documents/GitHub/relationship-life-course/psid"
 		if `"`c(hostname)'"' == "PPRC-STATS-P01" global root `"T:/Research Projects/Relationship Life Course (with LP)"' // PRC Stats Server
 		if `"`c(hostname)'"' == "PPRC-STATS-P01" global code `"T:/github/relationship-life-course/psid"'
 		if `"`c(hostname)'"' == "PC008964" global root `"C:/Users/kmcerlea/Istituto Universitario Europeo/Pessin, Lea - 1. WeEqualize - Team Folder/Papers/Relationship Life Course"' // Team folder on EUI Computer
