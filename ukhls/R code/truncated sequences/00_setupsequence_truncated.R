@@ -119,10 +119,10 @@ table(data$`_mi_m`)
 # Identifying the columns in which we have sequence variables
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-## couple_work_ow_trunc: Couple-level work indicator (overwork split out, but not detailed)
-## couple_hw_hrs_combo_trunc:	Couple-level housework indicator, split by time spent 
+## couple_work_trunc: Couple-level work indicator
+## couple_hw_hrs_4cat_trunc:	Couple-level housework indicator, split by time spent 
 ##on HW for some categories (consolidated)
-## family_type_trunc:	Type of family based on relationship type + number of 
+## family_type_5cat_trunc:	Type of family based on relationship type + number of 
 ##children
 
 # ------------------------------------------------------------------------------
@@ -131,20 +131,21 @@ table(data$`_mi_m`)
 t = 1:10 #Number of time units (10 years - don't want to use year 11)
 
 # ------------------------------------------------------------------------------
-#Couple Paid Work - WITH OW: columns
+#Couple Paid Work: columns
+
 
 lab_t=c()
 for (i in 1:10){
-  lab_t[i]=paste("couple_work_ow_trunc",i, sep="")
+  lab_t[i]=paste("couple_work_trunc",i, sep="")
 }
-col_work.ow=which(colnames(data)%in%lab_t) 
+col_work=which(colnames(data)%in%lab_t) 
 
 # ------------------------------------------------------------------------------
-#Couple HW - amounts v2 (group-specific ptiles): columns
+#Couple HW: columns
 
 lab_t=c()
 for (i in 1:10){
-  lab_t[i]=paste("couple_hw_hrs_combo_trunc",i, sep="")
+  lab_t[i]=paste("couple_hw_hrs_4cat_trunc",i, sep="")
 }
 col_hw.hrs =which(colnames(data)%in%lab_t) 
 
@@ -153,7 +154,7 @@ col_hw.hrs =which(colnames(data)%in%lab_t)
 
 lab_t=c()
 for (i in 1:10){
-  lab_t[i]=paste("family_type_trunc",i, sep="")
+  lab_t[i]=paste("family_type_5cat_trunc",i, sep="")
 }
 col_fam =which(colnames(data)%in%lab_t) 
 
@@ -165,42 +166,38 @@ col_fam =which(colnames(data)%in%lab_t)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # ------------------------------------------------------------------------------
-#Couple Paid Work - WITH OW: labels
+#Couple Paid Work: labels
 
-shortlab.work.ow <- c("MBW", "1.5MBW", 
-                      "dualFT", "dualFT-anyOW", 
-                      "FBW", "underWK")
+shortlab.work <- c("MBW", "1.5MBW", 
+                   "dualFT", 
+                   "FBW", "underWK")
 
-longlab.work.ow <- c("male breadwinner", "1.5 male breadwinner", 
-                     "dual full-time", "dual full-time & any overwork", 
-                     "female breadwinner", "under work")
-
+longlab.work <- c("male breadwinner", "1.5 male breadwinner", 
+                  "dual full-time", 
+                  "female breadwinner", "under work")
 
 # ------------------------------------------------------------------------------
-#Couple HW - with amounts (group-specific ptiles): labels 
+#Couple HW: labels 
 
-shortlab.hw.hrs.combo <- c("W-most:high", "W-most:low",
-                           "equal:high", "equal:low", 
-                           "M-most:all")
+shortlab.hw.hrs <- c("W-most:high", "W-most:low",
+                     "equal:all", 
+                     "M-most:all")
 
-longlab.hw.hrs.combo <- c("woman does most/all: high", "woman does most/all: low",
-                          "equal:high", "equal:low", 
-                          "man does most: all")
+longlab.hw.hrs <- c("woman does most/all: high", "woman does most/all: low",
+                    "equal:all", 
+                    "man does most: all")
 
 # ------------------------------------------------------------------------------
 #Family type: labels
 
-shortlab.fam <- c("MARc0", "MARc1", "MARc2", "MARc3",
-                  "COHc0", "COHc1", "COHc2", "COHc3")
+shortlab.fam <- c("MARc0", "MARc1", "MARc2",
+                  "COHc0", "COHc1")
 
 longlab.fam <- c("married, 0 Ch", 
                  "married, 1 Ch",
-                 "married, 2 Ch",
-                 "married, 3 Ch",
+                 "married, 2 or more Ch",
                  "cohab, 0 Ch",
-                 "cohab, 1 Ch",
-                 "cohab, 2 Ch",
-                 "cohab, 3 Ch ")
+                 "cohab, 1 or more Ch")
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -212,34 +209,34 @@ longlab.fam <- c("married, 0 Ch",
 # https://blog.r-project.org/2019/04/01/hcl-based-color-palettes-in-grdevices/
 
 # ------------------------------------------------------------------------------
-#Couple Paid Work - OW: labels
+#Couple Paid Work: labels
 
 # Work colors
 col1 <- sequential_hcl(5, palette = "BuGn") [1:2] #Male BW
-col2 <- sequential_hcl(5, palette = "Purples")[1:2] #Dual FT
+col2 <- sequential_hcl(5, palette = "Purples")[c(1)] #Dual FT
 col3 <- sequential_hcl(5, palette = "PuRd")[c(2)] #Female BW
 col4 <- sequential_hcl(5, palette = "PuRd")[c(1)]  #UnderWork
 
 # Combine to full color palette
-colspace.work.ow <- c(col1, col2, col3, col4)
+colspace.work <- c(col1, col2, col3, col4)
 
 # ------------------------------------------------------------------------------
-#Couple HW - amounts v2 (group-specific ptiles): labels 
+#Couple HW: labels 
 
 #Housework colors
 # col1 <- sequential_hcl(5, palette = "Reds") [1:2] #W-all
 col1 <- sequential_hcl(5, palette = "PurpOr")[c(1)] #W-most
 col2 <- sequential_hcl(5, palette = "PurpOr")[c(3)] #W-most
-col3 <- sequential_hcl(5, palette = "OrYel")[2:3] #Equal
+col3 <- sequential_hcl(5, palette = "OrYel")[c(2)] #Equal
 col4 <- sequential_hcl(5, palette = "Teal")[c(2)] #M-most
 
 # Combine to full color palette
-colspace.hw.hrs.combo <- c(col1, col2, col3, col4)
+colspace.hw.hrs <- c(col1, col2, col3, col4)
 
 # ------------------------------------------------------------------------------
 # Family colors
-col1 <- sequential_hcl(5, palette = "Blues")[4:1]   # Married states
-col2 <- sequential_hcl(15, palette = "Inferno")[15:12]   # Cohabitation states
+col1 <- sequential_hcl(5, palette = "Blues")[4:2]   # Married states [4:1] 
+col2 <- sequential_hcl(15, palette = "Inferno")[c(15,13)]   # Cohabitation states [15:12] 
 #col3 <- sequential_hcl(5, palette = "Grays")[c(2,4)] # Right-censored states
 
 # Combine to full color palette
@@ -250,24 +247,24 @@ colspace.fam <- c(col1, col2)
 # Here, treating missing as NA to facilitate OM later
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-# Couple Paid Work - OW
-seq.work.ow <- seqdef(data[,col_work.ow], cpal = colspace.work.ow, labels=longlab.work.ow, states= shortlab.work.ow,right=NA)
-seqlength(seq.work.ow, with.missing = FALSE)
-seq.len.work<-seqlength(seq.work.ow, with.missing = FALSE)
+# Couple Paid Work
+seq.work <- seqdef(data[,col_work], cpal = colspace.work, labels=longlab.work, states= shortlab.work,right=NA)
+seqlength(seq.work)
+seq.len.work<-seqlength(seq.work, with.missing = FALSE)
 
-ggseqdplot(seq.work.ow) +
+ggseqdplot(seq.work) +
   scale_x_discrete(labels = 1:10) +
   labs(x = "Year")
 
 # So default is actually already missing=false
 # for reference (confirm I understand what is happening):
-ggseqdplot(seq.work.ow, with.missing=TRUE) +
+ggseqdplot(seq.work, with.missing=TRUE) +
   scale_x_discrete(labels = 1:10) +
   labs(x = "Year")
 
-# Couple HW - amounts v2
-seq.hw.hrs <- seqdef(data[,col_hw.hrs], cpal = colspace.hw.hrs.combo, labels=longlab.hw.hrs.combo, 
-                         states= shortlab.hw.hrs.combo,right=NA)
+# Couple HW with amounts for some
+seq.hw.hrs <- seqdef(data[,col_hw.hrs], cpal = colspace.hw.hrs, labels=longlab.hw.hrs, 
+                     states= shortlab.hw.hrs,right=NA)
 
 seq.len.hw<-seqlength(seq.hw.hrs, with.missing = FALSE)
 
@@ -285,41 +282,86 @@ ggseqdplot(seq.fam) +
   labs(x = "Year")
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Dissimilarity matrix
+# Cost setting
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-# First set costs of sm to 0 for missing
-fam.miss.cost <- seqcost(seq.fam, method="CONSTANT", 
-                              miss.cost=0, with.missing=TRUE, miss.cost.fixed=TRUE)
+# Create custom substitution matrices for non-missing states
+sw <- c("MBW", "1.5MBW", "dualFT", "FBW", "underWK")
+work.raw <- matrix(c(0, 2, 3, 5, 3,
+                     2, 0, 1, 3, 3,
+                     3, 1, 0, 2, 4,
+                     5, 3, 2, 0, 2,
+                     3, 3, 4, 2, 0), 5, byrow = TRUE, dimnames = list(sw, sw))
 
-work.miss.cost <- seqcost(seq.work.ow, method="CONSTANT", 
-                         miss.cost=0, with.missing=TRUE, miss.cost.fixed=TRUE)
+sh <- c("W-most:high", "W-most:low", "equal:all", "M-most:all")
+hw.raw <- matrix(c(0, 1, 2, 4,
+                   1, 0, 2, 4,
+                   2, 2, 0, 2,
+                   4, 4, 2, 0), 4, byrow = TRUE, dimnames = list(sh, sh))
 
-hw.miss.cost <- seqcost(seq.hw.hrs, method="CONSTANT", 
-                         miss.cost=0, with.missing=TRUE, miss.cost.fixed=TRUE)
+sf <- c("MARc0", "MARc1", "MARc2", "COHc0", "COHc1")
+fam.raw <- matrix(c(0, 4, 6, 3, 8,
+                    4, 0, 2, 7, 4,
+                    6, 2, 0, 9, 4,
+                    3, 7, 9, 0, 5,
+                    8, 4, 4, 5, 0), 5, byrow = TRUE, dimnames = list(sf, sf))
 
-# Then make indel costs very high
-fam.miss.indel<- rep(1,ncol(fam.miss.cost$sm))
-fam.miss.indel[length(fam.miss.indel)] <- 99999
-fam.miss.indel
 
-work.miss.indel<- rep(1,ncol(work.miss.cost$sm))
-work.miss.indel[length(work.miss.indel)] <- 99999
-work.miss.indel
+# raw matrix -> sm in the sequence object's alphabet order, rescaled to max cval,
+# with the censored state "*" appended at zero cost (what seqcost(with.missing = TRUE) produced)
+build_sm <- function(raw, seqobj, cval = 2) {
+  alph <- alphabet(seqobj)
+  stopifnot(setequal(alph, rownames(raw)), isSymmetric(raw), all(diag(raw) == 0))
+  m  <- raw[alph, alph] * cval / max(raw)
+  sm <- rbind(cbind(m, 0), 0)
+  dimnames(sm) <- list(c(alph, "*"), c(alph, "*"))
+  sm
+}
 
-hw.miss.indel<- rep(1,ncol(hw.miss.cost$sm))
-hw.miss.indel[length(hw.miss.indel)] <- 99999
-hw.miss.indel
+build_indel <- function(seqobj) c(rep(1, length(alphabet(seqobj))), 99999)
 
+## Run functions to create costs for both substitutions and indels
+work.miss.cost <- list(sm = build_sm(work.raw, seq.work))
+hw.miss.cost   <- list(sm = build_sm(hw.raw,   seq.hw.hrs))
+fam.miss.cost  <- list(sm = build_sm(fam.raw,  seq.fam))
+
+#view(work.miss.cost$sm)
+print(work.miss.cost$sm)
+#view(hw.miss.cost$sm)
+print(hw.miss.cost$sm)
+#view(fam.miss.cost$sm)
+print(fam.miss.cost$sm)
+
+work.miss.indel <- build_indel(seq.work)
+hw.miss.indel   <- build_indel(seq.hw.hrs)
+fam.miss.indel  <- build_indel(seq.fam)
+
+print(work.miss.indel)
+print(hw.miss.indel)
+print(fam.miss.indel)
+
+# Check: each matrix ends in a zero row/column labelled "*", largest valid cost is 2
+round(work.miss.cost$sm, 2); work.miss.indel
+round(hw.miss.cost$sm, 2);   hw.miss.indel
+round(fam.miss.cost$sm, 2);  fam.miss.indel
+
+# Appendix tables: the rescaled matrices without the censored state
+write.csv(round(work.miss.cost$sm[sw, sw], 2), "results/UKHLS/costs_paidwork.csv")
+write.csv(round(hw.miss.cost$sm[sh, sh], 2),   "results/UKHLS/costs_housework.csv")
+write.csv(round(fam.miss.cost$sm[sf, sf], 2),  "results/UKHLS/costs_family.csv")
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Dissimilarity matrix
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Now use these costs to create NON-normalized matrices
-dist.work.om <- seqdist(seq.work.ow, method="OM", indel=work.miss.indel, 
-                           sm= work.miss.cost$sm, with.missing=TRUE)
+dist.work.om <- seqdist(seq.work, method="OM", indel=work.miss.indel, 
+                        sm= work.miss.cost$sm, with.missing=TRUE)
 
 dist.hw.om <- seqdist(seq.hw.hrs, method="OM", indel=hw.miss.indel, 
-                              sm= hw.miss.cost$sm, with.missing=TRUE)
+                      sm= hw.miss.cost$sm, with.missing=TRUE)
 
 dist.fam.om <- seqdist(seq.fam, method="OM", indel=fam.miss.indel, 
-                           sm= fam.miss.cost$sm, with.missing=TRUE)
+                       sm= fam.miss.cost$sm, with.missing=TRUE)
 
 # Then create matrices of shortest length 
 fam.min.len <- matrix(NA,ncol=length(seq.len.fam),nrow=length(seq.len.fam))
@@ -360,7 +402,7 @@ pdf("results/UKHLS/UKHLS_Base_Sequences_truncated.pdf",
     width=12,
     height=3)
 
-s1<-ggseqdplot(seq.work.ow) +
+s1<-ggseqdplot(seq.work) +
   scale_x_discrete(labels = 1:10) +
   labs(x = "Relationship Duration", y=NULL) + 
   theme(legend.position="none") +
@@ -390,7 +432,7 @@ dev.off()
 #    height=5)
 
 #i1<-ggseqiplot(seq.fam, sortv="from.start")
-#i2<-ggseqiplot(seq.work.ow, sortv="from.start")
+#i2<-ggseqiplot(seq.work, sortv="from.start")
 #i3<-ggseqiplot(seq.hw.hrs.alt, sortv="from.start")
 
 #grid.arrange(i1,i2,i3, ncol=3, nrow=1)
@@ -408,7 +450,7 @@ pdf("results/UKHLS/UKHLS_Base_RF_truncated.pdf",
 rf1<-ggseqrfplot(seq.fam, diss=dist.fam.min, k=500, sortv="from.start",
                  which.plot="medoids") + theme(legend.position="none")
 
-rf2<-ggseqrfplot(seq.work.ow, diss=dist.work.min, k=500, sortv="from.start",
+rf2<-ggseqrfplot(seq.work, diss=dist.work.min, k=500, sortv="from.start",
                  which.plot="medoids") + theme(legend.position="none")
 
 rf3<-ggseqrfplot(seq.hw.hrs, diss=dist.hw.min, k=500, sortv="from.start",
@@ -430,12 +472,12 @@ save.image("created data/ukhls/ukhls-setupsequence-truncated.RData")
 # (so not even running with this, just exploring)
 # One Q: do I do by domain, or using the multichannel sequences?
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-seqtrate(seq.work.ow)
-seqtrate(seq.hw.hrs)
-seqtrate(seq.fam)
+#seqtrate(seq.work)
+#seqtrate(seq.hw.hrs)
+#seqtrate(seq.fam)
 
-work.trate.subcosts <- seqsubm(seq.work.ow, method = "TRATE")
-hw.trate.subcosts <- seqsubm(seq.hw.hrs, method = "TRATE")
-fam.trate.subcosts <- seqsubm(seq.fam, method = "TRATE")
+#work.trate.subcosts <- seqsubm(seq.work, method = "TRATE")
+#hw.trate.subcosts <- seqsubm(seq.hw.hrs, method = "TRATE")
+#fam.trate.subcosts <- seqsubm(seq.fam, method = "TRATE")
 
 

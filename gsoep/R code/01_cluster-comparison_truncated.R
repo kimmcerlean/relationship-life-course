@@ -2,7 +2,7 @@
 #    Program: cluster-comparison_truncated
 #    Author: Kim McErlean & Lea Pessin 
 #    Date: January 2025
-#    Modified: August 13 2025
+#    Modified: October 8 2026
 #    Goal: compare clusters for SC v. MC solution,
 #     all sequences, including truncated (GSOEP)
 # --------------------------------------------------------------------
@@ -113,7 +113,7 @@ x <- 2:15 ## this is number of clusters
 
 # Extract r2 and silhouette for the combined clustering
 
-mcsa<-seqMD(channels=list(seq.work.ow, seq.hw.hrs.weekly, seq.fam),
+mcsa<-seqMD(channels=list(seq.work, seq.hw.hrs, seq.fam),
             with.missing=TRUE,
             what="MDseq") ##, right=NA)
 seqlength(mcsa)
@@ -121,7 +121,7 @@ seqlength(mcsa, with.missing = FALSE) # okay, this isn't working,
 # but all sequences are same length across domains, so can just use 1 domain
 
 ## Now create multi-channel distance
-mcdist.det.om <- seqdistmc(channels=list(seq.work.ow, seq.hw.hrs.weekly, seq.fam), ## Seq states NOT om matrix
+mcdist.det.om <- seqdistmc(channels=list(seq.work, seq.hw.hrs, seq.fam), ## Seq states NOT om matrix
                            method="OM", 
                            indel=list(work.miss.indel,hw.miss.indel, fam.miss.indel),
                            sm=list(work.miss.cost$sm, hw.miss.cost$sm, fam.miss.cost$sm),
@@ -161,14 +161,14 @@ mc.om.r2 <- mc.om.val[,7]
 
 ## Now, get the truncated sequence information to compare
 # Paid work
-work.ow.pam <- wcKMedRange(dist.work.min, 
+work.pam <- wcKMedRange(dist.work.min, 
                                 kvals = 2:15)
 
-work.ow.val<-work.ow.pam[[4]]
+work.val<-work.pam[[4]]
 
-work.ow.asw <- work.ow.val[,4]
+work.asw <- work.val[,4]
 
-work.ow.r2 <- work.ow.val[,7]
+work.r2 <- work.val[,7]
 
 # Family
 fam.pam <- wcKMedRange(dist.fam.min, 
@@ -266,7 +266,7 @@ legend("bottomright", legend=c("ASW", "R2"),
        col=c("blue", "black"), lty = 1:2, cex=1.2)
 
 # Paid Work Channel: With Overwork
-plot(x, work.ow.asw, type = "b", frame = FALSE, pch = 19, main="Paid Work (with Overwork)", 
+plot(x, work.asw, type = "b", frame = FALSE, pch = 19, main="Paid Work (with Overwork)", 
      col = "blue", xlab = "N. clusters", ylab = "", ylim = c(0,0.8),
      cex.main=2,
      cex.lab=1.6,
@@ -275,7 +275,7 @@ grid(nx = NULL,
      ny = NA,
      lty = 1, col = "gray85", lwd = 1)
 # Add a second line
-lines(x, work.ow.r2, pch = 19, col = "black", type = "b", lty = 2)
+lines(x, work.r2, pch = 19, col = "black", type = "b", lty = 2)
 # Add a legend to the plot
 legend("bottomright", legend=c("ASW", "R2"),
        col=c("blue", "black"), lty = 1:2, cex=1.2)
