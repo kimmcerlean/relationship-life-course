@@ -230,10 +230,10 @@ save.image("temp data/gsoep/gsoep_cluster-comparison-test-data.RData")
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Is this going to work with NORMALIZED Matrix? Maybe *this* is the problem?
 # Converting multichannel data to single-channel data
-sc_data <- mc_to_sc_data(list(marr_seq, child_seq, left_seq))
+#sc_data <- mc_to_sc_data(list(marr_seq, child_seq, left_seq))
 
 # 10 combined states
-alphabet(sc_data)
+#alphabet(sc_data)
 
 # Can I get combined cost structure?
 #cost_output <- seqdistmc(channels=list(seq.work, seq.hw.hrs, seq.fam), what = "cost")
@@ -246,18 +246,18 @@ print(cost_output)
 view(cost_output)
 
 # Core problem here is this is just the SEQUENCE OBJECT and we really need the DISTANCE MATRIX
-bcq.combined <- seqnullcqi(mcsa, clustqual2, R=100, model="combined", 
-                           seqdist.args=list(channels=list(seq.work, seq.hw.hrs, seq.fam),
-                                              method="OM", 
-                                             indel=list(work.miss.indel,hw.miss.indel, fam.miss.indel),
-                                             sm=list(work.miss.cost$sm, hw.miss.cost$sm, fam.miss.cost$sm),
-                                             with.missing=TRUE), 
-                           hclust.method="ward.D", kmedoid = TRUE,
-                           parallel = FALSE, progressbar=TRUE)
+#bcq.combined <- seqnullcqi(mcsa, clustqual2, R=100, model="combined", 
+#                           seqdist.args=list(channels=list(seq.work, seq.hw.hrs, seq.fam),
+                                              #method="OM", 
+                                             #indel=list(work.miss.indel,hw.miss.indel, fam.miss.indel),
+                                             #sm=list(work.miss.cost$sm, hw.miss.cost$sm, fam.miss.cost$sm),
+                                             #with.missing=TRUE), 
+                           #hclust.method="ward.D", kmedoid = TRUE,
+                           #parallel = FALSE, progressbar=TRUE)
 
 
-mcdist.det.om <- seqdistmc(channels=list(seq.work, seq.hw.hrs, seq.fam), ## Seq states NOT om matrix
-                           method="OM", 
-                           indel=list(work.miss.indel,hw.miss.indel, fam.miss.indel),
-                           sm=list(work.miss.cost$sm, hw.miss.cost$sm, fam.miss.cost$sm),
-                           with.missing=TRUE) 
+#mcdist.det.om <- seqdistmc(channels=list(seq.work, seq.hw.hrs, seq.fam), ## Seq states NOT om matrix
+#                           method="OM", 
+#                           indel=list(work.miss.indel,hw.miss.indel, fam.miss.indel),
+#                           sm=list(work.miss.cost$sm, hw.miss.cost$sm, fam.miss.cost$sm),
+#                           with.missing=TRUE) 
