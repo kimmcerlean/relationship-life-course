@@ -350,3 +350,121 @@ tabstat max_dur_hw_mod_egal if max_dur_hw_mod_egal!=0, by(sequence_length)
 tabstat max_dur_hw_egal if max_dur_hw_egal!=0, by(sequence_length) 
 
 // also want to figure out how to do this JUST for people who experienced state. think that is where some of above helpful because can use code that exists (like at least one in the rowtotal I do). actually, I can just do if MAX DUR > 0? but then again will be helpful to compare that that matches what I did above... okay, so did all of this...
+
+********************************************************************************
+**# Is there something with a SURVIVAL analysis?
+********************************************************************************
+use "$created_data/ukhls_couples_wide_truncated.dta", clear // need data in LONG format, right? I guess I can do either, but long format is easier for me? OH but do I need the truncated file or is the other one fine and I just leave as is? Because, I don't really care if missing or 98/99 for these purposes right? well, I guess I want missing.
+// but it might just be easier to SET the missing while long and do this? okay but I create more variables while wide like sequence length, so should I just RESHAPE?
+
+********************************************************************************
+* Attempting to use MI
+********************************************************************************
+// minimum sequence length of 3
+unique pidp eligible_partner if sequence_length>=3 // confirm matches: 4873
+keep if sequence_length>=3
+
+// Only using first 5 imputations
+// mi set m -= (6,7,8,9,10)
+
+mi reshape long age_all fihhmngrs_dv gor_dv nkids_dv jbstat aidhh aidxhh aidhrs howlng work_hours jbhrs fimnlabgrs_dv nchild_dv hiqual_dv country_all employed total_hours age_youngest_child partnered_imp marital_status_imp int_year orig_record age_all_sp fihhmngrs_dv_sp gor_dv_sp nkids_dv_sp jbstat_sp aidhrs_sp howlng_sp work_hours_sp jbhrs_sp fimnlabgrs_dv_sp employed_sp total_hours_sp age_youngest_child_sp partnered_imp_sp marital_status_imp_sp weekly_hrs_woman weekly_hrs_man housework_woman housework_man marital_status_woman marital_status_man partnered_woman partnered_man num_children_woman num_children_man ft_pt_woman overwork_woman ft_pt_man overwork_man ft_pt_det_woman ft_pt_det_man couple_work couple_work_ow couple_work_ow_detailed  couple_hw_total woman_hw_share hw_terc_woman hw_hilow_woman hw_hilow_man couple_hw hw_hilow_woman_gp1 hw_hilow_woman_gp2 hw_hilow_man_gp4 hw_hilow_woman_combo couple_hw_hrs couple_hw_hrs_alt couple_hw_hrs_combo rel_type couple_num_children couple_num_children_gp family_type ft_pt_woman_end overwork_woman_end ft_pt_man_end overwork_man_end ft_pt_det_woman_end ft_pt_det_man_end couple_work_end couple_work_ow_detailed_end couple_work_ow_end couple_hw_end couple_hw_hrs_end couple_hw_hrs_alt_end couple_hw_hrs_combo_end couple_num_children_gp_end family_type_end npens_dv tenure_dv jshrs employment_status disabled_est sr_health aid_hours num_parents_hh master_religion respondent_info npens_dv_sp tenure_dv_sp employment_status_sp disabled_est_sp sr_health_sp aid_hours_sp num_parents_hh_sp master_religion_sp respondent_info_sp employment_status_woman employment_status_man monthly_earnings_woman monthly_earnings_man carework_woman carework_man region_woman region_man housing_woman housing_man religion_woman religion_man disabled_woman disabled_man sr_health_woman sr_health_man any_aid any_aid_sp current_parent_status current_parent_status_sp dual_work_end egalitarian_end division_of_labor_end egal_dol_yn_end dual_ft_end hw_egal_end hw_mod_egal_end couple_hw_hrs_4cat couple_hw_hrs_4cat_end family_type_5cat family_type_5cat_end couple_work_3cat_end couple_hw_3cat_end detailed_dol_end couple_work_ow_trunc couple_work_trunc couple_hw_hrs_combo_trunc couple_hw_hrs_4cat_trunc family_type_trunc family_type_5cat_trunc division_of_labor_trunc egalitarian_trunc egal_dol_yn_trunc dual_work_trunc dual_ft_trunc hw_egal_trunc hw_mod_egal_trunc couple_work_3cat_trunc couple_hw_3cat_trunc detailed_dol_trunc ///
+, i(pidp eligible_partner eligible_rel_start_year eligible_rel_end_year eligible_rel_status) j(duration)
+
+unique pidp eligible_partner 
+tab sequence_length
+tab duration
+
+drop if duration==11
+
+browse pidp eligible_partner duration sequence_length detailed_dol_trunc couple_hw_3cat_trunc couple_work_3cat_trunc egalitarian_trunc egal_dol_yn_trunc
+	// egal_dol_yn_trunc = true
+	// egalitarian_trunc = modified aka more liberal def
+
+tab egalitarian_trunc
+mi passive: gen egal_failure = .
+mi passive: replace egal_failure = 1 if egalitarian_trunc==0
+mi passive: replace egal_failure = 0 if egalitarian_trunc==1
+
+tab egalitarian_trunc, m
+tab egal_failure, m
+
+// so time would be duration
+// failure needs to be egal reverse coded?
+mi stset duration, failure(egal_failure) // I can't mi set using passive variables
+
+// https://www.statalist.org/forums/forum/general-stata-discussion/general/1575925-help-using-stset-with-imputed-duration-variable-for-discrete-logistic-hazard-model
+// https://www.statalist.org/forums/forum/general-stata-discussion/general/1480466-multiple-imputation-and-mi-stset-for-cox-regression
+// have to do one at a time then pool
+
+********************************************************************************
+* Just one
+********************************************************************************
+use "$created_data/ukhls_couples_wide_truncated.dta", clear 
+
+mi extract 1
+
+// minimum sequence length of 3
+unique pidp eligible_partner if sequence_length>=3 // confirm matches: 4873
+keep if sequence_length>=3
+
+reshape long age_all fihhmngrs_dv gor_dv nkids_dv jbstat aidhh aidxhh aidhrs howlng work_hours jbhrs fimnlabgrs_dv nchild_dv hiqual_dv country_all employed total_hours age_youngest_child partnered_imp marital_status_imp int_year orig_record age_all_sp fihhmngrs_dv_sp gor_dv_sp nkids_dv_sp jbstat_sp aidhrs_sp howlng_sp work_hours_sp jbhrs_sp fimnlabgrs_dv_sp employed_sp total_hours_sp age_youngest_child_sp partnered_imp_sp marital_status_imp_sp weekly_hrs_woman weekly_hrs_man housework_woman housework_man marital_status_woman marital_status_man partnered_woman partnered_man num_children_woman num_children_man ft_pt_woman overwork_woman ft_pt_man overwork_man ft_pt_det_woman ft_pt_det_man couple_work couple_work_ow couple_work_ow_detailed  couple_hw_total woman_hw_share hw_terc_woman hw_hilow_woman hw_hilow_man couple_hw hw_hilow_woman_gp1 hw_hilow_woman_gp2 hw_hilow_man_gp4 hw_hilow_woman_combo couple_hw_hrs couple_hw_hrs_alt couple_hw_hrs_combo rel_type couple_num_children couple_num_children_gp family_type ft_pt_woman_end overwork_woman_end ft_pt_man_end overwork_man_end ft_pt_det_woman_end ft_pt_det_man_end couple_work_end couple_work_ow_detailed_end couple_work_ow_end couple_hw_end couple_hw_hrs_end couple_hw_hrs_alt_end couple_hw_hrs_combo_end couple_num_children_gp_end family_type_end npens_dv tenure_dv jshrs employment_status disabled_est sr_health aid_hours num_parents_hh master_religion respondent_info npens_dv_sp tenure_dv_sp employment_status_sp disabled_est_sp sr_health_sp aid_hours_sp num_parents_hh_sp master_religion_sp respondent_info_sp employment_status_woman employment_status_man monthly_earnings_woman monthly_earnings_man carework_woman carework_man region_woman region_man housing_woman housing_man religion_woman religion_man disabled_woman disabled_man sr_health_woman sr_health_man any_aid any_aid_sp current_parent_status current_parent_status_sp dual_work_end egalitarian_end division_of_labor_end egal_dol_yn_end dual_ft_end hw_egal_end hw_mod_egal_end couple_hw_hrs_4cat couple_hw_hrs_4cat_end family_type_5cat family_type_5cat_end couple_work_3cat_end couple_hw_3cat_end detailed_dol_end couple_work_ow_trunc couple_work_trunc couple_hw_hrs_combo_trunc couple_hw_hrs_4cat_trunc family_type_trunc family_type_5cat_trunc division_of_labor_trunc egalitarian_trunc egal_dol_yn_trunc dual_work_trunc dual_ft_trunc hw_egal_trunc hw_mod_egal_trunc couple_work_3cat_trunc couple_hw_3cat_trunc detailed_dol_trunc ///
+, i(pidp eligible_partner eligible_rel_start_year eligible_rel_end_year eligible_rel_status) j(duration)
+
+
+unique pidp eligible_partner 
+tab sequence_length
+tab duration
+
+drop if duration==11
+
+browse pidp eligible_partner duration sequence_length detailed_dol_trunc couple_hw_3cat_trunc couple_work_3cat_trunc egalitarian_trunc egal_dol_yn_trunc
+	// egal_dol_yn_trunc = true
+	// egalitarian_trunc = modified aka more liberal def
+
+tab egalitarian_trunc
+gen egal_failure = .
+replace egal_failure = 1 if egalitarian_trunc==0
+replace egal_failure = 0 if egalitarian_trunc==1
+
+tab egalitarian_trunc, m
+tab egal_failure, m
+
+// I think I might need to DROP the durations post sequence length too actually
+drop if duration > sequence_length
+
+// so time would be duration
+// failure needs to be egal reverse coded?
+stset duration, failure(egal_failure)
+
+browse pidp eligible_partner duration sequence_length egal_failure egalitarian_trunc  _st _d _t _t0
+
+sts list
+sts list, failure
+sts list, cumhaz
+
+sts graph
+
+tab egal_failure if duration==1
+tab egal_failure if duration==10
+
+// I am confusing myself - should this be restricted to people egal at time 1? I feel like I thought this handled that but I am struggling to interpret'
+// for when I inevitably forget: https://www.statalist.org/forums/forum/general-stata-discussion/general/1645684-interpreting-output-of-sts-list-command
+// https://www.stata.com/statalist/archive/2007-11/msg00486.html
+
+stset duration, id(couple_id) failure(egal_failure)
+sts list
+sts graph
+
+sts list, failure
+sts graph, failure
+
+tab egal_failure if duration==1 // yes so NOW time 1 matches, then the rest are contingent on making it here
+tab duration egal_failure, row
+
+sts list, saving("$results/ukhls_survival", replace) 
+
+sts graph, xlabel(0(1)10) ylabel(0(.1)1)
+graph export "$results/ukhls_survival.png", replace
+sts graph, saving("$results/ukhls_survival.gph", replace) xlabel(0(1)10) ylabel(0(.1)1)
+
+// AH I needed it to be BY ID so it's within person

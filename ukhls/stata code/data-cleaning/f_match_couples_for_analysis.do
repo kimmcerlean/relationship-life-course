@@ -846,6 +846,73 @@ tab division_of_labor_end, m
 	
 	tab division_of_labor_end egal_dol_yn_end, m
 
+*1a. More detailed version of above, want to see if this helps with transition matrix - I want to know what they left to.
+	// Let's actually create three category inputs first:
+	* Paid work: Dual Work, Male BW, Female BW
+	tab ft_pt_man_end ft_pt_woman_end
+	
+	mi passive: gen couple_work_3cat_end = .
+	mi passive: replace couple_work_3cat_end = 1 if ft_pt_man_end == 2 & ft_pt_woman_end == 2
+	mi passive: replace couple_work_3cat_end = 1 if ft_pt_man_end == 1 & ft_pt_woman_end == 1
+	mi passive: replace couple_work_3cat_end = 2 if ft_pt_man_end == 2 & ft_pt_woman_end == 0
+	mi passive: replace couple_work_3cat_end = 2 if ft_pt_man_end == 2 & ft_pt_woman_end == 1
+	mi passive: replace couple_work_3cat_end = 2 if ft_pt_man_end == 1 & ft_pt_woman_end == 0
+	mi passive: replace couple_work_3cat_end = 3 if ft_pt_man_end == 0 & ft_pt_woman_end == 2
+	mi passive: replace couple_work_3cat_end = 3 if ft_pt_man_end == 1 & ft_pt_woman_end == 2
+	mi passive: replace couple_work_3cat_end = 3 if ft_pt_man_end == 0 & ft_pt_woman_end == 1
+	mi passive: replace couple_work_3cat_end = 4 if ft_pt_man_end == 0 & ft_pt_woman_end == 0
+	mi passive: replace couple_work_3cat_end = 98 if ft_pt_woman_end==98 & ft_pt_man_end==98
+	mi passive: replace couple_work_3cat_end = 99 if ft_pt_woman_end==99 & ft_pt_man_end==99
+
+	label define couple_work_3cat 1 "Equal (Dual FT or PT)" 2 "Male BW" 3 "Female BW" 4 "Neither Working"
+	label values couple_work_3cat_end couple_work_3cat
+	
+	tab couple_work_end couple_work_3cat_end
+	tab couple_work_3cat_end dual_work_end
+
+	* Housework: Shared, She Does More, He Does More
+	fre couple_hw_end
+	mi passive: gen couple_hw_3cat_end = .
+	mi passive: replace couple_hw_3cat_end = 1 if couple_hw_end==3
+	mi passive: replace couple_hw_3cat_end = 2 if inlist(couple_hw_end,1,2)
+	mi passive: replace couple_hw_3cat_end = 3 if couple_hw_end==4
+	mi passive: replace couple_hw_3cat_end = 98 if couple_hw_end==98
+	mi passive: replace couple_hw_3cat_end = 99 if couple_hw_end==99
+	
+	label define couple_hw_3cat 1 "Equal" 2 "She Does More" 3 "He Does More"
+	label values couple_hw_3cat_end couple_hw_3cat
+	
+	tab couple_hw_end couple_hw_3cat_end
+
+// variable itself
+tab couple_work_end couple_hw_end if division_of_labor_end==4
+tab division_of_labor_end
+tab couple_work_3cat_end couple_hw_3cat_end
+
+mi passive: gen detailed_dol_end = .
+mi passive: replace detailed_dol_end = 1 if couple_work_3cat_end==1 & couple_hw_3cat_end==1
+mi passive: replace detailed_dol_end = 2 if couple_work_3cat_end==1 & couple_hw_3cat_end==2
+mi passive: replace detailed_dol_end = 3 if couple_work_3cat_end==1 & couple_hw_3cat_end==3
+mi passive: replace detailed_dol_end = 4 if couple_work_3cat_end==2 & couple_hw_3cat_end==1
+mi passive: replace detailed_dol_end = 5 if couple_work_3cat_end==2 & couple_hw_3cat_end==2
+mi passive: replace detailed_dol_end = 6 if couple_work_3cat_end==2 & couple_hw_3cat_end==3
+mi passive: replace detailed_dol_end = 7 if couple_work_3cat_end==3 & couple_hw_3cat_end==1
+mi passive: replace detailed_dol_end = 8 if couple_work_3cat_end==3 & couple_hw_3cat_end==2
+mi passive: replace detailed_dol_end = 9 if couple_work_3cat_end==3 & couple_hw_3cat_end==3
+mi passive: replace detailed_dol_end = 10 if couple_work_3cat_end==4
+mi passive: replace detailed_dol_end = 98 if couple_work_3cat_end==98
+mi passive: replace detailed_dol_end = 99 if couple_work_3cat_end==99
+
+label define detailed_dol 1 "Egal Work x Egal HW" 2 "Egal Work x Her HW" 3 "Egal Work x His HW" ///
+						4 "Male BW x Egal HW" 5 "Male BW x Her HW" 6 "Male BW x His HW" ///
+						7 "Female BW x Egal HW" 8 "Female BW x Her HW" 9 "Female BW x His HW" ///
+						10 "Neither Working"
+
+label values detailed_dol_end detailed_dol
+
+tab detailed_dol_end
+tab detailed_dol_end division_of_labor_end
+
 *2. Binary - "egalitarian" + all other. This will include all dual full-time + part-time and those where they share HW equally or he does more. 
 tab dual_work_end couple_hw_end 
 
@@ -946,7 +1013,7 @@ mi update
 **# Reshape back to wide to see the data by duration and compare to long estimates
 ********************************************************************************
 
-mi reshape wide age_all fihhmngrs_dv gor_dv nkids_dv jbstat aidhh aidxhh aidhrs howlng work_hours jbhrs fimnlabgrs_dv nchild_dv hiqual_dv country_all employed total_hours age_youngest_child partnered_imp marital_status_imp int_year orig_record age_all_sp fihhmngrs_dv_sp gor_dv_sp nkids_dv_sp jbstat_sp aidhrs_sp howlng_sp work_hours_sp jbhrs_sp fimnlabgrs_dv_sp employed_sp total_hours_sp age_youngest_child_sp partnered_imp_sp marital_status_imp_sp weekly_hrs_woman weekly_hrs_man housework_woman housework_man marital_status_woman marital_status_man partnered_woman partnered_man num_children_woman num_children_man ft_pt_woman overwork_woman ft_pt_man overwork_man ft_pt_det_woman ft_pt_det_man couple_work couple_work_ow couple_work_ow_detailed  couple_hw_total woman_hw_share hw_terc_woman hw_hilow_woman hw_hilow_man couple_hw hw_hilow_woman_gp1 hw_hilow_woman_gp2 hw_hilow_man_gp4 hw_hilow_woman_combo couple_hw_hrs couple_hw_hrs_alt couple_hw_hrs_combo rel_type couple_num_children couple_num_children_gp family_type ft_pt_woman_end overwork_woman_end ft_pt_man_end overwork_man_end ft_pt_det_woman_end ft_pt_det_man_end couple_work_end couple_work_ow_detailed_end couple_work_ow_end couple_hw_end couple_hw_hrs_end couple_hw_hrs_alt_end couple_hw_hrs_combo_end couple_num_children_gp_end family_type_end npens_dv tenure_dv jshrs employment_status disabled_est sr_health aid_hours num_parents_hh master_religion respondent_info npens_dv_sp tenure_dv_sp employment_status_sp disabled_est_sp sr_health_sp aid_hours_sp num_parents_hh_sp master_religion_sp respondent_info_sp employment_status_woman employment_status_man monthly_earnings_woman monthly_earnings_man carework_woman carework_man region_woman region_man housing_woman housing_man religion_woman religion_man disabled_woman disabled_man sr_health_woman sr_health_man any_aid any_aid_sp current_parent_status current_parent_status_sp dual_work_end egalitarian_end division_of_labor_end egal_dol_yn_end dual_ft_end hw_egal_end hw_mod_egal_end couple_hw_hrs_4cat couple_hw_hrs_4cat_end family_type_5cat family_type_5cat_end ///
+mi reshape wide age_all fihhmngrs_dv gor_dv nkids_dv jbstat aidhh aidxhh aidhrs howlng work_hours jbhrs fimnlabgrs_dv nchild_dv hiqual_dv country_all employed total_hours age_youngest_child partnered_imp marital_status_imp int_year orig_record age_all_sp fihhmngrs_dv_sp gor_dv_sp nkids_dv_sp jbstat_sp aidhrs_sp howlng_sp work_hours_sp jbhrs_sp fimnlabgrs_dv_sp employed_sp total_hours_sp age_youngest_child_sp partnered_imp_sp marital_status_imp_sp weekly_hrs_woman weekly_hrs_man housework_woman housework_man marital_status_woman marital_status_man partnered_woman partnered_man num_children_woman num_children_man ft_pt_woman overwork_woman ft_pt_man overwork_man ft_pt_det_woman ft_pt_det_man couple_work couple_work_ow couple_work_ow_detailed  couple_hw_total woman_hw_share hw_terc_woman hw_hilow_woman hw_hilow_man couple_hw hw_hilow_woman_gp1 hw_hilow_woman_gp2 hw_hilow_man_gp4 hw_hilow_woman_combo couple_hw_hrs couple_hw_hrs_alt couple_hw_hrs_combo rel_type couple_num_children couple_num_children_gp family_type ft_pt_woman_end overwork_woman_end ft_pt_man_end overwork_man_end ft_pt_det_woman_end ft_pt_det_man_end couple_work_end couple_work_ow_detailed_end couple_work_ow_end couple_hw_end couple_hw_hrs_end couple_hw_hrs_alt_end couple_hw_hrs_combo_end couple_num_children_gp_end family_type_end npens_dv tenure_dv jshrs employment_status disabled_est sr_health aid_hours num_parents_hh master_religion respondent_info npens_dv_sp tenure_dv_sp employment_status_sp disabled_est_sp sr_health_sp aid_hours_sp num_parents_hh_sp master_religion_sp respondent_info_sp employment_status_woman employment_status_man monthly_earnings_woman monthly_earnings_man carework_woman carework_man region_woman region_man housing_woman housing_man religion_woman religion_man disabled_woman disabled_man sr_health_woman sr_health_man any_aid any_aid_sp current_parent_status current_parent_status_sp dual_work_end egalitarian_end division_of_labor_end egal_dol_yn_end dual_ft_end hw_egal_end hw_mod_egal_end couple_hw_hrs_4cat couple_hw_hrs_4cat_end family_type_5cat family_type_5cat_end couple_work_3cat_end couple_hw_3cat_end detailed_dol_end ///
 , i(pidp eligible_partner eligible_rel_start_year eligible_rel_end_year eligible_rel_status) j(duration)
 
 tab _mi_miss, m // see what happens if I reshape but DON'T convert
@@ -1089,6 +1156,16 @@ forvalues d=1/11{
 	replace hw_egal_trunc`d' = . if inlist(hw_egal_end`d',98,99)
 	capture gen hw_mod_egal_trunc`d' = hw_mod_egal_end`d'
 	replace hw_mod_egal_trunc`d' = . if inlist(hw_mod_egal_end`d',98,99)
+	
+	capture gen couple_work_3cat_trunc`d' = couple_work_3cat_end`d'
+	replace couple_work_3cat_trunc`d' = . if inlist(couple_work_3cat_end`d',98,99)
+	label values couple_work_3cat_trunc`d' couple_work_3cat
+	capture gen couple_hw_3cat_trunc`d' = couple_hw_3cat_end`d'
+	replace couple_hw_3cat_trunc`d' = . if inlist(couple_hw_3cat_end`d',98,99)
+	label values couple_hw_3cat_trunc`d' couple_hw_3cat
+	capture gen detailed_dol_trunc`d' = detailed_dol_end`d'
+	replace detailed_dol_trunc`d' = . if inlist(detailed_dol_end`d',98,99)
+	label values detailed_dol_trunc`d' detailed_dol	
 }
 
 fre couple_work_ow_trunc5
@@ -1100,6 +1177,7 @@ tab couple_work_ow_trunc1 if _mi_m!=0, m
 tab couple_work_trunc1 if _mi_m!=0, m
 tab couple_hw_hrs_4cat_trunc1 if _mi_m!=0, m
 tab family_type_5cat_trunc1 if _mi_m!=0, m
+tab detailed_dol_trunc1 if _mi_m!=0, m
 
 // browse pidp eligible_partner complete_seq sequence_length couple_work_ow_trunc* couple_hw_hrs_combo_trunc* family_type_trunc* if _mi_m!=0
 

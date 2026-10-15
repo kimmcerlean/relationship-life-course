@@ -351,3 +351,57 @@ tabstat max_dur_hw_mod_egal if max_dur_hw_mod_egal!=0, by(sequence_length)
 tabstat max_dur_hw_egal if max_dur_hw_egal!=0, by(sequence_length) 
 
 // also want to figure out how to do this JUST for people who experienced state. think that is where some of above helpful because can use code that exists (like at least one in the rowtotal I do). actually, I can just do if MAX DUR > 0? but then again will be helpful to compare that that matches what I did above... okay, so did all of this...
+
+********************************************************************************
+**# Is there something with a SURVIVAL analysis?
+********************************************************************************
+
+use "$created_data/gsoep_couples_wide_truncated.dta", clear
+
+mi extract 1
+
+// minimum sequence length of 3
+unique pid eligible_partner if sequence_length>=3 // confirm matches: 5425
+keep if sequence_length>=3
+
+reshape long employment self_reported_health disability_yn religious_affiliation errands_sundays housework_saturdays housework_sundays childcare_saturdays childcare_sundays repair_saturdays errands_weekdays housework_weekdays childcare_weekdays repair_weekdays errands_saturdays aid_in_hh_hl kidsu18_hh num_65up_hh age_youngest_child age nationality_region federal_state housing_status weekly_work_hrs gross_income_lm net_income_lm hh_income_net_monthly earnings_gross_t_cnef hh_gross_income_t_cnef repair_sundays any_outside_help any_parent_in_hh current_parent_status marst_imp retired_yn full_status_pl duplicate_record urban_region employment_sp self_reported_health_sp disability_yn_sp religious_affiliation_sp errands_sundays_sp housework_saturdays_sp housework_sundays_sp childcare_saturdays_sp childcare_sundays_sp repair_saturdays_sp errands_weekdays_sp housework_weekdays_sp childcare_weekdays_sp repair_weekdays_sp errands_saturdays_sp nationality_pb_sp aid_in_hh_hl_sp kidsu18_hh_sp num_65up_hh_sp age_youngest_child_sp age_sp nationality_region_sp federal_state_sp housing_status_sp weekly_work_hrs_sp gross_income_lm_sp net_income_lm_sp hh_income_net_monthly_sp earnings_gross_t_cnef_sp hh_gross_income_t_cnef_sp repair_sundays_sp any_outside_help_sp any_parent_in_hh_sp current_parent_status_sp marst_imp_sp retired_yn_sp full_status_pl_sp urban_region_sp weekly_hrs_woman weekly_hrs_man employment_status_woman employment_status_man monthly_earnings_woman monthly_earnings_man annual_earnings_woman annual_earnings_man housework_weekdays_woman housework_weekdays_man housework_saturdays_woman housework_saturdays_man housework_sundays_woman housework_sundays_man repair_weekdays_woman repair_weekdays_man repair_saturdays_woman repair_saturdays_man repair_sundays_woman repair_sundays_man errands_weekdays_woman errands_weekdays_man errands_saturdays_woman errands_saturdays_man errands_sundays_woman errands_sundays_man aid_in_hh_woman aid_in_hh_man marital_status_woman marital_status_man partnered_woman partnered_man num_children_woman num_children_man age_youngest_woman age_youngest_man federal_state_woman federal_state_man where_ew_woman where_ew_man urban_region_woman urban_region_man housing_woman housing_man religion_woman religion_man disabled_woman disabled_man sr_health_woman sr_health_man retired_woman retired_man ft_pt_woman overwork_woman ft_pt_man overwork_man couple_work couple_work_ow_detailed couple_work_ow couple_weekday_hw_total woman_weekday_hw_share couple_hw_weekday housework_weekdays_5_woman housework_weekly_est_woman housework_weekdays_5_man housework_weekly_est_man couple_weekly_hw_total woman_weekly_hw_share couple_hw_weekly housework_combined_woman housework_combined_man couple_combined_hw_total woman_combined_hw_share couple_hw_combined syear rel_type couple_num_children couple_num_children_gp family_type hw_weekly_hilow_woman hw_weekly_hilow_equal couple_hw_hrs_weekly hw_combined_hilow_equal hw_combined_hilow_woman couple_hw_hrs_combined hw_weekday_hilow_woman hw_weekday_hilow_equal hw_weekday_hilow_test hw_weekday_equal couple_hw_hrs_weekday ft_pt_woman_end overwork_woman_end ft_pt_man_end overwork_man_end couple_work_end couple_work_ow_detailed_end couple_work_ow_end couple_hw_weekday_end couple_hw_hrs_weekday_end couple_hw_weekly_end couple_hw_hrs_weekly_end couple_hw_combined_end couple_hw_hrs_combined_end couple_num_children_gp_end family_type_end dual_work_end division_of_labor_end egalitarian_end egal_dol_yn_end dual_ft_end hw_egal_end hw_mod_egal_end couple_hw_hrs_4cat couple_hw_hrs_4cat_end family_type_5cat family_type_5cat_end couple_work_3cat_end couple_hw_3cat_end detailed_dol_end couple_hw_hrs_weekday_trunc couple_hw_hrs_weekly_trunc couple_hw_hrs_combined_trunc couple_work_ow_trunc couple_work_trunc couple_hw_hrs_combo_trunc couple_hw_hrs_4cat_trunc family_type_trunc family_type_5cat_trunc division_of_labor_trunc egalitarian_trunc egal_dol_yn_trunc dual_work_trunc dual_ft_trunc hw_egal_trunc hw_mod_egal_trunc couple_work_3cat_trunc couple_hw_3cat_trunc detailed_dol_trunc ///
+, i(pid eligible_partner eligible_rel_start_year eligible_rel_end_year eligible_rel_status) j(duration)
+
+unique pid eligible_partner 
+tab sequence_length
+tab duration
+
+drop if duration==11
+
+browse pid eligible_partner duration sequence_length detailed_dol_trunc couple_hw_3cat_trunc couple_work_3cat_trunc egalitarian_trunc egal_dol_yn_trunc
+	// egal_dol_yn_trunc = true
+	// egalitarian_trunc = modified aka more liberal def
+
+tab egalitarian_trunc
+gen egal_failure = .
+replace egal_failure = 1 if egalitarian_trunc==0
+replace egal_failure = 0 if egalitarian_trunc==1
+
+tab egalitarian_trunc, m
+tab egal_failure, m
+
+// I think I might need to DROP the durations post sequence length too actually
+drop if duration > sequence_length
+
+// so time would be duration
+// failure needs to be egal reverse coded?
+stset duration, id(couple_id) failure(egal_failure)
+sts list
+sts graph
+
+sts list, failure
+sts graph, failure
+
+tab egal_failure if duration==1 // yes so NOW time 1 matches, then the rest are contingent on making it here
+tab duration egal_failure, row
+
+sts list, saving("$results/gsoep_survival", replace) 
+
+sts graph, xlabel(0(1)10) ylabel(0(.1)1)
+graph export "$results/gsoep_survival.png", replace
+sts graph, saving("$results/gsoep_survival.gph", replace) xlabel(0(1)10) ylabel(0(.1)1)

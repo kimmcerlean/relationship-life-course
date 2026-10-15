@@ -350,3 +350,95 @@ tabstat max_dur_hw_mod_egal if max_dur_hw_mod_egal!=0, by(sequence_length)
 tabstat max_dur_hw_egal if max_dur_hw_egal!=0, by(sequence_length) 
 
 // also want to figure out how to do this JUST for people who experienced state. think that is where some of above helpful because can use code that exists (like at least one in the rowtotal I do). actually, I can just do if MAX DUR > 0? but then again will be helpful to compare that that matches what I did above...
+
+********************************************************************************
+**# Is there something with a SURVIVAL analysis?
+********************************************************************************
+
+use "$created_data/psid_couples_wide_truncated.dta", clear 
+
+mi extract 1
+
+// minimum sequence length of 3
+unique unique_id partner_unique_id if sequence_length>=3 // confirm matches: 5973
+keep if sequence_length>=3
+
+reshape long ft_pt_woman_end overwork_woman_end ft_pt_man_end overwork_man_end couple_work_end couple_work_ow_detailed_end couple_work_ow_end couple_hw_end couple_hw_hrs_end couple_hw_hrs_alt_end couple_hw_hrs_combo_end rel_type couple_num_children_gp_end family_type_end in_sample hh_status relationship housework_focal age_focal weekly_hrs_t_focal earnings_t_focal family_income_t partnered_imp educ_focal_imp num_children_imp_hh weekly_hrs_woman weekly_hrs_man housework_woman housework_man num_children_woman num_children_man ft_pt_woman overwork_woman ft_pt_man overwork_man ft_pt_det_woman ft_pt_det_man  in_sample_sp hh_status_sp relationship_sp housework_focal_sp age_focal_sp weekly_hrs_t_focal_sp earnings_t_focal_sp family_income_t_sp partnered_imp_sp marst_imp marst_imp_sp marst_woman marst_man num_children_imp_hh_sp couple_work_ow_detailed couple_work_ow couple_hw_hrs_combo age_young_child RESPONDENT_WHO_ REGION_ employment_status_focal religion_focal lives_family_focal disabled_focal disabled_scale_focal sr_health_focal yr_retired_focal father_in_hh mother_in_hh num_parent_in_hh num_65up_hh rolling_births current_parent_status retired_est_focal house_status_all age_young_child_sp RESPONDENT_WHO_sp REGION_sp employment_status_focal_sp religion_focal_sp lives_family_focal_sp disabled_focal_sp sr_health_focal_sp num_65up_hh_sp rolling_births_sp current_parent_status_sp retired_est_focal_sp house_status_all_sp home_owner home_owner_sp employment_status_woman employment_status_man annual_earnings_woman annual_earnings_man age_youngest_woman age_youngest_man is_parent_woman is_parent_man region_woman region_man housing_woman housing_man religion_woman religion_man disabled_woman disabled_man sr_health_woman sr_health_man retired_woman retired_man lives_near_fam_woman lives_near_fam_man couple_work couple_hw couple_hw_hrs couple_hw_hrs_alt couple_num_children couple_num_children_gp family_type ft_pt_det_woman_end ft_pt_det_man_end is_respondent_focal is_respondent_focal_sp any_parent_in_hh any_parent_in_hh_sp RELATION_ relationship_type_ is_first_yr_cohabitor has_first_yr_cohabitor current_rel_type marital_status_focal in_rel_flag survey_yr dual_work_end division_of_labor_end egalitarian_end egal_dol_yn_end dual_ft_end hw_egal_end hw_mod_egal_end couple_hw_hrs_4cat couple_hw_hrs_4cat_end family_type_5cat family_type_5cat_end  couple_work_3cat_end couple_hw_3cat_end detailed_dol_end couple_work_ow_trunc couple_work_trunc couple_hw_hrs_combo_trunc couple_hw_hrs_4cat_trunc family_type_trunc family_type_5cat_trunc division_of_labor_trunc egalitarian_trunc egal_dol_yn_trunc dual_work_trunc dual_ft_trunc hw_egal_trunc hw_mod_egal_trunc couple_work_3cat_trunc couple_hw_3cat_trunc detailed_dol_trunc ///
+, i(unique_id partner_unique_id eligible_rel_start_year eligible_rel_end_year) j(duration) 
+
+unique unique_id partner_unique_id
+tab sequence_length
+tab duration
+
+drop if duration==11
+
+browse unique_id partner_unique_id duration sequence_length detailed_dol_trunc couple_hw_3cat_trunc couple_work_3cat_trunc egalitarian_trunc egal_dol_yn_trunc
+	// egal_dol_yn_trunc = true
+	// egalitarian_trunc = modified aka more liberal def
+
+tab egalitarian_trunc
+gen egal_failure = .
+replace egal_failure = 1 if egalitarian_trunc==0
+replace egal_failure = 0 if egalitarian_trunc==1
+
+tab egalitarian_trunc, m
+tab egal_failure, m
+
+// I think I might need to DROP the durations post sequence length too actually
+drop if duration > sequence_length
+
+// so time would be duration
+// failure needs to be egal reverse coded?
+stset duration, id(couple_id) failure(egal_failure)
+sts list
+sts graph
+
+sts list, failure
+sts graph, failure
+
+tab egal_failure if duration==1 // yes so NOW time 1 matches, then the rest are contingent on making it here
+tab duration egal_failure, row
+
+sts list, saving("$results/psid_survival", replace) 
+
+sts graph, xlabel(0(1)10) ylabel(0(.1)1)
+graph export "$results/psid_survival.png", replace
+sts graph, saving("$results/psid_survival.gph", replace) xlabel(0(1)10) ylabel(0(.1)1)
+
+// Can i stack and make one figure?
+use "$root/results/PSID/psid_survival", clear
+
+gen country = .
+replace country = 1
+
+label define country 1 "US" 2 "UK" 3 "DE"
+label values country country 
+
+append using "$root/results/UKHLS/ukhls_survival"
+replace country = 2 if country == .
+
+append using "$root/results/GSOEP/gsoep_survival"
+replace country = 3 if country == .
+
+browse
+
+/*
+insobs 1, after(30)
+replace time = 0 if time==.
+replace country = 1 if country==.
+replace survivor = 1 if survivor==.
+
+insobs 1, after(31)
+replace time = 0 if time==.
+replace country = 2 if country==.
+replace survivor = 1 if survivor==.
+
+insobs 1, after(32)
+replace time = 0 if time==.
+replace country = 3 if country==.
+replace survivor = 1 if survivor==.
+*/
+
+twoway (line survivor time if country==1) (line survivor time if country==2) (line survivor time if country==3)
+
+graph combine "$root/results/GSOEP/gsoep_survival.gph" "$root/results/PSID/psid_survival.gph" "$root/results/UKHLS/ukhls_survival.gph", rows(1)
