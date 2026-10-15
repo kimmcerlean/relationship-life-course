@@ -84,6 +84,10 @@ if (Sys.getenv(c("USERNAME")) == "lpessin") {
   lapply(required_packages, require, character.only = TRUE)
 }
 
+# Adding this for now to use LP added code, but we have to work out of a system to integrate code better.
+# I am not changing this everywhere for now
+country <- "PSID"          # "GSOEP", "UKHLS", "PSID"
+
 # ~~~~~~~~~~~~~~~~
 # Import data ----
 # ~~~~~~~~~~~~~~~~
@@ -109,6 +113,11 @@ table(data$division_of_labor_trunc1)
 table(data$egal_dol_yn_trunc1)
 table(data$egal_dol_yn_trunc5)
 table(data$hw_egal_trunc5)
+table(data$detailed_dol_trunc5)
+
+# >>> ADDED: rows are couple x imputation; counts are divided by this to be reported as couples
+n_imp <- length(unique(data$`_mi_m`))
+# <<< END ADDED
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Setting up the data ----------------------------------------------------------
@@ -132,7 +141,7 @@ table(data$hw_egal_trunc5)
 ## dual_ft_trunc: Dual FT only
 ## hw_mod_egal_trunc: equal OR he does more HW
 ## hw_egal_trunc: Just equal HW
-
+## detailed_dol_trunc
 
 # ------------------------------------------------------------------------------
 ### We identify columns that contain our sequence analysis input variables
@@ -147,6 +156,15 @@ for (i in 1:10){
   lab_t[i]=paste("division_of_labor_trunc",i, sep="")
 }
 col_dol=which(colnames(data)%in%lab_t) 
+
+# Detailed Division of Labor
+
+lab_t=c()
+for (i in 1:10){
+  lab_t[i]=paste("detailed_dol_trunc",i, sep="")
+}
+col_det_dol=which(colnames(data)%in%lab_t)
+
 
 # ------------------------------------------------------------------------------
 # Binary version of above
@@ -202,6 +220,13 @@ for (i in 1:10){
 col_hw_egal =which(colnames(data)%in%lab_t) 
 
 
+# ------------------------------------------------------------------------------
+# Need to add individual sequence domains
+col_work       <- which(colnames(data) %in% paste0("couple_work_trunc", 1:10))
+col_hw.hrs <- which(colnames(data) %in% paste0("couple_hw_hrs_4cat_trunc", 1:10))
+col_fam           <- which(colnames(data) %in% paste0("family_type_5cat_trunc", 1:10))
+stopifnot(length(col_work) == 10, length(col_hw.hrs) == 10, length(col_fam) == 10)
+
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -228,6 +253,15 @@ lab.hw.mod.egal <- c("Not Egalitarian", "Egal or He Does More HW")
 
 lab.hw.egal <- c("Not Egalitarian", "Egalitarian HW")
 
+lab.detailed.dol <- c("Egal Work x Egal HW", "Egal Work x Her HW", "Egal Work x His HW",
+                      "Male BW x Egal HW", "Male BW x Her HW", "Male BW x His HW",
+                      "Female BW x Egal HW", "Female BW x Her HW", "Female BW x His HW",
+                      "Neither Working")
+
+shortlab.work <- c("MBW", "1.5MBW", "dualFT", "FBW", "underWK")
+shortlab.hw.hrs <- c("W-most:high", "W-most:low", "equal:all", "M-most:all")
+shortlab.fam <- c("MARc0", "MARc1", "MARc2", "COHc0", "COHc1")
+
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -245,6 +279,14 @@ colspace.dol <- sequential_hcl(5, palette = "Hawaii") [1:4]
 col1 <- sequential_hcl(5, palette = "Grays")[c(3)] #Not Egal
 col2 <- sequential_hcl(5, palette = "Hawaii")[c(1)]  #Egal
 colspace.egal <- c(col1, col2)
+
+# Detailed DoL
+col1 <- sequential_hcl(5, palette = "Purp")[c(1,3,4)] # Dual Work
+col2 <- sequential_hcl(5, palette = "Greens")[c(1,3,4)] # Male BW
+col3 <- sequential_hcl(5, palette = "Reds")[2:4] # Female BW
+col4 <- sequential_hcl(5, palette = "Grays")[c(3)] # Not Working
+
+colspace.det.dol<- c(col1, col2, col3, col4)
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Creating the sequence objects for each channel
@@ -264,6 +306,15 @@ ggseqdplot(seq.dol) +
 # So default is actually already missing=false
 # for reference (confirm I understand what is happening):
 ggseqdplot(seq.dol, with.missing=TRUE) +
+  scale_x_discrete(labels = 1:10) +
+  labs(x = "Year")
+
+# Detailed Division of labor
+seq.det.dol <- seqdef(data[,col_det_dol], cpal = colspace.det.dol, labels=lab.detailed.dol, 
+                  states= lab.detailed.dol, right=NA)
+
+
+ggseqdplot(seq.det.dol) +
   scale_x_discrete(labels = 1:10) +
   labs(x = "Year")
 
@@ -316,6 +367,26 @@ seq.hw.egal <- seqdef(data[,col_hw_egal], cpal = colspace.egal, labels=lab.hw.eg
 ggseqdplot(seq.hw.egal) +
   scale_x_discrete(labels = 1:10) +
   labs(x = "Year")
+
+# >>> ADDED: the three channel objects (no colours needed here, they are not plotted)
+seq.work    <- seqdef(data[, col_work],       states = shortlab.work,       right = NA)
+seq.hw.hrs <- seqdef(data[, col_hw.hrs], states = shortlab.hw.hrs, right = NA)
+seq.fam           <- seqdef(data[, col_fam],           states = shortlab.fam,           right = NA)
+stopifnot(all(seqlength(seq.work, with.missing = FALSE) == seq.len.all))
+
+## Check totals + create matrix version of variables to use later
+m.work <- as.matrix(seq.work);       m.work[m.work %in% c("*", "%")] <- NA
+m.hw   <- as.matrix(seq.hw.hrs); m.hw[m.hw %in% c("*", "%")]     <- NA
+m.fam  <- as.matrix(seq.fam);           m.fam[m.fam %in% c("*", "%")]   <- NA
+m.egal <- as.matrix(seq.dol.egal) == "Classic Egalitarian";  m.egal[is.na(m.work)] <- NA
+m.mod  <- as.matrix(seq.mod.egal) == "Modified Egalitarian"; m.mod[is.na(m.work)]  <- NA
+
+#  I technically made variables for these, but in the interest of not just adding sequence objects, I think this works.
+# BUT for posterity, updating to our NEW alphabet. 
+m.dualft  <- m.work %in% c("dualFT"); dim(m.dualft)  <- dim(m.work); m.dualft[is.na(m.work)] <- NA
+m.equalhw <- m.hw   %in% c("equal:all");  dim(m.equalhw) <- dim(m.hw);  m.equalhw[is.na(m.hw)] <- NA
+print(mean((m.dualft & m.equalhw) == m.egal, na.rm = TRUE))   # expect 1
+# 99% sure it's not 1 because of dual FT v. FT + PT. Need to align on definition, though dual PT is so small.
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Exploring possibilities of extracting max time spent egal
@@ -541,3 +612,100 @@ print(hw_egal_avg_by_sequence_length)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 write_dta(data, "created data/psid_wide_truncated_Rdurs.dta")
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Transition rate matrix. Is this useful? Might be useful, but maybe not in this format?
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# common transitions
+seqtrate(seq.dol)
+seqtrate(seq.det.dol)
+
+trans.rate.det.dol<-data.frame(seqtrate(seq.det.dol, with.missing=TRUE))
+write.csv(trans.rate.det.dol, "results/PSID/dol_transition_rates.csv", row.names = TRUE)
+
+seqtrate(seq.dol, with.missing=TRUE)
+seqtrate(seq.dol, with.missing=FALSE)
+
+seqtrate(seq.dol, time.varying=TRUE) # here can do at each time point. so this is useful for after time 1, but still not as useful for FIRST transition
+seqtrate(seq.det.dol, time.varying=TRUE)
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# would ideally like to figure out the FIRST departure from egal state, where do you go.
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# I think I can calculate first egal, then need to figure out state after that. Can I do using same code as like time to marriage?
+# https://stackoverflow.com/questions/73443586/is-there-a-way-for-traminer-to-find-the-first-time-leaving-a-state-for-each-obse
+
+#get first occurrence of non egal state?
+# This gives position of END? This is regardless of how long. so then I want the NEXT state
+seqfposend(seq.det.dol,state="Egal Work x Egal HW")
+
+# I know how to do this in stata but not here. I would just loop and pull the State that is in this position + 1. How do I do that here
+pos_end  <- seqfposend(seq.det.dol, state = "Egal Work x Egal HW") # actual position
+pos_next <- seqfposend(seq.det.dol, state = "Egal Work x Egal HW", lead = 1) # add 1 to get NEXT position
+
+det.dol.matrix <- as.matrix(seq.det.dol)        # plain character matrix of state codes
+n <- nrow(det.dol.matrix); L <- ncol(det.dol.matrix)
+
+# guard against people who never enter the state, and against spells
+# that run to the end of the observation window
+ok <- !is.na(pos_next) & pos_next >= 1 & pos_next <= L
+
+next_state <- rep(NA_character_, n)
+next_state[ok] <- det.dol.matrix[cbind(which(ok), pos_next[ok])]
+view(next_state)
+trans_output <- data.frame(det.dol.matrix, pos_end, pos_next, next_state)
+
+table(trans_output$next_state)
+table(trans_output$next_state, useNA = "always")
+table(trans_output$next_state, trans_output$pos_end)
+prop.table(table(trans_output$next_state))
+prop.table(table(trans_output$next_state, useNA = "always"))
+
+transition_table <- table(trans_output$next_state, useNA = "always")
+
+transition_export <- data.frame(
+  next_state = names(transition_table),
+  n          = as.numeric(transition_table),
+  pct        = round(100 * as.numeric(prop.table(transition_table)), 1)
+)
+
+write.csv(transition_export, "results/PSID/first_egal_exit.csv", row.names = FALSE)
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Summary: what changes when a strict egalitarian spell ends.
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+## Need to update earlier code to get this to work based on what I have run so far, so this isn't going to work right now
+## Or figure out what else to pull in from other file to get this to work. 
+
+#     exit at t = egalitarian at t, not at t+1, t+1 observed.
+exit <- m.egal[, 1:9] & !m.egal[, 2:10]
+exit[is.na(exit)] <- FALSE
+
+nch     <- as.integer(sub(".*c", "", m.fam)); dim(nch) <- dim(m.fam)
+married <- substr(m.fam, 1, 3) == "MAR";       dim(married) <- dim(m.fam)
+
+work_breaks <- !m.dualft[, 2:10][exit]              # leaves dual full-time
+hw_breaks   <- !m.equalhw[, 2:10][exit]             # leaves equal housework
+birth       <- (nch[, 2:10] > nch[, 1:9])[exit]     # birth between t and t+1
+marry       <- (married[, 2:10] & !married[, 1:9])[exit]
+
+exit_tab <- data.frame(
+  country       = country,
+  n_exits       = sum(exit) / n_imp,
+  work_only     = mean(work_breaks & !hw_breaks),
+  hw_only       = mean(!work_breaks & hw_breaks),
+  both          = mean(work_breaks & hw_breaks),
+  with_birth    = mean(birth),
+  with_marriage = mean(marry),
+  work_only_given_birth = mean((work_breaks & !hw_breaks)[birth]),
+  hw_only_given_birth   = mean((!work_breaks & hw_breaks)[birth]),
+  work_only_no_birth    = mean((work_breaks & !hw_breaks)[!birth]),
+  hw_only_no_birth      = mean((!work_breaks & hw_breaks)[!birth])
+)
+
+print(exit_tab)
+write.csv(exit_tab, file.path("results", country, paste0("egal_exit_", country, ".csv")), row.names = FALSE)
+# <<< END ADDED
+
+# https://traminer.unige.ch/doc/seqfpos.html
+# This is first occurrence
