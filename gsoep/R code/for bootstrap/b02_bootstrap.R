@@ -15,6 +15,8 @@
 #      1. observed CQIs across k, here once per imputation block (5 lines)
 #      2. generate "similar but nonclustered" data with a null model, run the SAME
 #         distance + clustering pipeline, record CQIs across k; repeat R times
+#         2.1 We can use the seqnull function for the combined null and the spell null but not the duration one
+#         2.2. We adapt the seqnull function for the duration null so it rescales to observed sequence length
 #      3. compare: raw null interval per k, and standardised "Max T"
 #
 #    Everything runs at single-imputation scale (n ~ 5,600), never on the
@@ -35,7 +37,7 @@ lea.server <- '/home/lpessin/stage/Life Course'
 kim.server <- '/home/kmcerlea/stage/Life Course'
 
 if (Sys.getenv(c("USERNAME")) == "mcerl") { setwd(kim); .libPaths("G:/Other computers/My Laptop/Documents/R/R library") }
-if (Sys.getenv(c("USERNAME")) == "lpessin") { setwd(lea); .libPaths("G:/My Drive/R Library")  }
+if (Sys.getenv(c("USERNAME")) == "lpessin") { setwd(lea); .libPaths(c("G:/My Drive/Software/R Library", .libPaths())) }  # prepend, keep default library
 if (Sys.getenv(c("HOME" )) == "/home/lpessin") { setwd(lea.server) }
 if (Sys.getenv(c("HOME" )) == "/home/kmcerlea") { setwd(kim.server) }
 getwd() # check it worked
@@ -149,6 +151,16 @@ comb.alphabet <- sort(unique(as.vector(comb[!is.na(comb)])))
 comb.seq <- seqdef(as.data.frame(comb), states = comb.alphabet, right = "DEL")
 stopifnot(all(seqlength(comb.seq) == len.m))
 
+# How much room the duration null has: free years per couple = observed length
+# minus number of combined-state spells. 0 means the null reproduces the couple exactly.
+dss.m    <- as.matrix(seqdss(comb.seq))
+nspell.m <- rowSums(!is.na(dss.m) & dss.m != attr(comb.seq, "void"))
+free.yrs <- as.vector(len.m) - nspell.m
+print(table(free.yrs))
+print(table(nspell.m))
+cat("single-spell couples:", round(mean(nspell.m == 1), 3), "\n")
+cat("couples with 0 free years:", round(mean(free.yrs == 0), 3), "\n")
+
 alph.work <- alphabet(seq.work); alph.hw <- alphabet(seq.hw.hrs); alph.fam <- alphabet(seq.fam)
 
   ## Testing adding impossible matrix
@@ -193,10 +205,51 @@ split_channels <- function(null) {
   list(work = getp(1), hw = getp(2), fam = getp(3))
 }
 
+# NEW: This replaces the seqnull() for the duration model only
+# Duration null with per-couple length: same as WeightedCluster:::seqnullspell
+# (randomize = "duration") except that redrawn durations sum to the observed
+# length len[i] instead of ncol(seqdata). Returns a character matrix with NA
+# after the observed length, in the shape split_channels() expects.
+seqnull_duration_len <- function(seqdata, len) {
+  len  <- as.integer(as.vector(len))
+  Tn   <- ncol(seqdata)
+  dss2 <- as.matrix(seqdss(seqdata))
+  dss2[dss2 == attr(seqdata, "void")] <- NA_character_
+  if (ncol(dss2) < Tn)                       # seqdss() drops all-void columns
+    dss2 <- cbind(dss2, matrix(NA_character_, nrow(dss2), Tn - ncol(dss2)))
+  nspell <- rowSums(!is.na(dss2))
+  stopifnot(length(len) == nrow(dss2), all(nspell <= len))
+  
+  # one uniform per spell; rescale so durations sum to len[i], each spell >= 1
+  durprop <- matrix(runif(length(dss2)), nrow(dss2), ncol(dss2))
+  durprop[is.na(dss2)] <- NA
+  durprop <- 1 + (len - nspell) * durprop / rowSums(durprop, na.rm = TRUE)
+  
+  dur2    <- floor(durprop)
+  durrest <- durprop - dur2
+  durtot  <- rowSums(dur2, na.rm = TRUE)
+  # Studer's rounding (seqnullspell line 94), kept verbatim for comparability.
+  # Note: order() not rank(), so the shortfall years go to a permuted set of
+  # spells rather than those with the largest remainders. Row totals are exact.
+  cond    <- (t(apply(durrest, 1, order, decreasing = TRUE)) <= (len - durtot))
+  dur2[cond] <- dur2[cond] + 1
+  stopifnot(all(rowSums(dur2, na.rm = TRUE) == len))
+  
+  # unroll; [1:Tn] pads with NA beyond len[i]
+  out <- t(sapply(seq_len(nrow(dss2)), function(i) {
+    ok <- !is.na(dur2[i, ])
+    rep(dss2[i, ok], times = as.integer(dur2[i, ok]))[1:Tn]
+  }))
+  dimnames(out) <- dimnames(as.matrix(seqdata))
+  out
+}
+
 # NEW: demonstrates missing value problem
+# Modified to adjust for unequal length
 null_len_check <- function(m) {
-  ch <- split_channels(seqnull(comb.seq, model = m, imp.trans.limit = imp_limit))
-  rowSums(!is.na(ch$work))
+  null <- if (m == "duration") seqnull_duration_len(comb.seq, len.m)
+  else seqnull(comb.seq, model = m, imp.trans.limit = imp_limit)
+  rowSums(!is.na(split_channels(null)$work))
 }
 
 #null_len_check <- function(m) {
@@ -255,8 +308,14 @@ obs_trans <- unique(paste(comb[, -ncol(comb)], comb[, -1])[ok_obs])
 set.seed(seed)
 null_desc <- list(observed = trans_shares(obs_ch, obs_trans))
 for (model in null_models) {
-  pilot <- t(sapply(seq_len(R_pilot), function(i)
-    trans_shares(split_channels(seqnull(comb.seq, model = model, imp.trans.limit = imp_limit)), obs_trans))) # imp.trans = my_impossible
+  pilot <- t(sapply(seq_len(R_pilot), function(i) {
+    null <- if (model == "duration") seqnull_duration_len(comb.seq, len.m)
+    else seqnull(comb.seq, model = model, imp.trans.limit = imp_limit)
+    ch   <- split_channels(null)
+    mask <- col(ch$work) > as.vector(len.m)
+    ch$work[mask] <- NA; ch$hw[mask] <- NA; ch$fam[mask] <- NA
+    trans_shares(ch, obs_trans)
+  }))
   null_desc[[paste0(model, "_mean")]] <- colMeans(pilot)
   null_desc[[paste0(model, "_min")]]  <- apply(pilot, 2, min)
   null_desc[[paste0(model, "_max")]]  <- apply(pilot, 2, max)
@@ -271,8 +330,14 @@ write.csv(null_desc, file.path(out_dir, paste0("null_models_description_", count
 # equal the observed ones; 'single_spell_seq' (observed row) is the share of sequences the
 # duration null cannot randomise and should be small.
 
+
+#here the function works differently for the duration model vs the other two
 one_rep <- function(r, model) {
-  null <- seqnull(comb.seq, model = model, imp.trans.limit = imp_limit) # ,imp.trans = my_impossible)
+  null <- if (model == "duration") {
+    seqnull_duration_len(comb.seq, len.m)
+  } else {
+    seqnull(comb.seq, model = model, imp.trans.limit = imp_limit) # ,imp.trans = my_impossible)
+  }
   ch   <- split_channels(null)
   len.v <- as.vector(len.m)
   mask <- col(ch$work) > len.v
