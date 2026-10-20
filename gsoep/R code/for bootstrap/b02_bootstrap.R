@@ -31,7 +31,7 @@ options(repos=c(CRAN="https://cran.r-project.org"))
 
 
 # set WD for whomever is running the script
-lea <- 'G:/My Drive/(2) McErlean and Pessin - Life-course division of labor/' #leas folder
+lea <- 'G:/.shortcut-targets-by-id/1xwBJnyjpp046iCE2k6qzOz2M3gRNGpeK/WeEqualize Papers/Relationship Life Course' #leas folder
 kim <- 'G:/My Drive/WeEqualize Papers/Relationship Life Course' # Kim
 lea.server <- '/home/lpessin/stage/Life Course'
 kim.server <- '/home/kmcerlea/stage/Life Course'
