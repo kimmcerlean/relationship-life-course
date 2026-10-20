@@ -15,14 +15,14 @@ options(repos=c(CRAN="https://cran.r-project.org"))
 
 
 # set WD for whomever is running the script
-lea <- 'C:/Users/lpessin/OneDrive - Istituto Universitario Europeo/1. WeEqualize - Team Folder/Papers/Relationship Life Course' #leas folder
+lea <- 'G:/My Drive/(2) McErlean and Pessin - Life-course division of labor/' #leas folder
 kim <- 'G:/My Drive/WeEqualize Papers/Relationship Life Course' # Kim
 # kim <- 'C:/Users/mcerl/Istituto Universitario Europeo/Pessin, Lea - 1. WeEqualize - Team Folder/Papers/Relationship Life Course' # Kim
 lea.server <- '/home/lpessin/stage/Life Course'
 kim.server <- '/home/kmcerlea/stage/Life Course'
 
 if (Sys.getenv(c("USERNAME")) == "mcerl") { setwd(kim); .libPaths("G:/Other computers/My Laptop/Documents/R/R library") }
-if (Sys.getenv(c("USERNAME")) == "lpessin") { setwd(lea); .libPaths("G:/My Drive/R Library")  }
+if (Sys.getenv(c("USERNAME")) == "lpessin") { setwd(lea); .libPaths("G:/My Drive/Software/R Library")  }
 if (Sys.getenv(c("HOME" )) == "/home/lpessin") { setwd(lea.server) }
 if (Sys.getenv(c("HOME" )) == "/home/kmcerlea") { setwd(kim.server) }
 getwd() # check it worked
