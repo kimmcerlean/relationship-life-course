@@ -37,7 +37,7 @@ lea.server <- '/home/lpessin/stage/Life Course'
 kim.server <- '/home/kmcerlea/stage/Life Course'
 
 if (Sys.getenv(c("USERNAME")) == "mcerl") { setwd(kim); .libPaths("G:/Other computers/My Laptop/Documents/R/R library") }
-if (Sys.getenv(c("USERNAME")) == "lpessin") { setwd(lea); .libPaths(c("G:/My Drive/Software/R Library", .libPaths())) }  # prepend, keep default library
+if (Sys.getenv(c("USERNAME")) == "lpessin") { setwd(lea); .libPaths(c("G:/My Drive/Software/R Library", .libPaths())) }
 if (Sys.getenv(c("HOME" )) == "/home/lpessin") { setwd(lea.server) }
 if (Sys.getenv(c("HOME" )) == "/home/kmcerlea") { setwd(kim.server) }
 getwd() # check it worked
@@ -74,7 +74,7 @@ imp_limit_unrestricted <- -1   # used by the "combined_unrestricted" sensitivity
 
 R_pilot     <- 20              # pilot nulls per model for the descriptive table on what each null preserves
 imp_for_null <- 1              # imputation block used to generate the null data
-n_cores     <- 8               # Lea's laptop: 10 physical cores, leave 2 free; on the server max(1, parallel::detectCores() - 2)
+n_cores     <- 5               # Lea's laptop: 10 physical cores, but little RAM, leave 2 free; on the server max(1, parallel::detectCores() - 2)
 seed        <- 20261001
 cqi_keep    <- c("PBC", "HG", "ASW", "R2", "HC")   # HC: lower is better, handled below
 out_dir     <- file.path("results", country, "bootstrap")
