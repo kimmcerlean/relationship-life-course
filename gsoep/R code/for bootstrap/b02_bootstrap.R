@@ -65,10 +65,10 @@ null_models <- c("combined", "duration", "sequencing")
 # sequencing: durations kept attached to states, only the order randomised -> tests ordering structure
 
 ####### Revisit this, trying with impossible transition matrix for now
-imp_limit   <- 0               # seqnull(imp.trans.limit): only transitions never observed between combined states are
+#imp_limit   <- 0               # seqnull(imp.trans.limit): only transitions never observed between combined states are
 # excluded (the default -1 would let the generator invent transitions). No other restriction:
 # every observed transition, parity decreases included, is possible in the null.
-#imp_limit   <- -1
+imp_limit   <- -1             
 
 R_pilot     <- 20              # pilot nulls per model for the descriptive table on what each null preserves
 imp_for_null <- 1              # imputation block used to generate the null data
@@ -115,7 +115,7 @@ obs_stats <- lapply(blocks, function(idx) cluster_cqi(mcdist.det.min[idx, idx], 
 # array: block x k x index
 obs_arr <- simplify2array(obs_stats)              # k x index x block
 obs_arr <- aperm(obs_arr, c(3, 1, 2))             # block x k x index
-saveRDS(obs_arr, file.path(out_dir, "observed_cqi_by_imputation.rds"))
+saveRDS(obs_arr, file.path(out_dir, paste0("observed_cqi_by_imputation_", country, ".rds")))
 
 # Optional: quality of the POOLED partition evaluated on each block.
 # Requires the pooled assignment (from Stata) merged on data as data$cluster_pooled.
@@ -123,8 +123,8 @@ saveRDS(obs_arr, file.path(out_dir, "observed_cqi_by_imputation.rds"))
 if ("cluster_pooled" %in% names(data)) {
   pooled_q <- t(sapply(blocks, function(idx)
     wcClusterQuality(mcdist.det.min[idx, idx], data$cluster_pooled[idx])$stats[cqi_keep]))
-  write.csv(pooled_q, file.path(out_dir, "pooled_partition_quality_by_imputation.csv"))
-}
+  write.csv(pooled_q, file.path(out_dir, paste0("pooled_partition_quality_by_imputation_", country, ".csv")))
+  }
 
 # Keep only the imputation block used for the null, then drop the stacked matrices
 idx_null <- blocks[[imp_for_null]]
@@ -160,35 +160,35 @@ print(table(free.yrs))
 print(table(nspell.m))
 cat("single-spell couples:", round(mean(nspell.m == 1), 3), "\n")
 cat("couples with 0 free years:", round(mean(free.yrs == 0), 3), "\n")
-
+#here results suggest that the duration null doesn't make much sense for our data, I need to think about this more
 alph.work <- alphabet(seq.work); alph.hw <- alphabet(seq.hw.hrs); alph.fam <- alphabet(seq.fam)
 
-  ## Testing adding impossible matrix
-  fam.comb <- vapply(strsplit(comb.alphabet, "|", fixed = TRUE), `[`, "", 3)
-  
-  is_mar <- grepl("^MAR", fam.comb)
-  is_coh <- grepl("^COH", fam.comb)
-  stopifnot(any(is_mar), any(is_coh))
-  
-  g   <- expand.grid(i = seq_along(comb.alphabet), j = seq_along(comb.alphabet))
-  bad <- is_mar[g$i] & is_coh[g$j]
-  
-  my_impossible <- setNames(comb.alphabet[g$j[bad]], comb.alphabet[g$i[bad]])
-  
-  cat("blocked pairs:", length(my_impossible),
-      "| origins:", length(unique(names(my_impossible))), "\n")
-  
-  head(my_impossible)
-  names(my_impossible)
-  unname(my_impossible)
-  length(unique(names(my_impossible)))
-  head(data.frame(from = names(my_impossible),
-                  to   = unname(my_impossible)), 65)
-  
-  # dead-end guard: no origin may have ALL 100 destinations blocked
-  blocked <- split(unname(my_impossible), names(my_impossible))
-  stopifnot(all(vapply(blocked, function(d) length(setdiff(comb.alphabet, d)) > 0, TRUE)))
-  
+  # ## Testing adding impossible matrix
+  # fam.comb <- vapply(strsplit(comb.alphabet, "|", fixed = TRUE), `[`, "", 3)
+  # 
+  # is_mar <- grepl("^MAR", fam.comb)
+  # is_coh <- grepl("^COH", fam.comb)
+  # stopifnot(any(is_mar), any(is_coh))
+  # 
+  # g   <- expand.grid(i = seq_along(comb.alphabet), j = seq_along(comb.alphabet))
+  # bad <- is_mar[g$i] & is_coh[g$j]
+  # 
+  # my_impossible <- setNames(comb.alphabet[g$j[bad]], comb.alphabet[g$i[bad]])
+  # 
+  # cat("blocked pairs:", length(my_impossible),
+  #     "| origins:", length(unique(names(my_impossible))), "\n")
+  # 
+  # head(my_impossible)
+  # names(my_impossible)
+  # unname(my_impossible)
+  # length(unique(names(my_impossible)))
+  # head(data.frame(from = names(my_impossible),
+  #                 to   = unname(my_impossible)), 65)
+  # 
+  # # dead-end guard: no origin may have ALL 100 destinations blocked
+  # blocked <- split(unname(my_impossible), names(my_impossible))
+  # stopifnot(all(vapply(blocked, function(d) length(setdiff(comb.alphabet, d)) > 0, TRUE)))
+
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # 3. One replicate: generate -> split into channels -> CAT distance -> normalise
 #    -> ward.D + PAM -> CQIs
@@ -305,6 +305,12 @@ ok_obs    <- !is.na(comb[, -1]) & !is.na(comb[, -ncol(comb)])
 obs_trans <- unique(paste(comb[, -ncol(comb)], comb[, -1])[ok_obs])
 #So here is this what transitions are observed that are between non-null states?
 
+# Is marriage -> cohabitation really absent from the data, in fact 20 cases
+fam_from <- sub(".*\\|", "", comb[, -ncol(comb)])[ok_obs]   # family part of the 'from' state
+fam_to   <- sub(".*\\|", "", comb[, -1])[ok_obs]            # family part of the 'to' state
+cat("marriage -> cohabitation year-pairs observed:", sum(grepl("^MAR", fam_from) & grepl("^COH", fam_to)), "\n")
+cat("parity decreases observed:", sum(as.integer(sub(".*c", "", fam_to)) < as.integer(sub(".*c", "", fam_from))), "\n")
+
 set.seed(seed)
 null_desc <- list(observed = trans_shares(obs_ch, obs_trans))
 for (model in null_models) {
@@ -320,13 +326,11 @@ for (model in null_models) {
   null_desc[[paste0(model, "_min")]]  <- apply(pilot, 2, min)
   null_desc[[paste0(model, "_max")]]  <- apply(pilot, 2, max)
 }
-#### This is where I got error that stopped it all
-#### that went away once I updated to full imputation NOT sample. TOO SPARSE when just 500 sequences
+
 
 null_desc <- do.call(rbind, null_desc)
 print(round(null_desc, 4))
 write.csv(null_desc, file.path(out_dir, paste0("null_models_description_", country, ".csv")))
-# Checks: 'unobserved_transition' is 0 for every model; the duration null's transition shares
 # equal the observed ones; 'single_spell_seq' (observed row) is the share of sequences the
 # duration null cannot randomise and should be small.
 
@@ -356,10 +360,8 @@ one_rep <- function(r, model) {
   cluster_cqi(D, kvals)
 }
 
-##Error here: Error:  [!] size of substitution cost matrix must be 5x5
-##Also, alphabets and labels are mismatched...
 
-# time one replicate before launching
+# we time one replication on the combined null
 # OH i misread this. we are TIMING one replicate before doing this. we are not doing something at "time one"
 set.seed(seed)
 t1 <- system.time(test_rep <- one_rep(1, null_models[1]))
@@ -368,7 +370,6 @@ print(t1); print(test_rep)
 cat("Estimated core-hours for", R_boot, "replicates x", length(null_models), "models:",
     round(t1["elapsed"] * R_boot * length(null_models) / 3600, 1), "\n")
 
-## The code runs through here. I am not convinced it is correct.
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # 4. Run the bootstrap (forked parallelism; on Windows use parLapply instead)
@@ -380,7 +381,7 @@ for (model in null_models) {
   res <- parallel::mclapply(seq_len(R_boot), function(r) one_rep(r, model),
                             mc.cores = n_cores, mc.set.seed = TRUE)
   null_res[[model]] <- aperm(simplify2array(res), c(3, 1, 2))   # replicate x k x index
-  saveRDS(null_res, file.path(out_dir, "null_cqi.rds"))
+  saveRDS(null_res, file.path(out_dir, paste0("null_cqi_", country, ".rds")))
   cat("done:", model, "\n")
 }
 
