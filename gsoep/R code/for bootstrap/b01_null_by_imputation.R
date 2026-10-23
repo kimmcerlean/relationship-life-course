@@ -1,8 +1,8 @@
 # ---------------------------------------------------------------------
-#    Program: b03_null_by_imputation.R
+#    Program: b01_null_by_imputation.R
 #    Author: Kim McErlean & Lea Pessin
 #    Date: October 2026
-#    Goal: appendix check for the parametric bootstrap (b02_bootstrap.R). The null
+#    Goal: appendix check for the parametric bootstrap (b00_bootstrap.R). The null
 #          replicates in b02 rotate over the five imputations and are pooled into one
 #          band. This script asks whether that is innocuous: it generates R_check
 #          replicates of the primary null (combined, imp_limit = 0) from EACH imputation
@@ -14,7 +14,7 @@
 #      null_by_imputation_summary_<country>.csv  one row per k: max between-imputation shift of the
 #                                               null mean / pooled sd, and observed gap / sd, per index
 #
-#    Setup (data, costs, D*, clustering) copied from b02_bootstrap.R so this runs on its own.
+#    Setup (data, costs, D*, clustering) copied from b00_bootstrap.R so this runs on its own.
 #    Compute: length(imps) x R_check replicates, ~2 min each on one core. Run AFTER b02.
 # --------------------------------------------------------------------
 
@@ -52,7 +52,7 @@ out_dir   <- file.path("results", country, "bootstrap")
 dir.create(out_dir, showWarnings = FALSE, recursive = TRUE)
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Data, costs, D*, clustering: as in b02_bootstrap.R
+# Data, costs, D*, clustering: as in b00_bootstrap.R
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 data <- read_dta("created data/gsoep/gsoep_couples_wide_truncated.dta")

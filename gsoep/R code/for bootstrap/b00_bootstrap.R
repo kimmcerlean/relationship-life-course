@@ -1,5 +1,5 @@
 # ---------------------------------------------------------------------
-#    Program: bootstrap-validation_truncated.R
+#    Program: b00_bootstrap.R
 #    Author: Kim McErlean & Lea Pessin
 #    Date: October 2026
 #    Goal: validate the MCSA typology with Studer's (2021) parametric bootstrap,
