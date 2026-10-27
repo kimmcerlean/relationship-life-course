@@ -134,6 +134,9 @@ mcdist.det.min.pam <- wcKMedRange(mcdist.det.min,
 
 mc.min.val<-mcdist.det.min.pam[[4]]
 
+  #Output this:
+  write.csv(mc.min.val,("results/PSID/PSID_CQI_output_mcsa_normalized.csv"))
+
 mc.min.asw <- mc.min.val[,4]
 
 mc.min.r2 <- mc.min.val[,7]
@@ -144,6 +147,9 @@ mcdist.det.om.pam <- wcKMedRange(mcdist.det.om,
                                  kvals = 2:15)
 
 mc.om.val<-mcdist.det.om.pam[[4]]
+
+  #Output this:
+  write.csv(mc.om.val,("results/PSID/PSID_CQI_output_mcsa_original.csv"))
 
 mc.om.asw <- mc.om.val[,4]
 
@@ -157,6 +163,9 @@ work.pam <- wcKMedRange(dist.work.min,
 
 work.val<-work.pam[[4]]
 
+  #Output this:
+  write.csv(work.val,("results/PSID/PSID_CQI_output_work.csv"))
+
 work.asw <- work.val[,4]
 
 work.r2 <- work.val[,7]
@@ -167,16 +176,21 @@ fam.pam <- wcKMedRange(dist.fam.min,
 
 fam.val<-fam.pam[[4]]
 
+  #Output this:
+  write.csv(fam.val,("results/PSID/PSID_CQI_output_family.csv"))
+
 fam.asw <- fam.val[,4]
 
 fam.r2 <- fam.val[,7]
-
 
 # Housework
 hw.hrs.pam <- wcKMedRange(dist.hw.min, 
                           kvals = 2:15)
 
 hw.hrs.val<-hw.hrs.pam[[4]]
+
+  #Output this:
+  write.csv(hw.hrs.val,("results/PSID/PSID_CQI_output_hw.csv"))
 
 hw.hrs.asw <- hw.hrs.val[,4]
 
