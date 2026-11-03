@@ -528,40 +528,57 @@ print(as.data.frame(validated), digits = 3)
 write.csv(validated, file.path(out_dir, paste0("bootstrap_validated_k_", country, ".csv")), row.names = FALSE)
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# 6. Figures: raw CQI with null band and five observed lines; standardised with Max T line
+# 6. Figure per null model (ASW and HC only, following Studer 2021): top row raw CQI with
+#    the max-T band and five observed lines; bottom row standardised CQI with the max-T
+#    line. HC on its original scale in both rows. Can be run on its own after the settings
+#    block: boot_tab is read back from the summary CSV if it is not in memory.
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+if (!exists("boot_tab"))
+  boot_tab <- read.csv(file.path(out_dir, paste0("bootstrap_summary_", country, ".csv")))
+
 for (model in null_models) {
-  d <- boot_tab %>% filter(model == !!model) %>%
-    mutate(index = factor(index, levels = cqi_keep,
-                          labels = c("PBC", "Hubert's gamma", "ASW", "pseudo R2", "HC (lower = better)")))
-  band <- d %>% distinct(index, k, null_lo, null_hi, null_mean)
-  
-  p_raw <- ggplot() +
-    geom_ribbon(data = band, aes(k, ymin = null_lo, ymax = null_hi), fill = "grey80", alpha = 0.8) +
-    geom_line(data = band, aes(k, null_mean), colour = "grey50", linetype = 2) +
-    geom_line(data = d, aes(k, observed, group = block), colour = "#0072B2", linewidth = 0.5, alpha = 0.8) +
-    geom_vline(xintercept = k_chosen, linetype = 3) +
-    facet_wrap(~ index, scales = "free_y") +
+  d <- boot_tab %>%
+    filter(model == !!model, index %in% c("ASW", "HC")) %>%
+    mutate(null_sd = abs(observed - null_mean) / abs(std),   # sd of the null CQI (not stored; std = (obs - mean)/sd)
+           std_raw = (observed - null_mean) / null_sd,       # un-flipped: HC negative when better than the null
+           index   = factor(index, levels = c("ASW", "HC")))
+  band <- d %>%
+    group_by(index, k) %>%
+    summarise(null_mean = first(null_mean), null_sd = median(null_sd, na.rm = TRUE),
+              crit = first(maxT_crit95), .groups = "drop") %>%
+    mutate(lo = null_mean - crit * null_sd, hi = null_mean + crit * null_sd,
+           crit_signed = ifelse(index == "ASW", crit, -crit))
+
+  panels <- c(raw = "Observed CQI\nand null band", std = "Standardised:\n(obs - null) / sd")
+  lines <- bind_rows(d %>% transmute(index, k, block, y = observed, panel = panels["raw"]),
+                     d %>% transmute(index, k, block, y = std_raw,  panel = panels["std"])) %>%
+    mutate(panel = factor(panel, levels = panels))
+  ribbon <- band %>% mutate(panel = factor(panels["raw"], levels = panels))
+  hlines <- bind_rows(distinct(band, index, y = crit_signed) %>% mutate(lt = 2),
+                      distinct(band, index) %>% mutate(y = 0, lt = 1)) %>%
+    mutate(panel = factor(panels["std"], levels = panels))
+
+  p <- ggplot() +
+    geom_ribbon(data = ribbon, aes(k, ymin = lo, ymax = hi), fill = "grey80", alpha = 0.8) +
+    geom_line(data = ribbon, aes(k, null_mean), colour = "grey50", linetype = 2) +
+    geom_hline(data = hlines, aes(yintercept = y, linetype = factor(lt)), colour = "grey40", show.legend = FALSE) +
+    geom_line(data = lines, aes(k, y, group = block), colour = "#0072B2", linewidth = 0.5, alpha = 0.8) +
+    facet_grid(panel ~ index, scales = "free_y", switch = "y") +
+    expand_limits(y = 0) +
     scale_x_continuous(breaks = kvals) +
+    scale_linetype_manual(values = c(`1` = "solid", `2` = "dashed")) +
     labs(x = "Number of clusters", y = NULL,
-         title = paste0(country, ": observed CQIs (one line per imputation) vs. null model '", model, "'"),
-         subtitle = "Grey band: 2.5 to 97.5 percentile of bootstrapped null CQIs; dotted line: reported solution") +
-    theme_minimal(base_size = 11) + theme(panel.grid.minor = element_blank())
-  ggsave(file.path(out_dir, paste0("cqi_raw_vs_null_", model, "_", country, ".pdf")), p_raw, width = 10, height = 6)
-  
-  p_std <- ggplot(d, aes(k, std, group = block)) +
-    geom_hline(aes(yintercept = maxT_crit95), colour = "grey40", linetype = 2) +
-    geom_hline(yintercept = 0, colour = "grey70") +
-    geom_line(colour = "#0072B2", linewidth = 0.5, alpha = 0.8) +
-    geom_vline(xintercept = k_chosen, linetype = 3) +
-    facet_wrap(~ index, scales = "free_y") +
-    scale_x_continuous(breaks = kvals) +
-    labs(x = "Number of clusters", y = "Standardised CQI (higher = more structure than null)",
-         title = paste0(country, ": standardised CQIs vs. null model '", model, "'"),
-         subtitle = "Dashed line: 95th percentile of the Max-T null distribution") +
-    theme_minimal(base_size = 11) + theme(panel.grid.minor = element_blank())
-  ggsave(file.path(out_dir, paste0("cqi_std_maxT_", model, "_", country, ".pdf")), p_std, width = 10, height = 6)
+         title = paste0(country, ": cluster quality vs. null model '", model, "' (one line per imputation)"),
+         subtitle = "Grey band and dashed line: max-T 95% band and null mean (top); max-T critical value (bottom)") +
+    theme_minimal(base_size = 11) +
+    theme(panel.grid.minor = element_blank(),
+          strip.placement = "outside",
+          strip.text.y.left = element_text(angle = 0, hjust = 1, face = "bold"),
+          strip.text.x = element_text(face = "bold"),
+          strip.background = element_rect(fill = "grey95", colour = NA),
+          panel.spacing.y = unit(1.5, "lines"))
+  ggsave(file.path(out_dir, paste0("cqi_vs_null_", model, "_", country, ".pdf")), p, width = 8, height = 7)
 }
 
 save(obs_arr, null_res, boot_tab, validated, kvals, k_chosen, null_models, R_boot,
