@@ -19,19 +19,19 @@
 use "$temp/PSID_clusters_truncated_sequences.dta", clear
 
 // append using "$created_data/psid_couples_base.dta"
-// browse unique_id partner_id _mi_m _mi_id
+// browse unique_id partner_unique_id _mi_m _mi_id
 // tab _mi_miss, m
 // drop _mi_miss
 
 drop couple_id
-egen couple_id = group(unique_id partner_id)
+egen couple_id = group(unique_id partner_unique_id)
 // rename _mi_id couple_id
 unique couple_id _mi_id
-unique unique_id partner_id
+unique unique_id partner_unique_id
 
 gen mim = _mi_m
 
-keep couple_id unique_id partner_id mim mc6_factor mc7_factor mc8_factor // old (non-truncated): mc_ward_det_4cl mc_ward_det_5cl mc4_factor mc5_factor
+keep couple_id unique_id partner_unique_id mim mc3_factor mc4_factor mc5_factor mc6_factor mc7_factor mc8_factor // old (non-truncated): mc_ward_det_4cl mc_ward_det_5cl mc4_factor mc5_factor
 
 save "$created_data/PSID_truncated_clusters.dta", replace
 
@@ -56,14 +56,14 @@ mi register regular rel_start_all rel_end_all age_focal* SEX rel_status rel_type
 use "$created_data/psid_couples_wide_truncated.dta", clear
 
 mi set m -= (6,7,8,9,10) // only did first 5 imputations for now
-// unique unique_id partner_id if sequence_length>=3
+// unique unique_id partner_unique_id if sequence_length>=3
 keep if sequence_length>=3 // also only keep relationships longer than 3 years now (for truncated sequences)
 
 mi update
 
 gen mim = _mi_m
 drop couple_id
-egen couple_id = group (unique_id partner_id)
+egen couple_id = group (unique_id partner_unique_id)
 
 // mi merge 1:1 couple_id mim using "$created_data/PSID_clusters.dta", gen(howmatch) // keep(match) 
 merge 1:1 couple_id mim using "$created_data/PSID_truncated_clusters.dta"
@@ -77,17 +77,19 @@ mi update
 ********************************************************************************
 * Figure out the data structure
 ********************************************************************************
-browse unique_id partner_id _mi_m mc6_factor mc7_factor mc8_factor
-// there are no sequence objects here. Are there supposed to be? Or we just care about cluster membership?
+browse unique_id partner_unique_id _mi_m mc3_factor mc4_factor mc5_factor mc6_factor mc7_factor mc8_factor couple_work_trunc1 couple_hw_hrs_4cat_trunc1 family_type_5cat_trunc1
 
-tab mc6_factor, m
-tab mc7_factor, m
-tab mc8_factor, m // these match the charts I created but, is it problematic that no one in imputation 0 is assigned to a cluster? or is that fine? do I give them their own cluster maybe?
+tab mc5_factor, m
 
 // for now, very crude labels
-capture label define mc8_factor 1 "cf cohab + 2nd shift" 2 "persistent trad work" 3 "work complexity + cohab" 4 "ow + delayed parenthood" ///
-5 "work complexity + fam intensity" 6 "dual FT + 1-2 kids" 7 "dual FT + CF" 8 "dual FT + 2-3 kids"
-label values mc8_factor mc8_factor
+capture label define mc5_factor 1 "egal cohab to 2nd shift marriage" 2 "stable second shift" ///
+3 "traditionalization among direct marriers" 4 "stable trad married couples w children" 5 "egal marriage to 2nd shift marriage"
+
+label values mc5_factor mc5_factor
+
+tab mc5_factor couple_work_trunc4, row
+tab mc5_factor couple_hw_hrs_4cat_trunc4, row
+tab mc5_factor family_type_5cat_trunc4
 
 ********************************************************************************
 * Any variables still need to be created
@@ -118,7 +120,7 @@ tab _mi_m couple_educ_type, row
 // these are imputed so need mi passive
 mi passive: egen couple_earnings_t1 = rowtotal(earnings_t_focal1 earnings_t_focal_sp1)
 
-browse unique_id partner_id family_income_t1 family_income_t_sp1 couple_earnings_t1 earnings_t_focal1 earnings_t_focal_sp1
+browse unique_id partner_unique_id family_income_t1 family_income_t_sp1 couple_earnings_t1 earnings_t_focal1 earnings_t_focal_sp1
 sum couple_earnings_t1, detail
 
 mi passive: egen couple_earnings_quart1 = cut(couple_earnings_t1) if couple_earnings_t1!=0, group(4)
@@ -135,7 +137,7 @@ tab employment_status_man1
 tab employment_status_woman1
 
 // what about home ownership status? in theory should match across partners, esp at time1?
-label values housing_woman* housing_man* house_status
+label values housing_woman* housing_man* .
 tab housing_woman1 housing_man1, m // even here close to 100%, but not perfect
 tab housing_woman1 housing_man1 if _mi_m==0, m // okay yes nearly 100%
 
@@ -213,37 +215,19 @@ gen in_first_rel_man = 0
 replace in_first_rel_man = 1 if rel_no_man==1
 
 // first birth timing relative to relationship start
-	// the first birth info for each partner was created in step 5 in cluster prep
-	// oh, I guess i also have the first birth timing rel variables for focal spouse already created also...
-browse unique_id partner_id SEX rel_start_all FIRST_BIRTH_YR birth_timing_rel FIRST_BIRTH_YR_sp birth_timing_rel_sp yr_first_birth_woman yr_first_birth_man
-// okay, I had originally created this as relationship years following first birth, but that feels confusing from descriptive standpoint, so will create opposite
-// will need to workout out to account for the 9999s (using ever parent status?) so just leave that way for now. or should I just make missing actually? Since these are fixed, non-time-varying variables?
-gen first_birth_timing_man = yr_first_birth_man - rel_start_all
-replace first_birth_timing_man = . if yr_first_birth_man==9999
-
-gen first_birth_timing_woman = yr_first_birth_woman - rel_start_all
-replace first_birth_timing_woman = . if yr_first_birth_woman==9999
+	// created in earlier step
 
 // create a binary of pre / post
-	// browse unique_id partner_id SEX rel_start_all first_birth_timing_woman yr_first_birth_woman first_birth_timing_man yr_first_birth_man
-mi passive: gen first_birth_pre_rel_man = .
-mi passive: replace first_birth_pre_rel_man = 0 if first_birth_timing_man >=0 & first_birth_timing_man!=.
-mi passive: replace first_birth_pre_rel_man = 0 if yr_first_birth_man==9999 // can actually put 9999 here because is, theoretically, 0 if no births
-mi passive: replace first_birth_pre_rel_man = 1 if first_birth_timing_man <0 & first_birth_timing_man!=.
-
+	// browse unique_id partner_unique_id SEX rel_start_all first_birth_timing_woman yr_first_birth_woman first_birth_timing_man yr_first_birth_man'
+	// also moved this up earlier
+	
 tab first_birth_timing_man first_birth_pre_rel_man, m
 tab yr_first_birth_man first_birth_pre_rel_man, m
-
-mi passive: gen first_birth_pre_rel_woman = .
-mi passive: replace first_birth_pre_rel_woman = 0 if first_birth_timing_woman >=0 & first_birth_timing_woman!=.
-mi passive: replace first_birth_pre_rel_woman = 0 if yr_first_birth_woman==9999 // can actually put 9999 here because is, theoretically, 0 if no births
-mi passive: replace first_birth_pre_rel_woman = 1 if first_birth_timing_woman <0 & first_birth_timing_woman!=.
-
 tab first_birth_timing_woman first_birth_pre_rel_woman, m
 tab yr_first_birth_woman first_birth_pre_rel_woman, m
 
 // age of oldest child...wait, if I do this at relationship start, this is actually essentially the same? so I might not need to create this? Okay duh, this is why the POSITIVE version was useful - because that is essentially what that was...okay, let's just leave for now, we can revisit coding if needed later
-browse unique_id partner_id SEX rel_start_all yr_first_birth_woman first_birth_timing_woman yr_first_birth_man first_birth_timing_man family_type1
+browse unique_id partner_unique_id SEX rel_start_all yr_first_birth_woman first_birth_timing_woman yr_first_birth_man first_birth_timing_man family_type1
 
 // age of youngest child - this is just in the HH, prob useful descriptively but we don't 100% know with this variable if it's their kid together
 tab age_youngest_woman1 age_youngest_man1, m
@@ -345,17 +329,20 @@ tab employment_status_woman1 disabled_woman1
 
 // parents in HH
 // this is created in very first step 1 using info about parents unique IDs to know if they are in the HH, then in variable recodes, I update to say if one or both parents is in HH. so these are likely NOT congruous across partners (bc this is just based on individual's parents)
-tab num_parent_in_hh1 num_parent_in_hh_sp1 // there is a shockingly high amount of parents in HH. so, I could use at rel start. I could also try to create a variable that captures if there whole time? is there a lot of variation?
-browse unique_id num_parent_in_hh* if _mi_m!=0
-tab num_parent_in_hh1 // okay time 1 is not great, because I think I am sometimes capturing like a move out of the HH??
-tab num_parent_in_hh2 // bc it's much less at time 2..
-tab rel_type1 num_parent_in_hh1
-tab num_parent_in_hh1 num_parent_in_hh2
+// Update November 2026: I had to update this so it's ANY parent in HH, not number to get the imputation to work
 
-egen years_parent_in_hh = anycount(num_parent_in_hh1 num_parent_in_hh2 num_parent_in_hh3 num_parent_in_hh4 num_parent_in_hh5 num_parent_in_hh6 num_parent_in_hh7 num_parent_in_hh8 num_parent_in_hh9 num_parent_in_hh10), values(1 2)
-browse unique_id years_parent_in_hh num_parent_in_hh1 num_parent_in_hh2 num_parent_in_hh3 num_parent_in_hh4 num_parent_in_hh5 num_parent_in_hh6 num_parent_in_hh7 num_parent_in_hh8 num_parent_in_hh9 num_parent_in_hh10
+tab any_parent_in_hh1 any_parent_in_hh_sp1, m
 
-egen years_parent_in_hh_sp = anycount(num_parent_in_hh_sp1 num_parent_in_hh_sp2 num_parent_in_hh_sp3 num_parent_in_hh_sp4 num_parent_in_hh_sp5 num_parent_in_hh_sp6 num_parent_in_hh_sp7 num_parent_in_hh_sp8 num_parent_in_hh_sp9 num_parent_in_hh_sp10), values(1 2)
+tab any_parent_in_hh1 // okay time 1 is not great, because I think I am sometimes capturing like a move out of the HH??
+tab any_parent_in_hh2 // bc it's much less at time 2..
+
+tab any_parent_in_hh1 any_parent_in_hh2
+tab rel_type1 any_parent_in_hh1, row
+
+egen years_parent_in_hh = rowtotal(any_parent_in_hh1 any_parent_in_hh2 any_parent_in_hh3 any_parent_in_hh4 any_parent_in_hh5 any_parent_in_hh6 any_parent_in_hh7 any_parent_in_hh8 any_parent_in_hh9 any_parent_in_hh10)
+browse unique_id years_parent_in_hh any_parent_in_hh1 any_parent_in_hh2 any_parent_in_hh3 any_parent_in_hh4 any_parent_in_hh5 any_parent_in_hh6 any_parent_in_hh7 any_parent_in_hh8 any_parent_in_hh9 any_parent_in_hh10
+
+egen years_parent_in_hh_sp = rowtotal(any_parent_in_hh_sp1 any_parent_in_hh_sp2 any_parent_in_hh_sp3 any_parent_in_hh_sp4 any_parent_in_hh_sp5 any_parent_in_hh_sp6 any_parent_in_hh_sp7 any_parent_in_hh_sp8 any_parent_in_hh_sp9 any_parent_in_hh_sp10)
 
 gen years_parent_in_hh_man=years_parent_in_hh if SEX==1
 replace years_parent_in_hh_man=years_parent_in_hh_sp if SEX==2
@@ -365,6 +352,8 @@ replace years_parent_in_hh_woman=years_parent_in_hh_sp if SEX==1
 
 tab years_parent_in_hh_woman years_parent_in_hh_man
 browse unique_id years_parent_in_hh_woman years_parent_in_hh_man
+
+egen max_years_parent_in_hh = rowmax(years_parent_in_hh_woman years_parent_in_hh_man) // new Nov 2026 (might be better)
 
 // lives near childhood home (proxy POSSIBLY for proximity to parents). let's leave as this detailed 3 category now, but might revisit later (like same state y/n maybe?)
 label values lives_near_fam_man* lives_near_fam_woman* lives_family
@@ -378,7 +367,7 @@ tab lives_near_fam_man1 lives_near_fam_woman1
 // again, might time 1 and 2 be diff?
 tab num_65up_hh1 num_65up_hh_sp1, m
 tab num_65up_hh1 num_65up_hh_sp1 if _mi_m!=0, m
-tab num_65up_hh2 num_65up_hh_sp2 if _mi_m!=0, m // time 2 is more aligned
+tab num_65up_hh2 num_65up_hh_sp2 if _mi_m!=0, m
 
 tab num_65up_hh1 num_65up_hh2, m
 
@@ -485,7 +474,7 @@ drop relig_woman0 relig_woman1 relig_woman2 relig_woman3 relig_woman4
 
 // going to try creating the variables here, because I think I can just do the basic tab, per above
 tab couple_educ_type, gen(couple_educ)
-tab housing_woman1, gen(house_status)
+// tab housing_woman1, gen(house_status)
 tab raceth_man, gen(race_man)
 tab raceth_woman, gen(race_woman)
 tab region_gp_woman1, gen(region_gp)
@@ -500,102 +489,100 @@ tab lives_near_fam_woman1, gen(lives_woman)
 *Descriptive table by cluster
 putexcel set "$tables/stata_descriptives_by_cluster.xlsx", replace
 putexcel B1 = "Full Sample"
-putexcel C1 = "1: cf cohab + 2nd shift"
-putexcel D1 = "2: persistent trad work"
-putexcel E1 = "3: work complexity + cohab"
-putexcel F1 = "4: ow + delayed parenthood"
-putexcel G1 = "5: work complexity + fam intensity"
-putexcel H1 = "6: dual FT + 1-2 kids"
-putexcel I1 = "7: dual FT + CF"
-putexcel J1 = "8: dual FT + 2-3 kids"
+putexcel C1 = "(MC1, C3) egal cohab to 2nd shift marriage"
+putexcel D1 = "(MC2, C1) stable second shift"
+putexcel E1 = "(MC3, C5) traditionalization among direct marriers"
+putexcel F1 = "(MC4, C2) stable trad married couples w children"
+putexcel G1 = "(MC5, C4) egal marriage to 2nd shift marriage"
 
 putexcel A2 = "Couple Educ: Neither College"
 putexcel A3 = "Couple Educ: Her College"
 putexcel A4 = "Couple Educ: Him College"
 putexcel A5 = "Couple Educ: Both College"
 putexcel A6 = "Couple Earnings (T1)"
-putexcel A7 = "Housing Status T1: Neither"
-putexcel A8 = "Housing Status T1: Rents"
-putexcel A9 = "Housing Status T1: Owns"
-putexcel A10 = "Race Man: NH White"
-putexcel A11 = "Race Man: Black"
-putexcel A12 = "Race Man: Hispanic"
-putexcel A13 = "Race Man: NH Asian"
-putexcel A14 = "Race Man: NH Other"
-putexcel A15 = "Race Woman: NH White"
-putexcel A16 = "Race Woman: Black"
-putexcel A17 = "Race Woman: Hispanic"
-putexcel A18 = "Race Woman: NH Asian"
-putexcel A19 = "Race Woman: NH Other"
-putexcel A20 = "In Immigrant Sample Man"
-putexcel A21 = "In Immigrant Sample Woman"
-putexcel A22 = "Region: Northeast"
-putexcel A23 = "Region: North Central"
-putexcel A24 = "Region: South"
-putexcel A25 = "Region: West"
-// putexcel A26 = "Region: Other"
-putexcel A26 = "Age Man (T1)"
-putexcel A27 = "Age Woman (T1)"
-putexcel A28 = "Relationship Number Man"
-putexcel A29 = "Relationship Number Woman"
-putexcel A30 = "In First Rel YN: Man"
-putexcel A31 = "In First Rel YN: Woman"
-putexcel A32 = "First Birth Timing Man"
-putexcel A33 = "First Birth Timing Woman"
-putexcel A34 = "First Birth Pre Rel YN: Man"
-putexcel A35 = "First Birth Pre Rel YN: Woman"
-putexcel A36 = "Age Youngest Child in HH"
-putexcel A37 = "Ever Parent Man"
-putexcel A38 = "Ever Parent Woman"
-putexcel A39 = "MPF Y/N Man"
-putexcel A40 = "MPF Y/N Woman"
-putexcel A41 = "Man's Father has College Degree"
-putexcel A42 = "Man's Mother has College Degree"
-putexcel A43 = "Woman's Father has College Degree"
-putexcel A44 = "Woman's Mother has College Degree"
-putexcel A45 = "Man Lived with Bio Parents"
-putexcel A46 = "Woman Lived with Bio Parents"
-putexcel A47 = "Rel Cohort: 1990-1999"
-putexcel A48 = "Rel Cohort: 2000-2009"
-putexcel A49 = "Rel Cohort: 2010+"
-putexcel A50 = "Birth Cohort Man: Pre 1960s"
-putexcel A51 = "Birth Cohort Man: 1960s"
-putexcel A52 = "Birth Cohort Man: 1970s"
-putexcel A53 = "Birth Cohort Man: 1980s"
-putexcel A54 = "Birth Cohort Man: 1990s+"
-putexcel A55 = "Birth Cohort Woman: Pre 1960s"
-putexcel A56 = "Birth Cohort Woman: 1960s"
-putexcel A57 = "Birth Cohort Woman: 1970s"
-putexcel A58 = "Birth Cohort Woman: 1980s"
-putexcel A59 = "Birth Cohort Woman: 1990s+"
-putexcel A60 = "Religion Man: None"
-putexcel A61 = "Religion Man: Catholic"
-putexcel A62 = "Religion Man: Protestant"
-putexcel A63 = "Religion Man: Other Christian"
-putexcel A64 = "Religion Man: Other Non-Christian"
-putexcel A65 = "Religion Woman: None"
-putexcel A66 = "Religion Woman: Catholic"
-putexcel A67 = "Religion Woman: Protestant"
-putexcel A68 = "Religion Woman: Other Christian"
-putexcel A69 = "Religion Woman: Other Non-Christian"
-putexcel A70 = "Disabled Man Y/N"
-putexcel A71 = "Disabled Woman Y/N"
-putexcel A72 = "Man's Parents in HH (# Years)"
-putexcel A73 = "Woman's Parents in HH (# Years)"
-putexcel A74 = "Where Live Man: Same State"
-putexcel A75 = "Where Live Man: Same Region"
-putexcel A76 = "Where Live Man: Diff Region"
-putexcel A77 = "Where Live Woman: Same State"
-putexcel A78 = "Where Live Woman: Same Region"
-putexcel A79 = "Where Live Woman: Diff Region"
-putexcel A80 = "Number People 65+ in HH (average)"
-putexcel A81 = "Self-rated health Man (Avg T1)"
-putexcel A82 = "Self-rated health Woman (Avg T1)"
+putexcel A7 = "Homeowner T1 (YN)"
 
-local desc_vars "couple_educ1 couple_educ2 couple_educ3 couple_educ4 couple_earnings_t1 house_status1 house_status2 house_status3 race_man1 race_man2 race_man3 race_man4 race_man5 race_woman1 race_woman2 race_woman3 race_woman4 race_woman5 imm_sample_man imm_sample_woman region_gp1 region_gp2 region_gp3 region_gp4 age_man1 age_woman1 rel_no_man rel_no_woman in_first_rel_man in_first_rel_woman first_birth_timing_man first_birth_timing_woman first_birth_pre_rel_man first_birth_pre_rel_woman age_youngest_woman1 ever_parent_man ever_parent_woman mpf_man mpf_woman father_college_man mother_college_man father_college_woman mother_college_woman family_structure_man family_structure_woman rel_cohort1 rel_cohort2 rel_cohort3 bc_man1 bc_man2 bc_man3 bc_man4 bc_man5 bc_woman1 bc_woman2 bc_woman3 bc_woman4 bc_woman5 relig_man1 relig_man2 relig_man3 relig_man4 relig_man5 relig_woman1 relig_woman2 relig_woman3 relig_woman4 relig_woman5 disabled_man1 disabled_woman1 years_parent_in_hh_man years_parent_in_hh_woman lives_man1 lives_man2 lives_man3 lives_woman1 lives_woman2 lives_woman3 num_65up_hh_avg sr_health_man_rev1 sr_health_woman_rev1" // region_gp5 - this is "other" and it's too small in some cluster + imputation combos
+
+putexcel A8 = "Race Man: NH White"
+putexcel A9 = "Race Man: Black"
+putexcel A10 = "Race Man: Hispanic"
+putexcel A11 = "Race Man: NH Asian"
+putexcel A12 = "Race Man: NH Other"
+putexcel A13 = "Race Woman: NH White"
+putexcel A14 = "Race Woman: Black"
+putexcel A15 = "Race Woman: Hispanic"
+putexcel A16 = "Race Woman: NH Asian"
+putexcel A17 = "Race Woman: NH Other"
+putexcel A18 = "In Immigrant Sample Man"
+putexcel A19 = "In Immigrant Sample Woman"
+putexcel A20 = "Region: Northeast"
+putexcel A21 = "Region: North Central"
+putexcel A22 = "Region: South"
+putexcel A23 = "Region: West"
+// putexcel A24 = "Region: Other"
+putexcel A24 = "Age Man (T1)"
+putexcel A25 = "Age Woman (T1)"
+putexcel A26 = "Relationship Number Man"
+putexcel A27 = "Relationship Number Woman"
+putexcel A28 = "In First Rel YN: Man"
+putexcel A29 = "In First Rel YN: Woman"
+putexcel A30 = "First Birth Timing Man"
+putexcel A31 = "First Birth Timing Woman"
+putexcel A32 = "First Birth Pre Rel YN: Man"
+putexcel A33 = "First Birth Pre Rel YN: Woman"
+putexcel A34 = "Age Youngest Child in HH"
+putexcel A35 = "Ever Parent Man"
+putexcel A36 = "Ever Parent Woman"
+putexcel A37 = "MPF Y/N Man"
+putexcel A38 = "MPF Y/N Woman"
+putexcel A39 = "Man's Father has College Degree"
+putexcel A40 = "Man's Mother has College Degree"
+putexcel A41 = "Woman's Father has College Degree"
+putexcel A42 = "Woman's Mother has College Degree"
+putexcel A43 = "Man Lived with Bio Parents"
+putexcel A44 = "Woman Lived with Bio Parents"
+putexcel A45 = "Rel Cohort: 1990-1999"
+putexcel A46 = "Rel Cohort: 2000-2009"
+putexcel A47 = "Rel Cohort: 2010+"
+putexcel A48 = "Birth Cohort Man: Pre 1960s"
+putexcel A49 = "Birth Cohort Man: 1960s"
+putexcel A50 = "Birth Cohort Man: 1970s"
+putexcel A51 = "Birth Cohort Man: 1980s"
+putexcel A52 = "Birth Cohort Man: 1990s+"
+putexcel A53 = "Birth Cohort Woman: Pre 1960s"
+putexcel A54 = "Birth Cohort Woman: 1960s"
+putexcel A55 = "Birth Cohort Woman: 1970s"
+putexcel A56 = "Birth Cohort Woman: 1980s"
+putexcel A57 = "Birth Cohort Woman: 1990s+"
+putexcel A58 = "Religion Man: None"
+putexcel A59 = "Religion Man: Catholic"
+putexcel A60 = "Religion Man: Protestant"
+putexcel A61 = "Religion Man: Other Christian"
+putexcel A62 = "Religion Man: Other Non-Christian"
+putexcel A63 = "Religion Woman: None"
+putexcel A64 = "Religion Woman: Catholic"
+putexcel A65 = "Religion Woman: Protestant"
+putexcel A66 = "Religion Woman: Other Christian"
+putexcel A67 = "Religion Woman: Other Non-Christian"
+putexcel A68 = "Disabled Man Y/N"
+putexcel A69 = "Disabled Woman Y/N"
+putexcel A70 = "Man's Parents in HH (# Years)"
+putexcel A71 = "Woman's Parents in HH (# Years)"
+putexcel A72 = "Max # Years Any Parent in HH"
+putexcel A73 = "Where Live Man: Same State"
+putexcel A74 = "Where Live Man: Same Region"
+putexcel A75 = "Where Live Man: Diff Region"
+putexcel A76 = "Where Live Woman: Same State"
+putexcel A77 = "Where Live Woman: Same Region"
+putexcel A78 = "Where Live Woman: Diff Region"
+putexcel A79 = "Number People 65+ in HH (average)"
+putexcel A80 = "Self-rated health Man (Avg T1)"
+putexcel A81 = "Self-rated health Woman (Avg T1)"
+
+local desc_vars "couple_educ1 couple_educ2 couple_educ3 couple_educ4 couple_earnings_t1 housing_woman1 race_man1 race_man2 race_man3 race_man4 race_man5 race_woman1 race_woman2 race_woman3 race_woman4 race_woman5 imm_sample_man imm_sample_woman region_gp1 region_gp2 region_gp3 region_gp4 age_man1 age_woman1 rel_no_man rel_no_woman in_first_rel_man in_first_rel_woman first_birth_timing_man first_birth_timing_woman first_birth_pre_rel_man first_birth_pre_rel_woman age_youngest_woman1 ever_parent_man ever_parent_woman mpf_man mpf_woman father_college_man mother_college_man father_college_woman mother_college_woman family_structure_man family_structure_woman rel_cohort1 rel_cohort2 rel_cohort3 bc_man1 bc_man2 bc_man3 bc_man4 bc_man5 bc_woman1 bc_woman2 bc_woman3 bc_woman4 bc_woman5 relig_man1 relig_man2 relig_man3 relig_man4 relig_man5 relig_woman1 relig_woman2 relig_woman3 relig_woman4 relig_woman5 disabled_man1 disabled_woman1 years_parent_in_hh_man years_parent_in_hh_woman max_years_parent_in_hh lives_man1 lives_man2 lives_man3 lives_woman1 lives_woman2 lives_woman3 num_65up_hh_avg sr_health_man_rev1 sr_health_woman_rev1" // region_gp5 - this is "other" and it's too small in some cluster + imputation combos
 
 // full sample
-forvalues w=1/81{
+forvalues w=1/80{
 	local row=`w'+1
 	local var: word `w' of `desc_vars'
 	mi estimate: mean `var'	
@@ -606,14 +593,14 @@ forvalues w=1/81{
 
 
 // by cluster
-local col1 "C D E F G H I J"
+local col1 "C D E F G"
 
-forvalues c=1/8{
+forvalues c=1/5{
 	local col: word `c' of `col1'
-	forvalues w=1/81{
+	forvalues w=1/80{
 		local row=`w'+1
 		local var: word `w' of `desc_vars'
-		mi estimate, esampvaryok: mean `var' if mc8_factor==`c'
+		mi estimate, esampvaryok: mean `var' if mc5_factor==`c'
 		matrix c`var'= e(b_mi)
 		local c`var' = c`var'[1,1]
 		putexcel `col'`row' = `c`var'', nformat(#.#%)
@@ -621,14 +608,15 @@ forvalues c=1/8{
 }
 
 // small checks
-mi estimate, esampvaryok: proportion couple_educ_type raceth_woman if mc8_factor==1
-mi estimate, esampvaryok: proportion couple_educ_type raceth_woman if mc8_factor==8
-mi estimate, esampvaryok: mean couple_earnings_t1 sr_health_man_rev1 father_college_woman if mc8_factor==1
-mi estimate, esampvaryok: mean couple_earnings_t1 sr_health_man_rev1 father_college_woman if mc8_factor==8
-tabstat couple_earnings_t1, by(mc8_factor)
+mi estimate, esampvaryok: proportion couple_educ_type raceth_woman if mc5_factor==1
+mi estimate, esampvaryok: proportion couple_educ_type raceth_woman if mc5_factor==5
+mi estimate, esampvaryok: mean couple_earnings_t1 sr_health_man_rev1 father_college_woman if mc5_factor==1
+mi estimate, esampvaryok: mean couple_earnings_t1 sr_health_man_rev1 father_college_woman if mc5_factor==5
+tabstat couple_earnings_t1, by(mc5_factor)
+tabstat sequence_length, by(mc5_factor)
 
 // tabstat in_first_rel_man in_first_rel_woman first_birth_pre_rel_man first_birth_pre_rel_woman // added these later (11/7 - afer adding for UK / DE)
-// tabstat in_first_rel_man in_first_rel_woman first_birth_pre_rel_man first_birth_pre_rel_woman, by(mc8_factor)
+// tabstat in_first_rel_man in_first_rel_woman first_birth_pre_rel_man first_birth_pre_rel_woman, by(mc5_factor)
 
 // stopped here 9/5 (above is done - updated the variables so need to fix the reshape below)
 // okay back 10/20/25 - actually very few variables to add, because most of the created were fixed. so just truncated (x3) + sr health vars
@@ -637,6 +625,8 @@ tabstat couple_earnings_t1, by(mc8_factor)
 ********************************************************************************
 **# Describe sequences
 ********************************************************************************
+**Not yet repulled November 2026**
+
 // I think the data need to be LONG here (to get average across durations)
 use "$created_data/PSID_truncated_clusters_analysis.dta", clear
 
@@ -645,13 +635,13 @@ use "$created_data/PSID_truncated_clusters_analysis.dta", clear
 /*
 should I get some t1 variables to use as fixed when I reshape?? oh maybe this happened automatically? I think this only happens automatically if there is JUST a dur 1 version, but if it exists at all durations, will get reshaped? I guess, unless I don't include in reshape, but then that won't work for diff reasons...
 // religion_gp_man1 religion_gp_woman1 couple_earnings_t1
-// unique unique_id partner_id 
-// unique unique_id partner_id couple_earnings_t1
-// unique unique_id partner_id couple_earnings_t1 if _mi_m!=0
-// browse unique_id partner_id duration couple_earnings_t1 age_man1 _mi_m // right - if imputed, will match across durations, but not nec. across imputations
+// unique unique_id partner_unique_id 
+// unique unique_id partner_unique_id couple_earnings_t1
+// unique unique_id partner_unique_id couple_earnings_t1 if _mi_m!=0
+// browse unique_id partner_unique_id duration couple_earnings_t1 age_man1 _mi_m // right - if imputed, will match across durations, but not nec. across imputations
 */
 
-mi reshape long ft_pt_woman_end overwork_woman_end ft_pt_man_end overwork_man_end couple_work_end couple_work_ow_detailed_end couple_work_ow_end couple_hw_end couple_hw_hrs_end couple_hw_hrs_alt_end couple_hw_hrs_combo_end rel_type couple_num_children_gp_end family_type_end in_sample hh_status relationship housework_focal age_focal weekly_hrs_t_focal earnings_t_focal family_income_t partnered_imp educ_focal_imp num_children_imp_hh weekly_hrs_woman weekly_hrs_man housework_woman housework_man partnered_woman partnered_man num_children_woman num_children_man ft_pt_woman overwork_woman ft_pt_man overwork_man ft_pt_det_woman ft_pt_det_man  in_sample_sp hh_status_sp relationship_sp housework_focal_sp age_focal_sp weekly_hrs_t_focal_sp earnings_t_focal_sp family_income_t_sp partnered_imp_sp num_children_imp_hh_sp couple_work_ow_detailed couple_work_ow couple_hw_hrs_combo age_young_child RESPONDENT_WHO_ REGION_ employment_status_focal religion_focal lives_family_focal disabled_focal disabled_scale_focal sr_health_focal yr_retired_focal father_in_hh mother_in_hh num_parent_in_hh num_65up_hh rolling_births current_parent_status retired_est_focal house_status_all disabled_imp_focal age_young_child_sp RESPONDENT_WHO_sp REGION_sp employment_status_focal_sp religion_focal_sp lives_family_focal_sp disabled_focal_sp sr_health_focal_sp num_parent_in_hh_sp num_65up_hh_sp rolling_births_sp current_parent_status_sp retired_est_focal_sp house_status_all_sp employment_status_woman employment_status_man annual_earnings_woman annual_earnings_man age_youngest_woman age_youngest_man is_parent_woman is_parent_man region_woman region_man housing_woman housing_man religion_woman religion_man disabled_woman disabled_man sr_health_woman sr_health_man retired_woman retired_man lives_near_fam_woman lives_near_fam_man couple_work couple_hw couple_hw_hrs couple_hw_hrs_alt couple_num_children couple_num_children_gp family_type ft_pt_det_woman_end ft_pt_det_man_end couple_work_ow_trunc couple_hw_hrs_combo_trunc family_type_trunc sr_health_man_rev sr_health_woman_rev, i(unique_id partner_id rel_start_all rel_end_all) j(duration) 
+mi reshape long ft_pt_woman_end overwork_woman_end ft_pt_man_end overwork_man_end couple_work_end couple_work_ow_detailed_end couple_work_ow_end couple_hw_end couple_hw_hrs_end couple_hw_hrs_alt_end couple_hw_hrs_combo_end rel_type couple_num_children_gp_end family_type_end in_sample hh_status relationship housework_focal age_focal weekly_hrs_t_focal earnings_t_focal family_income_t partnered_imp educ_focal_imp num_children_imp_hh weekly_hrs_woman weekly_hrs_man housework_woman housework_man partnered_woman partnered_man num_children_woman num_children_man ft_pt_woman overwork_woman ft_pt_man overwork_man ft_pt_det_woman ft_pt_det_man  in_sample_sp hh_status_sp relationship_sp housework_focal_sp age_focal_sp weekly_hrs_t_focal_sp earnings_t_focal_sp family_income_t_sp partnered_imp_sp num_children_imp_hh_sp couple_work_ow_detailed couple_work_ow couple_hw_hrs_combo age_young_child RESPONDENT_WHO_ REGION_ employment_status_focal religion_focal lives_family_focal disabled_focal disabled_scale_focal sr_health_focal yr_retired_focal father_in_hh mother_in_hh num_parent_in_hh num_65up_hh rolling_births current_parent_status retired_est_focal house_status_all disabled_imp_focal age_young_child_sp RESPONDENT_WHO_sp REGION_sp employment_status_focal_sp religion_focal_sp lives_family_focal_sp disabled_focal_sp sr_health_focal_sp num_parent_in_hh_sp num_65up_hh_sp rolling_births_sp current_parent_status_sp retired_est_focal_sp house_status_all_sp employment_status_woman employment_status_man annual_earnings_woman annual_earnings_man age_youngest_woman age_youngest_man is_parent_woman is_parent_man region_woman region_man housing_woman housing_man religion_woman religion_man disabled_woman disabled_man sr_health_woman sr_health_man retired_woman retired_man lives_near_fam_woman lives_near_fam_man couple_work couple_hw couple_hw_hrs couple_hw_hrs_alt couple_num_children couple_num_children_gp family_type ft_pt_det_woman_end ft_pt_det_man_end couple_work_ow_trunc couple_hw_hrs_combo_trunc family_type_trunc sr_health_man_rev sr_health_woman_rev, i(unique_id partner_unique_id rel_start_all rel_end_all) j(duration) 
 
 tab _mi_m mc8_factor, m
 

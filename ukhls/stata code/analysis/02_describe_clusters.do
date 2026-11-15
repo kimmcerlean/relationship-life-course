@@ -55,13 +55,14 @@ mi update
 ********************************************************************************
 browse pidp eligible_partner _mi_m mc6_factor mc7_factor mc8_factor
 
-tab mc8_factor, m
+tab mc6_factor, m
+tab mc6_factor
 
 // for now, very crude labels
-capture label define mc8_factor 1 "cf cohab + 2nd shift" 2 "trans to neotrad" 3 "ow + CF cohab" 4 "fam diversity + trad work" ///
-5 "cf cohab + counter-trad hw" 6 "neotrad marriage" 7 "underwork + over-HW" 8 "neotrad cohab"
+capture label define mc6_factor 1 "ss cohab to neotrad marriage" 2 "traditionalization among direct marriers" 3 "egal cohab to 2nd shift marriage" ///
+4 "stable neotrad cohab w children" 5 "stable underemployment" 6 "stable neotrad marriage w children"
 
-label values mc8_factor mc8_factor
+label values mc6_factor mc6_factor
 
 ********************************************************************************
 * Any variables still need to be created
@@ -513,14 +514,12 @@ tab aid_hours_gp_sp1, gen(aid_time_sp)
 *Descriptive table by cluster
 putexcel set "$tables/UKHLS_stata_descriptives_by_cluster.xlsx", replace
 putexcel B1 = "Full Sample"
-putexcel C1 = "1: cf cohab + 2nd shift"
-putexcel D1 = "2: trans to neotrad"
-putexcel E1 = "3: ow + CF cohab"
-putexcel F1 = "4: fam diversity + trad work"
-putexcel G1 = "5: cf cohab + counter-trad hw"
-putexcel H1 = "6: neotrad marriage"
-putexcel I1 = "7: underwork + over-HW"
-putexcel J1 = "8: neotrad cohab"
+putexcel C1 = "(MC1, C4) ss cohab to neotrad marriage"
+putexcel D1 = "(MC2, C5) traditionalization among direct marriers"
+putexcel E1 = "(MC3, C3) egal cohab to 2nd shift marriage"
+putexcel F1 = "(MC4, C1) stable neotrad cohab w children"
+putexcel G1 = "(MC5, C6) stable underemployment"
+putexcel H1 = "(MC6, C2) stable neotrad marriage w children"
 
 putexcel A2 = "Couple Educ: Neither College"
 putexcel A3 = "Couple Educ: Her College"
@@ -611,14 +610,14 @@ forvalues w=1/75{
 }
 
 // by cluster
-local col1 "C D E F G H I J"
+local col1 "C D E F G H"
 
-forvalues c=1/8{
+forvalues c=1/6{
 	local col: word `c' of `col1'
 	forvalues w=1/75{
 		local row=`w'+1
 		local var: word `w' of `desc_vars'
-		mi estimate, esampvaryok: mean `var' if mc8_factor==`c'
+		mi estimate, esampvaryok: mean `var' if mc6_factor==`c'
 		matrix c`var'= e(b_mi)
 		local c`var' = c`var'[1,1]
 		putexcel `col'`row' = `c`var'', nformat(#.#%)
@@ -630,11 +629,12 @@ mi estimate: proportion couple_educ_type country_woman1
 mi estimate: proportion aid_hours_gp1 aid_hours_gp_sp1
 mi estimate: mean couple_earnings_t1 educ_type1 sr_health_man_rev1 father_college_woman rel_no_woman
 
-mi estimate, esampvaryok: proportion couple_educ_type country_woman1 if mc8_factor==1
-mi estimate, esampvaryok: proportion couple_educ_type country_woman1 if mc8_factor==4
-mi estimate, esampvaryok: mean couple_earnings_t1 educ_type1 sr_health_man_rev1 father_college_woman rel_no_woman if mc8_factor==1
-mi estimate, esampvaryok: mean couple_earnings_t1 educ_type1 sr_health_man_rev1 father_college_woman rel_no_woman if mc8_factor==7
-tabstat couple_earnings_t1, by(mc8_factor)
+mi estimate, esampvaryok: proportion couple_educ_type country_woman1 if mc6_factor==1
+mi estimate, esampvaryok: proportion couple_educ_type country_woman1 if mc6_factor==4
+mi estimate, esampvaryok: mean couple_earnings_t1 educ_type1 sr_health_man_rev1 father_college_woman rel_no_woman if mc6_factor==1
+mi estimate, esampvaryok: mean couple_earnings_t1 educ_type1 sr_health_man_rev1 father_college_woman rel_no_woman if mc6_factor==6
+tabstat couple_earnings_t1, by(mc6_factor)
+tabstat sequence_length, by(mc6_factor)
 
 ********************************************************************************
 /* Doesn't work because of no mi_m==0
@@ -671,7 +671,7 @@ mi reshape long age_all fihhmngrs_dv gor_dv nkids_dv jbstat aidhh aidxhh aidhrs 
 
 mi estimate: proportion couple_work_ow_trunc couple_hw_hrs_combo_trunc family_type_trunc if duration <=10
 
-tab _mi_m mc8_factor, m
+tab _mi_m mc6_factor, m
 
 tab couple_work_ow_trunc, gen(work_seq)
 tab couple_hw_hrs_combo_trunc, gen(hw_seq)
@@ -749,7 +749,7 @@ local col1 "C D E F G H I J"
 forvalues c=1/8{
 	local col: word `c' of `col1'
 	forvalues w=1/6{
-	   mi estimate, esampvaryok: mean work_seq`w' if mc8_factor==`c' & duration<=10
+	   mi estimate, esampvaryok: mean work_seq`w' if mc6_factor==`c' & duration<=10
 	   matrix w`w' = e(b_mi)
 	   local w`w' = w`w'[1,1]
 	   local row = 2+`w'
@@ -760,7 +760,7 @@ forvalues c=1/8{
 forvalues c=1/8{
 	local col: word `c' of `col1'
 	forvalues h=1/5{
-	   mi estimate, esampvaryok: mean hw_seq`h' if mc8_factor==`c'  & duration<=10
+	   mi estimate, esampvaryok: mean hw_seq`h' if mc6_factor==`c'  & duration<=10
 	   matrix h`h' = e(b_mi)
 	   local h`h' = h`h'[1,1]
 	   local row = 10+`h'
@@ -771,7 +771,7 @@ forvalues c=1/8{
 forvalues c=1/8{
 	local col: word `c' of `col1'
 	forvalues f=1/8{
-	   capture mi estimate, esampvaryok: mean fam_seq`f' if mc8_factor==`c'  & duration<=10
+	   capture mi estimate, esampvaryok: mean fam_seq`f' if mc6_factor==`c'  & duration<=10
 	   matrix f`f' = e(b_mi)
 	   local f`f' = f`f'[1,1]
 	   local row = 17+`f'
@@ -779,15 +779,15 @@ forvalues c=1/8{
 	}
 }
 
-// okay, this isn't working: mi estimate, esampvaryok: mean fam_seq7 if mc8_factor==2 & duration<=10 // in imputation 2, there are 0 people in cohab 2 children
-// tab family_type_trunc mc8_factor if _mi_m==2
+// okay, this isn't working: mi estimate, esampvaryok: mean fam_seq7 if mc6_factor==2 & duration<=10 // in imputation 2, there are 0 people in cohab 2 children
+// tab family_type_trunc mc6_factor if _mi_m==2
 // will capture work? does that mess up the loop or will it keep going? does running these two lines of code together simulate? let's add a capture
-capture mi estimate, esampvaryok: mean fam_seq7 if mc8_factor==2  & duration<=10
-mi estimate, esampvaryok: mean fam_seq8 if mc8_factor==2  & duration<=10
+capture mi estimate, esampvaryok: mean fam_seq7 if mc6_factor==2  & duration<=10
+mi estimate, esampvaryok: mean fam_seq8 if mc6_factor==2  & duration<=10
 // I think one problem is that it might just use the last stored matrix? so it might population with fam seq 6 instead of 7 (yes, this is exactly what happens...)? so can just check. or can fill in using the below code, i think it will work if I do as proportion, it is just not working this way because I am using the binary variables? so I think I can recover the info. just this isn't very replicable...
 
 // check
-mi estimate, esampvaryok: proportion couple_work_ow_trunc couple_hw_hrs_combo_trunc family_type_trunc if duration <=10 & mc8_factor==2 // okay this actually doesn't work either...so..I actually cannot fill it in? so, it just will be 0%. This is just descriptive anyway, it is fine.
-mi estimate, esampvaryok: proportion couple_work_ow_trunc couple_hw_hrs_combo_trunc if duration <=10 & mc8_factor==2
-mi estimate, esampvaryok: proportion couple_work_ow_trunc couple_hw_hrs_combo_trunc family_type_trunc if duration <=10 & mc8_factor==5
-mi estimate, esampvaryok: proportion couple_work_ow_trunc couple_hw_hrs_combo_trunc family_type_trunc if duration <=10 & mc8_factor==7
+mi estimate, esampvaryok: proportion couple_work_ow_trunc couple_hw_hrs_combo_trunc family_type_trunc if duration <=10 & mc6_factor==2 // okay this actually doesn't work either...so..I actually cannot fill it in? so, it just will be 0%. This is just descriptive anyway, it is fine.
+mi estimate, esampvaryok: proportion couple_work_ow_trunc couple_hw_hrs_combo_trunc if duration <=10 & mc6_factor==2
+mi estimate, esampvaryok: proportion couple_work_ow_trunc couple_hw_hrs_combo_trunc family_type_trunc if duration <=10 & mc6_factor==5
+mi estimate, esampvaryok: proportion couple_work_ow_trunc couple_hw_hrs_combo_trunc family_type_trunc if duration <=10 & mc6_factor==7

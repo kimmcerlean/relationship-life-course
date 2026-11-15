@@ -26,7 +26,7 @@ unique pid eligible_partner
 
 gen mim = _mi_m
 
-keep couple_id pid eligible_partner mim mc6_factor mc7_factor mc8_factor mc9_factor // old (non-truncated): mc_ward_det_4cl mc_ward_det_5cl mc4_factor mc5_factor
+keep couple_id pid eligible_partner mim mc4_factor mc5_factor mc6_factor mc7_factor mc8_factor mc9_factor mc10_factor
 
 save "$created_data/GSOEP_truncated_clusters.dta", replace
 
@@ -82,18 +82,15 @@ mi update
 ********************************************************************************
 * Figure out the data structure
 ********************************************************************************
-browse unique_id partner_id _mi_m mc6_factor mc7_factor mc8_factor mc9_factor
-// there are no sequence objects here. Are there supposed to be? Or we just care about cluster membership?
+browse pid eligible_partner _mi_m mc6_factor couple_work_trunc1 couple_hw_hrs_4cat_trunc1 family_type_5cat_trunc1
 
 tab mc6_factor, m
-tab mc7_factor, m
-tab mc8_factor, m
-tab mc9_factor, m
+tab mc6_factor
 
 // for now, very crude labels
-capture label define mc9_factor 1 "early trans to trad" 2 "egal cohab" 3 "neotrad cohab to marr" 4 "trad marriage" ///
-5 "cf cohab + 2nd shift" 6 "late trans to neotrad" 7 "OW + CF cohab" 8 "trad cohab with kids" 9 "UW cohab"
-label values mc9_factor mc9_factor
+capture label define mc6_factor 1 "ss cohab to neotrad marriage" 2 "egal cohab to 2nd shift marriage" 3 "stable trad married couples w children" ///
+ 4 "volatile breadwinning and hw" 5 "traditionalization among direct marriers" 6 "stable neotrad cohab w children"
+label values mc6_factor mc6_factor
 
 ********************************************************************************
 * Any variables still need to be created
@@ -166,7 +163,7 @@ label define ethn_homogamy 1 "Both German" 2 "Mixed" 3 "Both Abroad"
 label values ethn_homogamy ethn_homogamy
 
 // I actually think these where born are too detailed and will cause problems
-tab global_region_born_man mc9_factor
+tab global_region_born_man mc6_factor
 
 gen region_born_gp_man=.
 replace region_born_gp_man = 0 if global_region_born_man==0
@@ -186,8 +183,8 @@ label define region_born_gp 0 "Germany" 1 "SE Europe" 2 "Africa and Middle East"
 label values region_born_gp_man region_born_gp_woman region_born_gp
 
 tab global_region_born_man  region_born_gp_man, m
-tab region_born_gp_man mc9_factor
-tab region_born_gp_woman mc9_factor
+tab region_born_gp_man mc6_factor
+tab region_born_gp_woman mc6_factor
 
 // also denote which sample (created previously to drop refugees) - but let's see if this corresponds to above
 tab sample_type sample_type_sp, m // these match so I can just pick 1
@@ -396,14 +393,14 @@ tab any_parent_in_hh_sp2, m
 
 browse pid eligible_partner sequence_length any_parent_in_hh1 any_parent_in_hh2 any_parent_in_hh3 any_parent_in_hh4 any_parent_in_hh5 any_parent_in_hh6 any_parent_in_hh7 any_parent_in_hh8 any_parent_in_hh9 any_parent_in_hh10
 
-egen years_parent_in_hh = anycount(any_parent_in_hh2 any_parent_in_hh3 any_parent_in_hh4 any_parent_in_hh5 any_parent_in_hh6 any_parent_in_hh7 any_parent_in_hh8 any_parent_in_hh9 any_parent_in_hh10), values(1 2) // I am not including 1 because I think will skew. so need to divide by sequence length - 1 omg
+egen years_parent_in_hh = rowtotal(any_parent_in_hh2 any_parent_in_hh3 any_parent_in_hh4 any_parent_in_hh5 any_parent_in_hh6 any_parent_in_hh7 any_parent_in_hh8 any_parent_in_hh9 any_parent_in_hh10) // I am not including 1 because I think will skew. so need to divide by sequence length - 1 omg
 	// should I add actually divide by sequence length??
 	gen pct_parent_in_hh = years_parent_in_hh / (sequence_length - 1)
 	replace pct_parent_in_hh = 1 if pct_parent_in_hh>1 & pct_parent_in_hh!=.
 // browse pid eligible_partner sequence_length years_parent_in_hh pct_parent_in_hh any_parent_in_hh2 any_parent_in_hh3 any_parent_in_hh4 any_parent_in_hh5 any_parent_in_hh6 any_parent_in_hh7 any_parent_in_hh8 any_parent_in_hh9 any_parent_in_hh10
 mean years_parent_in_hh pct_parent_in_hh
 
-egen years_parent_in_hh_sp = anycount(any_parent_in_hh_sp2 any_parent_in_hh_sp3 any_parent_in_hh_sp4 any_parent_in_hh_sp5 any_parent_in_hh_sp6 any_parent_in_hh_sp7 any_parent_in_hh_sp8 any_parent_in_hh_sp9 any_parent_in_hh_sp10), values(1 2)
+egen years_parent_in_hh_sp = rowtotal(any_parent_in_hh_sp2 any_parent_in_hh_sp3 any_parent_in_hh_sp4 any_parent_in_hh_sp5 any_parent_in_hh_sp6 any_parent_in_hh_sp7 any_parent_in_hh_sp8 any_parent_in_hh_sp9 any_parent_in_hh_sp10)
 	gen pct_parent_in_hh_sp = years_parent_in_hh_sp / (sequence_length - 1)
 	replace pct_parent_in_hh_sp = 1 if pct_parent_in_hh_sp>1 & pct_parent_in_hh_sp!=.
 	
@@ -487,15 +484,12 @@ tab religion_gp_woman1, gen(relig_woman)
 *Descriptive table by cluster
 putexcel set "$tables/SOEP_stata_descriptives_by_cluster.xlsx", replace
 putexcel B1 = "Full Sample"
-putexcel C1 = "1: Early Trans to Trad"
-putexcel D1 = "2: Egal Cohab"
-putexcel E1 = "3: Neotrad Cohab to Marr"
-putexcel F1 = "4: Trad Marriage"
-putexcel G1 = "5: CF Cohab + 2nd Shift"
-putexcel H1 = "6: Late Trans to Neotrad"
-putexcel I1 = "7: OW + CF Cohab"
-putexcel J1 = "8: Trad Cohab + Kids"
-putexcel K1 = "9: UW Cohab"
+putexcel C1 = "(MC1,C4) ss cohab to neotrad marriage"
+putexcel D1 = "(MC2,C3) egal cohab to 2nd shift marriage"
+putexcel E1 = "(MC3,C2) stable trad married couples w children"
+putexcel F1 = "(MC4,C6) volatile breadwinning and hw"
+putexcel G1 = "(MC5,C5) traditionalization among direct marriers"
+putexcel H1 = "(MC6,C1) stable neotrad cohab w children"
 
 putexcel A2 = "Couple Educ: Neither College"
 putexcel A3 = "Couple Educ: Her College"
@@ -594,14 +588,14 @@ forvalues w=1/81{
 
 // by cluster
 log using "$results/cluster_descriptives.log", replace
-local col1 "C D E F G H I J K"
+local col1 "C D E F G H"
 
-forvalues c=1/9{
+forvalues c=1/6{
 	local col: word `c' of `col1'
 	forvalues w=1/81{
 		local row=`w'+1
 		local var: word `w' of `desc_vars'
-		capture noisily mi estimate, esampvaryok: mean `var' if mc9_factor==`c'
+		capture noisily mi estimate, esampvaryok: mean `var' if mc6_factor==`c'
 		matrix c`var'= e(b_mi)
 		local c`var' = c`var'[1,1]
 		putexcel `col'`row' = `c`var'', nformat(#.#%)
@@ -610,24 +604,28 @@ forvalues c=1/9{
 
 log close
 
+/* 
+I think this is a remnant from when I had 9 clusters...
 // the global region born women is failing for cluster 3, born in Africa, even though I recoded
-tab region_born_gp_woman mc9_factor
-mi estimate, esampvaryok: mean where_born_woman3 if mc9_factor==3
-capture mi estimate, esampvaryok: mean where_born_woman3 if mc9_factor==3
-capture noisily mi estimate, esampvaryok: mean where_born_woman3 if mc9_factor==3
+tab region_born_gp_woman mc6_factor
+mi estimate, esampvaryok: mean where_born_woman3 if mc6_factor==3
+capture mi estimate, esampvaryok: mean where_born_woman3 if mc6_factor==3
+capture noisily mi estimate, esampvaryok: mean where_born_woman3 if mc6_factor==3
 // could add a capture to the above. is that problematic, though, because I won't know where else fails?
 // could use capture noisily I think, and then a log file? so that I can go through and check once it's done? if any errors get thrown?
 // clusters 1 and 2 finished so I will just start with cluster 3 to rerun for now (bc this takes so long)
+*/
 
 // check
 mi estimate: proportion couple_educ_type region_born_gp_man religion_gp_woman1 // validate that this matches
 mi estimate: mean couple_earnings_t1 educ_type1 sr_health_man_rev1 father_college_woman rel_no_woman
 
-mi estimate, esampvaryok: proportion couple_educ_type region_born_gp_man religion_gp_woman1 if mc9_factor==1
-mi estimate, esampvaryok: proportion couple_educ_type region_born_gp_man religion_gp_woman1 if mc9_factor==4
-mi estimate, esampvaryok: mean couple_earnings_t1 educ_type1 sr_health_man_rev1 father_college_woman rel_no_woman  if mc9_factor==2
-mi estimate, esampvaryok: mean couple_earnings_t1 educ_type1 sr_health_man_rev1 father_college_woman rel_no_woman  if mc9_factor==7
-tabstat couple_earnings_t1, by(mc9_factor)
+mi estimate, esampvaryok: proportion couple_educ_type region_born_gp_man religion_gp_woman1 if mc6_factor==1
+mi estimate, esampvaryok: proportion couple_educ_type region_born_gp_man religion_gp_woman1 if mc6_factor==4
+mi estimate, esampvaryok: mean couple_earnings_t1 educ_type1 sr_health_man_rev1 father_college_woman rel_no_woman  if mc6_factor==2
+mi estimate, esampvaryok: mean couple_earnings_t1 educ_type1 sr_health_man_rev1 father_college_woman rel_no_woman  if mc6_factor==6
+tabstat couple_earnings_t1, by(mc6_factor)
+tabstat sequence_length, by(mc6_factor)
 
 ********************************************************************************
 /* Doesn't work because of no mi_m==0
@@ -657,24 +655,24 @@ restore
 *Exploration
 ********************************************************************************
 // trying to sort out what correlates with mothers shifting back from no work to PT work in some clusters. is it child aging? (just some clusters I can't tell if they're having an additional kid which is confusing)
-// Specifically real clusters: 2, 3, and a bit 7. These are MC9: 8, 4, 1 (respectively)
+// Specifically real clusters: 2, 3, and a bit 7. These are mc6: 8, 4, 1 (respectively)
 
 // use "$created_data/GSOEP_truncated_clusters_analysis.dta", clear
-browse mc9_factor couple_work_ow_trunc* age_youngest_child1 age_youngest_child2 age_youngest_child3 age_youngest_child4 age_youngest_child5 age_youngest_child6 age_youngest_child7 age_youngest_child8 age_youngest_child9 age_youngest_child10 if mc9_factor==8 // in real cluster 2, around duration 4-5, it switches
+browse mc6_factor couple_work_ow_trunc* age_youngest_child1 age_youngest_child2 age_youngest_child3 age_youngest_child4 age_youngest_child5 age_youngest_child6 age_youngest_child7 age_youngest_child8 age_youngest_child9 age_youngest_child10 if mc6_factor==8 // in real cluster 2, around duration 4-5, it switches
 	forvalues d=1/10{
-		tabstat age_youngest_child`d' if mc9_factor==8 & age_youngest_child`d'!=9999
+		tabstat age_youngest_child`d' if mc6_factor==8 & age_youngest_child`d'!=9999
 	}
-browse mc9_factor couple_work_ow_trunc* age_youngest_child1 age_youngest_child2 age_youngest_child3 age_youngest_child4 age_youngest_child5 age_youngest_child6 age_youngest_child7 age_youngest_child8 age_youngest_child9 age_youngest_child10 if mc9_factor==4 // in real cluster 3, around duration 3-4-5, it switches
+browse mc6_factor couple_work_ow_trunc* age_youngest_child1 age_youngest_child2 age_youngest_child3 age_youngest_child4 age_youngest_child5 age_youngest_child6 age_youngest_child7 age_youngest_child8 age_youngest_child9 age_youngest_child10 if mc6_factor==4 // in real cluster 3, around duration 3-4-5, it switches
 	forvalues d=1/10{
-		tabstat age_youngest_child`d' if mc9_factor==4 & age_youngest_child`d'!=9999
+		tabstat age_youngest_child`d' if mc6_factor==4 & age_youngest_child`d'!=9999
 	}
 	forvalues d=1/10{
-		tabstat age_youngest_child`d' if mc9_factor==4 & age_youngest_child`d'!=9999 & couple_work_ow_trunc`d'==2
-		tabstat age_youngest_child`d' if mc9_factor==4 & age_youngest_child`d'!=9999 & couple_work_ow_trunc`d'==1
+		tabstat age_youngest_child`d' if mc6_factor==4 & age_youngest_child`d'!=9999 & couple_work_ow_trunc`d'==2
+		tabstat age_youngest_child`d' if mc6_factor==4 & age_youngest_child`d'!=9999 & couple_work_ow_trunc`d'==1
 	}
-browse mc9_factor couple_work_ow_trunc* age_youngest_child1 age_youngest_child2 age_youngest_child3 age_youngest_child4 age_youngest_child5 age_youngest_child6 age_youngest_child7 age_youngest_child8 age_youngest_child9 age_youngest_child10 if mc9_factor==1 // in real cluster 7, around duration 7-8, it switches
+browse mc6_factor couple_work_ow_trunc* age_youngest_child1 age_youngest_child2 age_youngest_child3 age_youngest_child4 age_youngest_child5 age_youngest_child6 age_youngest_child7 age_youngest_child8 age_youngest_child9 age_youngest_child10 if mc6_factor==1 // in real cluster 7, around duration 7-8, it switches
 	forvalues d=1/10{
-		tabstat age_youngest_child`d' if mc9_factor==1 & age_youngest_child`d'!=9999
+		tabstat age_youngest_child`d' if mc6_factor==1 & age_youngest_child`d'!=9999
 	}
 
 ********************************************************************************
@@ -688,7 +686,7 @@ mi reshape long employment self_reported_health disability_yn religious_affiliat
 mi estimate: proportion couple_work_ow_trunc couple_hw_hrs_weekly_trunc family_type_trunc if duration <=10
 mi estimate: proportion couple_work_ow_trunc couple_hw_hrs_weekly_trunc family_type_trunc if duration ==10
 
-tab _mi_m mc9_factor, m
+tab _mi_m mc6_factor, m
 
 tab couple_work_ow_trunc, gen(work_seq)
 tab couple_hw_hrs_weekly_trunc, gen(hw_seq)
@@ -767,7 +765,7 @@ local col1 "C D E F G H I J K"
 forvalues c=1/9{
 	local col: word `c' of `col1'
 	forvalues w=1/6{
-	   mi estimate, esampvaryok: mean work_seq`w' if mc9_factor==`c' & duration<=10
+	   mi estimate, esampvaryok: mean work_seq`w' if mc6_factor==`c' & duration<=10
 	   matrix w`w' = e(b_mi)
 	   local w`w' = w`w'[1,1]
 	   local row = 2+`w'
@@ -778,7 +776,7 @@ forvalues c=1/9{
 forvalues c=1/9{
 	local col: word `c' of `col1'
 	forvalues h=1/5{
-	   mi estimate, esampvaryok: mean hw_seq`h' if mc9_factor==`c'  & duration<=10
+	   mi estimate, esampvaryok: mean hw_seq`h' if mc6_factor==`c'  & duration<=10
 	   matrix h`h' = e(b_mi)
 	   local h`h' = h`h'[1,1]
 	   local row = 10+`h'
@@ -789,7 +787,7 @@ forvalues c=1/9{
 forvalues c=1/9{
 	local col: word `c' of `col1'
 	forvalues f=1/8{
-	   capture noisily mi estimate, esampvaryok: mean fam_seq`f' if mc9_factor==`c'  & duration<=10 // didn't do capture with noisily, so there are a few I need to check; think I ran into similar issues like I did with UK
+	   capture noisily mi estimate, esampvaryok: mean fam_seq`f' if mc6_factor==`c'  & duration<=10 // didn't do capture with noisily, so there are a few I need to check; think I ran into similar issues like I did with UK
 	   matrix f`f' = e(b_mi)
 	   local f`f' = f`f'[1,1]
 	   local row = 17+`f'
@@ -799,7 +797,7 @@ forvalues c=1/9{
 
 
 // check
-mi estimate, esampvaryok: proportion couple_work_ow_trunc couple_hw_hrs_weekly_trunc family_type_trunc if duration <=10 & mc9_factor==1
-mi estimate, esampvaryok: proportion couple_work_ow_trunc couple_hw_hrs_weekly_trunc family_type_trunc if duration <=10 & mc9_factor==4
-mi estimate, esampvaryok: proportion couple_work_ow_trunc couple_hw_hrs_weekly_trunc family_type_trunc if duration <=10 & mc9_factor==9
+mi estimate, esampvaryok: proportion couple_work_ow_trunc couple_hw_hrs_weekly_trunc family_type_trunc if duration <=10 & mc6_factor==1
+mi estimate, esampvaryok: proportion couple_work_ow_trunc couple_hw_hrs_weekly_trunc family_type_trunc if duration <=10 & mc6_factor==4
+mi estimate, esampvaryok: proportion couple_work_ow_trunc couple_hw_hrs_weekly_trunc family_type_trunc if duration <=10 & mc6_factor==9
 
