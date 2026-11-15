@@ -92,9 +92,11 @@ load("created data/gsoep/gsoep_cluster-comparison-truncated.RData")
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Get the clusters: PAM using Ward's as starting point
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# replace seq.hw.hrs.weekly with seq.hw.hrs
+# replace seq.work.ow with seq.work
 
 # For reference, normalized distance matrix created in previous step
-# mcdist.det.om <- seqdistmc(channels=list(seq.work.ow, seq.hw.hrs.weekly, seq.fam), ## Seq states NOT om matrix
+#mcdist.det.om <- seqdistmc(channels=list(seq.work, seq.hw.hrs, seq.fam), ## Seq states NOT om matrix
 #                           method="OM", 
 #                           indel=list(work.miss.indel,hw.miss.indel, fam.miss.indel),
 #                           sm=list(work.miss.cost$sm, hw.miss.cost$sm, fam.miss.cost$sm),
@@ -109,8 +111,61 @@ mc.det.ward1 <- hclust(as.dist(mcdist.det.min),
 # Apply PAM clustering + Ward starting point
 # Ward's clustering is explained in Chapter 4
 
-mcdist.om.pam.ward <- wcKMedRange(mcdist.det.min, kvals = 2:10,
+mcdist.om.pam.ward <- wcKMedRange(mcdist.det.min, kvals = 2:15,
                                       initialclust = mc.det.ward1)
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Prep work for 4 cluster solution
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+# Cut tree at cluster==4
+
+mc4 <- mcdist.om.pam.ward$clustering$cluster4 # these are sub"folders" in ward output
+
+# Label the clusters from 1 to 4
+labels4<-unique(mc4)
+sort(labels4)
+
+mc4.factor <- factor(mc4, levels = sort(labels4),
+                     c("1", "2", "3", "4"))
+
+# Separate objects for each channel and for each cluster
+
+data$mc4.factor <- as.numeric(mc4.factor)
+
+# Identify position of variables indicating start and end of sequences
+
+mc4.work1.seq <- seq.work[data$mc4.factor == "1", ]
+mc4.work2.seq <- seq.work[data$mc4.factor == "2", ]
+mc4.work3.seq <- seq.work[data$mc4.factor == "3", ]
+mc4.work4.seq <- seq.work[data$mc4.factor == "4", ]
+
+mc4.hw.hrs1.seq <- seq.hw.hrs[data$mc4.factor == "1", ]
+mc4.hw.hrs2.seq <- seq.hw.hrs[data$mc4.factor == "2", ]
+mc4.hw.hrs3.seq <- seq.hw.hrs[data$mc4.factor == "3", ]
+mc4.hw.hrs4.seq <- seq.hw.hrs[data$mc4.factor == "4", ]
+
+mc4.fam1.seq <- seq.fam[data$mc4.factor == "1", ]
+mc4.fam2.seq <- seq.fam[data$mc4.factor == "2", ]
+mc4.fam3.seq <- seq.fam[data$mc4.factor == "3", ]
+mc4.fam4.seq <- seq.fam[data$mc4.factor == "4", ]
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+# Obtain relative frequencies of the four clusters
+
+relfreq4 <- data %>% 
+  count(mc4.factor) %>% 
+  mutate(share = n/ sum(n)) %>%
+  arrange(share)
+
+# Convert relative frequencies to percentages (will be used for labeling the y-axes)
+share <- round(as.numeric(relfreq4$share)*100, 1)
+
+# display frequencies of each cluster.
+print(relfreq4)
+
+write.csv(relfreq4,("results/GSOEP/truncated_cluster_freq_mc4.csv"))
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Prep work for 5 cluster solution
@@ -133,17 +188,17 @@ data$mc5.factor <- as.numeric(mc5.factor)
 
 # Identify position of variables indicating start and end of sequences
 
-mc5.work.ow1.seq <- seq.work.ow[data$mc5.factor == "1", ]
-mc5.work.ow2.seq <- seq.work.ow[data$mc5.factor == "2", ]
-mc5.work.ow3.seq <- seq.work.ow[data$mc5.factor == "3", ]
-mc5.work.ow4.seq <- seq.work.ow[data$mc5.factor == "4", ]
-mc5.work.ow5.seq <- seq.work.ow[data$mc5.factor == "5", ]
+mc5.work1.seq <- seq.work[data$mc5.factor == "1", ]
+mc5.work2.seq <- seq.work[data$mc5.factor == "2", ]
+mc5.work3.seq <- seq.work[data$mc5.factor == "3", ]
+mc5.work4.seq <- seq.work[data$mc5.factor == "4", ]
+mc5.work5.seq <- seq.work[data$mc5.factor == "5", ]
 
-mc5.hw.hrs1.seq <- seq.hw.hrs.weekly[data$mc5.factor == "1", ]
-mc5.hw.hrs2.seq <- seq.hw.hrs.weekly[data$mc5.factor == "2", ]
-mc5.hw.hrs3.seq <- seq.hw.hrs.weekly[data$mc5.factor == "3", ]
-mc5.hw.hrs4.seq <- seq.hw.hrs.weekly[data$mc5.factor == "4", ]
-mc5.hw.hrs5.seq <- seq.hw.hrs.weekly[data$mc5.factor == "5", ]
+mc5.hw.hrs1.seq <- seq.hw.hrs[data$mc5.factor == "1", ]
+mc5.hw.hrs2.seq <- seq.hw.hrs[data$mc5.factor == "2", ]
+mc5.hw.hrs3.seq <- seq.hw.hrs[data$mc5.factor == "3", ]
+mc5.hw.hrs4.seq <- seq.hw.hrs[data$mc5.factor == "4", ]
+mc5.hw.hrs5.seq <- seq.hw.hrs[data$mc5.factor == "5", ]
 
 mc5.fam1.seq <- seq.fam[data$mc5.factor == "1", ]
 mc5.fam2.seq <- seq.fam[data$mc5.factor == "2", ]
@@ -189,19 +244,19 @@ data$mc6.factor <- as.numeric(mc6.factor)
 
 # Identify position of variables indicating start and end of sequences
 
-mc6.work.ow1.seq <- seq.work.ow[data$mc6.factor == "1", ]
-mc6.work.ow2.seq <- seq.work.ow[data$mc6.factor == "2", ]
-mc6.work.ow3.seq <- seq.work.ow[data$mc6.factor == "3", ]
-mc6.work.ow4.seq <- seq.work.ow[data$mc6.factor == "4", ]
-mc6.work.ow5.seq <- seq.work.ow[data$mc6.factor == "5", ]
-mc6.work.ow6.seq <- seq.work.ow[data$mc6.factor == "6", ]
+mc6.work1.seq <- seq.work[data$mc6.factor == "1", ]
+mc6.work2.seq <- seq.work[data$mc6.factor == "2", ]
+mc6.work3.seq <- seq.work[data$mc6.factor == "3", ]
+mc6.work4.seq <- seq.work[data$mc6.factor == "4", ]
+mc6.work5.seq <- seq.work[data$mc6.factor == "5", ]
+mc6.work6.seq <- seq.work[data$mc6.factor == "6", ]
 
-mc6.hw.hrs1.seq <- seq.hw.hrs.weekly[data$mc6.factor == "1", ]
-mc6.hw.hrs2.seq <- seq.hw.hrs.weekly[data$mc6.factor == "2", ]
-mc6.hw.hrs3.seq <- seq.hw.hrs.weekly[data$mc6.factor == "3", ]
-mc6.hw.hrs4.seq <- seq.hw.hrs.weekly[data$mc6.factor == "4", ]
-mc6.hw.hrs5.seq <- seq.hw.hrs.weekly[data$mc6.factor == "5", ]
-mc6.hw.hrs6.seq <- seq.hw.hrs.weekly[data$mc6.factor == "6", ]
+mc6.hw.hrs1.seq <- seq.hw.hrs[data$mc6.factor == "1", ]
+mc6.hw.hrs2.seq <- seq.hw.hrs[data$mc6.factor == "2", ]
+mc6.hw.hrs3.seq <- seq.hw.hrs[data$mc6.factor == "3", ]
+mc6.hw.hrs4.seq <- seq.hw.hrs[data$mc6.factor == "4", ]
+mc6.hw.hrs5.seq <- seq.hw.hrs[data$mc6.factor == "5", ]
+mc6.hw.hrs6.seq <- seq.hw.hrs[data$mc6.factor == "6", ]
 
 mc6.fam1.seq <- seq.fam[data$mc6.factor == "1", ]
 mc6.fam2.seq <- seq.fam[data$mc6.factor == "2", ]
@@ -248,21 +303,21 @@ data$mc7.factor <- as.numeric(mc7.factor)
 
 # Identify position of variables indicating start and end of sequences
 
-mc7.work.ow1.seq <- seq.work.ow[data$mc7.factor == "1", ]
-mc7.work.ow2.seq <- seq.work.ow[data$mc7.factor == "2", ]
-mc7.work.ow3.seq <- seq.work.ow[data$mc7.factor == "3", ]
-mc7.work.ow4.seq <- seq.work.ow[data$mc7.factor == "4", ]
-mc7.work.ow5.seq <- seq.work.ow[data$mc7.factor == "5", ]
-mc7.work.ow6.seq <- seq.work.ow[data$mc7.factor == "6", ]
-mc7.work.ow7.seq <- seq.work.ow[data$mc7.factor == "7", ]
+mc7.work1.seq <- seq.work[data$mc7.factor == "1", ]
+mc7.work2.seq <- seq.work[data$mc7.factor == "2", ]
+mc7.work3.seq <- seq.work[data$mc7.factor == "3", ]
+mc7.work4.seq <- seq.work[data$mc7.factor == "4", ]
+mc7.work5.seq <- seq.work[data$mc7.factor == "5", ]
+mc7.work6.seq <- seq.work[data$mc7.factor == "6", ]
+mc7.work7.seq <- seq.work[data$mc7.factor == "7", ]
 
-mc7.hw.hrs1.seq <- seq.hw.hrs.weekly[data$mc7.factor == "1", ]
-mc7.hw.hrs2.seq <- seq.hw.hrs.weekly[data$mc7.factor == "2", ]
-mc7.hw.hrs3.seq <- seq.hw.hrs.weekly[data$mc7.factor == "3", ]
-mc7.hw.hrs4.seq <- seq.hw.hrs.weekly[data$mc7.factor == "4", ]
-mc7.hw.hrs5.seq <- seq.hw.hrs.weekly[data$mc7.factor == "5", ]
-mc7.hw.hrs6.seq <- seq.hw.hrs.weekly[data$mc7.factor == "6", ]
-mc7.hw.hrs7.seq <- seq.hw.hrs.weekly[data$mc7.factor == "7", ]
+mc7.hw.hrs1.seq <- seq.hw.hrs[data$mc7.factor == "1", ]
+mc7.hw.hrs2.seq <- seq.hw.hrs[data$mc7.factor == "2", ]
+mc7.hw.hrs3.seq <- seq.hw.hrs[data$mc7.factor == "3", ]
+mc7.hw.hrs4.seq <- seq.hw.hrs[data$mc7.factor == "4", ]
+mc7.hw.hrs5.seq <- seq.hw.hrs[data$mc7.factor == "5", ]
+mc7.hw.hrs6.seq <- seq.hw.hrs[data$mc7.factor == "6", ]
+mc7.hw.hrs7.seq <- seq.hw.hrs[data$mc7.factor == "7", ]
 
 mc7.fam1.seq <- seq.fam[data$mc7.factor == "1", ]
 mc7.fam2.seq <- seq.fam[data$mc7.factor == "2", ]
@@ -310,23 +365,23 @@ data$mc8.factor <- as.numeric(mc8.factor)
 
 # Identify position of variables indicating start and end of sequences
 
-mc8.work.ow1.seq <- seq.work.ow[data$mc8.factor == "1", ]
-mc8.work.ow2.seq <- seq.work.ow[data$mc8.factor == "2", ]
-mc8.work.ow3.seq <- seq.work.ow[data$mc8.factor == "3", ]
-mc8.work.ow4.seq <- seq.work.ow[data$mc8.factor == "4", ]
-mc8.work.ow5.seq <- seq.work.ow[data$mc8.factor == "5", ]
-mc8.work.ow6.seq <- seq.work.ow[data$mc8.factor == "6", ]
-mc8.work.ow7.seq <- seq.work.ow[data$mc8.factor == "7", ]
-mc8.work.ow8.seq <- seq.work.ow[data$mc8.factor == "8", ]
+mc8.work1.seq <- seq.work[data$mc8.factor == "1", ]
+mc8.work2.seq <- seq.work[data$mc8.factor == "2", ]
+mc8.work3.seq <- seq.work[data$mc8.factor == "3", ]
+mc8.work4.seq <- seq.work[data$mc8.factor == "4", ]
+mc8.work5.seq <- seq.work[data$mc8.factor == "5", ]
+mc8.work6.seq <- seq.work[data$mc8.factor == "6", ]
+mc8.work7.seq <- seq.work[data$mc8.factor == "7", ]
+mc8.work8.seq <- seq.work[data$mc8.factor == "8", ]
 
-mc8.hw.hrs1.seq <- seq.hw.hrs.weekly[data$mc8.factor == "1", ]
-mc8.hw.hrs2.seq <- seq.hw.hrs.weekly[data$mc8.factor == "2", ]
-mc8.hw.hrs3.seq <- seq.hw.hrs.weekly[data$mc8.factor == "3", ]
-mc8.hw.hrs4.seq <- seq.hw.hrs.weekly[data$mc8.factor == "4", ]
-mc8.hw.hrs5.seq <- seq.hw.hrs.weekly[data$mc8.factor == "5", ]
-mc8.hw.hrs6.seq <- seq.hw.hrs.weekly[data$mc8.factor == "6", ]
-mc8.hw.hrs7.seq <- seq.hw.hrs.weekly[data$mc8.factor == "7", ]
-mc8.hw.hrs8.seq <- seq.hw.hrs.weekly[data$mc8.factor == "8", ]
+mc8.hw.hrs1.seq <- seq.hw.hrs[data$mc8.factor == "1", ]
+mc8.hw.hrs2.seq <- seq.hw.hrs[data$mc8.factor == "2", ]
+mc8.hw.hrs3.seq <- seq.hw.hrs[data$mc8.factor == "3", ]
+mc8.hw.hrs4.seq <- seq.hw.hrs[data$mc8.factor == "4", ]
+mc8.hw.hrs5.seq <- seq.hw.hrs[data$mc8.factor == "5", ]
+mc8.hw.hrs6.seq <- seq.hw.hrs[data$mc8.factor == "6", ]
+mc8.hw.hrs7.seq <- seq.hw.hrs[data$mc8.factor == "7", ]
+mc8.hw.hrs8.seq <- seq.hw.hrs[data$mc8.factor == "8", ]
 
 mc8.fam1.seq <- seq.fam[data$mc8.factor == "1", ]
 mc8.fam2.seq <- seq.fam[data$mc8.factor == "2", ]
@@ -357,7 +412,6 @@ write.csv(relfreq8,("results/GSOEP/truncated_cluster_freq_mc8.csv"))
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Prep work for 9 cluster solution
-# This might be crazy - but family cluster on its own could yield many clusters?
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # Cut tree at cluster==9
@@ -377,25 +431,25 @@ data$mc9.factor <- as.numeric(mc9.factor)
 
 # Identify position of variables indicating start and end of sequences
 
-mc9.work.ow1.seq <- seq.work.ow[data$mc9.factor == "1", ]
-mc9.work.ow2.seq <- seq.work.ow[data$mc9.factor == "2", ]
-mc9.work.ow3.seq <- seq.work.ow[data$mc9.factor == "3", ]
-mc9.work.ow4.seq <- seq.work.ow[data$mc9.factor == "4", ]
-mc9.work.ow5.seq <- seq.work.ow[data$mc9.factor == "5", ]
-mc9.work.ow6.seq <- seq.work.ow[data$mc9.factor == "6", ]
-mc9.work.ow7.seq <- seq.work.ow[data$mc9.factor == "7", ]
-mc9.work.ow8.seq <- seq.work.ow[data$mc9.factor == "8", ]
-mc9.work.ow9.seq <- seq.work.ow[data$mc9.factor == "9", ]
+mc9.work1.seq <- seq.work[data$mc9.factor == "1", ]
+mc9.work2.seq <- seq.work[data$mc9.factor == "2", ]
+mc9.work3.seq <- seq.work[data$mc9.factor == "3", ]
+mc9.work4.seq <- seq.work[data$mc9.factor == "4", ]
+mc9.work5.seq <- seq.work[data$mc9.factor == "5", ]
+mc9.work6.seq <- seq.work[data$mc9.factor == "6", ]
+mc9.work7.seq <- seq.work[data$mc9.factor == "7", ]
+mc9.work8.seq <- seq.work[data$mc9.factor == "8", ]
+mc9.work9.seq <- seq.work[data$mc9.factor == "9", ]
 
-mc9.hw.hrs1.seq <- seq.hw.hrs.weekly[data$mc9.factor == "1", ]
-mc9.hw.hrs2.seq <- seq.hw.hrs.weekly[data$mc9.factor == "2", ]
-mc9.hw.hrs3.seq <- seq.hw.hrs.weekly[data$mc9.factor == "3", ]
-mc9.hw.hrs4.seq <- seq.hw.hrs.weekly[data$mc9.factor == "4", ]
-mc9.hw.hrs5.seq <- seq.hw.hrs.weekly[data$mc9.factor == "5", ]
-mc9.hw.hrs6.seq <- seq.hw.hrs.weekly[data$mc9.factor == "6", ]
-mc9.hw.hrs7.seq <- seq.hw.hrs.weekly[data$mc9.factor == "7", ]
-mc9.hw.hrs8.seq <- seq.hw.hrs.weekly[data$mc9.factor == "8", ]
-mc9.hw.hrs9.seq <- seq.hw.hrs.weekly[data$mc9.factor == "9", ]
+mc9.hw.hrs1.seq <- seq.hw.hrs[data$mc9.factor == "1", ]
+mc9.hw.hrs2.seq <- seq.hw.hrs[data$mc9.factor == "2", ]
+mc9.hw.hrs3.seq <- seq.hw.hrs[data$mc9.factor == "3", ]
+mc9.hw.hrs4.seq <- seq.hw.hrs[data$mc9.factor == "4", ]
+mc9.hw.hrs5.seq <- seq.hw.hrs[data$mc9.factor == "5", ]
+mc9.hw.hrs6.seq <- seq.hw.hrs[data$mc9.factor == "6", ]
+mc9.hw.hrs7.seq <- seq.hw.hrs[data$mc9.factor == "7", ]
+mc9.hw.hrs8.seq <- seq.hw.hrs[data$mc9.factor == "8", ]
+mc9.hw.hrs9.seq <- seq.hw.hrs[data$mc9.factor == "9", ]
 
 mc9.fam1.seq <- seq.fam[data$mc9.factor == "1", ]
 mc9.fam2.seq <- seq.fam[data$mc9.factor == "2", ]
@@ -423,6 +477,78 @@ share <- round(as.numeric(relfreq9$share)*100, 1)
 print(relfreq9)
 
 write.csv(relfreq9,("results/GSOEP/truncated_cluster_freq_mc9.csv"))
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Prep work for 10 cluster solution
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+# Cut tree at cluster==10
+
+mc10 <- mcdist.om.pam.ward$clustering$cluster10 # these are sub"folders" in ward output
+
+# Label the clusters from 1 to 10
+labels10<-unique(mc10)
+sort(labels10)
+
+mc10.factor <- factor(mc10, levels = sort(labels10),
+                      c("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"))
+
+# Separate objects for each channel and for each cluster
+
+data$mc10.factor <- as.numeric(mc10.factor)
+
+# Identify position of variables indicating start and end of sequences
+
+mc10.work1.seq <- seq.work[data$mc10.factor == "1", ]
+mc10.work2.seq <- seq.work[data$mc10.factor == "2", ]
+mc10.work3.seq <- seq.work[data$mc10.factor == "3", ]
+mc10.work4.seq <- seq.work[data$mc10.factor == "4", ]
+mc10.work5.seq <- seq.work[data$mc10.factor == "5", ]
+mc10.work6.seq <- seq.work[data$mc10.factor == "6", ]
+mc10.work7.seq <- seq.work[data$mc10.factor == "7", ]
+mc10.work8.seq <- seq.work[data$mc10.factor == "8", ]
+mc10.work9.seq <- seq.work[data$mc10.factor == "9", ]
+mc10.work10.seq <- seq.work[data$mc10.factor == "10", ]
+
+mc10.hw.hrs1.seq <- seq.hw.hrs[data$mc10.factor == "1", ]
+mc10.hw.hrs2.seq <- seq.hw.hrs[data$mc10.factor == "2", ]
+mc10.hw.hrs3.seq <- seq.hw.hrs[data$mc10.factor == "3", ]
+mc10.hw.hrs4.seq <- seq.hw.hrs[data$mc10.factor == "4", ]
+mc10.hw.hrs5.seq <- seq.hw.hrs[data$mc10.factor == "5", ]
+mc10.hw.hrs6.seq <- seq.hw.hrs[data$mc10.factor == "6", ]
+mc10.hw.hrs7.seq <- seq.hw.hrs[data$mc10.factor == "7", ]
+mc10.hw.hrs8.seq <- seq.hw.hrs[data$mc10.factor == "8", ]
+mc10.hw.hrs9.seq <- seq.hw.hrs[data$mc10.factor == "9", ]
+mc10.hw.hrs10.seq <- seq.hw.hrs[data$mc10.factor == "10", ]
+
+mc10.fam1.seq <- seq.fam[data$mc10.factor == "1", ]
+mc10.fam2.seq <- seq.fam[data$mc10.factor == "2", ]
+mc10.fam3.seq <- seq.fam[data$mc10.factor == "3", ]
+mc10.fam4.seq <- seq.fam[data$mc10.factor == "4", ]
+mc10.fam5.seq <- seq.fam[data$mc10.factor == "5", ]
+mc10.fam6.seq <- seq.fam[data$mc10.factor == "6", ]
+mc10.fam7.seq <- seq.fam[data$mc10.factor == "7", ]
+mc10.fam8.seq <- seq.fam[data$mc10.factor == "8", ]
+mc10.fam9.seq <- seq.fam[data$mc10.factor == "9", ]
+mc10.fam10.seq <- seq.fam[data$mc10.factor == "10", ]
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+# Obtain relative frequencies of the ten clusters
+
+relfreq10 <- data %>% 
+  count(mc10.factor) %>% 
+  mutate(share = n/ sum(n)) %>%
+  arrange(share)
+
+# Convert relative frequencies to percentages (will be used for labeling the y-axes)
+share <- round(as.numeric(relfreq10$share)*100, 1)
+
+# display frequencies of each cluster.
+print(relfreq10)
+
+write.csv(relfreq10,("results/GSOEP/truncated_cluster_freq_mc10.csv"))
+
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Save

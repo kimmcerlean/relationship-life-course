@@ -94,6 +94,134 @@ if (Sys.getenv(c("USERNAME")) == "lpessin") {
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Charts for 4 cluster solution
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Load cluster information created in step 2 
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+load("created data/gsoep/typology-comparison-truncated-prep.RData")
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Add cluster information to source data ---- 
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+# Cut tree (this happened in step 2)
+# mc4 <- mcdist.om.pam.ward$clustering$cluster4 # these are sub"folders" in ward output
+
+# add cluster membership indicator 
+data <- data |>
+  mutate(cluster = mc4,
+         id2 = row_number())
+
+# Obtain relative frequencies of the five cluster (using weights)
+# Convert relative frequencies to percentages (used for labeling the y-axes)
+
+data <- data |>
+  count(cluster) |>  # wt = weight40
+  mutate(share = n/ sum(n)) |>
+  arrange(desc(share)) |> 
+  mutate(mc.factor = glue("Cluster {row_number()}
+                            ({round(share*100,1)}%)"),
+         mc.factor = factor(mc.factor)) |> 
+  select(cluster, mc.factor, share) |> 
+  right_join(data, by = "cluster") |> 
+  arrange(id2)
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Create plots --------------------------------
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# for reference (the normalized OM matrix):
+# mcdist.det.min <- mcdist.det.om / fam.min.len
+
+
+#### State distribution
+pdf("results/GSOEP/GSOEP_MCSA_SDPlot_truncated_mc4.pdf",
+    width=15,
+    height=28)
+
+seqplotMD(channels=list('Paid Work'=seq.work,Housework=seq.hw.hrs,Family=seq.fam),
+          group = data$mc.factor, type="d",
+          xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE)  
+
+dev.off()
+
+#### Frequency
+pdf("results/GSOEP/GSOEP_MCSA_FreqPlot_truncated_mc4.pdf",
+    width=15,
+    height=28)
+
+seqplotMD(channels=list('Paid Work'=seq.work,Housework=seq.hw.hrs,Family=seq.fam),
+          group = data$mc.factor, type="f",
+          xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE)  
+
+dev.off()
+
+#### Modal States
+pdf("results/GSOEP/GSOEP_MCSA_Modal_truncated_mc4.pdf",
+    width=15,
+    height=28)
+
+seqplotMD(channels=list('Paid Work'=seq.work,Housework=seq.hw.hrs,Family=seq.fam),
+          group = data$mc.factor, type="ms",
+          xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE)  
+
+dev.off()
+
+
+#### Relative frequency: 100 K (start, domain: fam)
+pdf("results/GSOEP/GSOEP_RF100Plot_start_truncated_mc4.pdf",
+    width=15,
+    height=42)
+
+seqplotMD(channels=list('Paid Work'=seq.work,Housework=seq.hw.hrs,Family=seq.fam),
+          group = data$mc.factor, type="rf", diss=mcdist.det.min,
+          xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
+          dom.byrow=FALSE,k=100,sortv="from.start",dom.crit=3,
+          cex.legend=0.7)
+
+dev.off()
+
+#### Relative frequency: 100 K (end, domain: fam)
+pdf("results/GSOEP/GSOEP_RF100Plot_end_truncated_mc4.pdf",
+    width=15,
+    height=42)
+
+seqplotMD(channels=list('Paid Work'=seq.work,Housework=seq.hw.hrs,Family=seq.fam),
+          group = data$mc.factor, type="rf", diss=mcdist.det.min,
+          xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
+          dom.byrow=FALSE,k=100,sortv="from.end",dom.crit=3,
+          cex.legend=0.7)
+
+dev.off()
+
+#### Relative frequency: 500 K (start, domain: fam)
+pdf("results/GSOEP/GSOEP_RF500Plot_start_truncated_mc4.pdf",
+    width=15,
+    height=42)
+
+seqplotMD(channels=list('Paid Work'=seq.work,Housework=seq.hw.hrs,Family=seq.fam),
+          group = data$mc.factor, type="rf", diss=mcdist.det.min,
+          xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
+          dom.byrow=FALSE,k=500,sortv="from.start",dom.crit=3,
+          cex.legend=0.7)
+
+dev.off()
+
+#### Relative frequency: 500 K (end, domain: fam)
+pdf("results/GSOEP/GSOEP_RF500Plot_end_truncated_mc4.pdf",
+    width=15,
+    height=42)
+
+seqplotMD(channels=list('Paid Work'=seq.work,Housework=seq.hw.hrs,Family=seq.fam),
+          group = data$mc.factor, type="rf", diss=mcdist.det.min,
+          xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
+          dom.byrow=FALSE,k=500,sortv="from.end",dom.crit=3,
+          cex.legend=0.7)
+
+dev.off()
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Charts for 5 cluster solution
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -140,8 +268,30 @@ pdf("results/GSOEP/GSOEP_MCSA_SDPlot_truncated_mc5.pdf",
     width=15,
     height=28)
 
-seqplotMD(channels=list('Paid Work'=seq.work.ow,Family=seq.fam,Housework=seq.hw.hrs.weekly),
+seqplotMD(channels=list('Paid Work'=seq.work,Housework=seq.hw.hrs,Family=seq.fam),
           group = data$mc.factor, type="d",
+          xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE)  
+
+dev.off()
+
+#### Frequency
+pdf("results/GSOEP/GSOEP_MCSA_FreqPlot_truncated_mc5.pdf",
+    width=15,
+    height=28)
+
+seqplotMD(channels=list('Paid Work'=seq.work,Housework=seq.hw.hrs,Family=seq.fam),
+          group = data$mc.factor, type="f",
+          xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE)  
+
+dev.off()
+
+#### Modal States
+pdf("results/GSOEP/GSOEP_MCSA_Modal_truncated_mc5.pdf",
+    width=15,
+    height=28)
+
+seqplotMD(channels=list('Paid Work'=seq.work,Housework=seq.hw.hrs,Family=seq.fam),
+          group = data$mc.factor, type="ms",
           xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE)  
 
 dev.off()
@@ -152,10 +302,10 @@ pdf("results/GSOEP/GSOEP_RF100Plot_start_truncated_mc5.pdf",
     width=15,
     height=42)
 
-seqplotMD(channels=list('Paid Work'=seq.work.ow,Family=seq.fam,Housework=seq.hw.hrs.weekly),
+seqplotMD(channels=list('Paid Work'=seq.work,Housework=seq.hw.hrs,Family=seq.fam),
           group = data$mc.factor, type="rf", diss=mcdist.det.min,
           xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
-          dom.byrow=FALSE,k=100,sortv="from.start",dom.crit=2,
+          dom.byrow=FALSE,k=100,sortv="from.start",dom.crit=3,
           cex.legend=0.7)
 
 dev.off()
@@ -165,10 +315,36 @@ pdf("results/GSOEP/GSOEP_RF100Plot_end_truncated_mc5.pdf",
     width=15,
     height=42)
 
-seqplotMD(channels=list('Paid Work'=seq.work.ow,Family=seq.fam,Housework=seq.hw.hrs.weekly),
+seqplotMD(channels=list('Paid Work'=seq.work,Housework=seq.hw.hrs,Family=seq.fam),
           group = data$mc.factor, type="rf", diss=mcdist.det.min,
           xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
-          dom.byrow=FALSE,k=100,sortv="from.end",dom.crit=2,
+          dom.byrow=FALSE,k=100,sortv="from.end",dom.crit=3,
+          cex.legend=0.7)
+
+dev.off()
+
+#### Relative frequency: 500 K (start, domain: fam)
+pdf("results/GSOEP/GSOEP_RF500Plot_start_truncated_mc5.pdf",
+    width=15,
+    height=42)
+
+seqplotMD(channels=list('Paid Work'=seq.work,Housework=seq.hw.hrs,Family=seq.fam),
+          group = data$mc.factor, type="rf", diss=mcdist.det.min,
+          xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
+          dom.byrow=FALSE,k=500,sortv="from.start",dom.crit=3,
+          cex.legend=0.7)
+
+dev.off()
+
+#### Relative frequency: 500 K (end, domain: fam)
+pdf("results/GSOEP/GSOEP_RF500Plot_end_truncated_mc5.pdf",
+    width=15,
+    height=42)
+
+seqplotMD(channels=list('Paid Work'=seq.work,Housework=seq.hw.hrs,Family=seq.fam),
+          group = data$mc.factor, type="rf", diss=mcdist.det.min,
+          xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
+          dom.byrow=FALSE,k=500,sortv="from.end",dom.crit=3,
           cex.legend=0.7)
 
 dev.off()
@@ -220,22 +396,44 @@ pdf("results/GSOEP/GSOEP_MCSA_SDPlot_truncated_mc6.pdf",
     width=15,
     height=28)
 
-seqplotMD(channels=list('Paid Work'=seq.work.ow,Family=seq.fam,Housework=seq.hw.hrs.weekly),
+seqplotMD(channels=list('Paid Work'=seq.work,Housework=seq.hw.hrs,Family=seq.fam),
           group = data$mc.factor, type="d",
           xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE)  
 
 dev.off()
 
+#### Frequency
+pdf("results/GSOEP/GSOEP_MCSA_FreqPlot_truncated_mc6.pdf",
+    width=15,
+    height=28)
+
+seqplotMD(channels=list('Paid Work'=seq.work,Housework=seq.hw.hrs,Family=seq.fam),
+          group = data$mc.factor, type="f",
+          xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE)  
+
+dev.off()
+
+
+#### Modal States
+pdf("results/GSOEP/GSOEP_MCSA_Modal_truncated_mc6.pdf",
+    width=15,
+    height=28)
+
+seqplotMD(channels=list('Paid Work'=seq.work,Housework=seq.hw.hrs,Family=seq.fam),
+          group = data$mc.factor, type="ms",
+          xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE)  
+
+dev.off()
 
 #### Relative frequency: 100 K (start, domain: fam)
 pdf("results/GSOEP/GSOEP_RF100Plot_start_truncated_mc6.pdf",
     width=15,
     height=42)
 
-seqplotMD(channels=list('Paid Work'=seq.work.ow,Family=seq.fam,Housework=seq.hw.hrs.weekly),
+seqplotMD(channels=list('Paid Work'=seq.work,Housework=seq.hw.hrs,Family=seq.fam),
           group = data$mc.factor, type="rf", diss=mcdist.det.min,
           xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
-          dom.byrow=FALSE,k=100,sortv="from.start",dom.crit=2,
+          dom.byrow=FALSE,k=100,sortv="from.start",dom.crit=3,
           cex.legend=0.7)
 
 dev.off()
@@ -245,10 +443,36 @@ pdf("results/GSOEP/GSOEP_RF100Plot_end_truncated_mc6.pdf",
     width=15,
     height=42)
 
-seqplotMD(channels=list('Paid Work'=seq.work.ow,Family=seq.fam,Housework=seq.hw.hrs.weekly),
+seqplotMD(channels=list('Paid Work'=seq.work,Housework=seq.hw.hrs,Family=seq.fam),
           group = data$mc.factor, type="rf", diss=mcdist.det.min,
           xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
-          dom.byrow=FALSE,k=100,sortv="from.end",dom.crit=2,
+          dom.byrow=FALSE,k=100,sortv="from.end",dom.crit=3,
+          cex.legend=0.7)
+
+dev.off()
+
+#### Relative frequency: 500 K (start, domain: fam)
+pdf("results/GSOEP/GSOEP_RF500Plot_start_truncated_mc6.pdf",
+    width=15,
+    height=42)
+
+seqplotMD(channels=list('Paid Work'=seq.work,Housework=seq.hw.hrs,Family=seq.fam),
+          group = data$mc.factor, type="rf", diss=mcdist.det.min,
+          xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
+          dom.byrow=FALSE,k=500,sortv="from.start",dom.crit=3,
+          cex.legend=0.7)
+
+dev.off()
+
+#### Relative frequency: 500 K (end, domain: fam)
+pdf("results/GSOEP/GSOEP_RF500Plot_end_truncated_mc6.pdf",
+    width=15,
+    height=42)
+
+seqplotMD(channels=list('Paid Work'=seq.work,Housework=seq.hw.hrs,Family=seq.fam),
+          group = data$mc.factor, type="rf", diss=mcdist.det.min,
+          xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
+          dom.byrow=FALSE,k=500,sortv="from.end",dom.crit=3,
           cex.legend=0.7)
 
 dev.off()
@@ -310,22 +534,45 @@ pdf("results/GSOEP/GSOEP_MCSA_SDPlot_truncated_mc7.pdf",
     width=15,
     height=28)
 
-seqplotMD(channels=list('Paid Work'=seq.work.ow,Family=seq.fam,Housework=seq.hw.hrs.weekly),
+seqplotMD(channels=list('Paid Work'=seq.work,Housework=seq.hw.hrs,Family=seq.fam),
           group = data$mc.factor, type="d",
           xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE)  
 
 dev.off()
 
 
+#### Frequency
+pdf("results/GSOEP/GSOEP_MCSA_FreqPlot_truncated_mc7.pdf",
+    width=15,
+    height=28)
+
+seqplotMD(channels=list('Paid Work'=seq.work,Housework=seq.hw.hrs,Family=seq.fam),
+          group = data$mc.factor, type="f",
+          xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE)  
+
+dev.off()
+
+
+#### Modal States
+pdf("results/GSOEP/GSOEP_MCSA_Modal_truncated_mc7.pdf",
+    width=15,
+    height=28)
+
+seqplotMD(channels=list('Paid Work'=seq.work,Housework=seq.hw.hrs,Family=seq.fam),
+          group = data$mc.factor, type="ms",
+          xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE)  
+
+dev.off()
+
 #### Relative frequency: 100 K, (start, domain: fam)
 pdf("results/GSOEP/GSOEP_RF100Plot_start_truncated_mc7.pdf",
     width=15,
     height=42)
 
-seqplotMD(channels=list('Paid Work'=seq.work.ow,Family=seq.fam,Housework=seq.hw.hrs.weekly),
+seqplotMD(channels=list('Paid Work'=seq.work,Housework=seq.hw.hrs,Family=seq.fam),
           group = data$mc.factor, type="rf", diss=mcdist.det.min,
           xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
-          dom.byrow=FALSE,k=100,sortv="from.start",dom.crit=2,
+          dom.byrow=FALSE,k=100,sortv="from.start",dom.crit=3,
           cex.legend=0.7)
 
 dev.off()
@@ -336,10 +583,37 @@ pdf("results/GSOEP/GSOEP_RF100Plot_end_truncated_mc7.pdf",
     width=15,
     height=42)
 
-seqplotMD(channels=list('Paid Work'=seq.work.ow,Family=seq.fam,Housework=seq.hw.hrs.weekly),
+seqplotMD(channels=list('Paid Work'=seq.work,Housework=seq.hw.hrs,Family=seq.fam),
           group = data$mc.factor, type="rf", diss=mcdist.det.min,
           xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
-          dom.byrow=FALSE,k=100,sortv="from.end",dom.crit=2,
+          dom.byrow=FALSE,k=100,sortv="from.end",dom.crit=3,
+          cex.legend=0.7)
+
+dev.off()
+
+#### Relative frequency: 500 K, (start, domain: fam)
+pdf("results/GSOEP/GSOEP_RF500Plot_start_truncated_mc7.pdf",
+    width=15,
+    height=42)
+
+seqplotMD(channels=list('Paid Work'=seq.work,Housework=seq.hw.hrs,Family=seq.fam),
+          group = data$mc.factor, type="rf", diss=mcdist.det.min,
+          xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
+          dom.byrow=FALSE,k=500,sortv="from.start",dom.crit=3,
+          cex.legend=0.7)
+
+dev.off()
+
+
+#### Relative frequency: 500 K, (end, domain: fam)
+pdf("results/GSOEP/GSOEP_RF500Plot_end_truncated_mc7.pdf",
+    width=15,
+    height=42)
+
+seqplotMD(channels=list('Paid Work'=seq.work,Housework=seq.hw.hrs,Family=seq.fam),
+          group = data$mc.factor, type="rf", diss=mcdist.det.min,
+          xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
+          dom.byrow=FALSE,k=500,sortv="from.end",dom.crit=3,
           cex.legend=0.7)
 
 dev.off()
@@ -390,22 +664,44 @@ pdf("results/GSOEP/GSOEP_MCSA_SDPlot_truncated_mc8.pdf",
     width=15,
     height=28)
 
-seqplotMD(channels=list('Paid Work'=seq.work.ow,Family=seq.fam,Housework=seq.hw.hrs.weekly),
+seqplotMD(channels=list('Paid Work'=seq.work,Housework=seq.hw.hrs,Family=seq.fam),
           group = data$mc.factor, type="d",
           xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE)  
 
 dev.off()
 
+#### Frequency
+pdf("results/GSOEP/GSOEP_MCSA_FreqPlot_truncated_mc8.pdf",
+    width=15,
+    height=28)
+
+seqplotMD(channels=list('Paid Work'=seq.work,Housework=seq.hw.hrs,Family=seq.fam),
+          group = data$mc.factor, type="f",
+          xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE)  
+
+dev.off()
+
+
+#### Modal States
+pdf("results/GSOEP/GSOEP_MCSA_Modal_truncated_mc8.pdf",
+    width=15,
+    height=28)
+
+seqplotMD(channels=list('Paid Work'=seq.work,Housework=seq.hw.hrs,Family=seq.fam),
+          group = data$mc.factor, type="ms",
+          xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE)  
+
+dev.off()
 
 #### Relative frequency: 100 K (start, domain: fam)
 pdf("results/GSOEP/GSOEP_RF100Plot_start_truncated_mc8.pdf",
     width=15,
     height=42)
 
-seqplotMD(channels=list('Paid Work'=seq.work.ow,Family=seq.fam,Housework=seq.hw.hrs.weekly),
+seqplotMD(channels=list('Paid Work'=seq.work,Housework=seq.hw.hrs,Family=seq.fam),
           group = data$mc.factor, type="rf", diss=mcdist.det.min,
           xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
-          dom.byrow=FALSE,k=100,sortv="from.start",dom.crit=2,
+          dom.byrow=FALSE,k=100,sortv="from.start",dom.crit=3,
           cex.legend=0.7)
 
 dev.off()
@@ -415,89 +711,36 @@ pdf("results/GSOEP/GSOEP_RF100Plot_end_truncated_mc8.pdf",
     width=15,
     height=42)
 
-seqplotMD(channels=list('Paid Work'=seq.work.ow,Family=seq.fam,Housework=seq.hw.hrs.weekly),
+seqplotMD(channels=list('Paid Work'=seq.work,Housework=seq.hw.hrs,Family=seq.fam),
           group = data$mc.factor, type="rf", diss=mcdist.det.min,
           xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
-          dom.byrow=FALSE,k=100,sortv="from.end",dom.crit=2,
+          dom.byrow=FALSE,k=100,sortv="from.end",dom.crit=3,
           cex.legend=0.7)
 
 dev.off()
 
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Charts for 9 cluster solution
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Load cluster information created in step 2 
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-load("created data/gsoep/typology-comparison-truncated-prep.RData")
-
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Add cluster information to source data ---- 
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-# Cut tree
-# mc9 <- mcdist.om.pam.ward$clustering$cluster9 # these are sub"folders" in ward output
-
-# add cluster membership indicator 
-data <- data |>
-  mutate(cluster = mc9,
-         id2 = row_number())
-
-# Obtain relative frequencies of the nine cluster
-# Convert relative frequencies to percentages (used for labeling the y-axes)
-
-data <- data |>
-  count(cluster) |>  # wt = weight40
-  mutate(share = n/ sum(n)) |>
-  arrange(desc(share)) |> 
-  mutate(mc.factor = glue("Cluster {row_number()}
-                            ({round(share*100,1)}%)"),
-         mc.factor = factor(mc.factor)) |> 
-  select(cluster, mc.factor, share) |> 
-  right_join(data, by = "cluster") |> 
-  arrange(id2)
-
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Create plots --------------------------------
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# for reference (the normalized OM matrix):
-# mcdist.det.min <- mcdist.det.om / fam.min.len
-
-#### State distribution
-pdf("results/GSOEP/GSOEP_MCSA_SDPlot_truncated_mc9.pdf",
-    width=15,
-    height=28)
-
-seqplotMD(channels=list('Paid Work'=seq.work.ow,Family=seq.fam,Housework=seq.hw.hrs.weekly),
-          group = data$mc.factor, type="d",
-          xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE)  
-
-dev.off()
-
-
-#### Relative frequency: 100 K (start, domain: fam)
-pdf("results/GSOEP/GSOEP_RF100Plot_start_truncated_mc9.pdf",
+#### Relative frequency: 500 K (start, domain: fam)
+pdf("results/GSOEP/GSOEP_RF500Plot_start_truncated_mc8.pdf",
     width=15,
     height=42)
 
-seqplotMD(channels=list('Paid Work'=seq.work.ow,Family=seq.fam,Housework=seq.hw.hrs.weekly),
+seqplotMD(channels=list('Paid Work'=seq.work,Housework=seq.hw.hrs,Family=seq.fam),
           group = data$mc.factor, type="rf", diss=mcdist.det.min,
           xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
-          dom.byrow=FALSE,k=100,sortv="from.start",dom.crit=2,
+          dom.byrow=FALSE,k=500,sortv="from.start",dom.crit=3,
           cex.legend=0.7)
 
 dev.off()
 
-#### Relative frequency: 100 K (end, domain: fam)
-pdf("results/GSOEP/GSOEP_RF100Plot_end_truncated_mc9.pdf",
+#### Relative frequency: 500 K (end, domain: fam)
+pdf("results/GSOEP/GSOEP_RF500Plot_end_truncated_mc8.pdf",
     width=15,
     height=42)
 
-seqplotMD(channels=list('Paid Work'=seq.work.ow,Family=seq.fam,Housework=seq.hw.hrs.weekly),
+seqplotMD(channels=list('Paid Work'=seq.work,Housework=seq.hw.hrs,Family=seq.fam),
           group = data$mc.factor, type="rf", diss=mcdist.det.min,
           xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
-          dom.byrow=FALSE,k=100,sortv="from.end",dom.crit=2,
+          dom.byrow=FALSE,k=500,sortv="from.end",dom.crit=3,
           cex.legend=0.7)
 
 dev.off()

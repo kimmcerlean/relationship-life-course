@@ -93,6 +93,260 @@ if (Sys.getenv(c("USERNAME")) == "lpessin") {
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Charts for 3 cluster solution
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Load cluster information created in step 2 
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+load("created data/psid_typology-comparison-truncated-prep.RData")
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Add cluster information to source data ---- 
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+# Cut tree (this happened in step 2)
+# mc3 <- mcdist.om.pam.ward$clustering$cluster3 # these are sub"folders" in ward output
+
+# add cluster membership indicator 
+data <- data |>
+  mutate(cluster = mc3,
+         id2 = row_number())
+
+# Obtain relative frequencies of the three cluster (using weights)
+# Convert relative frequencies to percentages (used for labeling the y-axes)
+
+data <- data |>
+  count(cluster) |>  # wt = weight40
+  mutate(share = n/ sum(n)) |>
+  arrange(desc(share)) |> 
+  mutate(mc.factor = glue("Cluster {row_number()}
+                            ({round(share*100,1)}%)"),
+         mc.factor = factor(mc.factor)) |> 
+  select(cluster, mc.factor, share) |> 
+  right_join(data, by = "cluster") |> 
+  arrange(id2)
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Create plots --------------------------------
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# for reference (the normalized OM matrix):
+# mcdist.det.min <- mcdist.det.om / fam.min.len
+
+#### State distribution
+pdf("results/PSID/PSID_MCSA_SDPlot_truncated_mc3.pdf",
+    width=15,
+    height=28)
+
+seqplotMD(channels=list('Paid Work'=seq.work,Housework=seq.hw.hrs,Family=seq.fam),
+          group = data$mc.factor, type="d",
+          xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE)  
+
+dev.off()
+
+#### Frequency
+pdf("results/PSID/PSID_MCSA_FreqPlot_truncated_mc3.pdf",
+    width=15,
+    height=28)
+
+seqplotMD(channels=list('Paid Work'=seq.work,Housework=seq.hw.hrs,Family=seq.fam),
+          group = data$mc.factor, type="f",
+          xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE)  
+
+dev.off()
+
+
+#### Modal States
+pdf("results/PSID/PSID_MCSA_Modal_truncated_mc3.pdf",
+    width=15,
+    height=28)
+
+seqplotMD(channels=list('Paid Work'=seq.work,Housework=seq.hw.hrs,Family=seq.fam),
+          group = data$mc.factor, type="ms",
+          xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE)  
+
+dev.off()
+
+#### Relative frequency: 100 K (start, domain: fam)
+pdf("results/PSID/PSID_RF100Plot_start_truncated_mc3.pdf",
+    width=15,
+    height=42)
+
+seqplotMD(channels=list('Paid Work'=seq.work,Housework=seq.hw.hrs,Family=seq.fam),
+          group = data$mc.factor, type="rf", diss=mcdist.det.min,
+          xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
+          dom.byrow=FALSE,k=100,sortv="from.start",dom.crit=3,
+          cex.legend=0.7)
+
+dev.off()
+
+#### Relative frequency: 100 K (end, domain: fam)
+pdf("results/PSID/PSID_RF100Plot_end_truncated_mc3.pdf",
+    width=15,
+    height=42)
+
+seqplotMD(channels=list('Paid Work'=seq.work,Housework=seq.hw.hrs,Family=seq.fam),
+          group = data$mc.factor, type="rf", diss=mcdist.det.min,
+          xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
+          dom.byrow=FALSE,k=100,sortv="from.end",dom.crit=3,
+          cex.legend=0.7)
+
+dev.off()
+
+#### Relative frequency: 500 K (start, domain: fam)
+pdf("results/PSID/PSID_RF500Plot_start_truncated_mc3.pdf",
+    width=15,
+    height=42)
+
+seqplotMD(channels=list('Paid Work'=seq.work,Housework=seq.hw.hrs,Family=seq.fam),
+          group = data$mc.factor, type="rf", diss=mcdist.det.min,
+          xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
+          dom.byrow=FALSE,k=500,sortv="from.start",dom.crit=3,
+          cex.legend=0.7)
+
+dev.off()
+
+#### Relative frequency: 500 K (end, domain: fam)
+pdf("results/PSID/PSID_RF500Plot_end_truncated_mc3.pdf",
+    width=15,
+    height=42)
+
+seqplotMD(channels=list('Paid Work'=seq.work,Housework=seq.hw.hrs,Family=seq.fam),
+          group = data$mc.factor, type="rf", diss=mcdist.det.min,
+          xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
+          dom.byrow=FALSE,k=500,sortv="from.end",dom.crit=3,
+          cex.legend=0.7)
+
+dev.off()
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Charts for 4 cluster solution
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Load cluster information created in step 2 
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+load("created data/psid_typology-comparison-truncated-prep.RData")
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Add cluster information to source data ---- 
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+# Cut tree (this happened in step 2)
+# mc4 <- mcdist.om.pam.ward$clustering$cluster4 # these are sub"folders" in ward output
+
+# add cluster membership indicator 
+data <- data |>
+  mutate(cluster = mc4,
+         id2 = row_number())
+
+# Obtain relative frequencies of the four cluster (using weights)
+# Convert relative frequencies to percentages (used for labeling the y-axes)
+
+data <- data |>
+  count(cluster) |>  # wt = weight40
+  mutate(share = n/ sum(n)) |>
+  arrange(desc(share)) |> 
+  mutate(mc.factor = glue("Cluster {row_number()}
+                            ({round(share*100,1)}%)"),
+         mc.factor = factor(mc.factor)) |> 
+  select(cluster, mc.factor, share) |> 
+  right_join(data, by = "cluster") |> 
+  arrange(id2)
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Create plots --------------------------------
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# for reference (the normalized OM matrix):
+# mcdist.det.min <- mcdist.det.om / fam.min.len
+
+#### State distribution
+pdf("results/PSID/PSID_MCSA_SDPlot_truncated_mc4.pdf",
+    width=15,
+    height=28)
+
+seqplotMD(channels=list('Paid Work'=seq.work,Housework=seq.hw.hrs,Family=seq.fam),
+          group = data$mc.factor, type="d",
+          xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE)  
+
+dev.off()
+
+#### Frequency
+pdf("results/PSID/PSID_MCSA_FreqPlot_truncated_mc4.pdf",
+    width=15,
+    height=28)
+
+seqplotMD(channels=list('Paid Work'=seq.work,Housework=seq.hw.hrs,Family=seq.fam),
+          group = data$mc.factor, type="f",
+          xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE)  
+
+dev.off()
+
+#### Modal States
+pdf("results/PSID/PSID_MCSA_Modal_truncated_mc4.pdf",
+    width=15,
+    height=28)
+
+seqplotMD(channels=list('Paid Work'=seq.work,Housework=seq.hw.hrs,Family=seq.fam),
+          group = data$mc.factor, type="ms",
+          xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE)  
+
+dev.off()
+
+
+#### Relative frequency: 100 K (start, domain: fam)
+pdf("results/PSID/PSID_RF100Plot_start_truncated_mc4.pdf",
+    width=15,
+    height=42)
+
+seqplotMD(channels=list('Paid Work'=seq.work,Housework=seq.hw.hrs,Family=seq.fam),
+          group = data$mc.factor, type="rf", diss=mcdist.det.min,
+          xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
+          dom.byrow=FALSE,k=100,sortv="from.start",dom.crit=3,
+          cex.legend=0.7)
+
+dev.off()
+
+#### Relative frequency: 100 K (end, domain: fam)
+pdf("results/PSID/PSID_RF100Plot_end_truncated_mc4.pdf",
+    width=15,
+    height=42)
+
+seqplotMD(channels=list('Paid Work'=seq.work,Housework=seq.hw.hrs,Family=seq.fam),
+          group = data$mc.factor, type="rf", diss=mcdist.det.min,
+          xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
+          dom.byrow=FALSE,k=100,sortv="from.end",dom.crit=3,
+          cex.legend=0.7)
+
+dev.off()
+
+#### Relative frequency: 500 K (start, domain: fam)
+pdf("results/PSID/PSID_RF500Plot_start_truncated_mc4.pdf",
+    width=15,
+    height=42)
+
+seqplotMD(channels=list('Paid Work'=seq.work,Housework=seq.hw.hrs,Family=seq.fam),
+          group = data$mc.factor, type="rf", diss=mcdist.det.min,
+          xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
+          dom.byrow=FALSE,k=500,sortv="from.start",dom.crit=3,
+          cex.legend=0.7)
+
+dev.off()
+
+#### Relative frequency: 500 K (end, domain: fam)
+pdf("results/PSID/PSID_RF500Plot_end_truncated_mc4.pdf",
+    width=15,
+    height=42)
+
+seqplotMD(channels=list('Paid Work'=seq.work,Housework=seq.hw.hrs,Family=seq.fam),
+          group = data$mc.factor, type="rf", diss=mcdist.det.min,
+          xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
+          dom.byrow=FALSE,k=500,sortv="from.end",dom.crit=3,
+          cex.legend=0.7)
+
+dev.off()
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Charts for 5 cluster solution
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -138,22 +392,43 @@ pdf("results/PSID/PSID_MCSA_SDPlot_truncated_mc5.pdf",
     width=15,
     height=28)
 
-seqplotMD(channels=list('Paid Work'=seq.work.ow,Family=seq.fam,Housework=seq.hw.hrs),
+seqplotMD(channels=list('Paid Work'=seq.work,Housework=seq.hw.hrs,Family=seq.fam),
           group = data$mc.factor, type="d",
           xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE)  
 
 dev.off()
 
+#### Frequency
+pdf("results/PSID/PSID_MCSA_FreqPlot_truncated_mc5.pdf",
+    width=15,
+    height=28)
+
+seqplotMD(channels=list('Paid Work'=seq.work,Housework=seq.hw.hrs,Family=seq.fam),
+          group = data$mc.factor, type="f",
+          xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE)  
+
+dev.off()
+
+#### Modal State
+pdf("results/PSID/PSID_MCSA_Modal_truncated_mc5.pdf",
+    width=15,
+    height=28)
+
+seqplotMD(channels=list('Paid Work'=seq.work,Housework=seq.hw.hrs,Family=seq.fam),
+          group = data$mc.factor, type="ms",
+          xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE)  
+
+dev.off()
 
 #### Relative frequency: 100 K (start, domain: fam)
 pdf("results/PSID/PSID_RF100Plot_start_truncated_mc5.pdf",
     width=15,
     height=42)
 
-seqplotMD(channels=list('Paid Work'=seq.work.ow,Family=seq.fam,Housework=seq.hw.hrs),
+seqplotMD(channels=list('Paid Work'=seq.work,Housework=seq.hw.hrs,Family=seq.fam),
           group = data$mc.factor, type="rf", diss=mcdist.det.min,
           xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
-          dom.byrow=FALSE,k=100,sortv="from.start",dom.crit=2,
+          dom.byrow=FALSE,k=100,sortv="from.start",dom.crit=3,
           cex.legend=0.7)
 
 dev.off()
@@ -163,14 +438,39 @@ pdf("results/PSID/PSID_RF100Plot_end_truncated_mc5.pdf",
     width=15,
     height=42)
 
-seqplotMD(channels=list('Paid Work'=seq.work.ow,Family=seq.fam,Housework=seq.hw.hrs),
+seqplotMD(channels=list('Paid Work'=seq.work,Housework=seq.hw.hrs,Family=seq.fam),
           group = data$mc.factor, type="rf", diss=mcdist.det.min,
           xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
-          dom.byrow=FALSE,k=100,sortv="from.end",dom.crit=2,
+          dom.byrow=FALSE,k=100,sortv="from.end",dom.crit=3,
           cex.legend=0.7)
 
 dev.off()
 
+#### Relative frequency: 500 K (start, domain: fam)
+pdf("results/PSID/PSID_RF500Plot_start_truncated_mc5.pdf",
+    width=15,
+    height=42)
+
+seqplotMD(channels=list('Paid Work'=seq.work,Housework=seq.hw.hrs,Family=seq.fam),
+          group = data$mc.factor, type="rf", diss=mcdist.det.min,
+          xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
+          dom.byrow=FALSE,k=500,sortv="from.start",dom.crit=3,
+          cex.legend=0.7)
+
+dev.off()
+
+#### Relative frequency: 500 K (end, domain: fam)
+pdf("results/PSID/PSID_RF500Plot_end_truncated_mc5.pdf",
+    width=15,
+    height=42)
+
+seqplotMD(channels=list('Paid Work'=seq.work,Housework=seq.hw.hrs,Family=seq.fam),
+          group = data$mc.factor, type="rf", diss=mcdist.det.min,
+          xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
+          dom.byrow=FALSE,k=500,sortv="from.end",dom.crit=3,
+          cex.legend=0.7)
+
+dev.off()
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Charts for 6 cluster solution
@@ -193,7 +493,7 @@ data <- data |>
   mutate(cluster = mc6,
          id2 = row_number())
 
-# Obtain relative frequencies of the six cluster (using weights)
+# Obtain relative frequencies of the five cluster (using weights)
 # Convert relative frequencies to percentages (used for labeling the y-axes)
 
 data <- data |>
@@ -218,22 +518,43 @@ pdf("results/PSID/PSID_MCSA_SDPlot_truncated_mc6.pdf",
     width=15,
     height=28)
 
-seqplotMD(channels=list('Paid Work'=seq.work.ow,Family=seq.fam,Housework=seq.hw.hrs),
+seqplotMD(channels=list('Paid Work'=seq.work,Housework=seq.hw.hrs,Family=seq.fam),
           group = data$mc.factor, type="d",
           xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE)  
 
 dev.off()
 
+#### Frequency
+pdf("results/PSID/PSID_MCSA_FreqPlot_truncated_mc6.pdf",
+    width=15,
+    height=28)
+
+seqplotMD(channels=list('Paid Work'=seq.work,Housework=seq.hw.hrs,Family=seq.fam),
+          group = data$mc.factor, type="f",
+          xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE)  
+
+dev.off()
+
+#### Modal State
+pdf("results/PSID/PSID_MCSA_Modal_truncated_mc6.pdf",
+    width=15,
+    height=28)
+
+seqplotMD(channels=list('Paid Work'=seq.work,Housework=seq.hw.hrs,Family=seq.fam),
+          group = data$mc.factor, type="ms",
+          xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE)  
+
+dev.off()
 
 #### Relative frequency: 100 K (start, domain: fam)
 pdf("results/PSID/PSID_RF100Plot_start_truncated_mc6.pdf",
     width=15,
     height=42)
 
-seqplotMD(channels=list('Paid Work'=seq.work.ow,Family=seq.fam,Housework=seq.hw.hrs),
+seqplotMD(channels=list('Paid Work'=seq.work,Housework=seq.hw.hrs,Family=seq.fam),
           group = data$mc.factor, type="rf", diss=mcdist.det.min,
           xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
-          dom.byrow=FALSE,k=100,sortv="from.start",dom.crit=2,
+          dom.byrow=FALSE,k=100,sortv="from.start",dom.crit=3,
           cex.legend=0.7)
 
 dev.off()
@@ -243,104 +564,40 @@ pdf("results/PSID/PSID_RF100Plot_end_truncated_mc6.pdf",
     width=15,
     height=42)
 
-seqplotMD(channels=list('Paid Work'=seq.work.ow,Family=seq.fam,Housework=seq.hw.hrs),
+seqplotMD(channels=list('Paid Work'=seq.work,Housework=seq.hw.hrs,Family=seq.fam),
           group = data$mc.factor, type="rf", diss=mcdist.det.min,
           xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
-          dom.byrow=FALSE,k=100,sortv="from.end",dom.crit=2,
+          dom.byrow=FALSE,k=100,sortv="from.end",dom.crit=3,
           cex.legend=0.7)
 
 dev.off()
 
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Charts for 7 cluster solution
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Load cluster information created in step 2 
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-load("created data/psid_typology-comparison-truncated-prep.RData")
-
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Add cluster information to source data ---- 
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-# Cut tree (this happened in step 2)
-# mc7 <- mcdist.om.pam.ward$clustering$cluster7 # these are sub"folders" in ward output
-
-# add cluster membership indicator 
-data <- data |>
-  mutate(cluster = mc7,
-         id2 = row_number())
-
-# Obtain relative frequencies of the seven cluster (using weights)
-# Convert relative frequencies to percentages (used for labeling the y-axes)
-
-data <- data |>
-  count(cluster) |>  # wt = weight40
-  mutate(share = n/ sum(n)) |>
-  arrange(desc(share)) |> 
-  mutate(mc.factor = glue("Cluster {row_number()}
-                            ({round(share*100,1)}%)"),
-         mc.factor = factor(mc.factor)) |> 
-  select(cluster, mc.factor, share) |> 
-  right_join(data, by = "cluster") |> 
-  arrange(id2)
-
-# Need a new column with real cluster values
-# Will need to be updated with new solutions, but leaving the code for reference, because it works
-#real.cluster<-c(1,2,3,4,5,6,7)
-#mc7.factor<-c(7,3,6,1,4,5,2)
-#cluster.id<-c("Cluster 1 (14.7%)", "Cluster 2 (16.8%)", "Cluster 3 (16.5%)", "Cluster 4 (12.1%)",
-#              "Cluster 5 (13.4%)", "Cluster 6 (14.6%)", "Cluster 7 (11.9%)")
-#cluster_lookup <- data.frame(mc7.factor,cluster.id)
-
-#data$real.cluster <- data %>%
-#  left_join(cluster_lookup, by="mc7.factor")
-
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Create plots --------------------------------
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# for reference (the normalized OM matrix):
-# mcdist.det.min <- mcdist.det.om / fam.min.len
-
-#### State distribution
-pdf("results/PSID/PSID_MCSA_SDPlot_truncated_mc7.pdf",
-    width=15,
-    height=28)
-
-seqplotMD(channels=list('Paid Work'=seq.work.ow,Family=seq.fam,Housework=seq.hw.hrs),
-          group = data$mc.factor, type="d",
-          xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE)  
-
-dev.off()
-
-
-#### Relative frequency: 100 K, (start, domain: fam)
-pdf("results/PSID/PSID_RF100Plot_start_truncated_mc7.pdf",
+#### Relative frequency: 500 K (start, domain: fam)
+pdf("results/PSID/PSID_RF500Plot_start_truncated_mc6.pdf",
     width=15,
     height=42)
 
-seqplotMD(channels=list('Paid Work'=seq.work.ow,Family=seq.fam,Housework=seq.hw.hrs),
+seqplotMD(channels=list('Paid Work'=seq.work,Housework=seq.hw.hrs,Family=seq.fam),
           group = data$mc.factor, type="rf", diss=mcdist.det.min,
           xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
-          dom.byrow=FALSE,k=100,sortv="from.start",dom.crit=2,
+          dom.byrow=FALSE,k=500,sortv="from.start",dom.crit=3,
           cex.legend=0.7)
 
 dev.off()
 
-
-#### Relative frequency: 100 K, (end, domain: fam)
-pdf("results/PSID/PSID_RF100Plot_end_truncated_mc7.pdf",
+#### Relative frequency: 500 K (end, domain: fam)
+pdf("results/PSID/PSID_RF500Plot_end_truncated_mc6.pdf",
     width=15,
     height=42)
 
-seqplotMD(channels=list('Paid Work'=seq.work.ow,Family=seq.fam,Housework=seq.hw.hrs),
+seqplotMD(channels=list('Paid Work'=seq.work,Housework=seq.hw.hrs,Family=seq.fam),
           group = data$mc.factor, type="rf", diss=mcdist.det.min,
           xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
-          dom.byrow=FALSE,k=100,sortv="from.end",dom.crit=2,
+          dom.byrow=FALSE,k=500,sortv="from.end",dom.crit=3,
           cex.legend=0.7)
 
 dev.off()
+
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Charts for 8 cluster solution
@@ -363,7 +620,6 @@ data <- data |>
   mutate(cluster = mc8,
          id2 = row_number())
 
-# Obtain relative frequencies of the eight cluster (using weights)
 # Convert relative frequencies to percentages (used for labeling the y-axes)
 
 data <- data |>
@@ -388,8 +644,31 @@ pdf("results/PSID/PSID_MCSA_SDPlot_truncated_mc8.pdf",
     width=15,
     height=28)
 
-seqplotMD(channels=list('Paid Work'=seq.work.ow,Family=seq.fam,Housework=seq.hw.hrs),
+seqplotMD(channels=list('Paid Work'=seq.work,Housework=seq.hw.hrs,Family=seq.fam),
           group = data$mc.factor, type="d",
+          xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE)  
+
+dev.off()
+
+#### Frequency
+pdf("results/PSID/PSID_MCSA_FreqPlot_truncated_mc8.pdf",
+    width=15,
+    height=28)
+
+seqplotMD(channels=list('Paid Work'=seq.work,Housework=seq.hw.hrs,Family=seq.fam),
+          group = data$mc.factor, type="f",
+          xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE)  
+
+dev.off()
+
+
+#### Modal states
+pdf("results/PSID/PSID_MCSA_Modal_truncated_mc8.pdf",
+    width=15,
+    height=28)
+
+seqplotMD(channels=list('Paid Work'=seq.work,Housework=seq.hw.hrs,Family=seq.fam),
+          group = data$mc.factor, type="ms",
           xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE)  
 
 dev.off()
@@ -400,10 +679,10 @@ pdf("results/PSID/PSID_RF100Plot_start_truncated_mc8.pdf",
     width=15,
     height=42)
 
-seqplotMD(channels=list('Paid Work'=seq.work.ow,Family=seq.fam,Housework=seq.hw.hrs),
+seqplotMD(channels=list('Paid Work'=seq.work,Housework=seq.hw.hrs,Family=seq.fam),
           group = data$mc.factor, type="rf", diss=mcdist.det.min,
           xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
-          dom.byrow=FALSE,k=100,sortv="from.start",dom.crit=2,
+          dom.byrow=FALSE,k=100,sortv="from.start",dom.crit=3,
           cex.legend=0.7)
 
 dev.off()
@@ -413,10 +692,36 @@ pdf("results/PSID/PSID_RF100Plot_end_truncated_mc8.pdf",
     width=15,
     height=42)
 
-seqplotMD(channels=list('Paid Work'=seq.work.ow,Family=seq.fam,Housework=seq.hw.hrs),
+seqplotMD(channels=list('Paid Work'=seq.work,Housework=seq.hw.hrs,Family=seq.fam),
           group = data$mc.factor, type="rf", diss=mcdist.det.min,
           xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
-          dom.byrow=FALSE,k=100,sortv="from.end",dom.crit=2,
+          dom.byrow=FALSE,k=100,sortv="from.end",dom.crit=3,
+          cex.legend=0.7)
+
+dev.off()
+
+#### Relative frequency: 500 K (start, domain: fam)
+pdf("results/PSID/PSID_RF500Plot_start_truncated_mc8.pdf",
+    width=15,
+    height=42)
+
+seqplotMD(channels=list('Paid Work'=seq.work,Housework=seq.hw.hrs,Family=seq.fam),
+          group = data$mc.factor, type="rf", diss=mcdist.det.min,
+          xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
+          dom.byrow=FALSE,k=500,sortv="from.start",dom.crit=3,
+          cex.legend=0.7)
+
+dev.off()
+
+#### Relative frequency: 500 K (end, domain: fam)
+pdf("results/PSID/PSID_RF500Plot_end_truncated_mc8.pdf",
+    width=15,
+    height=42)
+
+seqplotMD(channels=list('Paid Work'=seq.work,Housework=seq.hw.hrs,Family=seq.fam),
+          group = data$mc.factor, type="rf", diss=mcdist.det.min,
+          xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
+          dom.byrow=FALSE,k=500,sortv="from.end",dom.crit=3,
           cex.legend=0.7)
 
 dev.off()

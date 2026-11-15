@@ -2,9 +2,9 @@
 #    Program: cluster-plots
 #    Author: Kim McErlean & Lea Pessin 
 #    Date: January 2025
-#    Modified: December 3 2025
-#    Goal: Create final RF plots to use in paper for 9 cluster solution
-#     Splitting out to test different sort orders more easily
+#    Modified: November 13, 2026
+#    Goal: Create final RF and MS plots to use in paper for 6 cluster solution
+#     Splitting out to test different sort orders more easily and run more quickly
 # --------------------------------------------------------------------
 # --------------------------------------------------------------------
 
@@ -93,7 +93,7 @@ if (Sys.getenv(c("USERNAME")) == "lpessin") {
 }
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-# Charts for 9 cluster solution
+# Charts for 6 cluster solution
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -106,14 +106,14 @@ load("created data/gsoep/typology-comparison-truncated-prep.RData")
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # Cut tree
-# mc9 <- mcdist.om.pam.ward$clustering$cluster9 # these are sub"folders" in ward output
+# mc6 <- mcdist.om.pam.ward$clustering$cluster6 # these are sub"folders" in ward output
 
 # add cluster membership indicator 
 data <- data |>
-  mutate(cluster = mc9,
+  mutate(cluster = mc6,
          id2 = row_number())
 
-# Obtain relative frequencies of the nine cluster
+# Obtain relative frequencies of the six cluster
 # Convert relative frequencies to percentages (used for labeling the y-axes)
 
 data <- data |>
@@ -128,15 +128,32 @@ data <- data |>
   arrange(id2)
 
 # Need a new column with real cluster values
-real.cluster<-c(1,2,3,4,5,6,7,8,9)
-mc9.factor<-c(3,8,4,2,5,6,1,7,9)
-cluster.id<-c("Cluster 1 (8.5%)", "Cluster 2 (7.5%)", "Cluster 3 (13.3%)",
-              "Cluster 4 (16.0%)", "Cluster 5 (10.1%)", "Cluster 6 (11.6%)", 
-              "Cluster 7 (10.9%)", "Cluster 8 (14.0%)", "Cluster 9 (8.1%)")
-cluster_lookup <- data.frame(mc9.factor,cluster.id)
+real.cluster<-c(1,2,3,4,5,6)
+mc6.factor<-c(6,3,2,1,5,4)
+cluster.id<-c("Stable neotraditional cohabitors with children (16.6%)", 
+              "Traditional married couples with children (18.5%)", 
+              "Egalitarian cohabitation to traditional or second shift marriage (23.7%)",
+              "Second shift cohabitation to neotraditional marriage (21.8%)",
+              "Traditionalization or intensification of second shift among direct marriers (11.1%)",
+              "Childfree couples experience volatile breadwinning and housework (8.4%)")
+cluster_lookup <- data.frame(mc6.factor,cluster.id)
 
 data$real.cluster <- data %>%
-  left_join(cluster_lookup, by="mc9.factor")
+  left_join(cluster_lookup, by="mc6.factor")
+
+# And get SORT order (it used to work because these were names Cluster 1, Cluster 2, etc.)
+# ANd R sorts ALPHABETIcally. But I updated names so now I hve to give a sort order
+cluster_order<-c("Stable neotraditional cohabitors with children (16.6%)", 
+                 "Traditional married couples with children (18.5%)", 
+                 "Egalitarian cohabitation to traditional or second shift marriage (23.7%)",
+                 "Second shift cohabitation to neotraditional marriage (21.8%)",
+                 "Traditionalization or intensification of second shift among direct marriers (11.1%)",
+                 "Childfree couples experience volatile breadwinning and housework (8.4%)")
+
+data$cluster.id <- factor(data$real.cluster$cluster.id, levels = cluster_order)
+cluster_titles <- levels(data$cluster.id)
+levels(data$cluster.id)
+table(data$cluster.id, useNA = "ifany")
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Create plots --------------------------------
@@ -144,42 +161,81 @@ data$real.cluster <- data %>%
 # for reference (the normalized OM matrix):
 # mcdist.det.min <- mcdist.det.om / fam.min.len
 
-#### Relative frequency: 100 K (start, domain: fam)
-pdf("results/GSOEP/GSOEP_RF100Plot_start_mc9_final.pdf",
-    width=15,
-    height=42)
-
-seqplotMD(channels=list('Paid Work'=seq.work.ow,Housework=seq.hw.hrs.weekly,Family=seq.fam),
-          group = data$real.cluster$cluster.id, type="rf", diss=mcdist.det.min,
-          xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
-          dom.byrow=FALSE,k=100,sortv="from.start",dom.crit=3,
-          cex.legend=0.7, main="Germany")
-
-dev.off()
 
 #### Relative frequency: 100 K (end, domain: fam)
-pdf("results/GSOEP/GSOEP_RF100Plot_end_mc9_final.pdf",
+pdf("results/GSOEP/GSOEP_RF100Plot_end_mc6_final.pdf",
     width=15,
     height=42)
 
-seqplotMD(channels=list('Paid Work'=seq.work.ow,Housework=seq.hw.hrs.weekly,Family=seq.fam),
-          group = data$real.cluster$cluster.id, type="rf", diss=mcdist.det.min,
-          xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
+par(oma = c(0, 2, 3, 0))
+
+seqplotMD(channels=list("Paid Work"=seq.work, "Housework"=seq.hw.hrs, "Family"=seq.fam),
+          group = data$cluster.id, type="rf", diss=mcdist.det.min,
+          xlab="Marital Duration", xtlab = 1:10, ylab=levels(data$cluster.id), 
+          col.main="transparent", yaxis="left", yaxt = "n",cex.lab = 1.5,
           dom.byrow=FALSE,k=100,sortv="from.end",dom.crit=3,
-          cex.legend=0.7, main="Germany")
+          cex.legend=1, main="Germany")
+
+mtext(
+  text = c("Paid Work", "Housework", "Family"),
+  side = 3,
+  outer = TRUE,
+  line = 0.5,
+  at = c(0.17, 0.50, 0.84),
+  font = 2,
+  cex = 1.2
+)
 
 dev.off()
 
 #### Relative frequency: 100 K (end, domain: fam)
-pdf("results/GSOEP/GSOEP_RF100Plot_end_mc9_final_size.pdf",
+pdf("results/GSOEP/GSOEP_RF100Plot_end_mc6_final_size.pdf",
     width=25,
     height=42)
 
-seqplotMD(channels=list('Paid Work'=seq.work.ow,Housework=seq.hw.hrs.weekly,Family=seq.fam),
-          group = data$real.cluster$cluster.id, type="rf", diss=mcdist.det.min,
-          xlab="Marital Duration", xtlab = 1:10, ylab=NA, yaxis=FALSE,
+par(oma = c(0, 2, 3, 0))
+
+seqplotMD(channels=list("Paid Work"=seq.work, "Housework"=seq.hw.hrs, "Family"=seq.fam),
+          group = data$cluster.id, type="rf", diss=mcdist.det.min,
+          xlab="Marital Duration", xtlab = 1:10, ylab=levels(data$cluster.id), 
+          col.main="transparent", yaxis="left", yaxt = "n",cex.lab = 1.5,
           dom.byrow=FALSE,k=100,sortv="from.end",dom.crit=3,
-          cex.legend=0.7, main="Germany")
+          cex.legend=1.3, main="Germany")
+
+mtext(
+  text = c("Paid Work", "Housework", "Family"),
+  side = 3,
+  outer = TRUE,
+  line = 0.5,
+  at = c(0.17, 0.50, 0.84),
+  font = 2,
+  cex = 1.2
+)
+
+dev.off()
+
+#### Modal States
+
+pdf("results/GSOEP/GSOEP_MSPlot_mc6_final.pdf",
+    width=15,
+    height=28)
+
+par(oma = c(0, 2, 3, 0))
+
+seqplotMD(channels=list("Paid Work"=seq.work, "Housework"=seq.hw.hrs, "Family"=seq.fam),
+          group = data$cluster.id, type="ms",
+          xlab="Marital Duration", xtlab = 1:10, ylab=levels(data$cluster.id),
+          col.main="transparent", cex.lab = 1.05, yaxis="all") #, with.missing=FALSE - don't think this did anything
+
+mtext(
+  text = c("Paid Work", "Housework", "Family"),
+  side = 3,
+  outer = TRUE,
+  line = 0.5,
+  at = c(0.17, 0.50, 0.84),
+  font = 2,
+  cex = 1.2
+)
 
 dev.off()
 
