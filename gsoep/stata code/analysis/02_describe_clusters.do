@@ -681,58 +681,50 @@ browse mc6_factor couple_work_ow_trunc* age_youngest_child1 age_youngest_child2 
 // I think the data need to be LONG here (to get average across durations)
 use "$created_data/GSOEP_truncated_clusters_analysis.dta", clear
 
-mi reshape long employment self_reported_health disability_yn religious_affiliation errands_sundays housework_saturdays housework_sundays childcare_saturdays childcare_sundays repair_saturdays errands_weekdays housework_weekdays childcare_weekdays repair_weekdays errands_saturdays aid_in_hh_hl kidsu18_hh num_65up_hh age_youngest_child age nationality_region federal_state housing_status weekly_work_hrs gross_income_lm net_income_lm hh_income_net_monthly earnings_gross_t_cnef hh_gross_income_t_cnef repair_sundays any_outside_help any_parent_in_hh current_parent_status marst_imp retired_yn full_status_pl duplicate_record urban_region employment_sp self_reported_health_sp disability_yn_sp religious_affiliation_sp errands_sundays_sp housework_saturdays_sp housework_sundays_sp childcare_saturdays_sp childcare_sundays_sp repair_saturdays_sp errands_weekdays_sp housework_weekdays_sp childcare_weekdays_sp repair_weekdays_sp errands_saturdays_sp nationality_pb_sp aid_in_hh_hl_sp kidsu18_hh_sp num_65up_hh_sp age_youngest_child_sp age_sp nationality_region_sp federal_state_sp housing_status_sp weekly_work_hrs_sp gross_income_lm_sp net_income_lm_sp hh_income_net_monthly_sp earnings_gross_t_cnef_sp hh_gross_income_t_cnef_sp repair_sundays_sp any_outside_help_sp any_parent_in_hh_sp current_parent_status_sp marst_imp_sp retired_yn_sp full_status_pl_sp urban_region_sp weekly_hrs_woman weekly_hrs_man employment_status_woman employment_status_man monthly_earnings_woman monthly_earnings_man annual_earnings_woman annual_earnings_man housework_weekdays_woman housework_weekdays_man housework_saturdays_woman housework_saturdays_man housework_sundays_woman housework_sundays_man repair_weekdays_woman repair_weekdays_man repair_saturdays_woman repair_saturdays_man repair_sundays_woman repair_sundays_man errands_weekdays_woman errands_weekdays_man errands_saturdays_woman errands_saturdays_man errands_sundays_woman errands_sundays_man aid_in_hh_woman aid_in_hh_man marital_status_woman marital_status_man partnered_woman partnered_man num_children_woman num_children_man age_youngest_woman age_youngest_man federal_state_woman federal_state_man where_ew_woman where_ew_man urban_region_woman urban_region_man housing_woman housing_man religion_woman religion_man disabled_woman disabled_man sr_health_woman sr_health_man retired_woman retired_man ft_pt_woman overwork_woman ft_pt_man overwork_man couple_work couple_work_ow_detailed couple_work_ow couple_weekday_hw_total woman_weekday_hw_share couple_hw_weekday housework_weekdays_5_woman housework_weekly_est_woman housework_weekdays_5_man housework_weekly_est_man couple_weekly_hw_total woman_weekly_hw_share couple_hw_weekly housework_combined_woman housework_combined_man couple_combined_hw_total woman_combined_hw_share couple_hw_combined syear rel_type couple_num_children couple_num_children_gp family_type hw_weekly_hilow_woman hw_weekly_hilow_equal couple_hw_hrs_weekly hw_combined_hilow_equal hw_combined_hilow_woman couple_hw_hrs_combined hw_weekday_hilow_woman hw_weekday_hilow_equal hw_weekday_hilow_test hw_weekday_equal couple_hw_hrs_weekday ft_pt_woman_end overwork_woman_end ft_pt_man_end overwork_man_end couple_work_end couple_work_ow_detailed_end couple_work_ow_end couple_hw_weekday_end couple_hw_hrs_weekday_end couple_hw_weekly_end couple_hw_hrs_weekly_end couple_hw_combined_end couple_hw_hrs_combined_end couple_num_children_gp_end family_type_end couple_work_ow_trunc couple_hw_hrs_weekday_trunc couple_hw_hrs_weekly_trunc couple_hw_hrs_combined_trunc family_type_trunc sr_health_man_rev sr_health_woman_rev, i(pid eligible_partner eligible_rel_start_year eligible_rel_end_year) j(duration) 
+mi reshape long employment self_reported_health disability_yn religious_affiliation errands_sundays housework_saturdays housework_sundays childcare_saturdays childcare_sundays repair_saturdays errands_weekdays housework_weekdays childcare_weekdays repair_weekdays errands_saturdays aid_in_hh_hl kidsu18_hh num_65up_hh age_youngest_child age nationality_region federal_state housing_status weekly_work_hrs gross_income_lm net_income_lm hh_income_net_monthly earnings_gross_t_cnef hh_gross_income_t_cnef repair_sundays any_outside_help any_parent_in_hh current_parent_status marst_imp retired_yn full_status_pl duplicate_record urban_region employment_sp self_reported_health_sp disability_yn_sp religious_affiliation_sp errands_sundays_sp housework_saturdays_sp housework_sundays_sp childcare_saturdays_sp childcare_sundays_sp repair_saturdays_sp errands_weekdays_sp housework_weekdays_sp childcare_weekdays_sp repair_weekdays_sp errands_saturdays_sp nationality_pb_sp aid_in_hh_hl_sp kidsu18_hh_sp num_65up_hh_sp age_youngest_child_sp age_sp nationality_region_sp federal_state_sp housing_status_sp weekly_work_hrs_sp gross_income_lm_sp net_income_lm_sp hh_income_net_monthly_sp earnings_gross_t_cnef_sp hh_gross_income_t_cnef_sp repair_sundays_sp any_outside_help_sp any_parent_in_hh_sp current_parent_status_sp marst_imp_sp retired_yn_sp full_status_pl_sp urban_region_sp weekly_hrs_woman weekly_hrs_man employment_status_woman employment_status_man monthly_earnings_woman monthly_earnings_man annual_earnings_woman annual_earnings_man housework_weekdays_woman housework_weekdays_man housework_saturdays_woman housework_saturdays_man housework_sundays_woman housework_sundays_man repair_weekdays_woman repair_weekdays_man repair_saturdays_woman repair_saturdays_man repair_sundays_woman repair_sundays_man errands_weekdays_woman errands_weekdays_man errands_saturdays_woman errands_saturdays_man errands_sundays_woman errands_sundays_man aid_in_hh_woman aid_in_hh_man marital_status_woman marital_status_man partnered_woman partnered_man num_children_woman num_children_man age_youngest_woman age_youngest_man federal_state_woman federal_state_man where_ew_woman where_ew_man urban_region_woman urban_region_man housing_woman housing_man religion_woman religion_man disabled_woman disabled_man sr_health_woman sr_health_man retired_woman retired_man ft_pt_woman overwork_woman ft_pt_man overwork_man couple_work couple_work_ow_detailed couple_work_ow couple_weekday_hw_total woman_weekday_hw_share couple_hw_weekday housework_weekdays_5_woman housework_weekly_est_woman housework_weekdays_5_man housework_weekly_est_man couple_weekly_hw_total woman_weekly_hw_share couple_hw_weekly housework_combined_woman housework_combined_man couple_combined_hw_total woman_combined_hw_share couple_hw_combined syear rel_type couple_num_children couple_num_children_gp family_type hw_weekly_hilow_woman hw_weekly_hilow_equal couple_hw_hrs_weekly hw_combined_hilow_equal hw_combined_hilow_woman couple_hw_hrs_combined hw_weekday_hilow_woman hw_weekday_hilow_equal hw_weekday_hilow_test hw_weekday_equal couple_hw_hrs_weekday ft_pt_woman_end overwork_woman_end ft_pt_man_end overwork_man_end couple_work_end couple_work_ow_detailed_end couple_work_ow_end couple_hw_weekday_end couple_hw_hrs_weekday_end couple_hw_weekly_end couple_hw_hrs_weekly_end couple_hw_combined_end couple_hw_hrs_combined_end couple_num_children_gp_end family_type_end couple_work_ow_trunc couple_hw_hrs_weekday_trunc couple_hw_hrs_weekly_trunc couple_hw_hrs_combined_trunc family_type_trunc sr_health_man_rev sr_health_woman_rev dual_work_end division_of_labor_end egalitarian_end egal_dol_yn_end dual_ft_end hw_egal_end hw_mod_egal_end couple_hw_hrs_4cat couple_hw_hrs_4cat_end family_type_5cat family_type_5cat_end couple_work_3cat_end couple_hw_3cat_end detailed_dol_end dual_work_trunc division_of_labor_trunc egalitarian_trunc egal_dol_yn_trunc dual_ft_trunc hw_egal_trunc hw_mod_egal_trunc  couple_hw_hrs_4cat_trunc family_type_5cat_trunc couple_work_trunc couple_work_3cat_trunc couple_hw_3cat_trunc detailed_dol_trunc, i(pid eligible_partner eligible_rel_start_year eligible_rel_end_year) j(duration) 
 
-mi estimate: proportion couple_work_ow_trunc couple_hw_hrs_weekly_trunc family_type_trunc if duration <=10
-mi estimate: proportion couple_work_ow_trunc couple_hw_hrs_weekly_trunc family_type_trunc if duration ==10
+mi estimate: proportion couple_work_trunc couple_hw_hrs_4cat_trunc family_type_5cat_trunc if duration <=10
+mi estimate: proportion couple_work_trunc couple_hw_hrs_4cat_trunc family_type_5cat_trunc if duration ==10
 
 tab _mi_m mc6_factor, m
 
-tab couple_work_ow_trunc, gen(work_seq)
-tab couple_hw_hrs_weekly_trunc, gen(hw_seq)
-tab family_type_trunc, gen(fam_seq)
+tab couple_work_trunc, gen(work_seq)
+tab couple_hw_hrs_4cat_trunc, gen(hw_seq)
+tab family_type_5cat_trunc, gen(fam_seq)
 mi estimate: mean work_seq1 work_seq2 if duration<=10
 mi estimate: proportion couple_work_ow_trunc if duration<=10
 
 putexcel set "$tables/SOEP_stata_cluster_composition.xlsx", replace
 putexcel B1 = "Full Sample"
-putexcel C1 = "1: Early Trans to Trad"
-putexcel D1 = "2: Egal Cohab"
-putexcel E1 = "3: Neotrad Cohab to Marr"
-putexcel F1 = "4: Trad Marriage"
-putexcel G1 = "5: CF Cohab + 2nd Shift"
-putexcel H1 = "6: Late Trans to Neotrad"
-putexcel I1 = "7: OW + CF Cohab"
-putexcel J1 = "8: Trad Cohab + Kids"
-putexcel K1 = "9: UW Cohab"
+putexcel C1 = "(MC1,C4) ss cohab to neotrad marriage"
+putexcel D1 = "(MC2,C3) egal cohab to 2nd shift marriage"
+putexcel E1 = "(MC3,C2) stable trad married couples w children"
+putexcel F1 = "(MC4,C6) volatile breadwinning and hw"
+putexcel G1 = "(MC5,C5) traditionalization among direct marriers"
+putexcel H1 = "(MC6,C1) stable neotrad cohab w children"
 
 putexcel A2 = "Work"
 putexcel A3 = "Male BW"
 putexcel A4 = "1.5 Male BW"
-putexcel A5 = "Dual FT: no OW"
-putexcel A6 = "Dual FT: any OW"
-putexcel A7 = "Female BW"
-putexcel A8 = "Underwork"
+putexcel A5 = "Dual FT: any OW"
+putexcel A6 = "Female BW"
+putexcel A7 = "Underwork"
 
-putexcel A10 = "Housework"
-putexcel A11 = "Woman Most: High"
-putexcel A12 = "Woman Most: Low"
-putexcel A13 = "Equal: High"
-putexcel A14 = "Equal: Low"
-putexcel A15 = "Man Most: All"
+putexcel A9 = "Housework"
+putexcel A10 = "Woman Most: High"
+putexcel A11 = "Woman Most: Low"
+putexcel A12 = "Equal: All"
+putexcel A13 = "Man Most: All"
 
-putexcel A17 = "Family"
-putexcel A18 = "Married, 0 Ch"
-putexcel A19 = "Married, 1 Ch"
-putexcel A20 = "Married, 2 Ch"
-putexcel A21 = "Married, 3+ Ch"
-putexcel A22 = "Cohab, 0 Ch"
-putexcel A23 = "Cohab, 1 Ch"
-putexcel A24 = "Cohab, 2 Ch"
-putexcel A25 = "Cohab, 3+ Ch"
+putexcel A15 = "Family"
+putexcel A16 = "Married, 0 Ch"
+putexcel A17 = "Married, 1 Ch"
+putexcel A18 = "Married, 2+ Ch"
+putexcel A19 = "Cohab, 0 Ch"
+putexcel A20 = "Cohab, 1+ Ch"
 
 // full sample
-forvalues w=1/6{
+forvalues w=1/5{
 	// capture mi passive: gen work_seq`w' = work_seq==`w'
    mi estimate: mean work_seq`w' if duration<=10
    matrix w`w' = e(b_mi)
@@ -741,30 +733,30 @@ forvalues w=1/6{
    putexcel B`row' = `w`w'', nformat(##.#%)
 }
 
-forvalues h=1/5{
+forvalues h=1/4{
    // capture mi passive: gen hw_seq`h' = couple_hw_hrs_combo_trunc==`h'
    mi estimate: mean hw_seq`h' if duration<=10
    matrix h`h' = e(b_mi)
    local h`h' = h`h'[1,1]
-   local row = 10+`h'
+   local row = 9+`h'
    putexcel B`row' = `h`h'', nformat(##.#%)
 }
 
-forvalues f=1/8{
+forvalues f=1/5{
    // capture mi passive: gen fam_seq`f' = family_type_trunc==`f'
    mi estimate: mean fam_seq`f' if duration<=10
    matrix f`f' = e(b_mi)
    local f`f' = f`f'[1,1]
-   local row = 17+`f'
+   local row = 15+`f'
    putexcel B`row' = `f`f'', nformat(##.#%)
 }
 
 // by cluster
-local col1 "C D E F G H I J K"
+local col1 "C D E F G H"
 
-forvalues c=1/9{
+forvalues c=1/6{
 	local col: word `c' of `col1'
-	forvalues w=1/6{
+	forvalues w=1/5{
 	   mi estimate, esampvaryok: mean work_seq`w' if mc6_factor==`c' & duration<=10
 	   matrix w`w' = e(b_mi)
 	   local w`w' = w`w'[1,1]
@@ -773,31 +765,31 @@ forvalues c=1/9{
 	}
 }
 
-forvalues c=1/9{
+forvalues c=1/6{
 	local col: word `c' of `col1'
-	forvalues h=1/5{
+	forvalues h=1/4{
 	   mi estimate, esampvaryok: mean hw_seq`h' if mc6_factor==`c'  & duration<=10
 	   matrix h`h' = e(b_mi)
 	   local h`h' = h`h'[1,1]
-	   local row = 10+`h'
+	   local row = 9+`h'
 	   putexcel `col'`row' = `h`h'', nformat(##.#%)
 	}
 }
 
-forvalues c=1/9{
+forvalues c=1/6{
 	local col: word `c' of `col1'
-	forvalues f=1/8{
+	forvalues f=1/5{
 	   capture noisily mi estimate, esampvaryok: mean fam_seq`f' if mc6_factor==`c'  & duration<=10 // didn't do capture with noisily, so there are a few I need to check; think I ran into similar issues like I did with UK
 	   matrix f`f' = e(b_mi)
 	   local f`f' = f`f'[1,1]
-	   local row = 17+`f'
+	   local row = 15+`f'
 	   putexcel `col'`row' = `f`f'', nformat(##.#%)
 	}
 }
 
 
 // check
-mi estimate, esampvaryok: proportion couple_work_ow_trunc couple_hw_hrs_weekly_trunc family_type_trunc if duration <=10 & mc6_factor==1
-mi estimate, esampvaryok: proportion couple_work_ow_trunc couple_hw_hrs_weekly_trunc family_type_trunc if duration <=10 & mc6_factor==4
-mi estimate, esampvaryok: proportion couple_work_ow_trunc couple_hw_hrs_weekly_trunc family_type_trunc if duration <=10 & mc6_factor==9
+mi estimate, esampvaryok: proportion couple_work_trunc couple_hw_hrs_4cat_trunc family_type_5cat_trunc if duration <=10 & mc6_factor==1
+mi estimate, esampvaryok: proportion couple_work_trunc couple_hw_hrs_4cat_trunc family_type_5cat_trunc if duration <=10 & mc6_factor==4
+mi estimate, esampvaryok: proportion couple_work_trunc couple_hw_hrs_4cat_trunc family_type_5cat_trunc if duration <=10 & mc6_factor==6
 

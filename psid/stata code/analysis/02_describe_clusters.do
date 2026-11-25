@@ -641,58 +641,51 @@ should I get some t1 variables to use as fixed when I reshape?? oh maybe this ha
 // browse unique_id partner_unique_id duration couple_earnings_t1 age_man1 _mi_m // right - if imputed, will match across durations, but not nec. across imputations
 */
 
-mi reshape long ft_pt_woman_end overwork_woman_end ft_pt_man_end overwork_man_end couple_work_end couple_work_ow_detailed_end couple_work_ow_end couple_hw_end couple_hw_hrs_end couple_hw_hrs_alt_end couple_hw_hrs_combo_end rel_type couple_num_children_gp_end family_type_end in_sample hh_status relationship housework_focal age_focal weekly_hrs_t_focal earnings_t_focal family_income_t partnered_imp educ_focal_imp num_children_imp_hh weekly_hrs_woman weekly_hrs_man housework_woman housework_man partnered_woman partnered_man num_children_woman num_children_man ft_pt_woman overwork_woman ft_pt_man overwork_man ft_pt_det_woman ft_pt_det_man  in_sample_sp hh_status_sp relationship_sp housework_focal_sp age_focal_sp weekly_hrs_t_focal_sp earnings_t_focal_sp family_income_t_sp partnered_imp_sp num_children_imp_hh_sp couple_work_ow_detailed couple_work_ow couple_hw_hrs_combo age_young_child RESPONDENT_WHO_ REGION_ employment_status_focal religion_focal lives_family_focal disabled_focal disabled_scale_focal sr_health_focal yr_retired_focal father_in_hh mother_in_hh num_parent_in_hh num_65up_hh rolling_births current_parent_status retired_est_focal house_status_all disabled_imp_focal age_young_child_sp RESPONDENT_WHO_sp REGION_sp employment_status_focal_sp religion_focal_sp lives_family_focal_sp disabled_focal_sp sr_health_focal_sp num_parent_in_hh_sp num_65up_hh_sp rolling_births_sp current_parent_status_sp retired_est_focal_sp house_status_all_sp employment_status_woman employment_status_man annual_earnings_woman annual_earnings_man age_youngest_woman age_youngest_man is_parent_woman is_parent_man region_woman region_man housing_woman housing_man religion_woman religion_man disabled_woman disabled_man sr_health_woman sr_health_man retired_woman retired_man lives_near_fam_woman lives_near_fam_man couple_work couple_hw couple_hw_hrs couple_hw_hrs_alt couple_num_children couple_num_children_gp family_type ft_pt_det_woman_end ft_pt_det_man_end couple_work_ow_trunc couple_hw_hrs_combo_trunc family_type_trunc sr_health_man_rev sr_health_woman_rev, i(unique_id partner_unique_id rel_start_all rel_end_all) j(duration) 
+mi reshape long ft_pt_woman_end overwork_woman_end ft_pt_man_end overwork_man_end couple_work_end couple_work_ow_detailed_end couple_work_ow_end couple_hw_end couple_hw_hrs_end couple_hw_hrs_alt_end couple_hw_hrs_combo_end rel_type couple_num_children_gp_end family_type_end in_sample hh_status relationship housework_focal age_focal weekly_hrs_t_focal earnings_t_focal family_income_t partnered_imp educ_focal_imp num_children_imp_hh weekly_hrs_woman weekly_hrs_man housework_woman housework_man partnered_woman partnered_man num_children_woman num_children_man ft_pt_woman overwork_woman ft_pt_man overwork_man ft_pt_det_woman ft_pt_det_man  in_sample_sp hh_status_sp relationship_sp housework_focal_sp age_focal_sp weekly_hrs_t_focal_sp earnings_t_focal_sp family_income_t_sp partnered_imp_sp  marst_imp marst_imp_sp  marst_woman marst_man num_children_imp_hh_sp couple_work_ow_detailed couple_work_ow couple_hw_hrs_combo age_young_child RESPONDENT_WHO_ REGION_ employment_status_focal religion_focal lives_family_focal disabled_focal disabled_scale_focal sr_health_focal yr_retired_focal father_in_hh mother_in_hh num_parent_in_hh num_65up_hh rolling_births current_parent_status retired_est_focal house_status_all disabled_imp_focal age_young_child_sp RESPONDENT_WHO_sp REGION_sp employment_status_focal_sp religion_focal_sp lives_family_focal_sp disabled_focal_sp sr_health_focal_sp num_parent_in_hh_sp num_65up_hh_sp rolling_births_sp current_parent_status_sp retired_est_focal_sp house_status_all_sp employment_status_woman employment_status_man annual_earnings_woman annual_earnings_man age_youngest_woman age_youngest_man is_parent_woman is_parent_man region_woman region_man housing_woman housing_man home_owner home_owner_sp  religion_woman religion_man disabled_woman disabled_man sr_health_woman sr_health_man retired_woman retired_man lives_near_fam_woman lives_near_fam_man couple_work couple_hw couple_hw_hrs couple_hw_hrs_alt couple_num_children couple_num_children_gp family_type ft_pt_det_woman_end ft_pt_det_man_end couple_work_ow_trunc couple_hw_hrs_combo_trunc family_type_trunc sr_health_man_rev sr_health_woman_rev is_respondent_focal is_respondent_focal_sp RELATION_ any_parent_in_hh any_parent_in_hh_sp relationship_type_ is_first_yr_cohabitor has_first_yr_cohabitor current_rel_type marital_status_focal in_rel_flag survey_yr dual_work_end division_of_labor_end egalitarian_end egal_dol_yn_end dual_ft_end hw_egal_end hw_mod_egal_end couple_hw_hrs_4cat couple_hw_hrs_4cat_end family_type_5cat family_type_5cat_end  couple_work_3cat_end couple_hw_3cat_end detailed_dol_end couple_work_trunc couple_hw_hrs_4cat_trunc family_type_5cat_trunc division_of_labor_trunc egalitarian_trunc egal_dol_yn_trunc dual_work_trunc dual_ft_trunc hw_egal_trunc hw_mod_egal_trunc couple_work_3cat_trunc couple_hw_3cat_trunc detailed_dol_trunc, i(unique_id partner_unique_id rel_start_all rel_end_all) j(duration) 
 
-tab _mi_m mc8_factor, m
+tab _mi_m mc5_factor, m
 
+mi estimate: proportion family_type_5cat_trunc couple_hw_hrs_4cat_trunc couple_work_trunc if duration <=10
 mi estimate: proportion couple_work_ow_trunc couple_hw_hrs_combo_trunc family_type_trunc if duration <=10 // this is possibly where those current Excel summary stats came from duh (yes, this is the case - so let's confirm these match once I update the below; not yet updated for truncated clusters)
 
 // the below actually didnt work because of the missing, so actually HAVE to do the tab way.
    // capture mi passive: gen work_seq`w' = couple_work_ow_trunc==`w'
    // mi estimate: mean work_seq`w'
-tab couple_work_ow_trunc, gen(work_seq)
-tab couple_hw_hrs_combo_trunc, gen(hw_seq)
-tab family_type_trunc, gen(fam_seq)
+tab couple_work_trunc, gen(work_seq)
+tab couple_hw_hrs_4cat_trunc, gen(hw_seq)
+tab family_type_5cat_trunc, gen(fam_seq)
 mi estimate: mean work_seq1 work_seq2 if duration<=10
 
 putexcel set "$tables/stata_cluster_composition.xlsx", replace
 putexcel B1 = "Full Sample"
-putexcel C1 = "1: cf cohab + 2nd shift"
-putexcel D1 = "2: persistent trad work"
-putexcel E1 = "3: work complexity + cohab"
-putexcel F1 = "4: ow + delayed parenthood"
-putexcel G1 = "5: work complexity + fam intensity"
-putexcel H1 = "6: dual FT + 1-2 kids"
-putexcel I1 = "7: dual FT + CF"
-putexcel J1 = "8: dual FT + 2-3 kids"
+putexcel C1 = "(MC1, C3) egal cohab to 2nd shift marriage"
+putexcel D1 = "(MC2, C1) stable second shift"
+putexcel E1 = "(MC3, C5) traditionalization among direct marriers"
+putexcel F1 = "(MC4, C2) stable trad married couples w children"
+putexcel G1 = "(MC5, C4) egal marriage to 2nd shift marriage"
 
 putexcel A2 = "Work"
 putexcel A3 = "Male BW"
 putexcel A4 = "1.5 Male BW"
-putexcel A5 = "Dual FT: no OW"
-putexcel A6 = "Dual FT: any OW"
-putexcel A7 = "Female BW"
-putexcel A8 = "Underwork"
+putexcel A5 = "Dual FT: any OW"
+putexcel A6 = "Female BW"
+putexcel A7 = "Underwork"
 
-putexcel A10 = "Housework"
-putexcel A11 = "Woman Most: High"
-putexcel A12 = "Woman Most: Low"
-putexcel A13 = "Equal: High"
-putexcel A14 = "Equal: Low"
-putexcel A15 = "Man Most: All"
+putexcel A9 = "Housework"
+putexcel A10 = "Woman Most: High"
+putexcel A11 = "Woman Most: Low"
+putexcel A12 = "Equal: All"
+putexcel A13 = "Man Most: All"
 
-putexcel A17 = "Family"
-putexcel A18 = "Married, 0 Ch"
-putexcel A19 = "Married, 1 Ch"
-putexcel A20 = "Married, 2 Ch"
-putexcel A21 = "Married, 3+ Ch"
-putexcel A22 = "Cohab, 0 Ch"
-putexcel A23 = "Cohab, 1 Ch"
-putexcel A24 = "Cohab, 2 Ch"
-putexcel A25 = "Cohab, 3+ Ch"
+putexcel A15 = "Family"
+putexcel A16 = "Married, 0 Ch"
+putexcel A17 = "Married, 1 Ch"
+putexcel A18 = "Married, 2+ Ch"
+putexcel A19 = "Cohab, 0 Ch"
+putexcel A20 = "Cohab, 1+ Ch"
 
 // full sample
-forvalues w=1/6{
+forvalues w=1/5{
    // capture mi passive: gen work_seq`w' = couple_work_ow_trunc==`w'
    mi estimate: mean work_seq`w' if duration<=10
    matrix w`w' = e(b_mi)
@@ -701,32 +694,32 @@ forvalues w=1/6{
    putexcel B`row' = `w`w'', nformat(##.#%)
 }
 
-forvalues h=1/5{
+forvalues h=1/4{
    // capture mi passive: gen hw_seq`h' = couple_hw_hrs_combo_trunc==`h'
    mi estimate: mean hw_seq`h' if duration<=10
    matrix h`h' = e(b_mi)
    local h`h' = h`h'[1,1]
-   local row = 10+`h'
+   local row = 9+`h'
    putexcel B`row' = `h`h'', nformat(##.#%)
 }
 
-forvalues f=1/8{
+forvalues f=1/5{
    // capture mi passive: gen fam_seq`f' = family_type_trunc==`f'
    mi estimate: mean fam_seq`f' if duration<=10
    matrix f`f' = e(b_mi)
    local f`f' = f`f'[1,1]
-   local row = 17+`f'
+   local row = 15+`f'
    putexcel B`row' = `f`f'', nformat(##.#%)
 }
 
 // by cluster
-local col1 "C D E F G H I J"
+local col1 "C D E F G"
 
 // by cluster
-forvalues c=1/8{
+forvalues c=1/5{
 	local col: word `c' of `col1'
-	forvalues w=1/6{
-	   mi estimate, esampvaryok: mean work_seq`w' if mc8_factor==`c' & duration<=10
+	forvalues w=1/5{
+	   mi estimate, esampvaryok: mean work_seq`w' if mc5_factor==`c' & duration<=10
 	   matrix w`w' = e(b_mi)
 	   local w`w' = w`w'[1,1]
 	   local row = 2+`w'
@@ -734,28 +727,28 @@ forvalues c=1/8{
 	}
 }
 
-forvalues c=1/8{
+forvalues c=1/5{
 	local col: word `c' of `col1'
-	forvalues h=1/5{
-	   mi estimate, esampvaryok: mean hw_seq`h' if mc8_factor==`c'  & duration<=10
+	forvalues h=1/4{
+	   mi estimate, esampvaryok: mean hw_seq`h' if mc5_factor==`c'  & duration<=10
 	   matrix h`h' = e(b_mi)
 	   local h`h' = h`h'[1,1]
-	   local row = 10+`h'
+	   local row = 9+`h'
 	   putexcel `col'`row' = `h`h'', nformat(##.#%)
 	}
 }
 
-forvalues c=1/8{
+forvalues c=1/5{
 	local col: word `c' of `col1'
-	forvalues f=1/8{
-	   mi estimate, esampvaryok: mean fam_seq`f' if mc8_factor==`c'  & duration<=10
+	forvalues f=1/5{
+	   mi estimate, esampvaryok: mean fam_seq`f' if mc5_factor==`c'  & duration<=10
 	   matrix f`f' = e(b_mi)
 	   local f`f' = f`f'[1,1]
-	   local row = 17+`f'
+	   local row = 15+`f'
 	   putexcel `col'`row' = `f`f'', nformat(##.#%)
 	}
 }
 
 // check
-mi estimate, esampvaryok: proportion couple_work_ow_trunc couple_hw_hrs_combo_trunc family_type_trunc if duration <=10 & mc8_factor==2
-mi estimate, esampvaryok: proportion couple_work_ow_trunc couple_hw_hrs_combo_trunc family_type_trunc if duration <=10 & mc8_factor==5
+mi estimate, esampvaryok: proportion couple_work_trunc couple_hw_hrs_4cat_trunc family_type_5cat_trunc if duration <=10 & mc5_factor==2
+mi estimate, esampvaryok: proportion couple_work_trunc couple_hw_hrs_4cat_trunc family_type_5cat_trunc if duration <=10 & mc5_factor==5

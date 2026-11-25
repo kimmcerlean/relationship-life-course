@@ -666,57 +666,53 @@ restore
 // I think the data need to be LONG here (to get average across durations)
 use "$created_data/UKHLS_truncated_clusters_analysis.dta", clear
 
-mi reshape long age_all fihhmngrs_dv gor_dv nkids_dv jbstat aidhh aidxhh aidhrs howlng work_hours jbhrs fimnlabgrs_dv nchild_dv hiqual_dv country_all employed total_hours age_youngest_child partnered_imp marital_status_imp int_year orig_record age_all_sp fihhmngrs_dv_sp gor_dv_sp nkids_dv_sp jbstat_sp aidhrs_sp howlng_sp work_hours_sp jbhrs_sp fimnlabgrs_dv_sp employed_sp total_hours_sp age_youngest_child_sp partnered_imp_sp marital_status_imp_sp weekly_hrs_woman weekly_hrs_man housework_woman housework_man marital_status_woman marital_status_man partnered_woman partnered_man num_children_woman num_children_man ft_pt_woman overwork_woman ft_pt_man overwork_man ft_pt_det_woman ft_pt_det_man couple_work couple_work_ow couple_work_ow_detailed  couple_hw_total woman_hw_share hw_terc_woman hw_hilow_woman hw_hilow_man couple_hw hw_hilow_woman_gp1 hw_hilow_woman_gp2 hw_hilow_man_gp4 hw_hilow_woman_combo couple_hw_hrs couple_hw_hrs_alt couple_hw_hrs_combo rel_type couple_num_children couple_num_children_gp family_type ft_pt_woman_end overwork_woman_end ft_pt_man_end overwork_man_end ft_pt_det_woman_end ft_pt_det_man_end couple_work_end couple_work_ow_detailed_end couple_work_ow_end couple_hw_end couple_hw_hrs_end couple_hw_hrs_alt_end couple_hw_hrs_combo_end couple_num_children_gp_end family_type_end npens_dv tenure_dv jshrs employment_status disabled_est sr_health aid_hours num_parents_hh master_religion respondent_info npens_dv_sp tenure_dv_sp employment_status_sp disabled_est_sp sr_health_sp aid_hours_sp num_parents_hh_sp master_religion_sp respondent_info_sp employment_status_woman employment_status_man monthly_earnings_woman monthly_earnings_man carework_woman carework_man region_woman region_man housing_woman housing_man religion_woman religion_man disabled_woman disabled_man sr_health_woman sr_health_man any_aid any_aid_sp current_parent_status current_parent_status_sp couple_work_ow_trunc couple_hw_hrs_combo_trunc family_type_trunc aid_yn_woman aid_yn_man sr_health_man_rev sr_health_woman_rev ///
+mi reshape long age_all fihhmngrs_dv gor_dv nkids_dv jbstat aidhh aidxhh aidhrs howlng work_hours jbhrs fimnlabgrs_dv nchild_dv hiqual_dv country_all employed total_hours age_youngest_child partnered_imp marital_status_imp int_year orig_record age_all_sp fihhmngrs_dv_sp gor_dv_sp nkids_dv_sp jbstat_sp aidhrs_sp howlng_sp work_hours_sp jbhrs_sp fimnlabgrs_dv_sp employed_sp total_hours_sp age_youngest_child_sp partnered_imp_sp marital_status_imp_sp weekly_hrs_woman weekly_hrs_man housework_woman housework_man marital_status_woman marital_status_man partnered_woman partnered_man num_children_woman num_children_man ft_pt_woman overwork_woman ft_pt_man overwork_man ft_pt_det_woman ft_pt_det_man couple_work couple_work_ow couple_work_ow_detailed  couple_hw_total woman_hw_share hw_terc_woman hw_hilow_woman hw_hilow_man couple_hw hw_hilow_woman_gp1 hw_hilow_woman_gp2 hw_hilow_man_gp4 hw_hilow_woman_combo couple_hw_hrs couple_hw_hrs_alt couple_hw_hrs_combo rel_type couple_num_children couple_num_children_gp family_type ft_pt_woman_end overwork_woman_end ft_pt_man_end overwork_man_end ft_pt_det_woman_end ft_pt_det_man_end couple_work_end couple_work_ow_detailed_end couple_work_ow_end couple_hw_end couple_hw_hrs_end couple_hw_hrs_alt_end couple_hw_hrs_combo_end couple_num_children_gp_end family_type_end npens_dv tenure_dv jshrs employment_status disabled_est sr_health aid_hours num_parents_hh master_religion respondent_info npens_dv_sp tenure_dv_sp employment_status_sp disabled_est_sp sr_health_sp aid_hours_sp num_parents_hh_sp master_religion_sp respondent_info_sp employment_status_woman employment_status_man monthly_earnings_woman monthly_earnings_man carework_woman carework_man region_woman region_man housing_woman housing_man religion_woman religion_man disabled_woman disabled_man sr_health_woman sr_health_man any_aid any_aid_sp current_parent_status current_parent_status_sp couple_work_ow_trunc couple_hw_hrs_combo_trunc family_type_trunc aid_yn_woman aid_yn_man sr_health_man_rev sr_health_woman_rev dual_work_end egalitarian_end division_of_labor_end egal_dol_yn_end dual_ft_end hw_egal_end hw_mod_egal_end couple_hw_hrs_4cat couple_hw_hrs_4cat_end family_type_5cat family_type_5cat_end couple_work_3cat_end couple_hw_3cat_end detailed_dol_end  dual_work_trunc egalitarian_trunc division_of_labor_trunc egal_dol_yn_trunc dual_ft_trunc hw_egal_trunc hw_mod_egal_trunc couple_hw_hrs_4cat_trunc family_type_5cat_trunc couple_work_3cat_trunc couple_hw_3cat_trunc detailed_dol_trunc couple_work_trunc ///
 , i(pidp eligible_partner eligible_rel_start_year eligible_rel_end_year eligible_rel_status) j(duration)
 
-mi estimate: proportion couple_work_ow_trunc couple_hw_hrs_combo_trunc family_type_trunc if duration <=10
+mi xtset, clear
+mi stset, clear 
+ 
+mi estimate: proportion couple_work_trunc couple_hw_hrs_4cat_trunc family_type_5cat_trunc if duration <=10
 
 tab _mi_m mc6_factor, m
 
-tab couple_work_ow_trunc, gen(work_seq)
-tab couple_hw_hrs_combo_trunc, gen(hw_seq)
-tab family_type_trunc, gen(fam_seq)
+tab couple_work_trunc, gen(work_seq)
+tab couple_hw_hrs_4cat_trunc, gen(hw_seq)
+tab family_type_5cat_trunc, gen(fam_seq)
 mi estimate: mean work_seq1 work_seq2 if duration<=10
-mi estimate: proportion couple_work_ow_trunc if duration<=10
+mi estimate: proportion couple_work_trunc if duration<=10
 
 putexcel set "$tables/UKHLS_stata_cluster_composition.xlsx", replace
 putexcel B1 = "Full Sample"
-putexcel C1 = "1: cf cohab + 2nd shift"
-putexcel D1 = "2: trans to neotrad"
-putexcel E1 = "3: ow + CF cohab"
-putexcel F1 = "4: fam diversity + trad work"
-putexcel G1 = "5: cf cohab + counter-trad hw"
-putexcel H1 = "6: neotrad marriage"
-putexcel I1 = "7: underwork + over-HW"
-putexcel J1 = "8: neotrad cohab"
+putexcel C1 = "(MC1, C4) ss cohab to neotrad marriage"
+putexcel D1 = "(MC2, C5) traditionalization among direct marriers"
+putexcel E1 = "(MC3, C3) egal cohab to 2nd shift marriage"
+putexcel F1 = "(MC4, C1) stable neotrad cohab w children"
+putexcel G1 = "(MC5, C6) stable underemployment"
+putexcel H1 = "(MC6, C2) stable neotrad marriage w children"
 
 putexcel A2 = "Work"
 putexcel A3 = "Male BW"
 putexcel A4 = "1.5 Male BW"
-putexcel A5 = "Dual FT: no OW"
-putexcel A6 = "Dual FT: any OW"
-putexcel A7 = "Female BW"
-putexcel A8 = "Underwork"
+putexcel A5 = "Dual FT: any OW"
+putexcel A6 = "Female BW"
+putexcel A7 = "Underwork"
 
-putexcel A10 = "Housework"
-putexcel A11 = "Woman Most: High"
-putexcel A12 = "Woman Most: Low"
-putexcel A13 = "Equal: High"
-putexcel A14 = "Equal: Low"
-putexcel A15 = "Man Most: All"
+putexcel A9 = "Housework"
+putexcel A10 = "Woman Most: High"
+putexcel A11 = "Woman Most: Low"
+putexcel A12 = "Equal: All"
+putexcel A13 = "Man Most: All"
 
-putexcel A17 = "Family"
-putexcel A18 = "Married, 0 Ch"
-putexcel A19 = "Married, 1 Ch"
-putexcel A20 = "Married, 2 Ch"
-putexcel A21 = "Married, 3+ Ch"
-putexcel A22 = "Cohab, 0 Ch"
-putexcel A23 = "Cohab, 1 Ch"
-putexcel A24 = "Cohab, 2 Ch"
-putexcel A25 = "Cohab, 3+ Ch"
+putexcel A15 = "Family"
+putexcel A16 = "Married, 0 Ch"
+putexcel A17 = "Married, 1 Ch"
+putexcel A18 = "Married, 2+ Ch"
+putexcel A19 = "Cohab, 0 Ch"
+putexcel A20 = "Cohab, 1+ Ch"
 
 // full sample
-forvalues w=1/6{
+forvalues w=1/5{
 	// capture mi passive: gen work_seq`w' = work_seq==`w'
    mi estimate: mean work_seq`w' if duration<=10
    matrix w`w' = e(b_mi)
@@ -725,30 +721,30 @@ forvalues w=1/6{
    putexcel B`row' = `w`w'', nformat(##.#%)
 }
 
-forvalues h=1/5{
+forvalues h=1/4{
    // capture mi passive: gen hw_seq`h' = couple_hw_hrs_combo_trunc==`h'
    mi estimate: mean hw_seq`h' if duration<=10
    matrix h`h' = e(b_mi)
    local h`h' = h`h'[1,1]
-   local row = 10+`h'
+   local row = 9+`h'
    putexcel B`row' = `h`h'', nformat(##.#%)
 }
 
-forvalues f=1/8{
+forvalues f=1/5{
    // capture mi passive: gen fam_seq`f' = family_type_trunc==`f'
    mi estimate: mean fam_seq`f' if duration<=10
    matrix f`f' = e(b_mi)
    local f`f' = f`f'[1,1]
-   local row = 17+`f'
+   local row = 15+`f'
    putexcel B`row' = `f`f'', nformat(##.#%)
 }
 
 // by cluster
-local col1 "C D E F G H I J"
+local col1 "C D E F G H"
 
-forvalues c=1/8{
+forvalues c=1/6{
 	local col: word `c' of `col1'
-	forvalues w=1/6{
+	forvalues w=1/5{
 	   mi estimate, esampvaryok: mean work_seq`w' if mc6_factor==`c' & duration<=10
 	   matrix w`w' = e(b_mi)
 	   local w`w' = w`w'[1,1]
@@ -757,37 +753,39 @@ forvalues c=1/8{
 	}
 }
 
-forvalues c=1/8{
+forvalues c=1/6{
 	local col: word `c' of `col1'
-	forvalues h=1/5{
+	forvalues h=1/4{
 	   mi estimate, esampvaryok: mean hw_seq`h' if mc6_factor==`c'  & duration<=10
 	   matrix h`h' = e(b_mi)
 	   local h`h' = h`h'[1,1]
-	   local row = 10+`h'
+	   local row = 9+`h'
 	   putexcel `col'`row' = `h`h'', nformat(##.#%)
 	}
 }
 
-forvalues c=1/8{
+forvalues c=1/6{
 	local col: word `c' of `col1'
-	forvalues f=1/8{
+	forvalues f=1/5{
 	   capture mi estimate, esampvaryok: mean fam_seq`f' if mc6_factor==`c'  & duration<=10
 	   matrix f`f' = e(b_mi)
 	   local f`f' = f`f'[1,1]
-	   local row = 17+`f'
+	   local row = 15+`f'
 	   putexcel `col'`row' = `f`f'', nformat(##.#%)
 	}
 }
 
-// okay, this isn't working: mi estimate, esampvaryok: mean fam_seq7 if mc6_factor==2 & duration<=10 // in imputation 2, there are 0 people in cohab 2 children
+/*
+okay, this isn't working: mi estimate, esampvaryok: mean fam_seq7 if mc6_factor==2 & duration<=10 // in imputation 2, there are 0 people in cohab 2 children
 // tab family_type_trunc mc6_factor if _mi_m==2
 // will capture work? does that mess up the loop or will it keep going? does running these two lines of code together simulate? let's add a capture
 capture mi estimate, esampvaryok: mean fam_seq7 if mc6_factor==2  & duration<=10
 mi estimate, esampvaryok: mean fam_seq8 if mc6_factor==2  & duration<=10
 // I think one problem is that it might just use the last stored matrix? so it might population with fam seq 6 instead of 7 (yes, this is exactly what happens...)? so can just check. or can fill in using the below code, i think it will work if I do as proportion, it is just not working this way because I am using the binary variables? so I think I can recover the info. just this isn't very replicable...
+mi estimate, esampvaryok: proportion  couple_work_trunc couple_hw_hrs_4cat_trunc family_type_5cat_trunc if duration <=10 & mc6_factor==2 // okay this actually doesn't work either...so..I actually cannot fill it in? so, it just will be 0%. This is just descriptive anyway, it is fine.
+*/
 
 // check
-mi estimate, esampvaryok: proportion couple_work_ow_trunc couple_hw_hrs_combo_trunc family_type_trunc if duration <=10 & mc6_factor==2 // okay this actually doesn't work either...so..I actually cannot fill it in? so, it just will be 0%. This is just descriptive anyway, it is fine.
-mi estimate, esampvaryok: proportion couple_work_ow_trunc couple_hw_hrs_combo_trunc if duration <=10 & mc6_factor==2
-mi estimate, esampvaryok: proportion couple_work_ow_trunc couple_hw_hrs_combo_trunc family_type_trunc if duration <=10 & mc6_factor==5
-mi estimate, esampvaryok: proportion couple_work_ow_trunc couple_hw_hrs_combo_trunc family_type_trunc if duration <=10 & mc6_factor==7
+mi estimate, esampvaryok: proportion couple_work_trunc couple_hw_hrs_4cat_trunc family_type_5cat_trunc if duration <=10 & mc6_factor==2
+mi estimate, esampvaryok: proportion couple_work_trunc couple_hw_hrs_4cat_trunc family_type_5cat_trunc if duration <=10 & mc6_factor==4
+mi estimate, esampvaryok: proportion couple_work_trunc couple_hw_hrs_4cat_trunc family_type_5cat_trunc if duration <=10 & mc6_factor==6
