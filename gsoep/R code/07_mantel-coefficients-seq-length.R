@@ -1,10 +1,10 @@
 # ---------------------------------------------------------------------
-#    Program: 01_mantel-coefficients.R
+#    Program: 07_mantel-coefficients.R
 #    Author: Kim McErlean & Lea Pessin 
 #    Date: January 2025
-#    Modified: Jan 22, 2026
+#    Modified: Nov 25, 2026
 #    Goal: Compare mantel coefficients of different sequence length configurations
-#    (Never did this for Germany before, so this is new, actual sequence states)
+#     to determine minimum length needed to remain in sample
 # --------------------------------------------------------------------
 # --------------------------------------------------------------------
 
@@ -90,9 +90,10 @@ data <- read_dta("created data/gsoep/gsoep_couples_imputed_wide_complete.dta")
 # think we did this instead of Rubin's rules bc we didn't know. For our purposes, this works for uncertainty iMO
 # Really, we also picked 3 bc of US cohabitation - so this is a check that 3 is at least mostly correlated with 10.
 data <- data%>%filter(`_mi_m`== 1) 
-table(data$couple_work_ow_end1)
-table(data$couple_hw_hrs_weekly_end1)
-table(data$family_type_end1)
+
+table(data$couple_work_end10)
+table(data$couple_hw_hrs_4cat_end10)
+table(data$family_type_5cat_end10)
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Preliminary analysis for MCSA 
@@ -103,10 +104,10 @@ table(data$family_type_end1)
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # Variables
-## couple_work_ow_end: Couple-level work indicator (overwork split out)
-## couple_hw_hrs_weekly_end:	Couple-level housework indicator, split by time spent (Germany uses weekly created)
+## couple_work_end: Couple-level work indicator
+## couple_hw_hrs_4cat_end:	Couple-level housework indicator, split by time spent (Germany uses weekly created)
 ##on HW, percentiles created within a specific subgroup (e.g. she does most)
-## family_type_end:	Type of family based on relationship type + number of 
+## family_type_5cat_end:	Type of family based on relationship type + number of 
 ##children
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -124,41 +125,38 @@ table(data$family_type_end1)
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # ------------------------------------------------------------------------------
-#Couple Paid Work - WITH OW: labels
+#Couple Paid Work: labels
 
-shortlab.work.ow <- c("MBW", "1.5MBW", 
-                      "dualFT", "dualFT-anyOW", 
-                      "FBW", "underWK")
+shortlab.work <- c("MBW", "1.5MBW", 
+                   "dualFT", 
+                   "FBW", "underWK")
 
-longlab.work.ow <- c("male breadwinner", "1.5 male breadwinner", 
-                     "dual full-time", "dual full-time & any overwork", 
-                     "female breadwinner", "under work")
+longlab.work <- c("male breadwinner", "1.5 male breadwinner", 
+                  "dual full-time", 
+                  "female breadwinner", "under work")
 
 # ------------------------------------------------------------------------------
-#Couple HW - with amounts (group-specific ptiles): labels 
+#Couple HW: labels - equal combined
 
-shortlab.hw.hrs.combo <- c("W-most:high", "W-most:low",
-                           "equal:high", "equal:low", 
-                           "M-most:all")
+shortlab.hw.hrs <- c("W-most:high", "W-most:low",
+                     "equal:all", 
+                     "M-most:all")
 
-longlab.hw.hrs.combo <- c("woman does most/all: high", "woman does most/all: low",
-                          "equal:high", "equal:low", 
-                          "man does most: all")
+longlab.hw.hrs <- c("woman does most/all: high", "woman does most/all: low",
+                    "equal:all", 
+                    "man does most: all")
 
 # ------------------------------------------------------------------------------
 #Family type: labels
 
-shortlab.fam <- c("MARc0", "MARc1", "MARc2", "MARc3",
-                  "COHc0", "COHc1", "COHc2", "COHc3")
+shortlab.fam <- c("MARc0", "MARc1", "MARc2",
+                  "COHc0", "COHc1")
 
 longlab.fam <- c("married, 0 Ch", 
                  "married, 1 Ch",
-                 "married, 2 Ch",
-                 "married, 3 Ch",
+                 "married, 2 or more Ch",
                  "cohab, 0 Ch",
-                 "cohab, 1 Ch",
-                 "cohab, 2 Ch",
-                 "cohab, 3 Ch ")
+                 "cohab, 1 or more Ch")
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -168,34 +166,34 @@ longlab.fam <- c("married, 0 Ch",
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 # ------------------------------------------------------------------------------
-#Couple Paid Work - OW: labels
+#Couple Paid Work: colors
 
 # Work colors
 col1 <- sequential_hcl(5, palette = "BuGn") [1:2] #Male BW
-col2 <- sequential_hcl(5, palette = "Purples")[1:2] #Dual FT
+col2 <- sequential_hcl(5, palette = "Purples")[c(1)] #Dual FT
 col3 <- sequential_hcl(5, palette = "PuRd")[c(2)] #Female BW
 col4 <- sequential_hcl(5, palette = "PuRd")[c(1)]  #UnderWork
 
 # Combine to full color palette
-colspace.work.ow <- c(col1, col2, col3, col4)
+colspace.work <- c(col1, col2, col3, col4)
 
 # ------------------------------------------------------------------------------
-#Couple HW - amounts v2 (group-specific ptiles): labels 
+#Couple HW - less detailed: labels 
 
 #Housework colors
 # col1 <- sequential_hcl(5, palette = "Reds") [1:2] #W-all
 col1 <- sequential_hcl(5, palette = "PurpOr")[c(1)] #W-most
 col2 <- sequential_hcl(5, palette = "PurpOr")[c(3)] #W-most
-col3 <- sequential_hcl(5, palette = "OrYel")[2:3] #Equal
+col3 <- sequential_hcl(5, palette = "OrYel")[c(2)] #Equal
 col4 <- sequential_hcl(5, palette = "Teal")[c(2)] #M-most
 
 # Combine to full color palette
-colspace.hw.hrs.combo <- c(col1, col2, col3, col4)
+colspace.hw.hrs <- c(col1, col2, col3, col4)
 
 # ------------------------------------------------------------------------------
 # Family colors
-col1 <- sequential_hcl(5, palette = "Blues")[4:1]   # Married states
-col2 <- sequential_hcl(15, palette = "Inferno")[15:12]   # Cohabitation states
+col1 <- sequential_hcl(5, palette = "Blues")[4:2]   # Married states [4:1] 
+col2 <- sequential_hcl(15, palette = "Inferno")[c(15,13)]   # Cohabitation states [15:12] 
 #col3 <- sequential_hcl(5, palette = "Grays")[c(2,4)] # Right-censored states
 
 # Combine to full color palette
@@ -213,35 +211,35 @@ colspace.fam <- c(col1, col2)
 # ~~~~~~~~~~~~~~
 
 # ------------------------------------------------------------------------------
-## Couple Paid Work - WITH OW
+## Couple Paid Work
 
 # Columns
 lab_t=c()
 for (i in 1:2){
-  lab_t[i]=paste("couple_work_ow_end",i, sep="")
+  lab_t[i]=paste("couple_work_end",i, sep="")
 }
-col_work.ow.2=which(colnames(data)%in%lab_t) 
+col_work.2=which(colnames(data)%in%lab_t) 
 
 # Sequence object
-seq.work.ow.2 <- seqdef(data[,col_work.ow.2], cpal = colspace.work.ow, labels=longlab.work.ow, states= shortlab.work.ow)
+seq.work.2 <- seqdef(data[,col_work.2], cpal = colspace.work, labels=longlab.work, states= shortlab.work)
 
-ggseqdplot(seq.work.ow.2) +
+ggseqdplot(seq.work.2) +
   scale_x_discrete(labels = 1:2) +
   labs(x = "Year")
 
 # ------------------------------------------------------------------------------
-## Couple HW - amounts v2 (group-specific ptiles)
+## Couple HW - less detailed
 
 # Columns
 lab_t=c()
 for (i in 1:2){
-  lab_t[i]=paste("couple_hw_hrs_weekly_end",i, sep="")
+  lab_t[i]=paste("couple_hw_hrs_4cat_end",i, sep="")
 }
-col_hw.hrs.weekly.2 =which(colnames(data)%in%lab_t) 
+col_hw.hrs.2 =which(colnames(data)%in%lab_t) 
 
 # Sequence object
-seq.hw.hrs.2 <- seqdef(data[,col_hw.hrs.weekly.2], cpal = colspace.hw.hrs.combo, labels=longlab.hw.hrs.combo, 
-                         states= shortlab.hw.hrs.combo)
+seq.hw.hrs.2 <- seqdef(data[,col_hw.hrs.2], cpal = colspace.hw.hrs, labels=longlab.hw.hrs, 
+                         states= shortlab.hw.hrs)
 
 ggseqdplot(seq.hw.hrs.2) +
   scale_x_discrete(labels = 1:2) +
@@ -253,7 +251,7 @@ ggseqdplot(seq.hw.hrs.2) +
 # Columns
 lab_t=c()
 for (i in 1:2){
-  lab_t[i]=paste("family_type_end",i, sep="")
+  lab_t[i]=paste("family_type_5cat_end",i, sep="")
 }
 col_fam.2 =which(colnames(data)%in%lab_t) 
 
@@ -269,35 +267,35 @@ ggseqdplot(seq.fam.2) +
 # ~~~~~~~~~~~~~~
 
 # ------------------------------------------------------------------------------
-## Couple Paid Work - WITH OW
+## Couple Paid Work
 
 # Columns
 lab_t=c()
 for (i in 1:3){
-  lab_t[i]=paste("couple_work_ow_end",i, sep="")
+  lab_t[i]=paste("couple_work_end",i, sep="")
 }
-col_work.ow.3=which(colnames(data)%in%lab_t) 
+col_work.3=which(colnames(data)%in%lab_t) 
 
 # Sequence object
-seq.work.ow.3 <- seqdef(data[,col_work.ow.3], cpal = colspace.work.ow, labels=longlab.work.ow, states= shortlab.work.ow)
+seq.work.3 <- seqdef(data[,col_work.3], cpal = colspace.work, labels=longlab.work, states= shortlab.work)
 
-ggseqdplot(seq.work.ow.3) +
+ggseqdplot(seq.work.3) +
   scale_x_discrete(labels = 1:3) +
   labs(x = "Year")
 
 # ------------------------------------------------------------------------------
-## Couple HW - amounts v2 (group-specific ptiles)
+## Couple HW - less detailed
 
 # Columns
 lab_t=c()
 for (i in 1:3){
-  lab_t[i]=paste("couple_hw_hrs_weekly_end",i, sep="")
+  lab_t[i]=paste("couple_hw_hrs_4cat_end",i, sep="")
 }
-col_hw.hrs.weekly.3 =which(colnames(data)%in%lab_t) 
+col_hw.hrs.3 =which(colnames(data)%in%lab_t) 
 
 # Sequence object
-seq.hw.hrs.3 <- seqdef(data[,col_hw.hrs.weekly.3], cpal = colspace.hw.hrs.combo, labels=longlab.hw.hrs.combo, 
-                           states= shortlab.hw.hrs.combo)
+seq.hw.hrs.3 <- seqdef(data[,col_hw.hrs.3], cpal = colspace.hw.hrs, labels=longlab.hw.hrs, 
+                           states= shortlab.hw.hrs)
 
 ggseqdplot(seq.hw.hrs.3) +
   scale_x_discrete(labels = 1:3) +
@@ -309,7 +307,7 @@ ggseqdplot(seq.hw.hrs.3) +
 # Columns
 lab_t=c()
 for (i in 1:3){
-  lab_t[i]=paste("family_type_end",i, sep="")
+  lab_t[i]=paste("family_type_5cat_end",i, sep="")
 }
 col_fam.3 =which(colnames(data)%in%lab_t) 
 
@@ -326,35 +324,35 @@ ggseqdplot(seq.fam.3) +
 # ~~~~~~~~~~~~~~
 
 # ------------------------------------------------------------------------------
-## Couple Paid Work - WITH OW
+## Couple Paid Work
 
 # Columns
 lab_t=c()
 for (i in 1:4){
-  lab_t[i]=paste("couple_work_ow_end",i, sep="")
+  lab_t[i]=paste("couple_work_end",i, sep="")
 }
-col_work.ow.4=which(colnames(data)%in%lab_t) 
+col_work.4=which(colnames(data)%in%lab_t) 
 
 # Sequence object
-seq.work.ow.4 <- seqdef(data[,col_work.ow.4], cpal = colspace.work.ow, labels=longlab.work.ow, states= shortlab.work.ow)
+seq.work.4 <- seqdef(data[,col_work.4], cpal = colspace.work, labels=longlab.work, states= shortlab.work)
 
-ggseqdplot(seq.work.ow.4) +
+ggseqdplot(seq.work.4) +
   scale_x_discrete(labels = 1:4) +
   labs(x = "Year")
 
 # ------------------------------------------------------------------------------
-## Couple HW - amounts v2 (group-specific ptiles)
+## Couple HW - less detailed
 
 # Columns
 lab_t=c()
 for (i in 1:4){
-  lab_t[i]=paste("couple_hw_hrs_weekly_end",i, sep="")
+  lab_t[i]=paste("couple_hw_hrs_4cat_end",i, sep="")
 }
-col_hw.hrs.weekly.4 =which(colnames(data)%in%lab_t) 
+col_hw.hrs.4 =which(colnames(data)%in%lab_t) 
 
 # Sequence object
-seq.hw.hrs.4 <- seqdef(data[,col_hw.hrs.weekly.4], cpal = colspace.hw.hrs.combo, labels=longlab.hw.hrs.combo, 
-                           states= shortlab.hw.hrs.combo)
+seq.hw.hrs.4 <- seqdef(data[,col_hw.hrs.4], cpal = colspace.hw.hrs, labels=longlab.hw.hrs, 
+                           states= shortlab.hw.hrs)
 
 ggseqdplot(seq.hw.hrs.4) +
   scale_x_discrete(labels = 1:4) +
@@ -366,7 +364,7 @@ ggseqdplot(seq.hw.hrs.4) +
 # Columns
 lab_t=c()
 for (i in 1:4){
-  lab_t[i]=paste("family_type_end",i, sep="")
+  lab_t[i]=paste("family_type_5cat_end",i, sep="")
 }
 col_fam.4 =which(colnames(data)%in%lab_t) 
 
@@ -383,35 +381,35 @@ ggseqdplot(seq.fam.4) +
 # ~~~~~~~~~~~~~~
 
 # ------------------------------------------------------------------------------
-## Couple Paid Work - WITH OW
+## Couple Paid Work
 
 # Columns
 lab_t=c()
 for (i in 1:5){
-  lab_t[i]=paste("couple_work_ow_end",i, sep="")
+  lab_t[i]=paste("couple_work_end",i, sep="")
 }
-col_work.ow.5=which(colnames(data)%in%lab_t) 
+col_work.5=which(colnames(data)%in%lab_t) 
 
 # Sequence object
-seq.work.ow.5 <- seqdef(data[,col_work.ow.5], cpal = colspace.work.ow, labels=longlab.work.ow, states= shortlab.work.ow)
+seq.work.5 <- seqdef(data[,col_work.5], cpal = colspace.work, labels=longlab.work, states= shortlab.work)
 
-ggseqdplot(seq.work.ow.5) +
+ggseqdplot(seq.work.5) +
   scale_x_discrete(labels = 1:5) +
   labs(x = "Year")
 
 # ------------------------------------------------------------------------------
-## Couple HW - amounts v2 (group-specific ptiles)
+## Couple HW - less detailed
 
 # Columns
 lab_t=c()
 for (i in 1:5){
-  lab_t[i]=paste("couple_hw_hrs_weekly_end",i, sep="")
+  lab_t[i]=paste("couple_hw_hrs_4cat_end",i, sep="")
 }
-col_hw.hrs.weekly.5 =which(colnames(data)%in%lab_t) 
+col_hw.hrs.5 =which(colnames(data)%in%lab_t) 
 
 # Sequence object
-seq.hw.hrs.5 <- seqdef(data[,col_hw.hrs.weekly.5], cpal = colspace.hw.hrs.combo, labels=longlab.hw.hrs.combo, 
-                           states= shortlab.hw.hrs.combo)
+seq.hw.hrs.5 <- seqdef(data[,col_hw.hrs.5], cpal = colspace.hw.hrs, labels=longlab.hw.hrs, 
+                           states= shortlab.hw.hrs)
 
 ggseqdplot(seq.hw.hrs.5) +
   scale_x_discrete(labels = 1:5) +
@@ -423,7 +421,7 @@ ggseqdplot(seq.hw.hrs.5) +
 # Columns
 lab_t=c()
 for (i in 1:5){
-  lab_t[i]=paste("family_type_end",i, sep="")
+  lab_t[i]=paste("family_type_5cat_end",i, sep="")
 }
 col_fam.5 =which(colnames(data)%in%lab_t) 
 
@@ -440,35 +438,35 @@ ggseqdplot(seq.fam.5) +
 # ~~~~~~~~~~~~~~
 
 # ------------------------------------------------------------------------------
-## Couple Paid Work - WITH OW
+## Couple Paid Work
 
 # Columns
 lab_t=c()
 for (i in 1:6){
-  lab_t[i]=paste("couple_work_ow_end",i, sep="")
+  lab_t[i]=paste("couple_work_end",i, sep="")
 }
-col_work.ow.6=which(colnames(data)%in%lab_t) 
+col_work.6=which(colnames(data)%in%lab_t) 
 
 # Sequence object
-seq.work.ow.6 <- seqdef(data[,col_work.ow.6], cpal = colspace.work.ow, labels=longlab.work.ow, states= shortlab.work.ow)
+seq.work.6 <- seqdef(data[,col_work.6], cpal = colspace.work, labels=longlab.work, states= shortlab.work)
 
-ggseqdplot(seq.work.ow.6) +
+ggseqdplot(seq.work.6) +
   scale_x_discrete(labels = 1:6) +
   labs(x = "Year")
 
 # ------------------------------------------------------------------------------
-## Couple HW - amounts v2 (group-specific ptiles)
+## Couple HW - less detailed
 
 # Columns
 lab_t=c()
 for (i in 1:6){
-  lab_t[i]=paste("couple_hw_hrs_weekly_end",i, sep="")
+  lab_t[i]=paste("couple_hw_hrs_4cat_end",i, sep="")
 }
-col_hw.hrs.weekly.6 =which(colnames(data)%in%lab_t) 
+col_hw.hrs.6 =which(colnames(data)%in%lab_t) 
 
 # Sequence object
-seq.hw.hrs.6 <- seqdef(data[,col_hw.hrs.weekly.6], cpal = colspace.hw.hrs.combo, labels=longlab.hw.hrs.combo, 
-                           states= shortlab.hw.hrs.combo)
+seq.hw.hrs.6 <- seqdef(data[,col_hw.hrs.6], cpal = colspace.hw.hrs, labels=longlab.hw.hrs, 
+                           states= shortlab.hw.hrs)
 
 ggseqdplot(seq.hw.hrs.6) +
   scale_x_discrete(labels = 1:6) +
@@ -480,7 +478,7 @@ ggseqdplot(seq.hw.hrs.6) +
 # Columns
 lab_t=c()
 for (i in 1:6){
-  lab_t[i]=paste("family_type_end",i, sep="")
+  lab_t[i]=paste("family_type_5cat_end",i, sep="")
 }
 col_fam.6 =which(colnames(data)%in%lab_t) 
 
@@ -497,35 +495,35 @@ ggseqdplot(seq.fam.6) +
 # ~~~~~~~~~~~~~~
 
 # ------------------------------------------------------------------------------
-## Couple Paid Work - WITH OW
+## Couple Paid Work
 
 # Columns
 lab_t=c()
 for (i in 1:7){
-  lab_t[i]=paste("couple_work_ow_end",i, sep="")
+  lab_t[i]=paste("couple_work_end",i, sep="")
 }
-col_work.ow.7=which(colnames(data)%in%lab_t) 
+col_work.7=which(colnames(data)%in%lab_t) 
 
 # Sequence object
-seq.work.ow.7 <- seqdef(data[,col_work.ow.7], cpal = colspace.work.ow, labels=longlab.work.ow, states= shortlab.work.ow)
+seq.work.7 <- seqdef(data[,col_work.7], cpal = colspace.work, labels=longlab.work, states= shortlab.work)
 
-ggseqdplot(seq.work.ow.7) +
+ggseqdplot(seq.work.7) +
   scale_x_discrete(labels = 1:7) +
   labs(x = "Year")
 
 # ------------------------------------------------------------------------------
-## Couple HW - amounts v2 (group-specific ptiles)
+## Couple HW - less detailed
 
 # Columns
 lab_t=c()
 for (i in 1:7){
-  lab_t[i]=paste("couple_hw_hrs_weekly_end",i, sep="")
+  lab_t[i]=paste("couple_hw_hrs_4cat_end",i, sep="")
 }
-col_hw.hrs.weekly.7 =which(colnames(data)%in%lab_t) 
+col_hw.hrs.7 =which(colnames(data)%in%lab_t) 
 
 # Sequence object
-seq.hw.hrs.7 <- seqdef(data[,col_hw.hrs.weekly.7], cpal = colspace.hw.hrs.combo, labels=longlab.hw.hrs.combo, 
-                           states= shortlab.hw.hrs.combo)
+seq.hw.hrs.7 <- seqdef(data[,col_hw.hrs.7], cpal = colspace.hw.hrs, labels=longlab.hw.hrs, 
+                           states= shortlab.hw.hrs)
 
 ggseqdplot(seq.hw.hrs.7) +
   scale_x_discrete(labels = 1:7) +
@@ -537,7 +535,7 @@ ggseqdplot(seq.hw.hrs.7) +
 # Columns
 lab_t=c()
 for (i in 1:7){
-  lab_t[i]=paste("family_type_end",i, sep="")
+  lab_t[i]=paste("family_type_5cat_end",i, sep="")
 }
 col_fam.7 =which(colnames(data)%in%lab_t) 
 
@@ -554,35 +552,35 @@ ggseqdplot(seq.fam.7) +
 # ~~~~~~~~~~~~~~
 
 # ------------------------------------------------------------------------------
-## Couple Paid Work - WITH OW
+## Couple Paid Work
 
 # Columns
 lab_t=c()
 for (i in 1:8){
-  lab_t[i]=paste("couple_work_ow_end",i, sep="")
+  lab_t[i]=paste("couple_work_end",i, sep="")
 }
-col_work.ow.8=which(colnames(data)%in%lab_t) 
+col_work.8=which(colnames(data)%in%lab_t) 
 
 # Sequence object
-seq.work.ow.8 <- seqdef(data[,col_work.ow.8], cpal = colspace.work.ow, labels=longlab.work.ow, states= shortlab.work.ow)
+seq.work.8 <- seqdef(data[,col_work.8], cpal = colspace.work, labels=longlab.work, states= shortlab.work)
 
-ggseqdplot(seq.work.ow.8) +
+ggseqdplot(seq.work.8) +
   scale_x_discrete(labels = 1:8) +
   labs(x = "Year")
 
 # ------------------------------------------------------------------------------
-## Couple HW - amounts v2 (group-specific ptiles)
+## Couple HW - less detailed
 
 # Columns
 lab_t=c()
 for (i in 1:8){
-  lab_t[i]=paste("couple_hw_hrs_weekly_end",i, sep="")
+  lab_t[i]=paste("couple_hw_hrs_4cat_end",i, sep="")
 }
-col_hw.hrs.weekly.8 =which(colnames(data)%in%lab_t) 
+col_hw.hrs.8 =which(colnames(data)%in%lab_t) 
 
 # Sequence object
-seq.hw.hrs.8 <- seqdef(data[,col_hw.hrs.weekly.8], cpal = colspace.hw.hrs.combo, labels=longlab.hw.hrs.combo, 
-                           states= shortlab.hw.hrs.combo)
+seq.hw.hrs.8 <- seqdef(data[,col_hw.hrs.8], cpal = colspace.hw.hrs, labels=longlab.hw.hrs, 
+                           states= shortlab.hw.hrs)
 
 ggseqdplot(seq.hw.hrs.8) +
   scale_x_discrete(labels = 1:8) +
@@ -594,7 +592,7 @@ ggseqdplot(seq.hw.hrs.8) +
 # Columns
 lab_t=c()
 for (i in 1:8){
-  lab_t[i]=paste("family_type_end",i, sep="")
+  lab_t[i]=paste("family_type_5cat_end",i, sep="")
 }
 col_fam.8 =which(colnames(data)%in%lab_t) 
 
@@ -611,35 +609,35 @@ ggseqdplot(seq.fam.8) +
 # ~~~~~~~~~~~~~~
 
 # ------------------------------------------------------------------------------
-## Couple Paid Work - WITH OW
+## Couple Paid Work
 
 # Columns
 lab_t=c()
 for (i in 1:9){
-  lab_t[i]=paste("couple_work_ow_end",i, sep="")
+  lab_t[i]=paste("couple_work_end",i, sep="")
 }
-col_work.ow.9=which(colnames(data)%in%lab_t) 
+col_work.9=which(colnames(data)%in%lab_t) 
 
 # Sequence object
-seq.work.ow.9 <- seqdef(data[,col_work.ow.9], cpal = colspace.work.ow, labels=longlab.work.ow, states= shortlab.work.ow)
+seq.work.9 <- seqdef(data[,col_work.9], cpal = colspace.work, labels=longlab.work, states= shortlab.work)
 
-ggseqdplot(seq.work.ow.9) +
+ggseqdplot(seq.work.9) +
   scale_x_discrete(labels = 1:9) +
   labs(x = "Year")
 
 # ------------------------------------------------------------------------------
-## Couple HW - amounts v2 (group-specific ptiles)
+## Couple HW - less detailed
 
 # Columns
 lab_t=c()
 for (i in 1:9){
-  lab_t[i]=paste("couple_hw_hrs_weekly_end",i, sep="")
+  lab_t[i]=paste("couple_hw_hrs_4cat_end",i, sep="")
 }
-col_hw.hrs.weekly.9 =which(colnames(data)%in%lab_t) 
+col_hw.hrs.9 =which(colnames(data)%in%lab_t) 
 
 # Sequence object
-seq.hw.hrs.9 <- seqdef(data[,col_hw.hrs.weekly.9], cpal = colspace.hw.hrs.combo, labels=longlab.hw.hrs.combo, 
-                           states= shortlab.hw.hrs.combo)
+seq.hw.hrs.9 <- seqdef(data[,col_hw.hrs.9], cpal = colspace.hw.hrs, labels=longlab.hw.hrs, 
+                           states= shortlab.hw.hrs)
 
 ggseqdplot(seq.hw.hrs.9) +
   scale_x_discrete(labels = 1:9) +
@@ -651,7 +649,7 @@ ggseqdplot(seq.hw.hrs.9) +
 # Columns
 lab_t=c()
 for (i in 1:9){
-  lab_t[i]=paste("family_type_end",i, sep="")
+  lab_t[i]=paste("family_type_5cat_end",i, sep="")
 }
 col_fam.9 =which(colnames(data)%in%lab_t) 
 
@@ -668,35 +666,35 @@ ggseqdplot(seq.fam.9) +
 # ~~~~~~~~~~~~~~
 
 # ------------------------------------------------------------------------------
-## Couple Paid Work - WITH OW
+## Couple Paid Work
 
 # Columns
 lab_t=c()
 for (i in 1:10){
-  lab_t[i]=paste("couple_work_ow_end",i, sep="")
+  lab_t[i]=paste("couple_work_end",i, sep="")
 }
-col_work.ow.10=which(colnames(data)%in%lab_t) 
+col_work.10=which(colnames(data)%in%lab_t) 
 
 # Sequence object
-seq.work.ow.10 <- seqdef(data[,col_work.ow.10], cpal = colspace.work.ow, labels=longlab.work.ow, states= shortlab.work.ow)
+seq.work.10 <- seqdef(data[,col_work.10], cpal = colspace.work, labels=longlab.work, states= shortlab.work)
 
-ggseqdplot(seq.work.ow.10) +
+ggseqdplot(seq.work.10) +
   scale_x_discrete(labels = 1:10) +
   labs(x = "Year")
 
 # ------------------------------------------------------------------------------
-## Couple HW - amounts v2 (group-specific ptiles)
+## Couple HW - less detailed
 
 # Columns
 lab_t=c()
 for (i in 1:10){
-  lab_t[i]=paste("couple_hw_hrs_weekly_end",i, sep="")
+  lab_t[i]=paste("couple_hw_hrs_4cat_end",i, sep="")
 }
-col_hw.hrs.weekly.10 =which(colnames(data)%in%lab_t) 
+col_hw.hrs.10 =which(colnames(data)%in%lab_t) 
 
 # Sequence object
-seq.hw.hrs.10 <- seqdef(data[,col_hw.hrs.weekly.10], cpal = colspace.hw.hrs.combo, labels=longlab.hw.hrs.combo, 
-                            states= shortlab.hw.hrs.combo)
+seq.hw.hrs.10 <- seqdef(data[,col_hw.hrs.10], cpal = colspace.hw.hrs, labels=longlab.hw.hrs, 
+                            states= shortlab.hw.hrs)
 
 ggseqdplot(seq.hw.hrs.10) +
   scale_x_discrete(labels = 1:10) +
@@ -708,7 +706,7 @@ ggseqdplot(seq.hw.hrs.10) +
 # Columns
 lab_t=c()
 for (i in 1:10){
-  lab_t[i]=paste("family_type_end",i, sep="")
+  lab_t[i]=paste("family_type_5cat_end",i, sep="")
 }
 col_fam.10 =which(colnames(data)%in%lab_t) 
 
@@ -725,41 +723,100 @@ ggseqdplot(seq.fam.10) +
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# First create custom cost structures, BUT don't need for missing states
+# because complete sequences, so should be easier
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Create custom substitution matrices for non-missing states
+
+sw <- c("MBW", "1.5MBW", "dualFT", "FBW", "underWK")
+work.raw <- matrix(c(0, 2, 3, 5, 3,
+                     2, 0, 1, 3, 3,
+                     3, 1, 0, 2, 4,
+                     5, 3, 2, 0, 2,
+                     3, 3, 4, 2, 0), 5, byrow = TRUE, dimnames = list(sw, sw))
+
+sh <- c("W-most:high", "W-most:low", "equal:all", "M-most:all")
+hw.raw <- matrix(c(0, 1, 2, 4,
+                   1, 0, 2, 4,
+                   2, 2, 0, 2,
+                   4, 4, 2, 0), 4, byrow = TRUE, dimnames = list(sh, sh))
+
+sf <- c("MARc0", "MARc1", "MARc2", "COHc0", "COHc1")
+fam.raw <- matrix(c(0, 4, 6, 3, 8,
+                    4, 0, 2, 7, 4,
+                    6, 2, 0, 9, 4,
+                    3, 7, 9, 0, 5,
+                    8, 4, 4, 5, 0), 5, byrow = TRUE, dimnames = list(sf, sf))
+
+
+build_sm <- function(raw, seqobj, cval = 2) {
+  alph <- alphabet(seqobj)
+  stopifnot(setequal(alph, rownames(raw)), isSymmetric(raw), all(diag(raw) == 0))
+  sm  <- raw[alph, alph] * cval / max(raw)
+  #sm <- rbind(cbind(m, 0), 0)
+  #sm
+}
+
+## Run functions to create costs for SM.
+##I think I can just do it once, because the states are the same, just the lengths differ?
+work.cost <- list(sm = build_sm(work.raw, seq.work.10))
+hw.cost   <- list(sm = build_sm(hw.raw,   seq.hw.hrs.10))
+fam.cost  <- list(sm = build_sm(fam.raw,  seq.fam.10))
+
+print(work.cost$sm)
+print(hw.cost$sm)
+print(fam.cost$sm)
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+# Now get distances
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 # Duration 2
-mcdist.om.2 <- seqdistmc(channels=list(seq.work.ow.2, seq.hw.hrs.2, seq.fam.2), ## Seq states NOT om matrix
-                           method="OM", indel=1, sm="CONSTANT") 
+mcdist.om.2 <- seqdistmc(channels=list(seq.work.2, seq.hw.hrs.2, seq.fam.2), ## Seq states NOT om matrix
+                           method="OM", indel=1,
+                         sm=list(work.cost$sm, hw.cost$sm, fam.cost$sm))
 
 # Duration 3
-mcdist.om.3 <- seqdistmc(channels=list(seq.work.ow.3, seq.hw.hrs.3, seq.fam.3), ## Seq states NOT om matrix
-                         method="OM", indel=1, sm="CONSTANT") 
+mcdist.om.3 <- seqdistmc(channels=list(seq.work.3, seq.hw.hrs.3, seq.fam.3), ## Seq states NOT om matrix
+                         method="OM", indel=1,
+                         sm=list(work.cost$sm, hw.cost$sm, fam.cost$sm))
 
 # Duration 4
-mcdist.om.4 <- seqdistmc(channels=list(seq.work.ow.4, seq.hw.hrs.4, seq.fam.4), ## Seq states NOT om matrix
-                         method="OM", indel=1, sm="CONSTANT") 
+mcdist.om.4 <- seqdistmc(channels=list(seq.work.4, seq.hw.hrs.4, seq.fam.4), ## Seq states NOT om matrix
+                         method="OM", indel=1,
+                         sm=list(work.cost$sm, hw.cost$sm, fam.cost$sm)) 
 
 # Duration 5
-mcdist.om.5 <- seqdistmc(channels=list(seq.work.ow.5, seq.hw.hrs.5, seq.fam.5), ## Seq states NOT om matrix
-                         method="OM", indel=1, sm="CONSTANT") 
+mcdist.om.5 <- seqdistmc(channels=list(seq.work.5, seq.hw.hrs.5, seq.fam.5), ## Seq states NOT om matrix
+                         method="OM", indel=1,
+                         sm=list(work.cost$sm, hw.cost$sm, fam.cost$sm))
 
 # Duration 6
-mcdist.om.6 <- seqdistmc(channels=list(seq.work.ow.6, seq.hw.hrs.6, seq.fam.6), ## Seq states NOT om matrix
-                         method="OM", indel=1, sm="CONSTANT") 
+mcdist.om.6 <- seqdistmc(channels=list(seq.work.6, seq.hw.hrs.6, seq.fam.6), ## Seq states NOT om matrix
+                         method="OM", indel=1,
+                         sm=list(work.cost$sm, hw.cost$sm, fam.cost$sm))
 
 # Duration 7
-mcdist.om.7 <- seqdistmc(channels=list(seq.work.ow.7, seq.hw.hrs.7, seq.fam.7), ## Seq states NOT om matrix
-                         method="OM", indel=1, sm="CONSTANT") 
+mcdist.om.7 <- seqdistmc(channels=list(seq.work.7, seq.hw.hrs.7, seq.fam.7), ## Seq states NOT om matrix
+                         method="OM", indel=1,
+                         sm=list(work.cost$sm, hw.cost$sm, fam.cost$sm))
 
 # Duration 8
-mcdist.om.8 <- seqdistmc(channels=list(seq.work.ow.8, seq.hw.hrs.8, seq.fam.8), ## Seq states NOT om matrix
-                         method="OM", indel=1, sm="CONSTANT") 
+mcdist.om.8 <- seqdistmc(channels=list(seq.work.8, seq.hw.hrs.8, seq.fam.8), ## Seq states NOT om matrix
+                         method="OM", indel=1,
+                         sm=list(work.cost$sm, hw.cost$sm, fam.cost$sm)) 
 
 # Duration 9
-mcdist.om.9 <- seqdistmc(channels=list(seq.work.ow.9, seq.hw.hrs.9, seq.fam.9), ## Seq states NOT om matrix
-                         method="OM", indel=1, sm="CONSTANT") 
+mcdist.om.9 <- seqdistmc(channels=list(seq.work.9, seq.hw.hrs.9, seq.fam.9), ## Seq states NOT om matrix
+                         method="OM", indel=1,
+                         sm=list(work.cost$sm, hw.cost$sm, fam.cost$sm)) 
 
 # Duration 10
-mcdist.om.10 <- seqdistmc(channels=list(seq.work.ow.10, seq.hw.hrs.10, seq.fam.10), ## Seq states NOT om matrix
-                         method="OM", indel=1, sm="CONSTANT") 
+mcdist.om.10 <- seqdistmc(channels=list(seq.work.10, seq.hw.hrs.10, seq.fam.10), ## Seq states NOT om matrix
+                         method="OM", indel=1,
+                         sm=list(work.cost$sm, hw.cost$sm, fam.cost$sm)) 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

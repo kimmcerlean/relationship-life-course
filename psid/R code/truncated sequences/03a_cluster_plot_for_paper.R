@@ -304,3 +304,17 @@ dev.off()
 #pdf_convert("C:/Users/mcerl/Istituto Universitario Europeo/Pessin, Lea - 1. WeEqualize - Team Folder/Papers/Relationship Life Course/results/for paper/United States Cluster Plot.pdf",
 #            format = "png", dpi = 300, pages = 1,
 #            "C:/Users/mcerl/Istituto Universitario Europeo/Pessin, Lea - 1. WeEqualize - Team Folder/Papers/Relationship Life Course/results/for paper/United States Cluster Plot.png")
+
+#pdf_convert("G:/My Drive/WeEqualize Papers/Relationship Life Course/results/PSID/cluster options/PSID_RF100Plot_end_mc5_final.pdf",
+#            format = "png", dpi = 300, pages = 1,
+#            "G:/My Drive/WeEqualize Papers/Relationship Life Course/results/PSID/cluster options/PSID_RF100Plot_end_mc5_final.png")
+
+#pdf_convert("G:/My Drive/WeEqualize Papers/Relationship Life Course/results/PSID/cluster options/PSID_MSPlot_mc5_final.pdf",
+#            format = "png", dpi = 300, pages = 1,
+#            "G:/My Drive/WeEqualize Papers/Relationship Life Course/results/PSID/cluster options/PSID_MSPlot_mc5_final.png")
+
+#pdf_convert("G:/My Drive/WeEqualize Papers/Relationship Life Course/results/PSID/cluster options/PSID_merged_plots.pdf",
+#            format = "png", dpi = 300, pages = 1,
+#            "G:/My Drive/WeEqualize Papers/Relationship Life Course/results/PSID/cluster options/PSID_merged_plots.png")
+
+
